@@ -7,28 +7,31 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
+// Create a new QueryClient instance
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/school-student" element={<NotFound />} />
-          <Route path="/adult-student" element={<NotFound />} />
-          <Route path="/become-tutor" element={<NotFound />} />
-          <Route path="/tutors" element={<NotFound />} />
-          <Route path="/about" element={<NotFound />} />
-          <Route path="/register" element={<NotFound />} />
-          <Route path="/login" element={<NotFound />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <TooltipProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/school-student" element={<NotFound />} />
+            <Route path="/adult-student" element={<NotFound />} />
+            <Route path="/become-tutor" element={<NotFound />} />
+            <Route path="/tutors" element={<NotFound />} />
+            <Route path="/about" element={<NotFound />} />
+            <Route path="/register" element={<NotFound />} />
+            <Route path="/login" element={<NotFound />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <Toaster />
+          <Sonner />
+        </TooltipProvider>
       </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+    </QueryClientProvider>
+  );
+};
 
 export default App;
