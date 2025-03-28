@@ -9,6 +9,12 @@ import TutorsPage from "./pages/TutorsPage";
 import AboutPage from "./pages/AboutPage";
 import SubjectsPage from "./pages/SubjectsPage";
 import NotFound from "./pages/NotFound";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
+import ChooseSubjectPage from "./pages/ChooseSubjectPage";
+import TutorCompletePage from "./pages/TutorCompletePage";
+import StudentProfilePage from "./pages/StudentProfilePage";
+import TutorProfilePage from "./pages/TutorProfilePage";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
@@ -26,8 +32,12 @@ const App = () => {
             <Route path="/tutors" element={<TutorsPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/subjects" element={<SubjectsPage />} />
-            <Route path="/register" element={<NotFound />} />
-            <Route path="/login" element={<NotFound />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/choose-subject" element={<ChooseSubjectPage />} />
+            <Route path="/profile/tutor/complete" element={<TutorCompletePage />} />
+            <Route path="/profile/student" element={<StudentProfilePage />} />
+            <Route path="/profile/tutor" element={<TutorProfilePage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           <Toaster />

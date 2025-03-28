@@ -101,19 +101,16 @@ const ChooseSubjectPage = () => {
         throw new Error("Пользователь не авторизован");
       }
       
-      // Save selected subjects to user's profile
-      // In a real app, you'd create a relationship between users and subjects
-      const { error } = await supabase
-        .from("student_subjects") // This table would need to be created in the database
-        .upsert(
-          selectedSubjects.map((subjectId) => ({
-            student_id: user.id,
-            subject_id: subjectId,
-          }))
-        );
+      // Update user profile with selected subjects
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ 
+          subjects: selectedSubjects 
+        })
+        .eq("id", user.id);
       
-      if (error) {
-        console.error("Error saving subjects:", error);
+      if (updateError) {
+        console.error("Error saving subjects:", updateError);
         throw new Error("Ошибка при сохранении выбранных предметов");
       }
       
