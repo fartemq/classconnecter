@@ -1,8 +1,10 @@
 
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 export const Header = () => {
+  const location = useLocation();
+
   return (
     <header className="w-full bg-white py-4 border-b border-gray-200">
       <div className="container mx-auto flex items-center justify-between px-4">
@@ -19,10 +21,16 @@ export const Header = () => {
               </svg>
             </button>
           </div>
-          <Link to="/tutors" className="text-gray-700 hover:text-primary">
+          <Link 
+            to="/tutors" 
+            className={`${location.pathname === "/tutors" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary`}
+          >
             Репетиторы
           </Link>
-          <Link to="/about" className="text-gray-700 hover:text-primary">
+          <Link 
+            to="/about" 
+            className={`${location.pathname === "/about" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary`}
+          >
             О нас
           </Link>
         </nav>
