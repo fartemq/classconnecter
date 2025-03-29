@@ -11,25 +11,31 @@ export type RegisterUserData = {
 };
 
 export const registerUser = async (userData: RegisterUserData) => {
-  // Register the user
-  const { data: authData, error: authError } = await supabase.auth.signUp({
-    email: userData.email,
-    password: userData.password,
-    options: {
-      data: {
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        role: userData.role,
+  try {
+    // Register the user
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+      options: {
+        data: {
+          first_name: userData.firstName,
+          last_name: userData.lastName,
+          role: userData.role,
+        },
       },
-    },
-  });
+    });
 
-  if (authError) {
-    throw authError;
-  }
+    if (authError) {
+      console.error("Auth error:", authError);
+      throw new Error(authError.message || "Ошибка при регистрации пользователя");
+    }
 
-  // Create profile in profiles table
-  if (authData.user) {
+    // Verify user is created
+    if (!authData.user) {
+      throw new Error("Не удалось создать пользователя");
+    }
+
+    // Create profile in profiles table
     const { error: profileError } = await supabase.from("profiles").insert({
       id: authData.user.id,
       first_name: userData.firstName,
@@ -39,9 +45,12 @@ export const registerUser = async (userData: RegisterUserData) => {
 
     if (profileError) {
       console.error("Error creating profile:", profileError);
-      throw new Error("Ошибка при создании профиля");
+      throw new Error(profileError.message || "Ошибка при создании профиля");
     }
-  }
 
-  return authData;
+    return authData;
+  } catch (error) {
+    console.error("Registration error:", error);
+    throw error;
+  }
 };

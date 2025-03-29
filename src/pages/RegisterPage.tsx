@@ -19,13 +19,15 @@ const RegisterPage = () => {
 
   async function handleRegisterSuccess(values: RegisterFormValues) {
     try {
-      await registerUser({
+      const result = await registerUser({
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
         password: values.password,
         role: values.role,
       });
+
+      console.log("Registration successful:", result);
 
       // Show success message
       toast({
@@ -40,6 +42,12 @@ const RegisterPage = () => {
         navigate("/choose-subject");
       }
     } catch (error) {
+      console.error("Registration error in page:", error);
+      toast({
+        title: "Ошибка регистрации",
+        description: error instanceof Error ? error.message : "Произошла ошибка при регистрации",
+        variant: "destructive",
+      });
       throw error; // Let the form component handle the error
     }
   }

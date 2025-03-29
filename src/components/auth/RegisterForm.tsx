@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -38,7 +37,7 @@ const formSchema = z
 export type RegisterFormValues = z.infer<typeof formSchema>;
 
 type RegisterFormProps = {
-  onSuccess: (values: RegisterFormValues) => void;
+  onSuccess: (values: RegisterFormValues) => Promise<void>;
 };
 
 export const RegisterForm = ({ onSuccess }: RegisterFormProps) => {
