@@ -1,84 +1,17 @@
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
-interface Profile {
-  id: string;
-  first_name: string;
-  last_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  city: string | null;
-  role: string;
-}
+import { useProfile } from "@/hooks/useProfile";
+import { TutorSidebar } from "@/components/profile/tutor/TutorSidebar";
+import { StudentsTab } from "@/components/profile/tutor/StudentsTab";
+import { ScheduleTab } from "@/components/profile/tutor/ScheduleTab";
+import { ChatsTab } from "@/components/profile/tutor/ChatsTab";
+import { StatsTab } from "@/components/profile/tutor/StatsTab";
 
 const TutorProfilePage = () => {
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        setIsLoading(true);
-        
-        // Check if user is authenticated
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        
-        if (authError || !session) {
-          toast({
-            title: "Требуется авторизация",
-            description: "Пожалуйста, войдите в систему для продолжения.",
-            variant: "destructive",
-          });
-          navigate("/login");
-          return;
-        }
-        
-        // Get user profile
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", session.user.id)
-          .single();
-        
-        if (profileError) {
-          throw profileError;
-        }
-        
-        // Check if user role is tutor
-        if (profileData.role !== "tutor") {
-          toast({
-            title: "Доступ запрещен",
-            description: "Эта страница доступна только для репетиторов.",
-            variant: "destructive",
-          });
-          navigate("/");
-          return;
-        }
-        
-        setProfile(profileData as Profile);
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-        toast({
-          title: "Ошибка",
-          description: "Произошла ошибка при загрузке профиля.",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchProfile();
-  }, [navigate]);
+  const { profile, isLoading } = useProfile("tutor");
 
   if (isLoading) {
     return (
@@ -102,27 +35,7 @@ const TutorProfilePage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Sidebar with user info */}
             <div className="col-span-1">
-              <Card>
-                <CardHeader className="text-center">
-                  <div className="w-24 h-24 rounded-full bg-gray-200 mx-auto mb-4">
-                    {profile?.avatar_url && (
-                      <img 
-                        src={profile.avatar_url} 
-                        alt={`${profile.first_name} ${profile.last_name || ''}`}
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    )}
-                  </div>
-                  <CardTitle className="text-xl">
-                    {profile?.first_name} {profile?.last_name}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <Button variant="outline" className="w-full">
-                    Редактировать профиль
-                  </Button>
-                </CardContent>
-              </Card>
+              {profile && <TutorSidebar profile={profile} />}
             </div>
             
             {/* Main content */}
@@ -136,81 +49,19 @@ const TutorProfilePage = () => {
                 </TabsList>
                 
                 <TabsContent value="students">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Поиск учеников</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-8">
-                        <p className="text-gray-600 mb-4">
-                          Заполните свой профиль полностью, чтобы привлечь больше учеников
-                        </p>
-                        <Button>Найти учеников</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <StudentsTab />
                 </TabsContent>
                 
                 <TabsContent value="schedule">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Расписание занятий</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-8 text-gray-500">
-                        У вас пока нет запланированных занятий.
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <ScheduleTab />
                 </TabsContent>
                 
                 <TabsContent value="chats">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Чаты с учениками</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-center py-8 text-gray-500">
-                        У вас пока нет активных чатов с учениками.
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <ChatsTab />
                 </TabsContent>
                 
                 <TabsContent value="stats">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Статистика</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                        <Card>
-                          <CardContent className="pt-6">
-                            <p className="text-gray-500">Просмотры профиля</p>
-                            <p className="text-3xl font-bold">0</p>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="pt-6">
-                            <p className="text-gray-500">Заявки на уроки</p>
-                            <p className="text-3xl font-bold">0</p>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="pt-6">
-                            <p className="text-gray-500">Проведенные уроки</p>
-                            <p className="text-3xl font-bold">0</p>
-                          </CardContent>
-                        </Card>
-                        <Card>
-                          <CardContent className="pt-6">
-                            <p className="text-gray-500">Доход (30 дней)</p>
-                            <p className="text-3xl font-bold">0 ₽</p>
-                          </CardContent>
-                        </Card>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <StatsTab />
                 </TabsContent>
               </Tabs>
             </div>
