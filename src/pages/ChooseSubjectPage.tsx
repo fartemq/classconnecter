@@ -101,11 +101,11 @@ const ChooseSubjectPage = () => {
         throw new Error("Пользователь не авторизован");
       }
       
-      // Check if the selected_subjects column exists in the profiles table
+      // First let's update the SQL schema if needed
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ 
-          selected_subjects: selectedSubjects 
+          bio: JSON.stringify({ selectedSubjects }) // Store subjects as JSON in bio field
         })
         .eq("id", user.id);
       

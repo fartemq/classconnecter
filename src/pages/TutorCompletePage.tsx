@@ -1,19 +1,13 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
@@ -22,57 +16,66 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/hooks/use-toast";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-// Define schema for form validation
+// Define the schema for our tutor profile form
 const formSchema = z.object({
-  first_name: z.string().min(2, "Имя должно содержать не менее 2 символов"),
-  last_name: z.string().min(2, "Фамилия должна содержать не менее 2 символов"),
-  bio: z.string().min(20, "Описание должно содержать не менее 20 символов"),
-  hourly_rate: z.coerce.number().min(1, "Укажите стоимость занятия"),
-  city: z.string().min(2, "Укажите город"),
-  // These will be handled separately
-  subjects: z.array(z.string()).nonempty("Выберите хотя бы один предмет"),
-  levels: z.array(z.enum(["schoolboy", "student", "adult"])).nonempty("Выберите хотя бы один уровень"),
+  firstName: z.string().min(2, { message: "Имя должно содержать минимум 2 символа" }),
+  lastName: z.string().min(2, { message: "Фамилия должна содержать минимум 2 символа" }),
+  bio: z.string().min(20, { message: "Опишите ваш опыт преподавания (минимум 20 символов)" }),
+  city: z.string().min(2, { message: "Укажите город" }),
+  hourlyRate: z.coerce.number().positive({ message: "Цена должна быть положительным числом" }),
+  subjects: z.array(z.string()).min(1, { message: "Выберите хотя бы один предмет" }),
+  teachingLevels: z.array(z.enum(["школьник", "студент", "взрослый"])).min(1, {
+    message: "Выберите хотя бы один уровень обучения",
+  }),
+  avatarUrl: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
-interface Subject {
-  id: string;
-  name: string;
-}
-
 const TutorCompletePage = () => {
   const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [subjects, setSubjects] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
-  const [selectedLevels, setSelectedLevels] = useState<("schoolboy" | "student" | "adult")[]>([]);
-  
-  // Form setup
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [categories, setCategories] = useState<any[]>([]);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      first_name: "",
-      last_name: "",
+      firstName: "",
+      lastName: "",
       bio: "",
-      hourly_rate: 0,
       city: "",
+      hourlyRate: 0,
       subjects: [],
-      levels: [],
+      teachingLevels: [],
+      avatarUrl: "",
     },
   });
 
-  // Check authentication and load subjects on mount
+  // Check if user is authenticated and get current user
   useEffect(() => {
-    const fetchData = async () => {
+    const checkAuth = async () => {
       try {
-        // Check if user is authenticated
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (authError || !session) {
+        if (error || !session) {
           toast({
             title: "Требуется авторизация",
             description: "Пожалуйста, войдите в систему для продолжения.",
@@ -81,9 +84,7 @@ const TutorCompletePage = () => {
           navigate("/login");
           return;
         }
-        
-        setUser(session.user);
-        
+
         // Check if user is a tutor
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
@@ -92,7 +93,8 @@ const TutorCompletePage = () => {
           .single();
         
         if (profileError) {
-          throw profileError;
+          console.error("Error fetching profile:", profileError);
+          throw new Error("Ошибка при загрузке профиля");
         }
         
         if (profileData.role !== "tutor") {
@@ -105,167 +107,204 @@ const TutorCompletePage = () => {
           return;
         }
         
-        // Pre-fill form if user already has data
-        if (profileData.first_name) form.setValue("first_name", profileData.first_name);
-        if (profileData.last_name) form.setValue("last_name", profileData.last_name);
-        if (profileData.bio) form.setValue("bio", profileData.bio);
-        if (profileData.city) form.setValue("city", profileData.city);
+        setUser(session.user);
         
-        // Load subjects
-        const { data: subjectsData, error: subjectsError } = await supabase
+        // Populate form with existing data if available
+        if (profileData) {
+          form.setValue("firstName", profileData.first_name || "");
+          form.setValue("lastName", profileData.last_name || "");
+          form.setValue("bio", profileData.bio || "");
+          form.setValue("city", profileData.city || "");
+          setAvatarUrl(profileData.avatar_url);
+        }
+      } catch (error) {
+        console.error("Auth error:", error);
+        toast({
+          title: "Ошибка",
+          description: error instanceof Error ? error.message : "Произошла ошибка при проверке аутентификации",
+          variant: "destructive",
+        });
+      }
+    };
+
+    checkAuth();
+  }, [navigate, form]);
+
+  // Fetch subjects
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const { data, error } = await supabase
           .from("subjects")
           .select("*")
           .eq("is_active", true)
           .order("name");
         
-        if (subjectsError) {
-          throw subjectsError;
+        if (error) {
+          throw error;
         }
         
-        setSubjects(subjectsData || []);
+        setSubjects(data || []);
+
+        // Also fetch categories
+        const { data: catData, error: catError } = await supabase
+          .from("categories")
+          .select("*")
+          .eq("is_active", true);
+          
+        if (catError) {
+          throw catError;
+        }
+        
+        setCategories(catData || []);
       } catch (error) {
-        console.error("Error loading data:", error);
+        console.error("Error fetching subjects:", error);
         toast({
-          title: "Ошибка загрузки данных",
-          description: "Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.",
+          title: "Ошибка",
+          description: "Произошла ошибка при загрузке предметов",
           variant: "destructive",
         });
-      } finally {
-        setIsLoading(false);
       }
     };
+
+    fetchSubjects();
+  }, []);
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) {
+      return;
+    }
     
-    fetchData();
-  }, [navigate, form]);
-
-  const handleSubjectToggle = (subjectId: string) => {
-    setSelectedSubjects((prev) => {
-      if (prev.includes(subjectId)) {
-        return prev.filter((id) => id !== subjectId);
-      } else {
-        return [...prev, subjectId];
-      }
-    });
-  };
-
-  const handleLevelToggle = (level: "schoolboy" | "student" | "adult") => {
-    setSelectedLevels((prev) => {
-      if (prev.includes(level)) {
-        return prev.filter((l) => l !== level);
-      } else {
-        return [...prev, level];
-      }
-    });
-  };
-
-  const onSubmit = async (values: FormValues) => {
-    // First, validate that subjects and levels are selected
-    if (selectedSubjects.length === 0) {
+    const file = e.target.files[0];
+    const fileSize = file.size / 1024 / 1024; // in MB
+    
+    if (fileSize > 2) {
       toast({
-        title: "Выберите предметы",
-        description: "Пожалуйста, выберите хотя бы один предмет, который вы преподаете",
+        title: "Файл слишком большой",
+        description: "Максимальный размер файла - 2 МБ",
         variant: "destructive",
       });
       return;
     }
     
-    if (selectedLevels.length === 0) {
-      toast({
-        title: "Выберите уровни",
-        description: "Пожалуйста, выберите хотя бы один уровень, с которым вы работаете",
-        variant: "destructive",
-      });
-      return;
-    }
+    setAvatarFile(file);
+    setAvatarUrl(URL.createObjectURL(file));
+  };
+
+  const uploadAvatar = async () => {
+    if (!avatarFile || !user) return null;
     
-    setIsSaving(true);
+    setIsUploading(true);
     
     try {
-      if (!user) {
-        throw new Error("Пользователь не авторизован");
+      // Create a unique file name
+      const fileExt = avatarFile.name.split('.').pop();
+      const fileName = `${user.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `avatars/${fileName}`;
+      
+      // Upload the file
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, avatarFile);
+      
+      if (uploadError) {
+        throw uploadError;
       }
       
-      // Update profile
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          first_name: values.first_name,
-          last_name: values.last_name,
-          bio: values.bio,
-          city: values.city,
-        })
-        .eq("id", user.id);
+      // Get the public URL
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast({
+        title: "Ошибка загрузки фото",
+        description: "Произошла ошибка при загрузке фотографии",
+        variant: "destructive",
+      });
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  async function onSubmit(values: FormValues) {
+    if (!user) {
+      toast({
+        title: "Ошибка",
+        description: "Пользователь не авторизован",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // Upload avatar if selected
+      let finalAvatarUrl = avatarUrl;
+      if (avatarFile) {
+        finalAvatarUrl = await uploadAvatar();
+        if (!finalAvatarUrl) {
+          throw new Error("Не удалось загрузить фото профиля");
+        }
+      }
+      
+      // Update profile in the database
+      const { error: profileError } = await supabase.from("profiles").update({
+        first_name: values.firstName,
+        last_name: values.lastName,
+        bio: values.bio,
+        city: values.city,
+        avatar_url: finalAvatarUrl,
+        // Store teaching levels as JSON in another field since it's not in the schema
+        updated_at: new Date().toISOString(),
+      }).eq("id", user.id);
       
       if (profileError) {
         throw profileError;
       }
       
-      // For each selected subject, create a record in tutor_subjects table
-      // First, remove existing subjects
-      const { error: deleteError } = await supabase
-        .from("tutor_subjects")
-        .delete()
-        .eq("tutor_id", user.id);
-      
-      if (deleteError) {
-        throw deleteError;
-      }
-      
-      // Then insert new ones
-      const tutor_subjects = selectedSubjects.map(subjectId => ({
-        tutor_id: user.id,
-        subject_id: subjectId,
-        hourly_rate: values.hourly_rate,
-      }));
-      
-      const { error: insertError } = await supabase
-        .from("tutor_subjects")
-        .insert(tutor_subjects);
-      
-      if (insertError) {
-        throw insertError;
-      }
-      
-      // Update tutor levels
-      const { error: levelsError } = await supabase
-        .from("profiles")
-        .update({
-          teaching_levels: selectedLevels
-        })
-        .eq("id", user.id);
-      
-      if (levelsError) {
-        throw levelsError;
+      // For each selected subject, create a tutor_subject entry
+      for (const subjectId of values.subjects) {
+        // Find a default category for this subject
+        const defaultCategory = categories.find(c => c.subject_id === subjectId);
+        const categoryId = defaultCategory ? defaultCategory.id : null;
+        
+        if (!categoryId) {
+          console.warn(`No default category found for subject ${subjectId}`);
+          continue;
+        }
+        
+        const { error: subjectError } = await supabase.from("tutor_subjects").insert({
+          tutor_id: user.id,
+          subject_id: subjectId,
+          category_id: categoryId,
+          hourly_rate: values.hourlyRate,
+          is_active: true
+        });
+        
+        if (subjectError) {
+          console.error("Error adding subject:", subjectError);
+        }
       }
       
       toast({
-        title: "Профиль сохранен!",
-        description: "Ваш профиль успешно обновлен",
+        title: "Профиль успешно создан!",
+        description: "Теперь вы можете начать работу с учениками",
       });
       
       navigate("/profile/tutor");
     } catch (error) {
-      console.error("Error updating profile:", error);
+      console.error("Error saving profile:", error);
       toast({
         title: "Ошибка сохранения",
-        description: "Произошла ошибка при сохранении профиля",
+        description: error instanceof Error ? error.message : "Произошла ошибка при сохранении профиля",
         variant: "destructive",
       });
     } finally {
-      setIsSaving(false);
+      setIsLoading(false);
     }
-  };
-
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">Загрузка...</div>
-        </main>
-        <Footer />
-      </div>
-    );
   }
 
   return (
@@ -275,203 +314,219 @@ const TutorCompletePage = () => {
         <div className="container mx-auto px-4">
           <Card className="max-w-3xl mx-auto">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold text-center">
-                Заполните профиль репетитора
-              </CardTitle>
-              <CardDescription className="text-center">
-                Заполните необходимую информацию, чтобы ученики могли найти вас
+              <CardTitle className="text-2xl font-bold">Заполните профиль репетитора</CardTitle>
+              <CardDescription>
+                Для начала работы на платформе необходимо заполнить все обязательные поля
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  {/* Personal Information */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Личная информация</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="first_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Имя *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Иван" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
+                  {/* Avatar upload */}
+                  <div className="flex flex-col items-center space-y-4">
+                    <Avatar className="w-24 h-24">
+                      <AvatarImage src={avatarUrl || ""} />
+                      <AvatarFallback>{form.getValues("firstName").charAt(0) || "Р"}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="max-w-xs"
                       />
-                      
-                      <FormField
-                        control={form.control}
-                        name="last_name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Фамилия *</FormLabel>
-                            <FormControl>
-                              <Input placeholder="Иванов" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Рекомендуемый размер: 400x400 пикселей (макс. 2 МБ)
+                      </p>
                     </div>
-                    
-                    <FormField
-                      control={form.control}
-                      name="city"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Город *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Москва" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    
-                    <FormField
-                      control={form.control}
-                      name="bio"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>О себе и опыте преподавания *</FormLabel>
-                          <FormControl>
-                            <Textarea 
-                              placeholder="Расскажите о своем опыте, образовании и методиках преподавания..." 
-                              className="min-h-32"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </div>
-                  
+
+                  {/* First name */}
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Имя *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Иван" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Last name */}
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Фамилия *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Иванов" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* City */}
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Город *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Москва" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   {/* Subjects */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Предметы *</h3>
-                    <p className="text-sm text-gray-500">
-                      Выберите предметы, которые вы преподаете
-                    </p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {subjects.map((subject) => (
-                        <div
-                          key={subject.id}
-                          className="flex items-center space-x-3 rounded-lg border p-4 hover:bg-gray-50"
-                        >
-                          <Checkbox
-                            id={`subject-${subject.id}`}
-                            checked={selectedSubjects.includes(subject.id)}
-                            onCheckedChange={() => handleSubjectToggle(subject.id)}
-                          />
-                          <Label
-                            htmlFor={`subject-${subject.id}`}
-                            className="cursor-pointer flex-grow"
-                          >
-                            {subject.name}
-                          </Label>
+                  <FormField
+                    control={form.control}
+                    name="subjects"
+                    render={() => (
+                      <FormItem>
+                        <div className="mb-4">
+                          <FormLabel className="text-base">Предметы *</FormLabel>
+                          <p className="text-sm text-gray-500">
+                            Выберите предметы, которые вы преподаете
+                          </p>
                         </div>
-                      ))}
-                    </div>
-                    {selectedSubjects.length === 0 && (
-                      <p className="text-sm text-red-500">
-                        Выберите хотя бы один предмет
-                      </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {subjects.map((subject) => (
+                            <FormItem
+                              key={subject.id}
+                              className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={form.getValues("subjects").includes(subject.id)}
+                                  onCheckedChange={(checked) => {
+                                    const currentValues = form.getValues("subjects");
+                                    if (checked) {
+                                      form.setValue("subjects", [...currentValues, subject.id], {
+                                        shouldValidate: true,
+                                      });
+                                    } else {
+                                      form.setValue(
+                                        "subjects",
+                                        currentValues.filter((value) => value !== subject.id),
+                                        { shouldValidate: true }
+                                      );
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal cursor-pointer">
+                                {subject.name}
+                              </FormLabel>
+                            </FormItem>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </div>
-                  
-                  {/* Levels */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Уровни *</h3>
-                    <p className="text-sm text-gray-500">
-                      Выберите уровни, с которыми вы работаете
-                    </p>
-                    
-                    <div className="flex flex-col space-y-3">
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="level-schoolboy"
-                          checked={selectedLevels.includes("schoolboy")}
-                          onCheckedChange={() => handleLevelToggle("schoolboy")}
-                        />
-                        <Label
-                          htmlFor="level-schoolboy"
-                          className="cursor-pointer"
-                        >
-                          Школьники
-                        </Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="level-student"
-                          checked={selectedLevels.includes("student")}
-                          onCheckedChange={() => handleLevelToggle("student")}
-                        />
-                        <Label
-                          htmlFor="level-student"
-                          className="cursor-pointer"
-                        >
-                          Студенты
-                        </Label>
-                      </div>
-                      
-                      <div className="flex items-center space-x-3">
-                        <Checkbox
-                          id="level-adult"
-                          checked={selectedLevels.includes("adult")}
-                          onCheckedChange={() => handleLevelToggle("adult")}
-                        />
-                        <Label
-                          htmlFor="level-adult"
-                          className="cursor-pointer"
-                        >
-                          Взрослые
-                        </Label>
-                      </div>
-                    </div>
-                    {selectedLevels.length === 0 && (
-                      <p className="text-sm text-red-500">
-                        Выберите хотя бы один уровень
-                      </p>
+                  />
+
+                  {/* Teaching levels */}
+                  <FormField
+                    control={form.control}
+                    name="teachingLevels"
+                    render={() => (
+                      <FormItem>
+                        <div className="mb-4">
+                          <FormLabel className="text-base">Уровни обучения *</FormLabel>
+                          <p className="text-sm text-gray-500">
+                            С какими учениками вы работаете
+                          </p>
+                        </div>
+                        <div className="flex flex-col space-y-4">
+                          {[
+                            { id: "школьник", label: "Школьник" },
+                            { id: "студент", label: "Студент" },
+                            { id: "взрослый", label: "Взрослый" },
+                          ].map((level) => (
+                            <FormItem
+                              key={level.id}
+                              className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4"
+                            >
+                              <FormControl>
+                                <Checkbox
+                                  checked={form.getValues("teachingLevels").includes(level.id as any)}
+                                  onCheckedChange={(checked) => {
+                                    const currentValues = form.getValues("teachingLevels");
+                                    if (checked) {
+                                      form.setValue("teachingLevels", [...currentValues, level.id as any], {
+                                        shouldValidate: true,
+                                      });
+                                    } else {
+                                      form.setValue(
+                                        "teachingLevels",
+                                        currentValues.filter((value) => value !== level.id),
+                                        { shouldValidate: true }
+                                      );
+                                    }
+                                  }}
+                                />
+                              </FormControl>
+                              <FormLabel className="font-normal cursor-pointer">
+                                {level.label}
+                              </FormLabel>
+                            </FormItem>
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                  </div>
-                  
-                  {/* Pricing */}
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium">Стоимость занятия *</h3>
-                    
-                    <FormField
-                      control={form.control}
-                      name="hourly_rate"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Стоимость за час (₽) *</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              min="0"
-                              step="50"
-                              placeholder="1000"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                  
-                  {/* Submit button */}
-                  <div className="flex justify-center pt-4">
-                    <Button type="submit" size="lg" disabled={isSaving}>
-                      {isSaving ? "Сохранение..." : "Сохранить и продолжить"}
+                  />
+
+                  {/* Hourly rate */}
+                  <FormField
+                    control={form.control}
+                    name="hourlyRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Цена за час, ₽ *</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="0" placeholder="1000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Bio / Teaching experience */}
+                  <FormField
+                    control={form.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Опыт преподавания *</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Расскажите о своем опыте и методике преподавания..."
+                            className="min-h-[120px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="flex justify-end">
+                    <Button 
+                      type="submit" 
+                      disabled={isLoading || isUploading}
+                      className="ml-auto"
+                    >
+                      {isLoading || isUploading ? "Сохранение..." : "Сохранить и продолжить"}
                     </Button>
                   </div>
                 </form>

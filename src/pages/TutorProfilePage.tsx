@@ -118,7 +118,7 @@ const TutorProfilePage = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Button variant="outline" className="w-full" onClick={() => navigate("/profile/tutor/complete")}>
+                  <Button variant="outline" className="w-full">
                     Редактировать профиль
                   </Button>
                 </CardContent>
@@ -130,9 +130,9 @@ const TutorProfilePage = () => {
               <Tabs defaultValue="students">
                 <TabsList className="mb-6">
                   <TabsTrigger value="students">Поиск учеников</TabsTrigger>
-                  <TabsTrigger value="statistics">Статистика</TabsTrigger>
-                  <TabsTrigger value="chats">Чаты</TabsTrigger>
                   <TabsTrigger value="schedule">Расписание</TabsTrigger>
+                  <TabsTrigger value="chats">Чаты</TabsTrigger>
+                  <TabsTrigger value="stats">Статистика</TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="students">
@@ -143,43 +143,22 @@ const TutorProfilePage = () => {
                     <CardContent>
                       <div className="text-center py-8">
                         <p className="text-gray-600 mb-4">
-                          Заполните ваш профиль, чтобы привлечь больше учеников.
+                          Заполните свой профиль полностью, чтобы привлечь больше учеников
                         </p>
-                        <Button onClick={() => navigate("/profile/tutor/complete")}>
-                          Заполнить профиль
-                        </Button>
+                        <Button>Найти учеников</Button>
                       </div>
                     </CardContent>
                   </Card>
                 </TabsContent>
                 
-                <TabsContent value="statistics">
+                <TabsContent value="schedule">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Статистика</CardTitle>
+                      <CardTitle>Расписание занятий</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                        <div className="bg-white p-4 rounded-lg border">
-                          <p className="text-sm text-gray-500">Просмотры профиля</p>
-                          <p className="text-2xl font-bold">0</p>
-                        </div>
-                        <div className="bg-white p-4 rounded-lg border">
-                          <p className="text-sm text-gray-500">Запросы на занятия</p>
-                          <p className="text-2xl font-bold">0</p>
-                        </div>
-                        <div className="bg-white p-4 rounded-lg border">
-                          <p className="text-sm text-gray-500">Подтвержденные занятия</p>
-                          <p className="text-2xl font-bold">0</p>
-                        </div>
-                        <div className="bg-white p-4 rounded-lg border">
-                          <p className="text-sm text-gray-500">Доход за месяц</p>
-                          <p className="text-2xl font-bold">0 ₽</p>
-                        </div>
-                      </div>
-                      
                       <div className="text-center py-8 text-gray-500">
-                        График доходов за последние 30 дней будет отображаться здесь.
+                        У вас пока нет запланированных занятий.
                       </div>
                     </CardContent>
                   </Card>
@@ -198,14 +177,37 @@ const TutorProfilePage = () => {
                   </Card>
                 </TabsContent>
                 
-                <TabsContent value="schedule">
+                <TabsContent value="stats">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Расписание занятий</CardTitle>
+                      <CardTitle>Статистика</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="text-center py-8 text-gray-500">
-                        У вас пока нет запланированных занятий.
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                        <Card>
+                          <CardContent className="pt-6">
+                            <p className="text-gray-500">Просмотры профиля</p>
+                            <p className="text-3xl font-bold">0</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-6">
+                            <p className="text-gray-500">Заявки на уроки</p>
+                            <p className="text-3xl font-bold">0</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-6">
+                            <p className="text-gray-500">Проведенные уроки</p>
+                            <p className="text-3xl font-bold">0</p>
+                          </CardContent>
+                        </Card>
+                        <Card>
+                          <CardContent className="pt-6">
+                            <p className="text-gray-500">Доход (30 дней)</p>
+                            <p className="text-3xl font-bold">0 ₽</p>
+                          </CardContent>
+                        </Card>
                       </div>
                     </CardContent>
                   </Card>
