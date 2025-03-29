@@ -1,13 +1,19 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { z } from "zod";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Form,
   FormControl,
@@ -16,175 +22,251 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { toast } from "@/hooks/use-toast";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 
-// Define the schema for the tutor profile completion form
+// Define schema for form validation
 const formSchema = z.object({
-  firstName: z.string().min(2, { message: "Имя должно содержать минимум 2 символа" }),
-  lastName: z.string().min(2, { message: "Фамилия должна содержать минимум 2 символа" }),
-  bio: z.string().min(50, { message: "Описание должно содержать минимум 50 символов" }),
-  hourlyRate: z.string().refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
-    message: "Укажите корректную стоимость занятия",
-  }),
-  city: z.string().min(2, { message: "Укажите город" }),
-  subjects: z.array(z.string()).nonempty({ message: "Выберите хотя бы один предмет" }),
-  levels: z.array(z.enum(["schoolboy", "student", "adult"])).nonempty({
-    message: "Выберите хотя бы один уровень обучения",
-  }),
+  first_name: z.string().min(2, "Имя должно содержать не менее 2 символов"),
+  last_name: z.string().min(2, "Фамилия должна содержать не менее 2 символов"),
+  bio: z.string().min(20, "Описание должно содержать не менее 20 символов"),
+  hourly_rate: z.coerce.number().min(1, "Укажите стоимость занятия"),
+  city: z.string().min(2, "Укажите город"),
+  // These will be handled separately
+  subjects: z.array(z.string()).nonempty("Выберите хотя бы один предмет"),
+  levels: z.array(z.enum(["schoolboy", "student", "adult"])).nonempty("Выберите хотя бы один уровень"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
+interface Subject {
+  id: string;
+  name: string;
+}
+
 const TutorCompletePage = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
-  const [subjects, setSubjects] = useState<Array<{ id: string; name: string }>>([]);
   const [user, setUser] = useState<any>(null);
-
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [selectedLevels, setSelectedLevels] = useState<("schoolboy" | "student" | "adult")[]>([]);
+  
+  // Form setup
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
+      first_name: "",
+      last_name: "",
       bio: "",
-      hourlyRate: "",
+      hourly_rate: 0,
       city: "",
       subjects: [],
       levels: [],
     },
   });
 
+  // Check authentication and load subjects on mount
   useEffect(() => {
-    const checkAuth = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error || !session) {
-        toast({
-          title: "Необходима авторизация",
-          description: "Пожалуйста, войдите в систему для заполнения профиля",
-          variant: "destructive",
-        });
-        navigate("/login");
-        return;
-      }
-
-      setUser(session.user);
-
-      // Load user profile data if it exists
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", session.user.id)
-        .single();
-
-      if (profileError) {
-        console.error("Error loading profile:", profileError);
-      } else if (profileData) {
-        form.setValue("firstName", profileData.first_name);
-        form.setValue("lastName", profileData.last_name || "");
-        form.setValue("bio", profileData.bio || "");
-        form.setValue("city", profileData.city || "");
-      }
-
-      // Load subjects
-      const { data: subjectsData, error: subjectsError } = await supabase
-        .from("subjects")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name");
-
-      if (subjectsError) {
-        console.error("Error loading subjects:", subjectsError);
-        toast({
-          title: "Ошибка",
-          description: "Не удалось загрузить список предметов",
-          variant: "destructive",
-        });
-      } else {
+    const fetchData = async () => {
+      try {
+        // Check if user is authenticated
+        const { data: { session }, error: authError } = await supabase.auth.getSession();
+        
+        if (authError || !session) {
+          toast({
+            title: "Требуется авторизация",
+            description: "Пожалуйста, войдите в систему для продолжения.",
+            variant: "destructive",
+          });
+          navigate("/login");
+          return;
+        }
+        
+        setUser(session.user);
+        
+        // Check if user is a tutor
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+        
+        if (profileError) {
+          throw profileError;
+        }
+        
+        if (profileData.role !== "tutor") {
+          toast({
+            title: "Доступ запрещен",
+            description: "Эта страница доступна только для репетиторов.",
+            variant: "destructive",
+          });
+          navigate("/");
+          return;
+        }
+        
+        // Pre-fill form if user already has data
+        if (profileData.first_name) form.setValue("first_name", profileData.first_name);
+        if (profileData.last_name) form.setValue("last_name", profileData.last_name);
+        if (profileData.bio) form.setValue("bio", profileData.bio);
+        if (profileData.city) form.setValue("city", profileData.city);
+        
+        // Load subjects
+        const { data: subjectsData, error: subjectsError } = await supabase
+          .from("subjects")
+          .select("*")
+          .eq("is_active", true)
+          .order("name");
+        
+        if (subjectsError) {
+          throw subjectsError;
+        }
+        
         setSubjects(subjectsData || []);
+      } catch (error) {
+        console.error("Error loading data:", error);
+        toast({
+          title: "Ошибка загрузки данных",
+          description: "Произошла ошибка при загрузке данных. Пожалуйста, попробуйте позже.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
       }
     };
-
-    checkAuth();
+    
+    fetchData();
   }, [navigate, form]);
 
-  const onSubmit = async (values: FormValues) => {
-    setIsLoading(true);
+  const handleSubjectToggle = (subjectId: string) => {
+    setSelectedSubjects((prev) => {
+      if (prev.includes(subjectId)) {
+        return prev.filter((id) => id !== subjectId);
+      } else {
+        return [...prev, subjectId];
+      }
+    });
+  };
 
+  const handleLevelToggle = (level: "schoolboy" | "student" | "adult") => {
+    setSelectedLevels((prev) => {
+      if (prev.includes(level)) {
+        return prev.filter((l) => l !== level);
+      } else {
+        return [...prev, level];
+      }
+    });
+  };
+
+  const onSubmit = async (values: FormValues) => {
+    // First, validate that subjects and levels are selected
+    if (selectedSubjects.length === 0) {
+      toast({
+        title: "Выберите предметы",
+        description: "Пожалуйста, выберите хотя бы один предмет, который вы преподаете",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (selectedLevels.length === 0) {
+      toast({
+        title: "Выберите уровни",
+        description: "Пожалуйста, выберите хотя бы один уровень, с которым вы работаете",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsSaving(true);
+    
     try {
       if (!user) {
         throw new Error("Пользователь не авторизован");
       }
-
-      // Update profile information
+      
+      // Update profile
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
-          first_name: values.firstName,
-          last_name: values.lastName,
+          first_name: values.first_name,
+          last_name: values.last_name,
           bio: values.bio,
           city: values.city,
-          updated_at: new Date().toISOString(),
         })
         .eq("id", user.id);
-
+      
       if (profileError) {
-        throw new Error("Ошибка при обновлении профиля");
+        throw profileError;
       }
-
-      // Add subject entries for each selected subject
-      const tutorSubjectsPromises = values.subjects.map(async (subjectId) => {
-        const { error } = await supabase
-          .from("tutor_subjects")
-          .insert({
-            tutor_id: user.id,
-            subject_id: subjectId,
-            category_id: subjectId, // using subject_id as category_id for simplicity
-            hourly_rate: Number(values.hourlyRate),
-            is_active: true,
-          });
-
-        if (error) {
-          console.error("Error adding subject:", error);
-        }
-      });
-
-      await Promise.all(tutorSubjectsPromises);
-
+      
+      // For each selected subject, create a record in tutor_subjects table
+      // First, remove existing subjects
+      const { error: deleteError } = await supabase
+        .from("tutor_subjects")
+        .delete()
+        .eq("tutor_id", user.id);
+      
+      if (deleteError) {
+        throw deleteError;
+      }
+      
+      // Then insert new ones
+      const tutor_subjects = selectedSubjects.map(subjectId => ({
+        tutor_id: user.id,
+        subject_id: subjectId,
+        hourly_rate: values.hourly_rate,
+      }));
+      
+      const { error: insertError } = await supabase
+        .from("tutor_subjects")
+        .insert(tutor_subjects);
+      
+      if (insertError) {
+        throw insertError;
+      }
+      
+      // Update tutor levels
+      const { error: levelsError } = await supabase
+        .from("profiles")
+        .update({
+          teaching_levels: selectedLevels
+        })
+        .eq("id", user.id);
+      
+      if (levelsError) {
+        throw levelsError;
+      }
+      
       toast({
-        title: "Профиль успешно создан!",
-        description: "Вы заполнили все необходимые данные и теперь можете использовать все возможности платформы.",
+        title: "Профиль сохранен!",
+        description: "Ваш профиль успешно обновлен",
       });
-
+      
       navigate("/profile/tutor");
     } catch (error) {
-      console.error("Error saving profile:", error);
+      console.error("Error updating profile:", error);
       toast({
         title: "Ошибка сохранения",
-        description: error instanceof Error ? error.message : "Произошла ошибка при сохранении профиля",
+        description: "Произошла ошибка при сохранении профиля",
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSaving(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">Загрузка...</div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -197,171 +279,199 @@ const TutorCompletePage = () => {
                 Заполните профиль репетитора
               </CardTitle>
               <CardDescription className="text-center">
-                Заполните информацию о себе и своих услугах, чтобы привлечь больше студентов
+                Заполните необходимую информацию, чтобы ученики могли найти вас
               </CardDescription>
             </CardHeader>
             <CardContent>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Personal Information */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Личная информация</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="first_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Имя *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Иван" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="last_name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Фамилия *</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Иванов" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    
                     <FormField
                       control={form.control}
-                      name="firstName"
+                      name="city"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Имя*</FormLabel>
+                          <FormLabel>Город *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Иван" {...field} />
+                            <Input placeholder="Москва" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-
+                    
                     <FormField
                       control={form.control}
-                      name="lastName"
+                      name="bio"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Фамилия*</FormLabel>
+                          <FormLabel>О себе и опыте преподавания *</FormLabel>
                           <FormControl>
-                            <Input placeholder="Иванов" {...field} />
+                            <Textarea 
+                              placeholder="Расскажите о своем опыте, образовании и методиках преподавания..." 
+                              className="min-h-32"
+                              {...field}
+                            />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
-
-                  <FormField
-                    control={form.control}
-                    name="bio"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Описание опыта преподавания*</FormLabel>
-                        <FormControl>
-                          <Textarea
-                            placeholder="Расскажите о своем опыте, образовании, методике преподавания..."
-                            className="h-32"
-                            {...field}
+                  
+                  {/* Subjects */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Предметы *</h3>
+                    <p className="text-sm text-gray-500">
+                      Выберите предметы, которые вы преподаете
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {subjects.map((subject) => (
+                        <div
+                          key={subject.id}
+                          className="flex items-center space-x-3 rounded-lg border p-4 hover:bg-gray-50"
+                        >
+                          <Checkbox
+                            id={`subject-${subject.id}`}
+                            checked={selectedSubjects.includes(subject.id)}
+                            onCheckedChange={() => handleSubjectToggle(subject.id)}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="hourlyRate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Стоимость занятия (₽/час)*</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="0" placeholder="1000" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Город*</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Москва" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="subjects"
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>Предметы, которые вы преподаете*</FormLabel>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
-                          {subjects.map((subject) => (
-                            <div key={subject.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`subject-${subject.id}`}
-                                checked={form.watch("subjects").includes(subject.id)}
-                                onCheckedChange={(checked) => {
-                                  const currentSubjects = form.getValues("subjects");
-                                  if (checked) {
-                                    form.setValue("subjects", [...currentSubjects, subject.id]);
-                                  } else {
-                                    form.setValue(
-                                      "subjects",
-                                      currentSubjects.filter((id) => id !== subject.id)
-                                    );
-                                  }
-                                }}
-                              />
-                              <label
-                                htmlFor={`subject-${subject.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                              >
-                                {subject.name}
-                              </label>
-                            </div>
-                          ))}
+                          <Label
+                            htmlFor={`subject-${subject.id}`}
+                            className="cursor-pointer flex-grow"
+                          >
+                            {subject.name}
+                          </Label>
                         </div>
-                        <FormMessage />
-                      </FormItem>
+                      ))}
+                    </div>
+                    {selectedSubjects.length === 0 && (
+                      <p className="text-sm text-red-500">
+                        Выберите хотя бы один предмет
+                      </p>
                     )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="levels"
-                    render={() => (
-                      <FormItem>
-                        <FormLabel>С кем вы работаете*</FormLabel>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-                          {[
-                            { id: "schoolboy", label: "Школьники" },
-                            { id: "student", label: "Студенты" },
-                            { id: "adult", label: "Взрослые" },
-                          ].map((level) => (
-                            <div key={level.id} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`level-${level.id}`}
-                                checked={form.watch("levels").includes(level.id as any)}
-                                onCheckedChange={(checked) => {
-                                  const currentLevels = form.getValues("levels");
-                                  if (checked) {
-                                    form.setValue("levels", [...currentLevels, level.id as any]);
-                                  } else {
-                                    form.setValue(
-                                      "levels",
-                                      currentLevels.filter((id) => id !== level.id)
-                                    );
-                                  }
-                                }}
-                              />
-                              <label
-                                htmlFor={`level-${level.id}`}
-                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                              >
-                                {level.label}
-                              </label>
-                            </div>
-                          ))}
-                        </div>
-                        <FormMessage />
-                      </FormItem>
+                  </div>
+                  
+                  {/* Levels */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Уровни *</h3>
+                    <p className="text-sm text-gray-500">
+                      Выберите уровни, с которыми вы работаете
+                    </p>
+                    
+                    <div className="flex flex-col space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="level-schoolboy"
+                          checked={selectedLevels.includes("schoolboy")}
+                          onCheckedChange={() => handleLevelToggle("schoolboy")}
+                        />
+                        <Label
+                          htmlFor="level-schoolboy"
+                          className="cursor-pointer"
+                        >
+                          Школьники
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="level-student"
+                          checked={selectedLevels.includes("student")}
+                          onCheckedChange={() => handleLevelToggle("student")}
+                        />
+                        <Label
+                          htmlFor="level-student"
+                          className="cursor-pointer"
+                        >
+                          Студенты
+                        </Label>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="level-adult"
+                          checked={selectedLevels.includes("adult")}
+                          onCheckedChange={() => handleLevelToggle("adult")}
+                        />
+                        <Label
+                          htmlFor="level-adult"
+                          className="cursor-pointer"
+                        >
+                          Взрослые
+                        </Label>
+                      </div>
+                    </div>
+                    {selectedLevels.length === 0 && (
+                      <p className="text-sm text-red-500">
+                        Выберите хотя бы один уровень
+                      </p>
                     )}
-                  />
-
-                  <div className="pt-4 flex justify-center">
-                    <Button type="submit" className="w-full md:w-auto" disabled={isLoading}>
-                      {isLoading ? "Сохранение..." : "Сохранить и продолжить"}
+                  </div>
+                  
+                  {/* Pricing */}
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium">Стоимость занятия *</h3>
+                    
+                    <FormField
+                      control={form.control}
+                      name="hourly_rate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Стоимость за час (₽) *</FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="50"
+                              placeholder="1000"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                  
+                  {/* Submit button */}
+                  <div className="flex justify-center pt-4">
+                    <Button type="submit" size="lg" disabled={isSaving}>
+                      {isSaving ? "Сохранение..." : "Сохранить и продолжить"}
                     </Button>
                   </div>
                 </form>

@@ -101,11 +101,11 @@ const ChooseSubjectPage = () => {
         throw new Error("Пользователь не авторизован");
       }
       
-      // Update user profile with selected subjects
+      // Check if the selected_subjects column exists in the profiles table
       const { error: updateError } = await supabase
         .from("profiles")
         .update({ 
-          subjects: selectedSubjects 
+          selected_subjects: selectedSubjects 
         })
         .eq("id", user.id);
       
