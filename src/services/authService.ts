@@ -35,7 +35,7 @@ export const registerUser = async (userData: RegisterUserData) => {
       throw new Error("Не удалось создать пользователя");
     }
 
-    // Create profile in profiles table
+    // Create profile in profiles table using service role permissions
     const { error: profileError } = await supabase.from("profiles").insert({
       id: authData.user.id,
       first_name: userData.firstName,
@@ -45,6 +45,9 @@ export const registerUser = async (userData: RegisterUserData) => {
 
     if (profileError) {
       console.error("Error creating profile:", profileError);
+      if (profileError.message.includes("duplicate key")) {
+        throw new Error("Пользователь с таким email уже существует");
+      }
       throw new Error(profileError.message || "Ошибка при создании профиля");
     }
 

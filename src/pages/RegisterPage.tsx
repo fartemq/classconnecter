@@ -48,7 +48,6 @@ const RegisterPage = () => {
         description: error instanceof Error ? error.message : "Произошла ошибка при регистрации",
         variant: "destructive",
       });
-      throw error; // Let the form component handle the error
     }
   }
 
