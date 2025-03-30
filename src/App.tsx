@@ -15,6 +15,9 @@ import ChooseSubjectPage from "./pages/ChooseSubjectPage";
 import TutorCompletePage from "./pages/TutorCompletePage";
 import StudentProfilePage from "./pages/StudentProfilePage";
 import TutorProfilePage from "./pages/TutorProfilePage";
+import SchoolStudentPage from "./pages/SchoolStudentPage";
+import AdultStudentPage from "./pages/AdultStudentPage";
+import BecomeTutorPage from "./pages/BecomeTutorPage";
 
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
@@ -26,9 +29,9 @@ const App = () => {
         <TooltipProvider>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/school-student" element={<NotFound />} />
-            <Route path="/adult-student" element={<NotFound />} />
-            <Route path="/become-tutor" element={<NotFound />} />
+            <Route path="/school-student" element={<SchoolStudentPage />} />
+            <Route path="/adult-student" element={<AdultStudentPage />} />
+            <Route path="/become-tutor" element={<BecomeTutorPage />} />
             <Route path="/tutors" element={<TutorsPage />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/subjects" element={<SubjectsPage />} />

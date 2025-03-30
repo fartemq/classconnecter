@@ -1,6 +1,6 @@
 
-import React from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { toast } from "@/hooks/use-toast";
@@ -16,6 +16,18 @@ import { registerUser } from "@/services/authService";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const [defaultRole, setDefaultRole] = useState<"student" | "tutor" | undefined>(undefined);
+
+  // Получаем роль из параметров URL, если она указана
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const role = params.get("role");
+    
+    if (role === "student" || role === "tutor") {
+      setDefaultRole(role);
+    }
+  }, [location]);
 
   async function handleRegisterSuccess(values: RegisterFormValues) {
     try {
@@ -63,7 +75,7 @@ const RegisterPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <RegisterForm onSuccess={handleRegisterSuccess} />
+            <RegisterForm onSuccess={handleRegisterSuccess} defaultRole={defaultRole} />
           </CardContent>
         </Card>
       </main>

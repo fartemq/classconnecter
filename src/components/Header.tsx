@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -8,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, LogIn } from "lucide-react";
 
 // Popular subjects for dropdown menu
 const popularSubjects = [
@@ -109,8 +108,11 @@ export const Header = () => {
         </nav>
         
         <div className="flex items-center">
-          <Button variant="default" className="bg-gray-900 hover:bg-gray-800">
-            Войти/Зарегистрироваться
+          <Button variant="default" className="bg-gray-900 hover:bg-gray-800" asChild>
+            <Link to="/login" className="flex items-center gap-2">
+              <LogIn className="h-4 w-4" />
+              Войти/Зарегистрироваться
+            </Link>
           </Button>
         </div>
       </div>
