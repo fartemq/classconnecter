@@ -11,7 +11,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { RegisterForm, RegisterFormValues } from "@/components/auth/RegisterForm";
+import { RegisterForm } from "@/components/auth/RegisterForm";
+import { RegisterFormValues } from "@/components/auth/register-form-schema";
 import { registerUser } from "@/services/authService";
 
 const RegisterPage = () => {
