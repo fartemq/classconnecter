@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { 
@@ -7,7 +8,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, LogIn } from "lucide-react";
+import { ChevronDown, LogIn, User } from "lucide-react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 // Popular subjects for dropdown menu
 const popularSubjects = [
@@ -42,6 +45,66 @@ const allSubjects = [
 
 export const Header = () => {
   const location = useLocation();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      // Проверяем, авторизован ли пользователь
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsAuthenticated(!!session);
+
+      if (session) {
+        // Получаем роль пользователя из профиля
+        const { data } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", session.user.id)
+          .single();
+
+        if (data) {
+          setUserRole(data.role);
+        }
+      }
+    };
+
+    checkAuth();
+
+    // Подписываемся на изменения статуса авторизации
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setIsAuthenticated(!!session);
+        
+        if (session) {
+          // Получаем роль пользователя при изменении статуса авторизации
+          const { data } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .single();
+
+          if (data) {
+            setUserRole(data.role);
+          }
+        } else {
+          setUserRole(null);
+        }
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Определяем URL для кнопки профиля в зависимости от роли пользователя
+  const getProfileUrl = () => {
+    if (userRole === "tutor") {
+      return "/profile/tutor";
+    } else {
+      return "/profile/student";
+    }
+  };
 
   return (
     <header className="w-full bg-white py-4 border-b border-gray-200">
@@ -108,12 +171,21 @@ export const Header = () => {
         </nav>
         
         <div className="flex items-center">
-          <Button variant="default" className="bg-gray-900 hover:bg-gray-800" asChild>
-            <Link to="/login" className="flex items-center gap-2">
-              <LogIn className="h-4 w-4" />
-              Войти/Зарегистрироваться
-            </Link>
-          </Button>
+          {isAuthenticated ? (
+            <Button variant="default" className="bg-gray-900 hover:bg-gray-800" asChild>
+              <Link to={getProfileUrl()} className="flex items-center gap-2">
+                <User className="h-4 w-4" />
+                Профиль
+              </Link>
+            </Button>
+          ) : (
+            <Button variant="default" className="bg-gray-900 hover:bg-gray-800" asChild>
+              <Link to="/login" className="flex items-center gap-2">
+                <LogIn className="h-4 w-4" />
+                Войти/Зарегистрироваться
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
     </header>
