@@ -22,11 +22,18 @@ export const registerUser = async (userData: RegisterUserData) => {
           last_name: userData.lastName,
           role: userData.role,
         },
+        emailRedirectTo: window.location.origin + '/profile/' + userData.role,
       },
     });
 
     if (authError) {
       console.error("Auth error:", authError);
+      
+      // Обработка специфических ошибок
+      if (authError.message.includes("User already registered")) {
+        throw new Error("Пользователь с таким email уже существует");
+      }
+      
       throw new Error(authError.message || "Ошибка при регистрации пользователя");
     }
 
@@ -51,9 +58,51 @@ export const registerUser = async (userData: RegisterUserData) => {
       throw new Error(profileError.message || "Ошибка при создании профиля");
     }
 
-    return authData;
+    return { user: authData.user, session: authData.session };
   } catch (error) {
     console.error("Registration error:", error);
+    throw error;
+  }
+};
+
+export const loginUser = async (email: string, password: string) => {
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      console.error("Login error:", error);
+      
+      if (error.message.includes("Email not confirmed")) {
+        throw new Error("Необходимо подтвердить email. Проверьте вашу почту.");
+      } else if (error.message.includes("Invalid login credentials")) {
+        throw new Error("Неверный email или пароль");
+      }
+      
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Login error:", error);
+    throw error;
+  }
+};
+
+export const getUserRole = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+
+    if (error) throw error;
+    return data?.role;
+  } catch (error) {
+    console.error("Error fetching user role:", error);
     throw error;
   }
 };

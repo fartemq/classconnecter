@@ -42,9 +42,10 @@ export type RegisterFormValues = z.infer<typeof formSchema>;
 export interface RegisterFormProps {
   onSuccess: (values: RegisterFormValues) => void;
   defaultRole?: "student" | "tutor";
+  isLoading?: boolean;
 }
 
-export function RegisterForm({ onSuccess, defaultRole }: RegisterFormProps) {
+export function RegisterForm({ onSuccess, defaultRole, isLoading = false }: RegisterFormProps) {
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -189,8 +190,8 @@ export function RegisterForm({ onSuccess, defaultRole }: RegisterFormProps) {
           />
         </div>
 
-        <Button type="submit" className="w-full">
-          Зарегистрироваться
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? "Регистрация..." : "Зарегистрироваться"}
         </Button>
 
         <div className="text-center mt-4">

@@ -1,6 +1,6 @@
 
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -24,8 +24,12 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InfoIcon } from "lucide-react";
+import { loginUser, getUserRole } from "@/services/authService";
 
 // Define the schema for our login form
 const formSchema = z.object({
@@ -38,7 +42,16 @@ type FormValues = z.infer<typeof formSchema>;
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
+  const [needConfirmation, setNeedConfirmation] = useState(false);
+
+  useEffect(() => {
+    // Проверяем состояние, переданное со страницы регистрации
+    if (location.state && location.state.needConfirmation) {
+      setNeedConfirmation(true);
+    }
+  }, [location]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -53,14 +66,7 @@ const LoginPage = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: values.email,
-        password: values.password,
-      });
-
-      if (error) {
-        throw error;
-      }
+      const data = await loginUser(values.email, values.password);
 
       toast({
         title: "Вход выполнен успешно!",
@@ -69,19 +75,9 @@ const LoginPage = () => {
 
       // Check user role and redirect accordingly
       if (data.user) {
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", data.user.id)
-          .single();
+        const role = await getUserRole(data.user.id);
 
-        if (profileError) {
-          console.error("Error fetching profile:", profileError);
-          navigate("/");
-          return;
-        }
-
-        if (profileData.role === "tutor") {
+        if (role === "tutor") {
           navigate("/profile/tutor");
         } else {
           navigate("/profile/student");
@@ -113,6 +109,15 @@ const LoginPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {needConfirmation && (
+              <Alert className="mb-6 bg-amber-50 border-amber-200">
+                <InfoIcon className="h-4 w-4 text-amber-600" />
+                <AlertDescription className="text-amber-800">
+                  Для завершения регистрации проверьте вашу почту и следуйте инструкциям в письме для подтверждения аккаунта.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -188,6 +193,12 @@ const LoginPage = () => {
               </form>
             </Form>
           </CardContent>
+          
+          <CardFooter className="flex flex-col text-center text-sm text-gray-500 pt-0">
+            <p>
+              Для разработки: вы можете отключить обязательное подтверждение email в настройках Supabase.
+            </p>
+          </CardFooter>
         </Card>
       </main>
       <Footer />

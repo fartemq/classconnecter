@@ -18,6 +18,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [defaultRole, setDefaultRole] = useState<"student" | "tutor" | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Получаем роль из параметров URL, если она указана
   useEffect(() => {
@@ -30,6 +31,8 @@ const RegisterPage = () => {
   }, [location]);
 
   async function handleRegisterSuccess(values: RegisterFormValues) {
+    setIsLoading(true);
+    
     try {
       const result = await registerUser({
         firstName: values.firstName,
@@ -44,14 +47,20 @@ const RegisterPage = () => {
       // Show success message
       toast({
         title: "Регистрация успешна!",
-        description: "Вы успешно зарегистрировались.",
+        description: "На вашу почту отправлено письмо для подтверждения аккаунта.",
       });
 
-      // Redirect based on role
-      if (values.role === "tutor") {
-        navigate("/profile/tutor/complete");
+      // Автоматически войти, если нет необходимости подтверждать email
+      if (result.session) {
+        // Redirect based on role
+        if (values.role === "tutor") {
+          navigate("/profile/tutor/complete");
+        } else {
+          navigate("/choose-subject");
+        }
       } else {
-        navigate("/choose-subject");
+        // Перенаправить на страницу подтверждения
+        navigate("/login", { state: { needConfirmation: true } });
       }
     } catch (error) {
       console.error("Registration error in page:", error);
@@ -60,6 +69,8 @@ const RegisterPage = () => {
         description: error instanceof Error ? error.message : "Произошла ошибка при регистрации",
         variant: "destructive",
       });
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -75,7 +86,7 @@ const RegisterPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <RegisterForm onSuccess={handleRegisterSuccess} defaultRole={defaultRole} />
+            <RegisterForm onSuccess={handleRegisterSuccess} defaultRole={defaultRole} isLoading={isLoading} />
           </CardContent>
         </Card>
       </main>
