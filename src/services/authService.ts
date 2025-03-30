@@ -42,7 +42,7 @@ export const registerUser = async (userData: RegisterUserData) => {
       throw new Error("Не удалось создать пользователя");
     }
 
-    // Create profile in profiles table using service role permissions
+    // Create profile in profiles table
     const { error: profileError } = await supabase.from("profiles").insert({
       id: authData.user.id,
       first_name: userData.firstName,
@@ -52,6 +52,15 @@ export const registerUser = async (userData: RegisterUserData) => {
 
     if (profileError) {
       console.error("Error creating profile:", profileError);
+      
+      // Log for debugging
+      console.log("Profile insert data:", {
+        id: authData.user.id,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        role: userData.role,
+      });
+      
       if (profileError.message.includes("duplicate key")) {
         throw new Error("Пользователь с таким email уже существует");
       }
@@ -67,6 +76,8 @@ export const registerUser = async (userData: RegisterUserData) => {
 
 export const loginUser = async (email: string, password: string) => {
   try {
+    console.log("Attempting login with:", { email });
+    
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -84,10 +95,33 @@ export const loginUser = async (email: string, password: string) => {
       throw error;
     }
 
+    console.log("Login successful, data:", data);
     return data;
   } catch (error) {
     console.error("Login error:", error);
     throw error;
+  }
+};
+
+export const logoutUser = async () => {
+  try {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+    return true;
+  } catch (error) {
+    console.error("Logout error:", error);
+    throw error;
+  }
+};
+
+export const getCurrentUser = async () => {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) throw error;
+    return session?.user || null;
+  } catch (error) {
+    console.error("Get current user error:", error);
+    return null;
   }
 };
 
@@ -99,7 +133,12 @@ export const getUserRole = async (userId: string) => {
       .eq("id", userId)
       .single();
 
-    if (error) throw error;
+    if (error) {
+      console.error("Error fetching user role:", error);
+      throw error;
+    }
+    
+    console.log("User role data:", data);
     return data?.role;
   } catch (error) {
     console.error("Error fetching user role:", error);

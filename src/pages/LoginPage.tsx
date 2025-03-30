@@ -6,7 +6,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -28,8 +27,9 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { InfoIcon } from "lucide-react";
+import { InfoIcon, Loader2 } from "lucide-react";
 import { loginUser, getUserRole } from "@/services/authService";
+import { supabase } from "@/integrations/supabase/client";
 
 // Define the schema for our login form
 const formSchema = z.object({
@@ -45,13 +45,34 @@ const LoginPage = () => {
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [needConfirmation, setNeedConfirmation] = useState(false);
+  const [loginAttempted, setLoginAttempted] = useState(false);
 
   useEffect(() => {
-    // Проверяем состояние, переданное со страницы регистрации
+    // Check if already logged in
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // User is already logged in, get their role and redirect
+        try {
+          const role = await getUserRole(session.user.id);
+          if (role === "tutor") {
+            navigate("/profile/tutor");
+          } else {
+            navigate("/profile/student");
+          }
+        } catch (error) {
+          console.error("Error checking role:", error);
+        }
+      }
+    };
+
+    checkSession();
+    
+    // Check if coming from registration page
     if (location.state && location.state.needConfirmation) {
       setNeedConfirmation(true);
     }
-  }, [location]);
+  }, [location, navigate]);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -64,8 +85,10 @@ const LoginPage = () => {
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true);
+    setLoginAttempted(true);
 
     try {
+      console.log("Submitting login form with:", values.email);
       const data = await loginUser(values.email, values.password);
 
       toast({
@@ -76,6 +99,7 @@ const LoginPage = () => {
       // Check user role and redirect accordingly
       if (data.user) {
         const role = await getUserRole(data.user.id);
+        console.log("User role after login:", role);
 
         if (role === "tutor") {
           navigate("/profile/tutor");
@@ -83,10 +107,11 @@ const LoginPage = () => {
           navigate("/profile/student");
         }
       } else {
+        console.error("Login succeeded but no user returned");
         navigate("/");
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Login error in page:", error);
       toast({
         title: "Ошибка входа",
         description: error instanceof Error ? error.message : "Произошла ошибка при входе в систему",
@@ -118,6 +143,15 @@ const LoginPage = () => {
               </Alert>
             )}
             
+            {loginAttempted && !isLoading && (
+              <Alert className="mb-6 bg-blue-50 border-blue-200">
+                <InfoIcon className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-blue-800">
+                  Подсказка: Если вы только что зарегистрировались, проверьте почту для подтверждения аккаунта. Для разработки можно отключить подтверждение email в настройках Supabase.
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -130,6 +164,7 @@ const LoginPage = () => {
                         <Input
                           type="email"
                           placeholder="ivan@example.com"
+                          autoComplete="email"
                           {...field}
                         />
                       </FormControl>
@@ -145,7 +180,12 @@ const LoginPage = () => {
                     <FormItem>
                       <FormLabel>Пароль</FormLabel>
                       <FormControl>
-                        <Input type="password" placeholder="******" {...field} />
+                        <Input 
+                          type="password" 
+                          placeholder="******" 
+                          autoComplete="current-password"
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -179,7 +219,14 @@ const LoginPage = () => {
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Вход..." : "Войти"}
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Вход...
+                    </>
+                  ) : (
+                    "Войти"
+                  )}
                 </Button>
 
                 <div className="text-center mt-4">
