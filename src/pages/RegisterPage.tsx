@@ -56,6 +56,8 @@ const RegisterPage = () => {
         // Redirect based on role
         if (values.role === "tutor") {
           navigate("/profile/tutor/complete");
+        } else if (values.role === "student") {
+          navigate("/profile/student");
         } else {
           navigate("/choose-subject");
         }
