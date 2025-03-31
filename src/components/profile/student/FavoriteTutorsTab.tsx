@@ -3,33 +3,27 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Users } from "lucide-react";
+import { Heart, Search } from "lucide-react";
 
-export const TutorsTab = () => {
+export const FavoriteTutorsTab = () => {
   const navigate = useNavigate();
-  
-  // Mock data - would come from database in real app
-  const myTutors = [];
+  const favoriteTutors = []; // This would come from a backend call
   
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Мои репетиторы</CardTitle>
-          <Users size={20} />
-        </div>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <CardTitle>Избранные репетиторы</CardTitle>
+        <Heart className="text-red-500" size={20} />
       </CardHeader>
       <CardContent>
-        {myTutors && myTutors.length > 0 ? (
+        {favoriteTutors && favoriteTutors.length > 0 ? (
           <div className="grid grid-cols-1 gap-4">
-            {/* Map through tutors here */}
+            {/* Map through favorite tutors here */}
           </div>
         ) : (
           <div className="text-center py-8">
-            <Users size={48} className="mx-auto mb-4 text-gray-300" />
             <div className="text-gray-500 mb-4">
-              У вас пока нет репетиторов.
+              У вас пока нет избранных репетиторов
             </div>
             <div className="flex justify-center">
               <Button onClick={() => navigate("/tutors")} className="flex items-center">
