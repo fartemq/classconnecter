@@ -8,7 +8,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, LogIn, User } from "lucide-react";
+import { ChevronDown, LogIn, User, Calendar, MessageCircle, Users, BarChart } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -106,6 +106,105 @@ export const Header = () => {
     }
   };
 
+  // Генерируем меню навигации в зависимости от роли пользователя
+  const getNavigationItems = () => {
+    // Если пользователь - репетитор, показываем специальное меню для репетиторов
+    if (isAuthenticated && userRole === "tutor") {
+      return (
+        <>
+          <Link 
+            to="/profile/tutor" 
+            className={`${location.pathname === "/profile/tutor" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+          >
+            <Calendar className="h-4 w-4" />
+            Расписание
+          </Link>
+          <Link 
+            to="/profile/tutor?tab=students" 
+            className={`${location.pathname === "/profile/tutor" && location.search.includes("tab=students") ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+          >
+            <Users className="h-4 w-4" />
+            Ученики
+          </Link>
+          <Link 
+            to="/profile/tutor?tab=chats" 
+            className={`${location.pathname === "/profile/tutor" && location.search.includes("tab=chats") ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+          >
+            <MessageCircle className="h-4 w-4" />
+            Сообщения
+          </Link>
+          <Link 
+            to="/profile/tutor?tab=stats" 
+            className={`${location.pathname === "/profile/tutor" && location.search.includes("tab=stats") ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+          >
+            <BarChart className="h-4 w-4" />
+            Статистика
+          </Link>
+        </>
+      );
+    }
+    
+    // Для студентов и неавторизованных пользователей показываем стандартное меню
+    return (
+      <>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="flex items-center space-x-1 text-gray-700 hover:text-primary outline-none">
+            <span>Предметы</span>
+            <ChevronDown className="h-4 w-4" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-56 bg-white">
+            <div className="p-2">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Популярные предметы</h3>
+              {popularSubjects.map((subject) => (
+                <DropdownMenuItem key={subject.slug} asChild>
+                  <Link to={`/tutors?subject=${subject.slug}`} className="w-full">
+                    {subject.name}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </div>
+            
+            <DropdownMenuSeparator />
+            
+            <div className="p-2 max-h-60 overflow-y-auto">
+              <h3 className="text-sm font-medium text-gray-500 mb-2">Все предметы</h3>
+              {allSubjects.map((subject) => (
+                <DropdownMenuItem key={subject.slug} asChild>
+                  <Link to={`/tutors?subject=${subject.slug}`} className="w-full">
+                    {subject.name}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+            </div>
+            
+            <DropdownMenuSeparator />
+            
+            <div className="p-2">
+              <DropdownMenuItem asChild>
+                <Link to="/subjects" className="w-full font-medium text-primary">
+                  Посмотреть все предметы
+                </Link>
+              </DropdownMenuItem>
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <Link 
+          to="/tutors" 
+          className={`${location.pathname === "/tutors" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary`}
+        >
+          Репетиторы
+        </Link>
+        <Link 
+          to="/about" 
+          className={`${location.pathname === "/about" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary`}
+        >
+          О нас
+        </Link>
+      </>
+    );
+  };
+
   return (
     <header className="w-full bg-white py-4 border-b border-gray-200">
       <div className="container mx-auto flex items-center justify-between px-4">
@@ -114,60 +213,7 @@ export const Header = () => {
         </Link>
         
         <nav className="hidden md:flex items-center space-x-6">
-          <DropdownMenu>
-            <DropdownMenuTrigger className="flex items-center space-x-1 text-gray-700 hover:text-primary outline-none">
-              <span>Предметы</span>
-              <ChevronDown className="h-4 w-4" />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-56 bg-white">
-              <div className="p-2">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Популярные предметы</h3>
-                {popularSubjects.map((subject) => (
-                  <DropdownMenuItem key={subject.slug} asChild>
-                    <Link to={`/tutors?subject=${subject.slug}`} className="w-full">
-                      {subject.name}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </div>
-              
-              <DropdownMenuSeparator />
-              
-              <div className="p-2 max-h-60 overflow-y-auto">
-                <h3 className="text-sm font-medium text-gray-500 mb-2">Все предметы</h3>
-                {allSubjects.map((subject) => (
-                  <DropdownMenuItem key={subject.slug} asChild>
-                    <Link to={`/tutors?subject=${subject.slug}`} className="w-full">
-                      {subject.name}
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
-              </div>
-              
-              <DropdownMenuSeparator />
-              
-              <div className="p-2">
-                <DropdownMenuItem asChild>
-                  <Link to="/subjects" className="w-full font-medium text-primary">
-                    Посмотреть все предметы
-                  </Link>
-                </DropdownMenuItem>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Link 
-            to="/tutors" 
-            className={`${location.pathname === "/tutors" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary`}
-          >
-            Репетиторы
-          </Link>
-          <Link 
-            to="/about" 
-            className={`${location.pathname === "/about" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary`}
-          >
-            О нас
-          </Link>
+          {getNavigationItems()}
         </nav>
         
         <div className="flex items-center">

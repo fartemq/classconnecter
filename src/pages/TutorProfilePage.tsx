@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,10 +13,28 @@ import { TutorAboutTab } from "@/components/profile/tutor/TutorAboutTab";
 import { TutorSettingsTab } from "@/components/profile/tutor/TutorSettingsTab";
 import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const TutorProfilePage = () => {
   const { profile, isLoading } = useProfile("tutor");
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("about");
+
+  // Get tab from URL query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (tab && ["about", "schedule", "students", "chats", "stats", "settings"].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
+
+  // Update URL when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    navigate(`/profile/tutor?tab=${value}`, { replace: true });
+  };
 
   if (isLoading) {
     return (
@@ -45,7 +64,7 @@ const TutorProfilePage = () => {
             {/* Main content with expanded tabs */}
             <div className="col-span-1 lg:col-span-3">
               <Card className="p-0 overflow-hidden">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
                   <TabsList className="w-full justify-start rounded-none border-b bg-white p-0">
                     <TabsTrigger 
                       value="about" 
