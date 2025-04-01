@@ -1,10 +1,9 @@
 
 import React from "react";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
+import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, User, BookOpen } from "lucide-react";
-import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 
 export const ScheduleTab = () => {
   // Mock data - would come from database in real app
@@ -38,35 +37,32 @@ export const ScheduleTab = () => {
   };
   
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Расписание занятий</CardTitle>
-          <Calendar size={20} />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="upcoming">
-          <TabsList className="mb-4">
-            <TabsTrigger value="upcoming" className="flex items-center">
-              <Clock size={16} className="mr-2" />
-              Предстоящие
-            </TabsTrigger>
-            <TabsTrigger value="past" className="flex items-center">
-              <Clock size={16} className="mr-2" />
-              Прошедшие
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="upcoming">
-            {renderLessonTable(upcomingLessons, "У вас пока нет запланированных занятий.")}
-          </TabsContent>
-          
-          <TabsContent value="past">
-            {renderLessonTable(pastLessons, "У вас пока нет прошедших занятий.")}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold">Расписание занятий</h2>
+        <Calendar size={20} />
+      </div>
+      
+      <Tabs defaultValue="upcoming">
+        <TabsList className="mb-4">
+          <TabsTrigger value="upcoming" className="flex items-center">
+            <Clock size={16} className="mr-2" />
+            Предстоящие
+          </TabsTrigger>
+          <TabsTrigger value="past" className="flex items-center">
+            <Clock size={16} className="mr-2" />
+            Прошедшие
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="upcoming">
+          {renderLessonTable(upcomingLessons, "У вас пока нет запланированных занятий.")}
+        </TabsContent>
+        
+        <TabsContent value="past">
+          {renderLessonTable(pastLessons, "У вас пока нет прошедших занятий.")}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };

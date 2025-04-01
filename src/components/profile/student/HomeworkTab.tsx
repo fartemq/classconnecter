@@ -1,6 +1,5 @@
 
 import React from "react";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { FileText, CheckCircle, Clock, AlertCircle } from "lucide-react";
@@ -27,35 +26,32 @@ export const HomeworkTab = () => {
   };
   
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle>Домашние задания</CardTitle>
-          <FileText size={20} />
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="current">
-          <TabsList className="mb-4">
-            <TabsTrigger value="current" className="flex items-center">
-              <Clock size={16} className="mr-2" />
-              Текущие
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="flex items-center">
-              <CheckCircle size={16} className="mr-2" />
-              Выполненные
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="current">
-            {renderHomeworkList(currentHomework, "У вас нет текущих домашних заданий.")}
-          </TabsContent>
-          
-          <TabsContent value="completed">
-            {renderHomeworkList(completedHomework, "У вас нет выполненных домашних заданий.")}
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+    <div>
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-semibold">Домашние задания</h2>
+        <FileText size={20} />
+      </div>
+      
+      <Tabs defaultValue="current">
+        <TabsList className="mb-4">
+          <TabsTrigger value="current" className="flex items-center">
+            <Clock size={16} className="mr-2" />
+            Текущие
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="flex items-center">
+            <CheckCircle size={16} className="mr-2" />
+            Выполненные
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="current">
+          {renderHomeworkList(currentHomework, "У вас нет текущих домашних заданий.")}
+        </TabsContent>
+        
+        <TabsContent value="completed">
+          {renderHomeworkList(completedHomework, "У вас нет выполненных домашних заданий.")}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };

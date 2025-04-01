@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -8,7 +8,18 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { ChevronDown, LogIn, User, Calendar, MessageCircle, Users, BarChart } from "lucide-react";
+import { 
+  ChevronDown, 
+  LogIn, 
+  User, 
+  Calendar, 
+  MessageSquare, 
+  Users, 
+  BarChart,
+  Heart,
+  FileText,
+  Settings
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -45,6 +56,7 @@ const allSubjects = [
 
 export const Header = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -97,6 +109,25 @@ export const Header = () => {
     };
   }, []);
 
+  // Determine if we're on the student profile page
+  const isStudentProfilePage = location.pathname === "/profile/student";
+  
+  // Get current active tab from URL for student profile
+  const getActiveStudentTab = () => {
+    if (isStudentProfilePage) {
+      const params = new URLSearchParams(location.search);
+      return params.get("tab") || "schedule";
+    }
+    return null;
+  };
+  
+  const activeStudentTab = getActiveStudentTab();
+  
+  // Handle tab click for student profile
+  const handleStudentTabClick = (tab: string) => {
+    navigate(`/profile/student?tab=${tab}`);
+  };
+
   // Определяем URL для кнопки профиля в зависимости от роли пользователя
   const getProfileUrl = () => {
     if (userRole === "tutor") {
@@ -130,7 +161,7 @@ export const Header = () => {
             to="/profile/tutor?tab=chats" 
             className={`${location.pathname === "/profile/tutor" && location.search.includes("tab=chats") ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
           >
-            <MessageCircle className="h-4 w-4" />
+            <MessageSquare className="h-4 w-4" />
             Сообщения
           </Link>
           <Link 
@@ -140,6 +171,55 @@ export const Header = () => {
             <BarChart className="h-4 w-4" />
             Статистика
           </Link>
+        </>
+      );
+    } 
+    // Если пользователь - студент и находится на странице профиля, показываем навигацию по вкладкам
+    else if (isAuthenticated && userRole === "student" && isStudentProfilePage) {
+      return (
+        <>
+          <button 
+            onClick={() => handleStudentTabClick("schedule")}
+            className={`${activeStudentTab === "schedule" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+          >
+            <Calendar className="h-4 w-4" />
+            Расписание
+          </button>
+          <button 
+            onClick={() => handleStudentTabClick("tutors")}
+            className={`${activeStudentTab === "tutors" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+          >
+            <Users className="h-4 w-4" />
+            Репетиторы
+          </button>
+          <button 
+            onClick={() => handleStudentTabClick("favorites")}
+            className={`${activeStudentTab === "favorites" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+          >
+            <Heart className="h-4 w-4" />
+            Избранное
+          </button>
+          <button
+            onClick={() => handleStudentTabClick("chats")}
+            className={`${activeStudentTab === "chats" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+          >
+            <MessageSquare className="h-4 w-4" />
+            Сообщения
+          </button>
+          <button
+            onClick={() => handleStudentTabClick("homework")}
+            className={`${activeStudentTab === "homework" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+          >
+            <FileText className="h-4 w-4" />
+            Домашние задания
+          </button>
+          <button
+            onClick={() => handleStudentTabClick("settings")}
+            className={`${activeStudentTab === "settings" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+          >
+            <Settings className="h-4 w-4" />
+            Настройки
+          </button>
         </>
       );
     }

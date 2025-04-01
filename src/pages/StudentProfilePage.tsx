@@ -1,8 +1,7 @@
 
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useProfile } from "@/hooks/useProfile";
 import { StudentSidebar } from "@/components/profile/student/StudentSidebar";
 import { ScheduleTab } from "@/components/profile/student/ScheduleTab";
@@ -13,18 +12,42 @@ import { FavoriteTutorsTab } from "@/components/profile/student/FavoriteTutorsTa
 import { SettingsTab } from "@/components/profile/student/SettingsTab";
 import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
-import { 
-  Calendar, 
-  MessageSquare, 
-  FileText, 
-  Users, 
-  Heart, 
-  Settings 
-} from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const StudentProfilePage = () => {
   const { profile, isLoading } = useProfile("student");
-  const [activeTab, setActiveTab] = useState("schedule");
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = React.useState("schedule");
+
+  // Get tab from URL query parameter
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (tab && ["schedule", "tutors", "favorites", "chats", "homework", "settings"].includes(tab)) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
+
+  // Render the appropriate tab content based on the active tab
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "schedule":
+        return <ScheduleTab />;
+      case "tutors":
+        return <TutorsTab />;
+      case "favorites":
+        return <FavoriteTutorsTab />;
+      case "chats":
+        return <ChatsTab />;
+      case "homework":
+        return <HomeworkTab />;
+      case "settings":
+        return <SettingsTab />;
+      default:
+        return <ScheduleTab />;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -51,79 +74,10 @@ const StudentProfilePage = () => {
               {profile && <StudentSidebar profile={profile} />}
             </div>
             
-            {/* Main content with expanded tabs */}
+            {/* Main content area - simplified to just show the active tab content */}
             <div className="col-span-1 lg:col-span-3">
-              <Card className="p-0 overflow-hidden">
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                  <TabsList className="w-full justify-start rounded-none border-b bg-white p-0">
-                    <TabsTrigger 
-                      value="schedule" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4 flex items-center"
-                    >
-                      <Calendar size={16} className="mr-2" />
-                      Расписание
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="tutors" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4 flex items-center"
-                    >
-                      <Users size={16} className="mr-2" />
-                      Репетиторы
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="favorites" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4 flex items-center"
-                    >
-                      <Heart size={16} className="mr-2" />
-                      Избранное
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="chats" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4 flex items-center"
-                    >
-                      <MessageSquare size={16} className="mr-2" />
-                      Сообщения
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="homework" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4 flex items-center"
-                    >
-                      <FileText size={16} className="mr-2" />
-                      Домашние задания
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="settings" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4 flex items-center"
-                    >
-                      <Settings size={16} className="mr-2" />
-                      Настройки
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="schedule" className="mt-0 p-6">
-                    <ScheduleTab />
-                  </TabsContent>
-                  
-                  <TabsContent value="tutors" className="mt-0 p-6">
-                    <TutorsTab />
-                  </TabsContent>
-                  
-                  <TabsContent value="favorites" className="mt-0 p-6">
-                    <FavoriteTutorsTab />
-                  </TabsContent>
-                  
-                  <TabsContent value="chats" className="mt-0 p-6">
-                    <ChatsTab />
-                  </TabsContent>
-                  
-                  <TabsContent value="homework" className="mt-0 p-6">
-                    <HomeworkTab />
-                  </TabsContent>
-                  
-                  <TabsContent value="settings" className="mt-0 p-6">
-                    <SettingsTab />
-                  </TabsContent>
-                </Tabs>
+              <Card className="p-6">
+                {renderTabContent()}
               </Card>
             </div>
           </div>
