@@ -1,8 +1,10 @@
+
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Heart, Search, Star, GraduationCap, MapPin } from "lucide-react";
 
 interface FavoriteTutor {

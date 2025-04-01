@@ -3,13 +3,26 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Search, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Search, Users, Star, MapPin } from "lucide-react";
+
+interface Tutor {
+  id: string;
+  name: string;
+  avatar?: string;
+  subjects: string[];
+  rating: number;
+  reviewsCount: number;
+  price: number;
+  location: string;
+}
 
 export const TutorsTab = () => {
   const navigate = useNavigate();
   
   // Mock data - would come from database in real app
-  const myTutors = [];
+  const myTutors: Tutor[] = [];
   
   return (
     <div>
@@ -19,8 +32,58 @@ export const TutorsTab = () => {
       </div>
       
       {myTutors && myTutors.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4">
-          {/* Map through tutors here */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {myTutors.map((tutor) => (
+            <Card key={tutor.id} className="overflow-hidden hover:shadow-md transition-shadow">
+              <div className="p-4 flex flex-col sm:flex-row gap-4">
+                <Avatar className="w-16 h-16">
+                  {tutor.avatar ? (
+                    <AvatarImage src={tutor.avatar} alt={tutor.name} />
+                  ) : (
+                    <AvatarFallback>{tutor.name.charAt(0)}</AvatarFallback>
+                  )}
+                </Avatar>
+                
+                <div className="flex-1">
+                  <h3 className="font-medium mb-1">{tutor.name}</h3>
+                  
+                  <div className="flex items-center text-sm text-gray-500 mb-2">
+                    <MapPin size={14} className="mr-1" />
+                    <span>{tutor.location}</span>
+                  </div>
+                  
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {tutor.subjects.map((subject) => (
+                      <Badge key={subject} variant="secondary" className="text-xs">
+                        {subject}
+                      </Badge>
+                    ))}
+                  </div>
+                  
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center">
+                      <Star size={14} className="text-yellow-500 mr-1" />
+                      <span className="text-sm font-medium">{tutor.rating}</span>
+                      <span className="text-xs text-gray-500 ml-1">({tutor.reviewsCount})</span>
+                    </div>
+                    <div className="text-sm font-medium">
+                      {tutor.price} ₽/час
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-gray-50 p-3 border-t">
+                <Button 
+                  variant="default" 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => navigate(`/tutors/${tutor.id}`)}
+                >
+                  Начать чат
+                </Button>
+              </div>
+            </Card>
+          ))}
         </div>
       ) : (
         <div className="text-center py-8">
