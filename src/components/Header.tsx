@@ -18,10 +18,13 @@ import {
   BarChart,
   Heart,
   FileText,
-  Settings
+  Settings,
+  LogOut
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { logoutUser } from "@/services/authService";
 
 // Popular subjects for dropdown menu
 const popularSubjects = [
@@ -59,6 +62,7 @@ export const Header = () => {
   const navigate = useNavigate();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -109,8 +113,61 @@ export const Header = () => {
     };
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      toast({
+        title: "Выход выполнен",
+        description: "Вы успешно вышли из системы"
+      });
+      navigate("/");
+    } catch (error) {
+      console.error("Ошибка выхода:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось выйти из системы",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Student navigation tabs
+  const studentTabs = [
+    { name: "Расписание", path: "/profile/student?tab=schedule", icon: Calendar },
+    { name: "Репетиторы", path: "/profile/student?tab=tutors", icon: Users },
+    { name: "Избранное", path: "/profile/student?tab=favorites", icon: Heart },
+    { name: "Сообщения", path: "/profile/student?tab=chats", icon: MessageSquare },
+    { name: "Домашние задания", path: "/profile/student?tab=homework", icon: FileText },
+    { name: "Настройки", path: "/profile/student?tab=settings", icon: Settings },
+  ];
+
+  // Tutor navigation tabs
+  const tutorTabs = [
+    { name: "Расписание", path: "/profile/tutor", icon: Calendar },
+    { name: "Ученики", path: "/profile/tutor?tab=students", icon: Users },
+    { name: "Сообщения", path: "/profile/tutor?tab=chats", icon: MessageSquare },
+    { name: "Статистика", path: "/profile/tutor?tab=stats", icon: BarChart },
+  ];
+
+  // Function to check if a student tab is active
+  const isStudentTabActive = (path: string) => {
+    const tabParam = new URLSearchParams(location.search).get("tab");
+    const pathTab = new URLSearchParams(new URL(path, window.location.origin).search).get("tab");
+    
+    return location.pathname === "/profile/student" && (tabParam === pathTab || (!tabParam && pathTab === "schedule"));
+  };
+
+  // Function to check if a tutor tab is active
+  const isTutorTabActive = (path: string) => {
+    const tabParam = new URLSearchParams(location.search).get("tab");
+    const pathTab = new URLSearchParams(new URL(path, window.location.origin).search).get("tab");
+    
+    return location.pathname === "/profile/tutor" && (tabParam === pathTab || (path === "/profile/tutor" && !tabParam));
+  };
+
   // Determine if we're on the student profile page
   const isStudentProfilePage = location.pathname === "/profile/student";
+  const isTutorProfilePage = location.pathname === "/profile/tutor";
   
   // Get current active tab from URL for student profile
   const getActiveStudentTab = () => {
@@ -139,92 +196,43 @@ export const Header = () => {
 
   // Генерируем меню навигации в зависимости от роли пользователя
   const getNavigationItems = () => {
-    // Если пользователь - репетитор, показываем специальное меню для репетиторов
-    if (isAuthenticated && userRole === "tutor") {
+    // Если пользователь - студент, показываем навигацию для студента
+    if (isAuthenticated && userRole === "student") {
       return (
         <>
-          <Link 
-            to="/profile/tutor" 
-            className={`${location.pathname === "/profile/tutor" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
-          >
-            <Calendar className="h-4 w-4" />
-            Расписание
-          </Link>
-          <Link 
-            to="/profile/tutor?tab=students" 
-            className={`${location.pathname === "/profile/tutor" && location.search.includes("tab=students") ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
-          >
-            <Users className="h-4 w-4" />
-            Ученики
-          </Link>
-          <Link 
-            to="/profile/tutor?tab=chats" 
-            className={`${location.pathname === "/profile/tutor" && location.search.includes("tab=chats") ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
-          >
-            <MessageSquare className="h-4 w-4" />
-            Сообщения
-          </Link>
-          <Link 
-            to="/profile/tutor?tab=stats" 
-            className={`${location.pathname === "/profile/tutor" && location.search.includes("tab=stats") ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
-          >
-            <BarChart className="h-4 w-4" />
-            Статистика
-          </Link>
-        </>
-      );
-    } 
-    // Если пользователь - студент и находится на странице профиля, показываем навигацию по вкладкам
-    else if (isAuthenticated && userRole === "student" && isStudentProfilePage) {
-      return (
-        <>
-          <button 
-            onClick={() => handleStudentTabClick("schedule")}
-            className={`${activeStudentTab === "schedule" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
-          >
-            <Calendar className="h-4 w-4" />
-            Расписание
-          </button>
-          <button 
-            onClick={() => handleStudentTabClick("tutors")}
-            className={`${activeStudentTab === "tutors" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
-          >
-            <Users className="h-4 w-4" />
-            Репетиторы
-          </button>
-          <button 
-            onClick={() => handleStudentTabClick("favorites")}
-            className={`${activeStudentTab === "favorites" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
-          >
-            <Heart className="h-4 w-4" />
-            Избранное
-          </button>
-          <button
-            onClick={() => handleStudentTabClick("chats")}
-            className={`${activeStudentTab === "chats" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
-          >
-            <MessageSquare className="h-4 w-4" />
-            Сообщения
-          </button>
-          <button
-            onClick={() => handleStudentTabClick("homework")}
-            className={`${activeStudentTab === "homework" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
-          >
-            <FileText className="h-4 w-4" />
-            Домашние задания
-          </button>
-          <button
-            onClick={() => handleStudentTabClick("settings")}
-            className={`${activeStudentTab === "settings" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
-          >
-            <Settings className="h-4 w-4" />
-            Настройки
-          </button>
+          {studentTabs.map((tab) => (
+            <Link 
+              key={tab.path}
+              to={tab.path}
+              className={`${isStudentTabActive(tab.path) ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.name}
+            </Link>
+          ))}
         </>
       );
     }
     
-    // Для студентов и неавторизованных пользователей показываем стандартное меню
+    // Если пользователь - репетитор, показываем специальное меню для репетиторов
+    else if (isAuthenticated && userRole === "tutor") {
+      return (
+        <>
+          {tutorTabs.map((tab) => (
+            <Link 
+              key={tab.path}
+              to={tab.path}
+              className={`${isTutorTabActive(tab.path) ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.name}
+            </Link>
+          ))}
+        </>
+      );
+    } 
+    
+    // Для неавторизованных пользователей показываем стандартное меню
     return (
       <>
         <DropdownMenu>
@@ -296,14 +304,20 @@ export const Header = () => {
           {getNavigationItems()}
         </nav>
         
-        <div className="flex items-center">
+        <div className="flex items-center gap-3">
           {isAuthenticated ? (
-            <Button variant="default" className="bg-gray-900 hover:bg-gray-800" asChild>
-              <Link to={getProfileUrl()} className="flex items-center gap-2">
-                <User className="h-4 w-4" />
-                Профиль
-              </Link>
-            </Button>
+            <>
+              <Button variant="default" className="bg-gray-900 hover:bg-gray-800" asChild>
+                <Link to={getProfileUrl()} className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Профиль
+                </Link>
+              </Button>
+              <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Выйти</span>
+              </Button>
+            </>
           ) : (
             <Button variant="default" className="bg-gray-900 hover:bg-gray-800" asChild>
               <Link to="/login" className="flex items-center gap-2">
@@ -313,6 +327,79 @@ export const Header = () => {
             </Button>
           )}
         </div>
+      </div>
+      
+      {/* Mobile navigation menu */}
+      <div className="md:hidden mt-4">
+        <Button 
+          variant="ghost" 
+          className="w-full flex justify-between items-center py-2 px-4"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          Меню
+          <ChevronDown className={`h-4 w-4 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
+        </Button>
+        
+        {isMenuOpen && (
+          <div className="bg-white border-t border-gray-100 py-2">
+            <div className="flex flex-col space-y-2 px-4">
+              {isAuthenticated ? (
+                userRole === "student" ? (
+                  // Mobile student navigation
+                  studentTabs.map((tab) => (
+                    <Link 
+                      key={tab.path}
+                      to={tab.path}
+                      className={`${isStudentTabActive(tab.path) ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-2 py-2`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <tab.icon className="h-4 w-4" />
+                      {tab.name}
+                    </Link>
+                  ))
+                ) : (
+                  // Mobile tutor navigation
+                  tutorTabs.map((tab) => (
+                    <Link 
+                      key={tab.path}
+                      to={tab.path}
+                      className={`${isTutorTabActive(tab.path) ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-2 py-2`}
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      <tab.icon className="h-4 w-4" />
+                      {tab.name}
+                    </Link>
+                  ))
+                )
+              ) : (
+                // Mobile guest navigation
+                <>
+                  <Link 
+                    to="/subjects"
+                    className="text-gray-700 hover:text-primary py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Предметы
+                  </Link>
+                  <Link 
+                    to="/tutors"
+                    className={`${location.pathname === "/tutors" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary py-2`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Репетиторы
+                  </Link>
+                  <Link 
+                    to="/about"
+                    className={`${location.pathname === "/about" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary py-2`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    О нас
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );

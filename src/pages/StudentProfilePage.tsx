@@ -26,6 +26,9 @@ const StudentProfilePage = () => {
     const tab = params.get("tab");
     if (tab && ["schedule", "tutors", "favorites", "chats", "homework", "settings"].includes(tab)) {
       setActiveTab(tab);
+    } else if (!tab) {
+      // If no tab is specified, default to schedule
+      setActiveTab("schedule");
     }
   }, [location.search]);
 
