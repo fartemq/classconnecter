@@ -1,39 +1,26 @@
 
 import React from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Pencil } from "lucide-react";
+import { getInitials } from "@/lib/utils";
 
 interface ProfileAvatarProps {
   avatarUrl: string | null;
   firstName: string;
   lastName: string | null;
-  onEditClick: () => void;
 }
 
-export const ProfileAvatar = ({ avatarUrl, firstName, lastName, onEditClick }: ProfileAvatarProps) => {
+export const ProfileAvatar = ({ avatarUrl, firstName, lastName }: ProfileAvatarProps) => {
   return (
-    <div className="relative mx-auto mb-4">
-      <Avatar className="w-24 h-24 mx-auto">
+    <div className="relative mx-auto w-20 h-20 mb-3">
+      <Avatar className="w-20 h-20 border-2 border-primary">
         {avatarUrl ? (
-          <AvatarImage 
-            src={avatarUrl} 
-            alt={`${firstName} ${lastName || ''}`}
-          />
+          <AvatarImage src={avatarUrl} alt={`${firstName} ${lastName || ""}`} />
         ) : (
-          <AvatarFallback className="text-2xl">
-            {firstName?.[0]}{lastName?.[0] || ''}
+          <AvatarFallback className="text-lg bg-primary text-primary-foreground">
+            {getInitials(firstName, lastName)}
           </AvatarFallback>
         )}
       </Avatar>
-      <Button 
-        size="sm" 
-        variant="secondary" 
-        className="absolute bottom-0 right-0 rounded-full p-1 w-8 h-8"
-        onClick={onEditClick}
-      >
-        <Pencil size={14} />
-      </Button>
     </div>
   );
 };

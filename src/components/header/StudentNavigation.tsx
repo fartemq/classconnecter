@@ -1,16 +1,17 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, Users, Heart, MessageSquare, FileText, Settings } from "lucide-react";
+import { Calendar, Users, Heart, MessageSquare, FileText, Settings, User } from "lucide-react";
 
 // Student navigation tabs
 const studentTabs = [
-  { name: "Расписание", path: "/profile/student?tab=schedule", icon: Calendar },
-  { name: "Репетиторы", path: "/profile/student?tab=tutors", icon: Users },
-  { name: "Избранное", path: "/profile/student?tab=favorites", icon: Heart },
-  { name: "Сообщения", path: "/profile/student?tab=chats", icon: MessageSquare },
-  { name: "Домашние задания", path: "/profile/student?tab=homework", icon: FileText },
-  { name: "Настройки", path: "/profile/student?tab=settings", icon: Settings },
+  { name: "Расписание", path: "/profile/student/schedule", icon: Calendar },
+  { name: "Репетиторы", path: "/profile/student/tutors", icon: Users },
+  { name: "Избранное", path: "/profile/student/favorites", icon: Heart },
+  { name: "Сообщения", path: "/profile/student/chats", icon: MessageSquare },
+  { name: "Домашние задания", path: "/profile/student/homework", icon: FileText },
+  { name: "Настройки", path: "/profile/student/settings", icon: Settings },
+  { name: "Мой профиль", path: "/profile/student/edit", icon: User },
 ];
 
 export const StudentNavigation = () => {
@@ -18,10 +19,7 @@ export const StudentNavigation = () => {
   
   // Function to check if a student tab is active
   const isStudentTabActive = (path: string) => {
-    const tabParam = new URLSearchParams(location.search).get("tab");
-    const pathTab = new URLSearchParams(new URL(path, window.location.origin).search).get("tab");
-    
-    return location.pathname === "/profile/student" && (tabParam === pathTab || (!tabParam && pathTab === "schedule"));
+    return location.pathname === path;
   };
 
   return (
