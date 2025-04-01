@@ -1,0 +1,105 @@
+
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { ChevronDown } from "lucide-react";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator,
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
+
+// Popular subjects for dropdown menu
+const popularSubjects = [
+  { name: "Mathematics", slug: "mathematics" },
+  { name: "English", slug: "english" },
+  { name: "Physics", slug: "physics" },
+  { name: "Chemistry", slug: "chemistry" },
+  { name: "Biology", slug: "biology" },
+  { name: "Computer Science", slug: "computer-science" },
+  { name: "Russian", slug: "russian" },
+  { name: "History", slug: "history" },
+];
+
+// All subjects (alphabetically sorted)
+const allSubjects = [
+  { name: "Art", slug: "art" },
+  { name: "Biology", slug: "biology" },
+  { name: "Chemistry", slug: "chemistry" },
+  { name: "Computer Science", slug: "computer-science" },
+  { name: "Economics", slug: "economics" },
+  { name: "English", slug: "english" },
+  { name: "Geography", slug: "geography" },
+  { name: "History", slug: "history" },
+  { name: "Literature", slug: "literature" },
+  { name: "Mathematics", slug: "mathematics" },
+  { name: "Music", slug: "music" },
+  { name: "Philosophy", slug: "philosophy" },
+  { name: "Physics", slug: "physics" },
+  { name: "Psychology", slug: "psychology" },
+  { name: "Russian", slug: "russian" },
+];
+
+export const GuestNavigation = () => {
+  const location = useLocation();
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger className="flex items-center space-x-1 text-gray-700 hover:text-primary outline-none">
+          <span>Предметы</span>
+          <ChevronDown className="h-4 w-4" />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56 bg-white">
+          <div className="p-2">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Популярные предметы</h3>
+            {popularSubjects.map((subject) => (
+              <DropdownMenuItem key={subject.slug} asChild>
+                <Link to={`/tutors?subject=${subject.slug}`} className="w-full">
+                  {subject.name}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </div>
+          
+          <DropdownMenuSeparator />
+          
+          <div className="p-2 max-h-60 overflow-y-auto">
+            <h3 className="text-sm font-medium text-gray-500 mb-2">Все предметы</h3>
+            {allSubjects.map((subject) => (
+              <DropdownMenuItem key={subject.slug} asChild>
+                <Link to={`/tutors?subject=${subject.slug}`} className="w-full">
+                  {subject.name}
+                </Link>
+              </DropdownMenuItem>
+            ))}
+          </div>
+          
+          <DropdownMenuSeparator />
+          
+          <div className="p-2">
+            <DropdownMenuItem asChild>
+              <Link to="/subjects" className="w-full font-medium text-primary">
+                Посмотреть все предметы
+              </Link>
+            </DropdownMenuItem>
+          </div>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      
+      <Link 
+        to="/tutors" 
+        className={`${location.pathname === "/tutors" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary`}
+      >
+        Репетиторы
+      </Link>
+      <Link 
+        to="/about" 
+        className={`${location.pathname === "/about" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary`}
+      >
+        О нас
+      </Link>
+    </>
+  );
+};
