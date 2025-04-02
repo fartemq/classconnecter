@@ -4,56 +4,36 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
-import { getUserRole } from "@/services/authService";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { LoginAlerts } from "@/components/auth/LoginAlerts";
 import { Loader } from "@/components/ui/loader";
+import { useAuth } from "@/hooks/useAuth";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, userRole, isLoading: authLoading } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [checkingSession, setCheckingSession] = useState(true);
   const [needConfirmation, setNeedConfirmation] = useState(false);
   const [loginAttempted, setLoginAttempted] = useState(false);
 
   useEffect(() => {
-    // Check if already logged in
-    const checkSession = async () => {
-      try {
-        setCheckingSession(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-          // User is already logged in, get their role and redirect
-          try {
-            const role = await getUserRole(session.user.id);
-            if (role === "tutor") {
-              navigate("/profile/tutor");
-            } else {
-              navigate("/profile/student");
-            }
-          } catch (error) {
-            console.error("Error checking role:", error);
-            setCheckingSession(false); // Make sure to stop loading state on error
-          }
-        } else {
-          setCheckingSession(false); // No session, stop loading state
-        }
-      } catch (error) {
-        console.error("Error checking session:", error);
-        setCheckingSession(false); // Make sure to stop loading state on error
-      }
-    };
-
-    checkSession();
-    
     // Check if coming from registration page
     if (location.state && location.state.needConfirmation) {
       setNeedConfirmation(true);
     }
-  }, [location, navigate]);
+  }, [location]);
+
+  useEffect(() => {
+    // If user is logged in, redirect based on role
+    if (user && userRole) {
+      if (userRole === "tutor") {
+        navigate("/profile/tutor");
+      } else {
+        navigate("/profile/student");
+      }
+    }
+  }, [user, userRole, navigate]);
 
   // Handle successful login
   const handleLoginSuccess = async (role: string) => {
@@ -64,7 +44,7 @@ const LoginPage = () => {
     }
   };
 
-  if (checkingSession) {
+  if (authLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -77,6 +57,11 @@ const LoginPage = () => {
         <Footer />
       </div>
     );
+  }
+
+  // If user is already logged in, don't show login page
+  if (user) {
+    return null; // Will be redirected in useEffect
   }
 
   return (

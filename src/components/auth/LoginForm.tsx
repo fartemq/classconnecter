@@ -54,7 +54,7 @@ export function LoginForm({ onSuccess, isLoading, setIsLoading, setLoginAttempte
       const data = await loginUser(values.email, values.password);
 
       if (!data || !data.user) {
-        throw new Error("Login succeeded but no user returned");
+        throw new Error("Ошибка входа: пользователь не найден");
       }
 
       // Get user role from profiles table

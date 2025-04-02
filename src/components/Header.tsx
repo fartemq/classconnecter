@@ -1,80 +1,30 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { StudentNavigation } from "./header/StudentNavigation";
 import { TutorNavigation } from "./header/TutorNavigation";
 import { GuestNavigation } from "./header/GuestNavigation";
 import { MobileNavigation } from "./header/MobileNavigation";
 import { AuthButtons } from "./header/AuthButtons";
+import { useAuth } from "@/hooks/useAuth";
 
 export const Header = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const { user, userRole } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      // Проверяем, авторизован ли пользователь
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsAuthenticated(!!session);
-
-      if (session) {
-        // Получаем роль пользователя из профиля
-        const { data } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", session.user.id)
-          .single();
-
-        if (data) {
-          setUserRole(data.role);
-        }
-      }
-    };
-
-    checkAuth();
-
-    // Подписываемся на изменения статуса авторизации
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setIsAuthenticated(!!session);
-        
-        if (session) {
-          // Получаем роль пользователя при изменении статуса авторизации
-          const { data } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", session.user.id)
-            .single();
-
-          if (data) {
-            setUserRole(data.role);
-          }
-        } else {
-          setUserRole(null);
-        }
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  // Генерируем меню навигации в зависимости от роли пользователя
+  // Generate navigation items based on user role
   const getNavigationItems = () => {
-    // Если пользователь - студент, показываем навигацию для студента
-    if (isAuthenticated && userRole === "student") {
+    // If user is a student, show student navigation
+    if (user && userRole === "student") {
       return <StudentNavigation />;
     }
     
-    // Если пользователь - репетитор, показываем специальное меню для репетиторов
-    else if (isAuthenticated && userRole === "tutor") {
+    // If user is a tutor, show tutor navigation
+    else if (user && userRole === "tutor") {
       return <TutorNavigation />;
     } 
     
-    // Для неавторизованных пользователей показываем стандартное меню
+    // For unauthenticated users, show standard menu
     return <GuestNavigation />;
   };
 
@@ -89,12 +39,12 @@ export const Header = () => {
           {getNavigationItems()}
         </nav>
         
-        <AuthButtons isAuthenticated={isAuthenticated} userRole={userRole} />
+        <AuthButtons isAuthenticated={!!user} userRole={userRole} />
       </div>
       
       {/* Mobile navigation menu */}
       <MobileNavigation 
-        isAuthenticated={isAuthenticated}
+        isAuthenticated={!!user}
         userRole={userRole}
         isMenuOpen={isMenuOpen}
         setIsMenuOpen={setIsMenuOpen}

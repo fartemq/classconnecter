@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/useAuth";
 
 export interface Profile {
   id: string;
@@ -18,6 +19,7 @@ export interface Profile {
 export const useProfile = (requiredRole?: string) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,22 +30,7 @@ export const useProfile = (requiredRole?: string) => {
         if (isMounted) setIsLoading(true);
         
         // Check if user is authenticated
-        const { data: { session }, error: authError } = await supabase.auth.getSession();
-        
-        if (authError) {
-          console.error("Auth error:", authError);
-          if (isMounted) {
-            toast({
-              title: "Ошибка авторизации",
-              description: "Произошла ошибка при проверке авторизации",
-              variant: "destructive",
-            });
-            navigate("/login");
-          }
-          return;
-        }
-        
-        if (!session) {
+        if (!user) {
           console.log("No active session found, redirecting to login");
           if (isMounted) {
             toast({
@@ -57,11 +44,11 @@ export const useProfile = (requiredRole?: string) => {
         }
         
         // Get user profile
-        console.log("Fetching profile for user:", session.user.id);
+        console.log("Fetching profile for user:", user.id);
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
-          .eq("id", session.user.id)
+          .eq("id", user.id)
           .single();
         
         if (profileError) {
@@ -119,7 +106,7 @@ export const useProfile = (requiredRole?: string) => {
     return () => {
       isMounted = false;
     };
-  }, [navigate, requiredRole]);
+  }, [navigate, requiredRole, user]);
 
   return { profile, isLoading };
 };
