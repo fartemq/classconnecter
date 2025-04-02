@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginUser } from "@/services/authService";
+import { loginUser, getUserRole } from "@/services/authService";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import {
@@ -55,19 +55,20 @@ export function LoginForm({ onSuccess, isLoading, setIsLoading, setLoginAttempte
       console.log("Submitting login form with:", values.email);
       const data = await loginUser(values.email, values.password);
 
+      if (!data || !data.user) {
+        throw new Error("Login succeeded but no user returned");
+      }
+
+      // Get user role from profiles table
+      const role = await getUserRole(data.user.id);
+
       toast({
         title: "Вход выполнен успешно!",
         description: "Добро пожаловать на платформу Stud.rep",
       });
 
-      // Return user role for redirection
-      if (data.user) {
-        const role = data.user.app_metadata?.role || 'student';
-        onSuccess(role);
-      } else {
-        console.error("Login succeeded but no user returned");
-        navigate("/");
-      }
+      // Call the onSuccess callback with the user role
+      onSuccess(role || 'student');
     } catch (error) {
       console.error("Login error in form:", error);
       toast({
@@ -75,8 +76,7 @@ export function LoginForm({ onSuccess, isLoading, setIsLoading, setLoginAttempte
         description: error instanceof Error ? error.message : "Произошла ошибка при входе в систему",
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
+      setIsLoading(false); // Make sure to reset loading state on error
     }
   }
 

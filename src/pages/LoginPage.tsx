@@ -8,30 +8,40 @@ import { supabase } from "@/integrations/supabase/client";
 import { getUserRole } from "@/services/authService";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { LoginAlerts } from "@/components/auth/LoginAlerts";
+import { Loader } from "@/components/ui/loader";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
   const [needConfirmation, setNeedConfirmation] = useState(false);
   const [loginAttempted, setLoginAttempted] = useState(false);
 
   useEffect(() => {
     // Check if already logged in
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // User is already logged in, get their role and redirect
-        try {
-          const role = await getUserRole(session.user.id);
-          if (role === "tutor") {
-            navigate("/profile/tutor");
-          } else {
-            navigate("/profile/student");
+      try {
+        setCheckingSession(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // User is already logged in, get their role and redirect
+          try {
+            const role = await getUserRole(session.user.id);
+            if (role === "tutor") {
+              navigate("/profile/tutor");
+            } else {
+              navigate("/profile/student");
+            }
+          } catch (error) {
+            console.error("Error checking role:", error);
           }
-        } catch (error) {
-          console.error("Error checking role:", error);
         }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setCheckingSession(false);
       }
     };
 
@@ -51,6 +61,21 @@ const LoginPage = () => {
       navigate("/profile/student");
     }
   };
+
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center bg-gray-50 py-12">
+          <div className="text-center">
+            <Loader size="lg" />
+            <p className="mt-4 text-gray-600">Проверка сессии...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">

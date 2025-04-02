@@ -14,12 +14,46 @@ import {
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { RegisterFormValues } from "@/components/auth/register-form-schema";
 import { registerUser } from "@/services/authService";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader } from "@/components/ui/loader";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [defaultRole, setDefaultRole] = useState<"student" | "tutor" | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+
+  // Проверяем, авторизован ли пользователь
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        setCheckingSession(true);
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          // Already logged in, redirect to profile
+          const { data } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .single();
+            
+          if (data?.role === "tutor") {
+            navigate("/profile/tutor");
+          } else {
+            navigate("/profile/student");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
+      } finally {
+        setCheckingSession(false);
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
 
   // Получаем роль из параметров URL, если она указана
   useEffect(() => {
@@ -75,6 +109,21 @@ const RegisterPage = () => {
     } finally {
       setIsLoading(false);
     }
+  }
+  
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center bg-gray-50 py-12">
+          <div className="text-center">
+            <Loader size="lg" />
+            <p className="mt-4 text-gray-600">Проверка сессии...</p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   return (

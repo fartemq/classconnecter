@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -124,7 +125,7 @@ export const getCurrentUser = async () => {
   }
 };
 
-export const getUserRole = async (userId: string) => {
+export const getUserRole = async (userId: string): Promise<string | null> => {
   try {
     const { data, error } = await supabase
       .from("profiles")
@@ -134,13 +135,13 @@ export const getUserRole = async (userId: string) => {
 
     if (error) {
       console.error("Error fetching user role:", error);
-      throw error;
+      return null;
     }
     
     console.log("User role data:", data);
-    return data?.role;
+    return data?.role || null;
   } catch (error) {
     console.error("Error fetching user role:", error);
-    throw error;
+    return null;
   }
 };
