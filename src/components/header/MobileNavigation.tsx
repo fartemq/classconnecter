@@ -3,7 +3,6 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ChevronDown } from "lucide-react";
-import { StudentNavigation } from "./StudentNavigation";
 import { TutorNavigation } from "./TutorNavigation";
 
 interface MobileNavigationProps {
@@ -21,6 +20,11 @@ export const MobileNavigation = ({
 }: MobileNavigationProps) => {
   const location = useLocation();
 
+  // Don't show student navigation in mobile header (it's moved to profile page)
+  if (isAuthenticated && userRole === "student") {
+    return null;
+  }
+  
   return (
     <div className="md:hidden mt-4">
       <Button 
@@ -36,13 +40,10 @@ export const MobileNavigation = ({
         <div className="bg-white border-t border-gray-100 py-2">
           <div className="flex flex-col space-y-2 px-4">
             {isAuthenticated ? (
-              userRole === "student" ? (
-                // Mobile student navigation
-                <StudentNavigation />
-              ) : (
+              userRole === "tutor" ? (
                 // Mobile tutor navigation
                 <TutorNavigation />
-              )
+              ) : null // Don't show student navigation here
             ) : (
               // Mobile guest navigation
               <>

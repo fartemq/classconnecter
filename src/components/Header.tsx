@@ -14,9 +14,9 @@ export const Header = () => {
 
   // Generate navigation items based on user role
   const getNavigationItems = () => {
-    // If user is a student, show student navigation
+    // If user is a student, don't show navigation in header (it's moved to profile page)
     if (user && userRole === "student") {
-      return <StudentNavigation />;
+      return null;
     }
     
     // If user is a tutor, show tutor navigation

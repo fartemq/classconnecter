@@ -4,6 +4,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useProfile } from "@/hooks/useProfile";
 import { StudentSidebar } from "@/components/profile/student/StudentSidebar";
+import { StudentProfileNav } from "@/components/profile/student/StudentProfileNav";
 import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
@@ -34,7 +35,7 @@ const StudentProfilePage = () => {
       <Header />
       <main className="flex-grow bg-gray-50 py-8">
         <div className="container mx-auto px-4">
-          <h1 className="text-2xl md:text-3xl font-bold mb-8">Личный кабинет ученика</h1>
+          <h1 className="text-2xl md:text-3xl font-bold mb-6 text-gray-800">Личный кабинет ученика</h1>
           
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Enhanced sidebar with user info */}
@@ -44,7 +45,10 @@ const StudentProfilePage = () => {
             
             {/* Main content area */}
             <div className="col-span-1 lg:col-span-3">
-              <Card className="p-6">
+              {/* New navigation component */}
+              <StudentProfileNav />
+              
+              <Card className="p-6 shadow-md border-none">
                 <Outlet />
               </Card>
             </div>
