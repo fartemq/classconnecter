@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 
-const studentNavItems = [
+export const studentNavItems = [
   { name: "Расписание", path: "/profile/student/schedule", icon: Calendar },
   { name: "Репетиторы", path: "/profile/student/tutors", icon: Users },
   { name: "Избранное", path: "/profile/student/favorites", icon: Heart },

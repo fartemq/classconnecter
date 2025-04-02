@@ -43,19 +43,19 @@ const StudentProfilePage = () => {
               {profile && <StudentSidebar profile={profile} />}
             </div>
             
-            {/* Main content area */}
+            {/* Main content area - increased size */}
             <div className="col-span-1 lg:col-span-3">
-              {/* New navigation component */}
+              {/* Navigation component */}
               <StudentProfileNav />
               
-              <Card className="p-6 shadow-md border-none">
+              <Card className="p-6 shadow-md border-none min-h-[600px]">
                 <Outlet />
               </Card>
             </div>
           </div>
         </div>
       </main>
-      <Footer />
+      <Footer className="py-4" /> {/* Reduced footer size */}
     </div>
   );
 };

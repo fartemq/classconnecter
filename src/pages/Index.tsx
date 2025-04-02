@@ -6,8 +6,13 @@ import { TestimonialsSection } from "@/components/TestimonialsSection";
 import { CtaSection } from "@/components/CtaSection";
 import { Footer } from "@/components/Footer";
 import { SupabaseStatus } from "@/components/SupabaseStatus";
+import { useAuth } from "@/hooks/useAuth";
+import { StudentDashboardButtons } from "@/components/StudentDashboardButtons";
 
 const Index = () => {
+  const { user, userRole } = useAuth();
+  const isStudent = user && userRole === "student";
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -15,12 +20,21 @@ const Index = () => {
         <div className="container mx-auto p-4">
           <SupabaseStatus />
         </div>
-        <HeroSection />
-        <FeaturesSection />
-        <TestimonialsSection />
-        <CtaSection />
+        
+        {isStudent ? (
+          <div className="container mx-auto px-4 py-8">
+            <StudentDashboardButtons />
+          </div>
+        ) : (
+          <>
+            <HeroSection />
+            <FeaturesSection />
+            <TestimonialsSection />
+            <CtaSection />
+          </>
+        )}
       </main>
-      <Footer />
+      <Footer className="py-4" /> {/* Reduced footer size */}
     </div>
   );
 };
