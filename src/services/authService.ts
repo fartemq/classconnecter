@@ -12,6 +12,8 @@ export type RegisterUserData = {
 
 export const registerUser = async (userData: RegisterUserData) => {
   try {
+    console.log("Starting registration process for:", userData.email);
+    
     // Register the user
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: userData.email,
@@ -41,6 +43,8 @@ export const registerUser = async (userData: RegisterUserData) => {
     if (!authData.user) {
       throw new Error("Не удалось создать пользователя");
     }
+    
+    console.log("User created successfully:", authData.user.id);
 
     // Create profile in profiles table
     const { error: profileError } = await supabase.from("profiles").insert({
@@ -53,19 +57,13 @@ export const registerUser = async (userData: RegisterUserData) => {
     if (profileError) {
       console.error("Error creating profile:", profileError);
       
-      // Log for debugging
-      console.log("Profile insert data:", {
-        id: authData.user.id,
-        first_name: userData.firstName,
-        last_name: userData.lastName,
-        role: userData.role,
-      });
-      
       if (profileError.message.includes("duplicate key")) {
         throw new Error("Пользователь с таким email уже существует");
       }
       throw new Error(profileError.message || "Ошибка при создании профиля");
     }
+    
+    console.log("Profile created successfully for user:", authData.user.id);
 
     return { user: authData.user, session: authData.session };
   } catch (error) {
@@ -76,7 +74,7 @@ export const registerUser = async (userData: RegisterUserData) => {
 
 export const loginUser = async (email: string, password: string) => {
   try {
-    console.log("Attempting login with:", { email });
+    console.log("Attempting login for:", email);
     
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -95,7 +93,7 @@ export const loginUser = async (email: string, password: string) => {
       throw error;
     }
 
-    console.log("Login successful, data:", data);
+    console.log("Login successful for:", email);
     return data;
   } catch (error) {
     console.error("Login error:", error);
@@ -127,6 +125,8 @@ export const getCurrentUser = async () => {
 
 export const getUserRole = async (userId: string): Promise<string | null> => {
   try {
+    console.log("Fetching role for user:", userId);
+    
     const { data, error } = await supabase
       .from("profiles")
       .select("role")

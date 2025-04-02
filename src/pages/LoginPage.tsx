@@ -36,12 +36,14 @@ const LoginPage = () => {
             }
           } catch (error) {
             console.error("Error checking role:", error);
+            setCheckingSession(false); // Make sure to stop loading state on error
           }
+        } else {
+          setCheckingSession(false); // No session, stop loading state
         }
       } catch (error) {
         console.error("Error checking session:", error);
-      } finally {
-        setCheckingSession(false);
+        setCheckingSession(false); // Make sure to stop loading state on error
       }
     };
 

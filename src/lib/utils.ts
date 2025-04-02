@@ -1,23 +1,29 @@
 
-import { clsx, type ClassValue } from "clsx"
-import { twMerge } from "tailwind-merge"
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
+  return twMerge(clsx(inputs));
 }
 
-/**
- * Generate initials from first name and last name
- * @param firstName - First name
- * @param lastName - Last name or null
- * @returns Initials (1-2 characters)
- */
-export function getInitials(firstName: string, lastName: string | null): string {
-  // Get first character of first name
-  const firstInitial = firstName.charAt(0).toUpperCase();
+export function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+}
+
+export function getInitials(firstName?: string, lastName?: string): string {
+  let initials = '';
   
-  // Get first character of last name if available
-  const lastInitial = lastName ? lastName.charAt(0).toUpperCase() : '';
+  if (firstName && firstName.length > 0) {
+    initials += firstName.charAt(0).toUpperCase();
+  }
   
-  return `${firstInitial}${lastInitial}`;
+  if (lastName && lastName.length > 0) {
+    initials += lastName.charAt(0).toUpperCase();
+  }
+  
+  return initials || 'U';
 }

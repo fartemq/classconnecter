@@ -33,21 +33,27 @@ const RegisterPage = () => {
         
         if (session) {
           // Already logged in, redirect to profile
-          const { data } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", session.user.id)
-            .single();
-            
-          if (data?.role === "tutor") {
-            navigate("/profile/tutor");
-          } else {
-            navigate("/profile/student");
+          try {
+            const { data } = await supabase
+              .from("profiles")
+              .select("role")
+              .eq("id", session.user.id)
+              .single();
+              
+            if (data?.role === "tutor") {
+              navigate("/profile/tutor");
+            } else {
+              navigate("/profile/student");
+            }
+          } catch (error) {
+            console.error("Error fetching profile data:", error);
+            setCheckingSession(false);
           }
+        } else {
+          setCheckingSession(false);
         }
       } catch (error) {
         console.error("Error checking session:", error);
-      } finally {
         setCheckingSession(false);
       }
     };
@@ -90,10 +96,8 @@ const RegisterPage = () => {
         // Redirect based on role
         if (values.role === "tutor") {
           navigate("/profile/tutor/complete");
-        } else if (values.role === "student") {
-          navigate("/profile/student");
         } else {
-          navigate("/choose-subject");
+          navigate("/profile/student");
         }
       } else {
         // Перенаправить на страницу подтверждения
@@ -138,7 +142,11 @@ const RegisterPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <RegisterForm onSuccess={handleRegisterSuccess} defaultRole={defaultRole} isLoading={isLoading} />
+            <RegisterForm 
+              onSuccess={handleRegisterSuccess} 
+              defaultRole={defaultRole} 
+              isLoading={isLoading} 
+            />
           </CardContent>
         </Card>
       </main>

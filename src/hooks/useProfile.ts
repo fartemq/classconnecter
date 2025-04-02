@@ -11,7 +11,7 @@ export interface Profile {
   avatar_url: string | null;
   bio: string | null;
   city: string | null;
-  phone: string | null; // Added missing phone property
+  phone: string | null;
   role: string;
 }
 
@@ -21,24 +21,43 @@ export const useProfile = (requiredRole?: string) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    let isMounted = true;
+    
     const fetchProfile = async () => {
       try {
-        setIsLoading(true);
+        if (isMounted) setIsLoading(true);
         
         // Check if user is authenticated
         const { data: { session }, error: authError } = await supabase.auth.getSession();
         
-        if (authError || !session) {
-          toast({
-            title: "Требуется авторизация",
-            description: "Пожалуйста, войдите в систему для продолжения.",
-            variant: "destructive",
-          });
-          navigate("/login");
+        if (authError) {
+          console.error("Auth error:", authError);
+          if (isMounted) {
+            toast({
+              title: "Ошибка авторизации",
+              description: "Произошла ошибка при проверке авторизации",
+              variant: "destructive",
+            });
+            navigate("/login");
+          }
+          return;
+        }
+        
+        if (!session) {
+          console.log("No active session found, redirecting to login");
+          if (isMounted) {
+            toast({
+              title: "Требуется авторизация",
+              description: "Пожалуйста, войдите в систему для продолжения.",
+              variant: "destructive",
+            });
+            navigate("/login");
+          }
           return;
         }
         
         // Get user profile
+        console.log("Fetching profile for user:", session.user.id);
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
@@ -46,34 +65,60 @@ export const useProfile = (requiredRole?: string) => {
           .single();
         
         if (profileError) {
-          throw profileError;
+          console.error("Profile error:", profileError);
+          if (isMounted) {
+            toast({
+              title: "Ошибка профиля",
+              description: "Не удалось загрузить данные профиля",
+              variant: "destructive",
+            });
+            
+            if (profileError.code === 'PGRST116') {
+              // Profile not found error
+              console.log("Profile not found, redirecting to login");
+              navigate("/login");
+            }
+          }
+          return;
         }
         
         // Check if user role matches required role if specified
         if (requiredRole && profileData.role !== requiredRole) {
-          toast({
-            title: "Доступ запрещен",
-            description: `Эта страница доступна только для ${requiredRole === "student" ? "студентов" : "репетиторов"}.`,
-            variant: "destructive",
-          });
-          navigate("/");
+          console.log(`User role (${profileData.role}) doesn't match required role (${requiredRole})`);
+          if (isMounted) {
+            toast({
+              title: "Доступ запрещен",
+              description: `Эта страница доступна только для ${requiredRole === "student" ? "студентов" : "репетиторов"}.`,
+              variant: "destructive",
+            });
+            navigate("/");
+          }
           return;
         }
         
-        setProfile(profileData as Profile);
+        console.log("Profile loaded successfully:", profileData);
+        if (isMounted) setProfile(profileData as Profile);
       } catch (error) {
-        console.error("Error fetching profile:", error);
-        toast({
-          title: "Ошибка",
-          description: "Произошла ошибка при загрузке профиля.",
-          variant: "destructive",
-        });
+        console.error("Error in useProfile hook:", error);
+        if (isMounted) {
+          toast({
+            title: "Ошибка",
+            description: "Произошла ошибка при загрузке профиля.",
+            variant: "destructive",
+          });
+          navigate("/login");
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) setIsLoading(false);
       }
     };
     
     fetchProfile();
+    
+    // Cleanup function to avoid state updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, [navigate, requiredRole]);
 
   return { profile, isLoading };

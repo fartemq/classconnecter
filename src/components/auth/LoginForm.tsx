@@ -1,11 +1,11 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginUser, getUserRole } from "@/services/authService";
 import { toast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import {
   Form,
   FormControl,
@@ -36,8 +36,6 @@ interface LoginFormProps {
 }
 
 export function LoginForm({ onSuccess, isLoading, setIsLoading, setLoginAttempted }: LoginFormProps) {
-  const navigate = useNavigate();
-  
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -139,12 +137,12 @@ export function LoginForm({ onSuccess, isLoading, setIsLoading, setLoginAttempte
               </FormItem>
             )}
           />
-          <a
-            href="/forgot-password"
+          <Link
+            to="/forgot-password"
             className="text-sm text-primary hover:underline"
           >
             Забыли пароль?
-          </a>
+          </Link>
         </div>
 
         <Button type="submit" className="w-full" disabled={isLoading}>
@@ -161,9 +159,9 @@ export function LoginForm({ onSuccess, isLoading, setIsLoading, setLoginAttempte
         <div className="text-center mt-4">
           <span className="text-sm text-gray-500">
             Еще нет аккаунта?{" "}
-            <a href="/register" className="text-primary hover:underline">
+            <Link to="/register" className="text-primary hover:underline">
               Зарегистрироваться
-            </a>
+            </Link>
           </span>
         </div>
       </form>
