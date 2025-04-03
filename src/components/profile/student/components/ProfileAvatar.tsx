@@ -5,6 +5,7 @@ import { getInitials } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { Camera } from "lucide-react";
 
 interface ProfileAvatarProps {
   avatarUrl: string | null;
@@ -86,9 +87,12 @@ export const ProfileAvatar = ({ avatarUrl, firstName, lastName }: ProfileAvatarP
       </Avatar>
       
       <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-        <span className="text-white text-xs font-medium">
-          {isUploading ? "Загрузка..." : "Изменить"}
-        </span>
+        <div className="flex flex-col items-center text-white">
+          <Camera className="mb-1" size={20} />
+          <span className="text-xs font-medium">
+            {isUploading ? "Загрузка..." : "Изменить"}
+          </span>
+        </div>
       </div>
     </div>
   );

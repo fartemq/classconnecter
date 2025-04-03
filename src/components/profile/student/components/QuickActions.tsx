@@ -1,38 +1,62 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, Heart, School, Book } from "lucide-react";
+import { Search, Heart, Book, School, User, CreditCard } from "lucide-react";
 
 export const QuickActions = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isSettingsPage = location.pathname.includes("/settings");
   
-  const actions = [
-    {
-      label: "Найти репетитора",
-      icon: Search,
-      path: "/tutors",
-      className: "bg-primary/5 border-primary/20 hover:bg-primary/10",
-    },
-    {
-      label: "Избранные репетиторы",
-      icon: Heart,
-      path: "/favorites",
-      className: "bg-red-50 border-red-200 hover:bg-red-100",
-    },
-    {
-      label: "Изменить предметы",
-      icon: Book,
-      path: "/choose-subject",
-      className: "bg-green-50 border-green-200 hover:bg-green-100",
-    },
-    {
-      label: "Все предметы",
-      icon: School,
-      path: "/subjects",
-      className: "bg-blue-50 border-blue-200 hover:bg-blue-100",
-    },
-  ];
+  // Different actions based on whether we're in the settings page or not
+  const actions = isSettingsPage 
+    ? [
+        {
+          label: "Редактировать профиль",
+          icon: User,
+          path: "/profile/student/edit",
+          className: "bg-primary/5 border-primary/20 hover:bg-primary/10",
+        },
+        {
+          label: "Изменить предметы",
+          icon: Book,
+          path: "/choose-subject",
+          className: "bg-green-50 border-green-200 hover:bg-green-100",
+        },
+        {
+          label: "Способы оплаты",
+          icon: CreditCard,
+          path: "/profile/student/payment",
+          className: "bg-blue-50 border-blue-200 hover:bg-blue-100",
+        }
+      ]
+    : [
+        {
+          label: "Найти репетитора",
+          icon: Search,
+          path: "/tutors",
+          className: "bg-primary/5 border-primary/20 hover:bg-primary/10",
+        },
+        {
+          label: "Избранные репетиторы",
+          icon: Heart,
+          path: "/favorites",
+          className: "bg-red-50 border-red-200 hover:bg-red-100",
+        },
+        {
+          label: "Изменить предметы",
+          icon: Book,
+          path: "/choose-subject",
+          className: "bg-green-50 border-green-200 hover:bg-green-100",
+        },
+        {
+          label: "Все предметы",
+          icon: School,
+          path: "/subjects",
+          className: "bg-blue-50 border-blue-200 hover:bg-blue-100",
+        }
+      ];
   
   return (
     <div className="pt-2 space-y-4">
