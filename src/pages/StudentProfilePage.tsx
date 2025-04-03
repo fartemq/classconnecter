@@ -13,6 +13,9 @@ const StudentProfilePage = () => {
   const { profile, isLoading } = useProfile("student");
   const location = useLocation();
 
+  // Only show sidebar on specific routes
+  const showSidebar = location.pathname.includes("/profile/student/edit");
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -36,13 +39,15 @@ const StudentProfilePage = () => {
       <main className="flex-grow bg-gray-50 py-6">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            {/* Sidebar - reduced width */}
-            <div className="col-span-1">
-              {profile && <StudentSidebar profile={profile} />}
-            </div>
+            {/* Sidebar - conditionally rendered */}
+            {showSidebar && (
+              <div className="col-span-1">
+                {profile && <StudentSidebar profile={profile} />}
+              </div>
+            )}
             
-            {/* Main content area - increased size */}
-            <div className="col-span-1 lg:col-span-4">
+            {/* Main content area - dynamically adjusts width */}
+            <div className={`col-span-1 lg:col-span-${showSidebar ? '4' : '5'}`}>
               {/* Navigation component */}
               <StudentProfileNav />
               
@@ -53,7 +58,7 @@ const StudentProfilePage = () => {
           </div>
         </div>
       </main>
-      <Footer className="py-2" /> {/* Reduced footer size */}
+      <Footer className="py-2" />
     </div>
   );
 };
