@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { StudentNavigation } from "./header/StudentNavigation";
 import { TutorNavigation } from "./header/TutorNavigation";
 import { GuestNavigation } from "./header/GuestNavigation";
 import { MobileNavigation } from "./header/MobileNavigation";
@@ -14,7 +13,7 @@ export const Header = () => {
 
   // Generate navigation items based on user role
   const getNavigationItems = () => {
-    // If user is a student, don't show navigation in header (it's moved to profile page)
+    // If user is a student, don't show navigation in header (it's moved to dashboard)
     if (user && userRole === "student") {
       return null;
     }
@@ -29,7 +28,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="w-full bg-white py-4 border-b border-gray-200">
+    <header className="w-full bg-white py-3 border-b border-gray-200">
       <div className="container mx-auto flex items-center justify-between px-4">
         <Link to="/" className="text-primary text-2xl font-bold">
           Stud.rep

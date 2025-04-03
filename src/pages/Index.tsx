@@ -22,7 +22,7 @@ const Index = () => {
         </div>
         
         {isStudent ? (
-          <div className="container mx-auto px-4 py-8">
+          <div className="container mx-auto px-4 py-8 flex-grow">
             <StudentDashboardButtons />
           </div>
         ) : (
@@ -34,7 +34,7 @@ const Index = () => {
           </>
         )}
       </main>
-      <Footer className="py-4" /> {/* Reduced footer size */}
+      <Footer className="py-2" /> {/* Reduced footer size */}
     </div>
   );
 };

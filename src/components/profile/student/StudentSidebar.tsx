@@ -5,6 +5,9 @@ import { ProfileAvatar } from "./components/ProfileAvatar";
 import { ProfileInfo } from "./components/ProfileInfo";
 import { QuickActions } from "./components/QuickActions";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Edit } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface StudentSidebarProps {
   profile: {
@@ -18,6 +21,8 @@ interface StudentSidebarProps {
 }
 
 export const StudentSidebar = ({ profile }: StudentSidebarProps) => {
+  const navigate = useNavigate();
+  
   return (
     <Card className="shadow-md border-none overflow-hidden">
       <div className="h-16 bg-gradient-to-r from-primary/80 to-primary w-full" />
@@ -28,6 +33,17 @@ export const StudentSidebar = ({ profile }: StudentSidebarProps) => {
           firstName={profile.first_name}
           lastName={profile.last_name}
         />
+        
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="absolute top-1 right-1 w-8 h-8 rounded-full p-0"
+          onClick={() => navigate("/profile/student/edit")}
+        >
+          <Edit className="h-4 w-4" />
+          <span className="sr-only">Edit Profile</span>
+        </Button>
+        
         <ProfileInfo 
           firstName={profile.first_name}
           lastName={profile.last_name}
