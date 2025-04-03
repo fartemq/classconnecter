@@ -28,19 +28,6 @@ export const ProfileAvatar = ({ avatarUrl, firstName, lastName }: ProfileAvatarP
         try {
           setIsUploading(true);
           
-          // Check if avatars bucket exists, if not handle gracefully
-          const { data: bucketExists } = await supabase.storage.getBucket('avatars');
-          
-          if (!bucketExists) {
-            // If implementing this feature, create the bucket first in Supabase
-            toast({
-              title: "Функция недоступна",
-              description: "Загрузка аватара временно недоступна",
-              variant: "destructive",
-            });
-            return;
-          }
-          
           // Upload file to Supabase Storage
           const fileExt = file.name.split('.').pop();
           const filePath = `${user.id}.${fileExt}`;

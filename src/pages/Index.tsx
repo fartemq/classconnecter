@@ -7,7 +7,7 @@ import { CtaSection } from "@/components/CtaSection";
 import { Footer } from "@/components/Footer";
 import { SupabaseStatus } from "@/components/SupabaseStatus";
 import { useAuth } from "@/hooks/useAuth";
-import { StudentDashboardButtons } from "@/components/StudentDashboardButtons";
+import { StudentDashboard } from "@/components/StudentDashboard";
 
 const Index = () => {
   const { user, userRole } = useAuth();
@@ -22,9 +22,7 @@ const Index = () => {
         </div>
         
         {isStudent ? (
-          <div className="container mx-auto px-4 py-8 flex-grow">
-            <StudentDashboardButtons />
-          </div>
+          <StudentDashboard />
         ) : (
           <>
             <HeroSection />
