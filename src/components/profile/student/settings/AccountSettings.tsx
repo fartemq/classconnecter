@@ -144,8 +144,8 @@ export const AccountSettings = () => {
     
     try {
       // Delete the user
-      // Fix by passing an empty object as parameters
-      const { error } = await supabase.rpc('delete_user', {});
+      // Use the correct type for the RPC function
+      const { error } = await supabase.rpc('delete_user');
       
       if (error) throw error;
       
@@ -301,4 +301,3 @@ export const AccountSettings = () => {
     </div>
   );
 };
-
