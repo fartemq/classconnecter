@@ -16,8 +16,7 @@ const StudentSettingsPage = () => {
       <Header />
       <main className="flex-grow bg-gray-50 py-6">
         <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-2xl font-bold mb-6">Настройки профиля</h1>
+          <div className="max-w-6xl mx-auto">
             <SettingsTab />
           </div>
         </div>

@@ -62,7 +62,7 @@ export const QuickActions = () => {
     <div className="pt-2 space-y-4">
       <h3 className="text-sm font-medium text-gray-500 mb-3">Быстрые действия</h3>
       
-      <div className="grid grid-cols-1 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3">
         {actions.map((action) => (
           <Button 
             key={action.label}

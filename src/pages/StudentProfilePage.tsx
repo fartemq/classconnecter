@@ -38,24 +38,30 @@ const StudentProfilePage = () => {
       <Header />
       <main className="flex-grow bg-gray-50 py-6">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            {/* Sidebar - conditionally rendered */}
-            {showSidebar && (
+          {showSidebar ? (
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              {/* Sidebar when showing */}
               <div className="col-span-1">
                 {profile && <StudentSidebar profile={profile} />}
               </div>
-            )}
-            
-            {/* Main content area - dynamically adjusts width */}
-            <div className={`col-span-1 lg:col-span-${showSidebar ? '4' : '5'}`}>
-              {/* Navigation component */}
-              <StudentProfileNav />
               
+              {/* Main content area with sidebar */}
+              <div className="col-span-1 lg:col-span-4">
+                <StudentProfileNav />
+                <Card className="p-6 shadow-md border-none min-h-[600px]">
+                  <Outlet />
+                </Card>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full">
+              {/* Full-width content area without sidebar */}
+              <StudentProfileNav />
               <Card className="p-6 shadow-md border-none min-h-[600px]">
                 <Outlet />
               </Card>
             </div>
-          </div>
+          )}
         </div>
       </main>
       <Footer className="py-2" />

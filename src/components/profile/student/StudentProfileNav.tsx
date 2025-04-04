@@ -52,7 +52,7 @@ export const StudentProfileNav = () => {
                 <ChevronDown className="ml-2 h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-full">
+            <DropdownMenuContent className="w-56">
               {studentNavItems.map((item) => (
                 <DropdownMenuItem 
                   key={item.path}
@@ -74,13 +74,13 @@ export const StudentProfileNav = () => {
           </DropdownMenu>
         </div>
         
-        <div className="hidden md:flex items-center space-x-1 bg-gray-100 p-1 rounded-lg">
+        <div className="hidden md:flex items-center overflow-x-auto gap-1 bg-gray-100 p-1 rounded-lg">
           {studentNavItems.map((item) => (
             <Button 
               key={item.path}
               variant={activeSection === item.path ? "default" : "ghost"} 
               size="sm"
-              className={`gap-2 relative ${activeSection === item.path ? 'shadow-sm' : ''}`}
+              className={`whitespace-nowrap gap-2 relative ${activeSection === item.path ? 'shadow-sm' : ''}`}
               onClick={() => handleNavigation(item.path)}
             >
               <item.icon className="h-4 w-4" />

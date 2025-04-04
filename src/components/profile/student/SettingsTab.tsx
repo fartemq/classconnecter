@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -32,13 +33,13 @@ export const SettingsTab = () => {
   };
   
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="w-full">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-semibold">Настройки</h2>
       </div>
       
-      <Tabs defaultValue="notifications" className="space-y-6">
-        <TabsList className="mb-6 p-1 w-full flex justify-start space-x-2 bg-muted/60">
+      <Tabs defaultValue="notifications" className="space-y-6 w-full">
+        <TabsList className="mb-6 p-1 w-full flex justify-start space-x-2 bg-muted/60 overflow-x-auto">
           <TabsTrigger value="notifications" className="flex items-center px-4 py-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Bell size={16} className="mr-2" />
             Уведомления
@@ -207,7 +208,7 @@ export const SettingsTab = () => {
             </Collapsible>
           </div>
           
-          <div className="flex gap-4 pt-4">
+          <div className="flex flex-wrap gap-4 pt-4">
             <Button onClick={handleSaveSettings}>
               <Check className="mr-2 h-4 w-4" />
               Сохранить настройки
