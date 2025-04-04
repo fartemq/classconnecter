@@ -32,12 +32,12 @@ export const PasswordChangeForm = () => {
     
     try {
       // First verify the current password by trying to sign in
-      const { error: signInError } = await supabase.auth.signInWithPassword({
+      const signInResponse = await supabase.auth.signInWithPassword({
         email: supabase.auth.getUser()?.data?.user?.email || "",
         password: passwordData.currentPassword,
       });
       
-      if (signInError) {
+      if (signInResponse.error) {
         throw new Error("Неверный текущий пароль");
       }
       

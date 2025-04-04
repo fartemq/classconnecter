@@ -2,10 +2,10 @@
 import React, { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Bell, Lock, HelpCircle, User } from "lucide-react";
-import { NotificationSettings } from "./NotificationSettings";
-import { PrivacySettings } from "./PrivacySettings";
-import { HelpSection } from "./HelpSection";
-import { AccountSettings } from "./AccountSettings";
+import { NotificationsTab } from "./tabs/NotificationsTab";
+import { PrivacyTab } from "./tabs/PrivacyTab";
+import { HelpTab } from "./tabs/HelpTab";
+import { AccountTab } from "./tabs/AccountTab";
 
 export const SettingsTabContent = () => {
   const [notificationFrequency, setNotificationFrequency] = useState<string>("realtime");
@@ -36,23 +36,23 @@ export const SettingsTabContent = () => {
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="notifications" className="space-y-8 p-4 bg-white rounded-lg shadow-sm border">
-          <NotificationSettings 
+        <TabsContent value="notifications">
+          <NotificationsTab 
             notificationFrequency={notificationFrequency}
             setNotificationFrequency={setNotificationFrequency}
           />
         </TabsContent>
         
-        <TabsContent value="privacy" className="space-y-8 p-4 bg-white rounded-lg shadow-sm border">
-          <PrivacySettings />
+        <TabsContent value="privacy">
+          <PrivacyTab />
         </TabsContent>
         
-        <TabsContent value="account" className="space-y-8 p-4 bg-white rounded-lg shadow-sm border">
-          <AccountSettings />
+        <TabsContent value="account">
+          <AccountTab />
         </TabsContent>
         
-        <TabsContent value="help" className="space-y-8 p-4 bg-white rounded-lg shadow-sm border">
-          <HelpSection />
+        <TabsContent value="help">
+          <HelpTab />
         </TabsContent>
       </Tabs>
     </div>
