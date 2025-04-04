@@ -144,7 +144,8 @@ export const AccountSettings = () => {
     
     try {
       // Delete the user
-      const { error } = await supabase.rpc('delete_user');
+      // Fix the type error by explicitly adding the return type to an empty object
+      const { error } = await supabase.rpc('delete_user', {});
       
       if (error) throw error;
       

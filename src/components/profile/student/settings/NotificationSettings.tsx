@@ -41,7 +41,7 @@ const SystemNotifications = () => (
   </div>
 );
 
-interface NotificationSettingsProps {
+export interface NotificationSettingsProps {
   notificationFrequency: string;
   setNotificationFrequency: (value: string) => void;
 }

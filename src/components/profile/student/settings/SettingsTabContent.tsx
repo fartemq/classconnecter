@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Bell, Lock, HelpCircle, User } from "lucide-react";
 import { NotificationSettings } from "./NotificationSettings";
@@ -8,6 +8,8 @@ import { HelpSection } from "./HelpSection";
 import { AccountSettings } from "./AccountSettings";
 
 export const SettingsTabContent = () => {
+  const [notificationFrequency, setNotificationFrequency] = useState<string>("realtime");
+  
   return (
     <div className="w-full">
       <div className="flex items-center justify-between mb-6">
@@ -35,7 +37,10 @@ export const SettingsTabContent = () => {
         </TabsList>
         
         <TabsContent value="notifications" className="space-y-8 p-4 bg-white rounded-lg shadow-sm border">
-          <NotificationSettings />
+          <NotificationSettings 
+            notificationFrequency={notificationFrequency}
+            setNotificationFrequency={setNotificationFrequency}
+          />
         </TabsContent>
         
         <TabsContent value="privacy" className="space-y-8 p-4 bg-white rounded-lg shadow-sm border">
