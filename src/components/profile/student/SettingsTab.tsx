@@ -5,4 +5,3 @@ import { SettingsTabContent } from "./settings/SettingsTabContent";
 export const SettingsTab = () => {
   return <SettingsTabContent />;
 };
-
