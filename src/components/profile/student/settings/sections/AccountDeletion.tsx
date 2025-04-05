@@ -37,7 +37,7 @@ export const AccountDeletion = () => {
     setIsLoading(true);
     
     try {
-      // Call the delete_user Supabase RPC function without parameters
+      // Call the delete_user Supabase RPC function
       const { error } = await supabase.rpc('delete_user');
       
       if (error) throw error;
