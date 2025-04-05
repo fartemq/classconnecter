@@ -32,8 +32,9 @@ export const PasswordChangeForm = () => {
     
     try {
       // First verify the current password by trying to sign in
+      // Make sure to await the promise before accessing data
       const signInResponse = await supabase.auth.signInWithPassword({
-        email: supabase.auth.getUser()?.data?.user?.email || "",
+        email: (await supabase.auth.getUser()).data.user?.email || "",
         password: passwordData.currentPassword,
       });
       

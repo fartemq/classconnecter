@@ -25,8 +25,8 @@ export const AccountDeletion = () => {
     
     try {
       // Delete the user
-      // Using type assertion to bypass TypeScript error
-      const { error } = await supabase.rpc('delete_user', {} as any);
+      // Pass an empty object to the delete_user function
+      const { error } = await supabase.rpc('delete_user', {});
       
       if (error) throw error;
       
