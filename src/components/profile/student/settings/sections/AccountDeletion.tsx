@@ -24,8 +24,7 @@ export const AccountDeletion = () => {
     setIsLoading(true);
     
     try {
-      // Delete the user - call the delete_user function without parameters
-      // The error was here - we were passing a parameter to a function that doesn't accept any
+      // Call the delete_user function without any parameters
       const { error } = await supabase.rpc('delete_user');
       
       if (error) throw error;
