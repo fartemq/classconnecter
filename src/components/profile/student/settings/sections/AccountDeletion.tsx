@@ -25,8 +25,8 @@ export const AccountDeletion = () => {
     
     try {
       // Delete the user
-      // Pass an empty object to the delete_user function
-      const { error } = await supabase.rpc('delete_user', {});
+      // The delete_user function doesn't require parameters, so pass an empty object
+      const { error } = await supabase.rpc('delete_user');
       
       if (error) throw error;
       
