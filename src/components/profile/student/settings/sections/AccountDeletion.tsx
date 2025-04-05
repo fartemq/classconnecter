@@ -24,8 +24,7 @@ export const AccountDeletion = () => {
     setIsLoading(true);
     
     try {
-      // Delete the user
-      // The delete_user function doesn't require parameters, so pass an empty object
+      // Delete the user - call the delete_user function without parameters
       const { error } = await supabase.rpc('delete_user');
       
       if (error) throw error;
@@ -83,8 +82,9 @@ export const AccountDeletion = () => {
             <AlertDialogAction 
               onClick={handleDeleteAccount} 
               className="bg-red-500 text-white hover:bg-red-600"
+              disabled={isLoading}
             >
-              Да, удалить аккаунт
+              {isLoading ? "Удаление..." : "Да, удалить аккаунт"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

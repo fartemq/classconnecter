@@ -1,22 +1,25 @@
 
 import React from "react";
 import { NotificationSettings } from "../NotificationSettings";
+import { Card } from "@/components/ui/card";
 
-type NotificationsTabProps = {
+export interface NotificationsTabProps {
   notificationFrequency: string;
-  setNotificationFrequency: React.Dispatch<React.SetStateAction<string>>;
-};
+  setNotificationFrequency: (value: string) => void;
+}
 
 export const NotificationsTab: React.FC<NotificationsTabProps> = ({ 
   notificationFrequency, 
   setNotificationFrequency 
 }) => {
   return (
-    <div className="space-y-8 p-4 bg-white rounded-lg shadow-sm border">
-      <NotificationSettings 
-        notificationFrequency={notificationFrequency}
-        setNotificationFrequency={setNotificationFrequency}
-      />
+    <div className="p-4 bg-white rounded-lg shadow-sm border">
+      <Card className="p-6 shadow-sm">
+        <NotificationSettings 
+          notificationFrequency={notificationFrequency}
+          setNotificationFrequency={setNotificationFrequency}
+        />
+      </Card>
     </div>
   );
 };

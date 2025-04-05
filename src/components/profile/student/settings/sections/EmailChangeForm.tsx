@@ -20,12 +20,21 @@ export const EmailChangeForm = () => {
   const handleEmailChange = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!user?.email) {
+      toast({
+        title: "Ошибка",
+        description: "Не удалось получить текущий email",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
       // First verify the password by trying to sign in
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user?.email || "",
+        email: user.email,
         password: emailData.password,
       });
       
@@ -102,7 +111,7 @@ export const EmailChangeForm = () => {
         
         <Button type="submit" disabled={isLoading}>
           <Mail className="mr-2 h-4 w-4" />
-          Изменить Email
+          {isLoading ? "Изменение..." : "Изменить Email"}
         </Button>
       </form>
     </div>

@@ -31,10 +31,17 @@ export const PasswordChangeForm = () => {
     setIsLoading(true);
     
     try {
+      // Get current user's email
+      const { data: userData } = await supabase.auth.getUser();
+      const userEmail = userData.user?.email;
+      
+      if (!userEmail) {
+        throw new Error("Не удалось получить email пользователя");
+      }
+      
       // First verify the current password by trying to sign in
-      // Make sure to await the promise before accessing data
       const signInResponse = await supabase.auth.signInWithPassword({
-        email: (await supabase.auth.getUser()).data.user?.email || "",
+        email: userEmail,
         password: passwordData.currentPassword,
       });
       
@@ -112,7 +119,7 @@ export const PasswordChangeForm = () => {
         
         <Button type="submit" disabled={isLoading}>
           <Lock className="mr-2 h-4 w-4" />
-          Изменить пароль
+          {isLoading ? "Изменение..." : "Изменить пароль"}
         </Button>
       </form>
     </div>
