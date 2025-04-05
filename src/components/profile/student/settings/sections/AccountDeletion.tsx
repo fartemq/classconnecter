@@ -53,11 +53,20 @@ export const AccountDeletion = () => {
       // Redirect to home page
       navigate("/");
       
-    } catch (error: any) {
-      console.error("Account deletion error:", error);
+    } catch (error: unknown) { // Using unknown is better than any
+      console.error("Ошибка удаления учетной записи:", error);
+      
+      let errorMessage: string; // Explicitly define error message type
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else {
+        errorMessage = "Не удалось удалить аккаунт"; // Default error message
+      }
+      
       toast({
         title: "Ошибка",
-        description: error.message || "Не удалось удалить аккаунт",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
