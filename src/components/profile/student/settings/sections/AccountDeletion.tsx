@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { AlertTriangle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,18 +20,29 @@ import {
 
 export const AccountDeletion = () => {
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Handle account deletion
   const handleDeleteAccount = async () => {
+    if (!user) {
+      toast({
+        title: "Ошибка",
+        description: "Вы не авторизованы",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
-      // Call the delete_user function without any parameters
+      // Call the delete_user Supabase RPC function without parameters
       const { error } = await supabase.rpc('delete_user');
       
       if (error) throw error;
       
-      // Sign out
+      // Sign out after successful deletion
       await supabase.auth.signOut();
       
       toast({
@@ -37,7 +50,11 @@ export const AccountDeletion = () => {
         description: "Ваш аккаунт был успешно удален",
       });
       
+      // Redirect to home page
+      navigate("/");
+      
     } catch (error: any) {
+      console.error("Account deletion error:", error);
       toast({
         title: "Ошибка",
         description: error.message || "Не удалось удалить аккаунт",
