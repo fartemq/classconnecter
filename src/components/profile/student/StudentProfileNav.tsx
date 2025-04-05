@@ -1,9 +1,9 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Calendar, Users, Heart, MessageSquare, 
-  FileText, Settings, User, ChevronDown, Bell
+  FileText, Settings, User, ChevronDown, Sparkles
 } from "lucide-react";
 import { 
   DropdownMenu,
@@ -20,6 +20,7 @@ export const studentNavItems = [
   { name: "Избранное", path: "/profile/student/favorites", icon: Heart },
   { name: "Сообщения", path: "/profile/student/chats", icon: MessageSquare, badge: 2 },
   { name: "Домашние задания", path: "/profile/student/homework", icon: FileText, badge: 1 },
+  { name: "Мой прогресс", path: "/profile/student/progress", icon: Sparkles },
   { name: "Настройки", path: "/profile/student/settings", icon: Settings },
   { name: "Мой профиль", path: "/profile/student/edit", icon: User },
 ];
@@ -28,6 +29,10 @@ export const StudentProfileNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState<string>(location.pathname);
+
+  useEffect(() => {
+    setActiveSection(location.pathname);
+  }, [location.pathname]);
 
   // Find current active section name
   const currentSection = studentNavItems.find(item => location.pathname === item.path);
@@ -63,7 +68,7 @@ export const StudentProfileNav = () => {
                     <item.icon className="mr-2 h-4 w-4" />
                     {item.name}
                   </div>
-                  {item.badge ? (
+                  {typeof item.badge === 'number' && item.badge > 0 ? (
                     <Badge variant="destructive" className="h-5 w-5 rounded-full p-0 flex items-center justify-center">
                       {item.badge}
                     </Badge>
@@ -85,7 +90,7 @@ export const StudentProfileNav = () => {
             >
               <item.icon className="h-4 w-4" />
               {item.name}
-              {item.badge ? (
+              {typeof item.badge === 'number' && item.badge > 0 ? (
                 <Badge variant="destructive" className="h-5 w-5 absolute -top-2 -right-2 rounded-full p-0 flex items-center justify-center">
                   {item.badge}
                 </Badge>

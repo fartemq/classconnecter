@@ -38,8 +38,8 @@ export const AccountDeletion = () => {
     
     try {
       // Call the delete_user Supabase RPC function
-      // Use `any` as the generic type to fix the type error
-      const { error } = await supabase.rpc<any>('delete_user');
+      // Specify both type arguments to fix the TS error
+      const { error } = await supabase.rpc<any, any>('delete_user');
       
       if (error) throw error;
       
