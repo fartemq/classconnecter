@@ -1,8 +1,5 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { 
   Search, 
   Heart, 
@@ -17,10 +14,9 @@ import {
   Sparkles
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 export const StudentDashboard = () => {
-  const navigate = useNavigate();
-  
   const actions = [
     {
       label: "Расписание занятий",
@@ -90,6 +86,12 @@ export const StudentDashboard = () => {
     },
   ];
   
+  // Функция для обработки клика по карточке
+  const handleCardClick = (path: string) => {
+    // Открываем ссылку в новой вкладке
+    window.open(path, '_blank', 'noopener,noreferrer');
+  };
+  
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -142,7 +144,7 @@ export const StudentDashboard = () => {
           <Card 
             key={action.label}
             className={`border shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden ${action.className}`} 
-            onClick={() => navigate(action.path)}
+            onClick={() => handleCardClick(action.path)}
           >
             <CardContent className="p-5 flex items-start gap-4">
               <div className="w-12 h-12 rounded-full flex items-center justify-center bg-white shadow-sm relative">

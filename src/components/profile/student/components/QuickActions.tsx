@@ -1,11 +1,10 @@
 
 import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Search, Heart, Book, School, User, CreditCard } from "lucide-react";
 
 export const QuickActions = () => {
-  const navigate = useNavigate();
   const location = useLocation();
   const isSettingsPage = location.pathname.includes("/settings");
   
@@ -58,6 +57,12 @@ export const QuickActions = () => {
         }
       ];
   
+  // Функция для обработки клика по кнопке
+  const handleButtonClick = (path: string) => {
+    // Открываем ссылку в новой вкладке
+    window.open(path, '_blank', 'noopener,noreferrer');
+  };
+  
   return (
     <div className="pt-2 space-y-4">
       <h3 className="text-sm font-medium text-gray-500 mb-3">Быстрые действия</h3>
@@ -68,7 +73,7 @@ export const QuickActions = () => {
             key={action.label}
             variant="outline" 
             className={`w-full flex justify-start h-auto py-3 ${action.className}`} 
-            onClick={() => navigate(action.path)}
+            onClick={() => handleButtonClick(action.path)}
           >
             <action.icon size={18} className="mr-2" />
             <span>{action.label}</span>
