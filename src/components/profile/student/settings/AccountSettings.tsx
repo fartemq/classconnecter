@@ -2,7 +2,6 @@
 import React from "react";
 import { PasswordChangeForm } from "./sections/PasswordChangeForm";
 import { EmailChangeForm } from "./sections/EmailChangeForm";
-import { AccountDeletion } from "./sections/AccountDeletion";
 import { Card } from "@/components/ui/card";
 
 export const AccountSettings = () => {
@@ -14,10 +13,6 @@ export const AccountSettings = () => {
       
       <Card className="p-6 shadow-sm">
         <EmailChangeForm />
-      </Card>
-      
-      <Card className="p-6 shadow-sm">
-        <AccountDeletion />
       </Card>
     </div>
   );
