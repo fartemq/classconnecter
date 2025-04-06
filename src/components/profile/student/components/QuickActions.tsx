@@ -2,7 +2,7 @@
 import React from "react";
 import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Search, Heart, Book, School, User, CreditCard } from "lucide-react";
+import { Search, Heart, Book, School, User, CreditCard, Pencil, BookMarked, FileText } from "lucide-react";
 import { ModalDialog } from "@/components/ui/modal-dialog";
 
 export const QuickActions = () => {
@@ -14,23 +14,23 @@ export const QuickActions = () => {
     ? [
         {
           label: "Редактировать профиль",
-          icon: User,
+          icon: Pencil,
           path: "/profile/student/edit",
-          className: "bg-primary/5 border-primary/20 hover:bg-primary/10",
+          className: "bg-primary/5 border-primary/20 hover:bg-primary/10 transition-all",
           content: "Здесь будет форма редактирования профиля"
         },
         {
           label: "Изменить предметы",
-          icon: Book,
+          icon: BookMarked,
           path: "/choose-subject",
-          className: "bg-green-50 border-green-200 hover:bg-green-100",
+          className: "bg-green-50 border-green-200 hover:bg-green-100 transition-all",
           content: "Здесь будет форма выбора предметов"
         },
         {
           label: "Способы оплаты",
           icon: CreditCard,
           path: "/profile/student/payment",
-          className: "bg-blue-50 border-blue-200 hover:bg-blue-100",
+          className: "bg-blue-50 border-blue-200 hover:bg-blue-100 transition-all",
           content: "Здесь будут настройки способов оплаты"
         }
       ]
@@ -39,35 +39,35 @@ export const QuickActions = () => {
           label: "Найти репетитора",
           icon: Search,
           path: "/tutors",
-          className: "bg-primary/5 border-primary/20 hover:bg-primary/10",
+          className: "bg-primary/5 border-primary/20 hover:bg-primary/10 transition-all",
           content: "Здесь будет поиск репетиторов"
         },
         {
           label: "Избранные репетиторы",
           icon: Heart,
           path: "/favorites",
-          className: "bg-red-50 border-red-200 hover:bg-red-100",
+          className: "bg-pink-50 border-pink-200 hover:bg-pink-100 transition-all",
           content: "Здесь будут избранные репетиторы"
         },
         {
           label: "Изменить предметы",
-          icon: Book,
+          icon: BookMarked,
           path: "/choose-subject",
-          className: "bg-green-50 border-green-200 hover:bg-green-100",
+          className: "bg-green-50 border-green-200 hover:bg-green-100 transition-all",
           content: "Здесь будет форма выбора предметов"
         },
         {
           label: "Все предметы",
-          icon: School,
+          icon: FileText,
           path: "/subjects",
-          className: "bg-blue-50 border-blue-200 hover:bg-blue-100",
+          className: "bg-violet-50 border-violet-200 hover:bg-violet-100 transition-all",
           content: "Здесь будет список всех предметов"
         }
       ];
   
   return (
     <div className="pt-2 space-y-4">
-      <h3 className="text-sm font-medium text-gray-500 mb-3">Быстрые действия</h3>
+      <h3 className="text-sm font-medium text-gray-600 mb-3">Быстрые действия</h3>
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3">
         {actions.map((action) => (
@@ -77,10 +77,10 @@ export const QuickActions = () => {
             triggerButton={
               <Button 
                 variant="outline" 
-                className={`w-full flex justify-start h-auto py-3 ${action.className}`}
+                className={`w-full flex justify-start h-auto py-3.5 px-4 rounded-xl shadow-sm card-hover ${action.className}`}
               >
-                <action.icon size={18} className="mr-2" />
-                <span>{action.label}</span>
+                <action.icon size={18} className="mr-2.5" />
+                <span className="font-medium">{action.label}</span>
               </Button>
             }
           >
