@@ -37,8 +37,7 @@ export const AccountDeletion = () => {
     setIsLoading(true);
     
     try {
-      // Call the delete_user Supabase RPC function
-      // Remove explicit type arguments to let TypeScript infer the correct types
+      // Call the delete_user Supabase RPC function without explicit type arguments
       const { error } = await supabase.rpc('delete_user');
       
       if (error) throw error;
@@ -54,15 +53,15 @@ export const AccountDeletion = () => {
       // Redirect to home page
       navigate("/");
       
-    } catch (error: unknown) { // Using unknown is better than any
+    } catch (error: unknown) {
       console.error("Ошибка удаления учетной записи:", error);
       
-      let errorMessage: string; // Explicitly define error message type
+      let errorMessage: string;
       
       if (error instanceof Error) {
         errorMessage = error.message;
       } else {
-        errorMessage = "Не удалось удалить аккаунт"; // Default error message
+        errorMessage = "Не удалось удалить аккаунт";
       }
       
       toast({
