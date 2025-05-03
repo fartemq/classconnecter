@@ -70,7 +70,7 @@ export const useProfile = (requiredRole?: string) => {
         }
         
         // Check if user role matches required role if specified
-        if (requiredRole && profileData.role !== requiredRole) {
+        if (requiredRole && profileData && profileData.role !== requiredRole) {
           console.log(`User role (${profileData.role}) doesn't match required role (${requiredRole})`);
           if (isMounted) {
             toast({
@@ -84,7 +84,7 @@ export const useProfile = (requiredRole?: string) => {
         }
         
         console.log("Profile loaded successfully:", profileData);
-        if (isMounted) setProfile(profileData as Profile);
+        if (isMounted && profileData) setProfile(profileData as Profile);
       } catch (error) {
         console.error("Error in useProfile hook:", error);
         if (isMounted) {

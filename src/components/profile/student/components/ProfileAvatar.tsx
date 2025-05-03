@@ -46,9 +46,9 @@ export const ProfileAvatar = ({ avatarUrl, firstName, lastName }: ProfileAvatarP
             
           // Update user profile with avatar URL
           const { error: updateError } = await supabase
-            .from('profiles')
+            .from("profiles")
             .update({ avatar_url: urlData.publicUrl })
-            .eq('id', user.id);
+            .eq("id", user.id);
             
           if (updateError) throw updateError;
           
