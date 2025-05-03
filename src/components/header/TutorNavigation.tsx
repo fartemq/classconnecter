@@ -1,11 +1,11 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, Users, MessageSquare, BarChart, Settings } from "lucide-react";
+import { Calendar, Users, MessageSquare, BarChart, Settings, User } from "lucide-react";
 
 // Tutor navigation tabs
 const tutorTabs = [
-  { name: "О себе", path: "/profile/tutor?tab=about", icon: Users },
+  { name: "О себе", path: "/profile/tutor?tab=about", icon: User },
   { name: "Расписание", path: "/profile/tutor?tab=schedule", icon: Calendar },
   { name: "Ученики", path: "/profile/tutor?tab=students", icon: Users },
   { name: "Сообщения", path: "/profile/tutor?tab=chats", icon: MessageSquare },

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useProfile } from "@/hooks/useProfile";
 import { TutorSidebar } from "@/components/profile/tutor/TutorSidebar";
 import { StudentsTab } from "@/components/profile/tutor/StudentsTab";
@@ -30,12 +30,6 @@ const TutorProfilePage = () => {
     }
   }, [location.search]);
 
-  // Update URL when tab changes
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    navigate(`/profile/tutor?tab=${value}`, { replace: true });
-  };
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -47,6 +41,26 @@ const TutorProfilePage = () => {
       </div>
     );
   }
+
+  // Function to render the active tab content
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "about":
+        return <TutorAboutTab profile={profile} />;
+      case "schedule":
+        return <ScheduleTab />;
+      case "students":
+        return <StudentsTab />;
+      case "chats":
+        return <ChatsTab />;
+      case "stats":
+        return <StatsTab />;
+      case "settings":
+        return <TutorSettingsTab profile={profile} />;
+      default:
+        return <TutorAboutTab profile={profile} />;
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -61,71 +75,12 @@ const TutorProfilePage = () => {
               {profile && <TutorSidebar profile={profile} />}
             </div>
             
-            {/* Main content with expanded tabs */}
+            {/* Main content without the tabs list */}
             <div className="col-span-1 lg:col-span-3">
-              <Card className="p-0 overflow-hidden">
-                <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-                  <TabsList className="w-full justify-start rounded-none border-b bg-white p-0">
-                    <TabsTrigger 
-                      value="about" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4"
-                    >
-                      О себе
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="schedule" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4"
-                    >
-                      Расписание
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="students" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4"
-                    >
-                      Ученики
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="chats" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4"
-                    >
-                      Сообщения
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="stats" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4"
-                    >
-                      Статистика
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="settings" 
-                      className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary py-3 px-4"
-                    >
-                      Настройки
-                    </TabsTrigger>
-                  </TabsList>
-                  
-                  <TabsContent value="about" className="mt-0 p-6">
-                    <TutorAboutTab profile={profile} />
-                  </TabsContent>
-                  
-                  <TabsContent value="schedule" className="mt-0 p-6">
-                    <ScheduleTab />
-                  </TabsContent>
-                  
-                  <TabsContent value="students" className="mt-0 p-6">
-                    <StudentsTab />
-                  </TabsContent>
-                  
-                  <TabsContent value="chats" className="mt-0 p-6">
-                    <ChatsTab />
-                  </TabsContent>
-                  
-                  <TabsContent value="stats" className="mt-0 p-6">
-                    <StatsTab />
-                  </TabsContent>
-                  
-                  <TabsContent value="settings" className="mt-0 p-6">
-                    <TutorSettingsTab profile={profile} />
+              <Card className="p-6 shadow-md border-none">
+                <Tabs value={activeTab} defaultValue="about">
+                  <TabsContent value={activeTab} className="mt-0 p-0">
+                    {renderTabContent()}
                   </TabsContent>
                 </Tabs>
               </Card>
