@@ -11,6 +11,7 @@ import { ChatsTab } from "@/components/profile/tutor/ChatsTab";
 import { StatsTab } from "@/components/profile/tutor/StatsTab";
 import { TutorAboutTab } from "@/components/profile/tutor/TutorAboutTab";
 import { TutorSettingsTab } from "@/components/profile/tutor/TutorSettingsTab";
+import { TutorDashboard } from "@/components/profile/tutor/TutorDashboard";
 import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -19,7 +20,7 @@ const TutorProfilePage = () => {
   const { profile, isLoading } = useProfile("tutor");
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("about");
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   // Get tab from URL query parameter
   useEffect(() => {
@@ -27,6 +28,9 @@ const TutorProfilePage = () => {
     const tab = params.get("tab");
     if (tab && ["about", "schedule", "students", "chats", "stats", "settings"].includes(tab)) {
       setActiveTab(tab);
+    } else if (!tab) {
+      // If no tab is specified, set to dashboard
+      setActiveTab("dashboard");
     }
   }, [location.search]);
 
@@ -45,6 +49,8 @@ const TutorProfilePage = () => {
   // Function to render the active tab content
   const renderTabContent = () => {
     switch (activeTab) {
+      case "dashboard":
+        return <TutorDashboard profile={profile} />;
       case "about":
         return <TutorAboutTab profile={profile} />;
       case "schedule":
@@ -58,7 +64,7 @@ const TutorProfilePage = () => {
       case "settings":
         return <TutorSettingsTab profile={profile} />;
       default:
-        return <TutorAboutTab profile={profile} />;
+        return <TutorDashboard profile={profile} />;
     }
   };
 
@@ -78,7 +84,7 @@ const TutorProfilePage = () => {
             {/* Main content without the tabs list */}
             <div className="col-span-1 lg:col-span-3">
               <Card className="p-6 shadow-md border-none">
-                <Tabs value={activeTab} defaultValue="about">
+                <Tabs value={activeTab} defaultValue="dashboard">
                   <TabsContent value={activeTab} className="mt-0 p-0">
                     {renderTabContent()}
                   </TabsContent>

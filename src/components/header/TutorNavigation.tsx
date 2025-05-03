@@ -1,10 +1,11 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, Users, MessageSquare, BarChart, Settings, User } from "lucide-react";
+import { Calendar, Users, MessageSquare, BarChart, Settings, User, Home } from "lucide-react";
 
 // Tutor navigation tabs
 const tutorTabs = [
+  { name: "Главная", path: "/profile/tutor", icon: Home },
   { name: "О себе", path: "/profile/tutor?tab=about", icon: User },
   { name: "Расписание", path: "/profile/tutor?tab=schedule", icon: Calendar },
   { name: "Ученики", path: "/profile/tutor?tab=students", icon: Users },
@@ -18,10 +19,24 @@ export const TutorNavigation = () => {
   
   // Function to check if a tutor tab is active
   const isTutorTabActive = (path: string) => {
-    const tabParam = new URLSearchParams(location.search).get("tab");
-    const pathTab = new URLSearchParams(new URL(path, window.location.origin).search).get("tab") || "about";
+    // For the main dashboard path without query params
+    if (path === "/profile/tutor" && location.pathname === "/profile/tutor" && !location.search) {
+      return true;
+    }
     
-    return location.pathname === "/profile/tutor" && (tabParam === pathTab || (!tabParam && pathTab === "about"));
+    // For paths with query params
+    const tabParam = new URLSearchParams(location.search).get("tab");
+    const pathTab = new URLSearchParams(new URL(path, window.location.origin).search).get("tab");
+    
+    if (pathTab) {
+      // If the path has a tab parameter, check if it matches the current tab
+      return location.pathname === "/profile/tutor" && tabParam === pathTab;
+    } else if (path === "/profile/tutor") {
+      // For the main dashboard path, it's active if no tab is specified
+      return location.pathname === "/profile/tutor" && !tabParam;
+    }
+    
+    return false;
   };
 
   return (

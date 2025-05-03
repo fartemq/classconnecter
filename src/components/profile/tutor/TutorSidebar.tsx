@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Profile } from "@/hooks/useProfile";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, BookOpen, Users } from "lucide-react";
+import { MapPin, Star, BookOpen, Users, Home } from "lucide-react";
 
 interface TutorSidebarProps {
   profile: Profile;
@@ -84,7 +84,15 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
           <div className="pt-2">
             <Button 
               variant="default" 
-              className="w-full mb-2"
+              className="w-full mb-2 bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2"
+              onClick={() => navigate("/profile/tutor")}
+            >
+              <Home className="h-4 w-4" />
+              Главная страница
+            </Button>
+            <Button 
+              variant="outline" 
+              className="w-full"
               onClick={() => navigate("/profile/tutor/complete")}
             >
               Редактировать профиль
