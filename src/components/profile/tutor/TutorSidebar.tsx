@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Profile } from "@/hooks/useProfile";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Mail, Star, BookOpen, Users } from "lucide-react";
+import { MapPin, Star, BookOpen, Users } from "lucide-react";
 
 interface TutorSidebarProps {
   profile: Profile;
@@ -24,7 +24,7 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
         <CardHeader className="text-center pb-2">
           <div className="relative mx-auto mb-4">
             <div className="w-32 h-32 rounded-full bg-gray-200 mx-auto overflow-hidden">
@@ -94,7 +94,7 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
       </Card>
       
       {/* Quick stats card */}
-      <Card>
+      <Card className="shadow-sm hover:shadow-md transition-all">
         <CardHeader className="pb-2">
           <h3 className="text-sm font-medium">Ближайшие занятия</h3>
         </CardHeader>

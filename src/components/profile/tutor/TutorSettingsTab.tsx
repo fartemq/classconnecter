@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { Settings, LogOut } from "lucide-react";
+import { Settings, LogOut, User, Bell, Lock } from "lucide-react";
 
 interface TutorSettingsTabProps {
   profile: Profile;
@@ -53,12 +53,14 @@ export const TutorSettingsTab = ({ profile }: TutorSettingsTabProps) => {
               className="w-full justify-start"
               onClick={() => navigate("/profile/tutor/complete")}
             >
+              <User className="h-4 w-4 mr-2" />
               Редактировать основную информацию
             </Button>
             
             <Button
               variant="outline"
               className="w-full justify-start"
+              onClick={() => navigate("/profile/tutor?tab=schedule")}
             >
               Управление расписанием
             </Button>
@@ -66,14 +68,18 @@ export const TutorSettingsTab = ({ profile }: TutorSettingsTabProps) => {
             <Button
               variant="outline"
               className="w-full justify-start"
+              onClick={() => navigate("/profile/tutor/notifications")}
             >
+              <Bell className="h-4 w-4 mr-2" />
               Настройки уведомлений
             </Button>
             
             <Button
               variant="outline"
               className="w-full justify-start"
+              onClick={() => navigate("/profile/tutor/password")}
             >
+              <Lock className="h-4 w-4 mr-2" />
               Изменить пароль
             </Button>
           </div>
