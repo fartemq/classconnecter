@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -6,7 +5,7 @@ import {
   FileText,
   ChartBar,
   LayoutDashboard,
-  Bulb,
+  Lightbulb,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -223,7 +222,7 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
       {/* Motivational quote */}
       <Card className="shadow-md hover:shadow-lg transition-shadow bg-gradient-to-r from-blue-600 to-indigo-700">
         <CardContent className="p-6 text-center">
-          <Bulb className="h-8 w-8 text-yellow-300 mx-auto mb-2" />
+          <Lightbulb className="h-8 w-8 text-yellow-300 mx-auto mb-2" />
           <p className="text-white text-xl font-medium italic">"{randomQuote}"</p>
         </CardContent>
       </Card>
