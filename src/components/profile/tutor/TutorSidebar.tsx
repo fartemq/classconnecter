@@ -2,7 +2,7 @@
 import React from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Profile } from "@/hooks/useProfile";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Star, BookOpen, Users, Home } from "lucide-react";
@@ -13,6 +13,10 @@ interface TutorSidebarProps {
 
 export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Check if we're on the main tutor dashboard page
+  const isMainDashboard = location.pathname === "/profile/tutor" && !location.search;
   
   // This would ideally come from the database in a real implementation
   const tutorStats = {
@@ -101,17 +105,19 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
         </CardContent>
       </Card>
       
-      {/* Quick stats card */}
-      <Card className="shadow-sm hover:shadow-md transition-all">
-        <CardHeader className="pb-2">
-          <h3 className="text-sm font-medium">Ближайшие занятия</h3>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <p className="text-gray-500 text-sm text-center py-2">
-            У вас нет запланированных занятий на ближайшее время
-          </p>
-        </CardContent>
-      </Card>
+      {/* Quick stats card - only show on main dashboard page */}
+      {isMainDashboard && (
+        <Card className="shadow-sm hover:shadow-md transition-all">
+          <CardHeader className="pb-2">
+            <h3 className="text-sm font-medium">Ближайшие занятия</h3>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <p className="text-gray-500 text-sm text-center py-2">
+              У вас нет запланированных занятий на ближайшее время
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
