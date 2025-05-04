@@ -1,269 +1,331 @@
 
-import React from "react";
-import { Profile } from "@/hooks/useProfile";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { 
-  BookOpen, 
-  Award, 
-  VideoIcon, 
-  Clock, 
-  MapPin,
-  GraduationCap,
-  Briefcase,
-  Info
-} from "lucide-react";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { toast } from "@/hooks/use-toast";
+import { AvatarUpload } from "./AvatarUpload";
+import { Profile } from "@/hooks/useProfile";
+import { fetchTutorProfile, saveTutorProfile } from "@/services/tutorService";
+import { TutorFormValues, TutorProfile } from "@/types/tutor";
+import { Loader } from "@/components/ui/loader";
+
+// Схема валидации для основной информации
+const personalSchema = z.object({
+  firstName: z.string().min(2, { message: "Имя должно содержать минимум 2 символа" }),
+  lastName: z.string().min(2, { message: "Фамилия должна содержать минимум 2 символа" }),
+  bio: z.string().min(20, { message: "Опишите ваш опыт преподавания (минимум 20 символов)" }),
+  city: z.string().min(2, { message: "Укажите город" }),
+});
+
+// Схема валидации для образования
+const educationSchema = z.object({
+  educationInstitution: z.string().min(2, { message: "Укажите название учебного заведения" }),
+  degree: z.string().min(2, { message: "Укажите специальность/степень" }),
+  graduationYear: z.coerce
+    .number()
+    .min(1950, { message: "Год должен быть не ранее 1950" })
+    .max(new Date().getFullYear(), { message: `Год не может быть позже ${new Date().getFullYear()}` }),
+});
+
+// Общая схема с объединением всех полей
+const formSchema = personalSchema.merge(educationSchema);
 
 interface TutorAboutTabProps {
   profile: Profile;
 }
 
 export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
-  // These would come from the database in a real implementation
-  const mockData = {
-    // Basic info
-    subjects: [
-      { id: 1, name: "Математика", specializations: ["Алгебра", "Геометрия"] },
-      { id: 2, name: "Физика", specializations: [] },
-    ],
-    education: [
-      { 
-        id: 1, 
-        institution: "МГУ им. Ломоносова", 
-        degree: "Магистр математики", 
-        year: "2015",
-        verified: true
-      },
-      { 
-        id: 2, 
-        institution: "МФТИ", 
-        degree: "Кандидат физико-математических наук", 
-        year: "2018",
-        verified: true
+  const [activeTab, setActiveTab] = useState("personal");
+  const [isLoading, setIsLoading] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(profile?.avatar_url || null);
+  const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
+  const form = useForm<TutorFormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      firstName: profile?.first_name || "",
+      lastName: profile?.last_name || "",
+      bio: profile?.bio || "",
+      city: profile?.city || "",
+      educationInstitution: "",
+      degree: "",
+      graduationYear: new Date().getFullYear(),
+    },
+  });
+
+  // Загрузка данных профиля репетитора
+  useEffect(() => {
+    const loadTutorProfile = async () => {
+      try {
+        setLoadingProfile(true);
+        const data = await fetchTutorProfile(profile.id);
+        setTutorProfile(data);
+        
+        // Заполняем форму данными
+        form.reset({
+          firstName: data.firstName,
+          lastName: data.lastName,
+          bio: data.bio,
+          city: data.city,
+          educationInstitution: data.educationInstitution,
+          degree: data.degree,
+          graduationYear: data.graduationYear || new Date().getFullYear(),
+        });
+        
+        setAvatarUrl(data.avatarUrl || null);
+      } catch (error) {
+        console.error("Error loading tutor profile:", error);
+        toast({
+          title: "Ошибка загрузки профиля",
+          description: "Не удалось загрузить данные профиля репетитора",
+          variant: "destructive",
+        });
+      } finally {
+        setLoadingProfile(false);
       }
-    ],
-    experience: [
-      {
-        id: 1,
-        place: "Школа №1234",
-        position: "Учитель математики",
-        period: "2015-2018",
-        description: "Преподавание алгебры и геометрии в 9-11 классах."
-      },
-      {
-        id: 2,
-        place: "Образовательный центр \"Эрудит\"",
-        position: "Репетитор",
-        period: "2018-настоящее время",
-        description: "Подготовка к ЕГЭ и ОГЭ по математике."
-      }
-    ],
-    achievements: [
-      {
-        id: 1,
-        title: "Лучший репетитор года",
-        year: "2020",
-        issuer: "Образовательный центр \"Эрудит\"",
-      },
-      {
-        id: 2,
-        title: "100 баллов на ЕГЭ у 3 учеников",
-        year: "2021",
-        issuer: "",
-      }
-    ],
-    teachingApproach: "Мой подход основан на индивидуальной работе с учениками, учитывая их особенности и цели. Использую как классические, так и современные методики преподавания, сочетая теорию с практическими заданиями.",
-    teachingFormats: [
-      { id: 1, type: "Онлайн", details: "Zoom, Skype", price: 1000 },
-      { id: 2, type: "У репетитора", details: "Центральный район", price: 1200 },
-      { id: 3, type: "У ученика", details: "Центральный и Приморский районы", price: 1500 },
-    ],
-    // More could be added as needed
+    };
+    
+    if (profile) {
+      loadTutorProfile();
+    }
+  }, [profile, form]);
+
+  const handleAvatarChange = (file: File | null, url: string | null) => {
+    setAvatarFile(file);
+    setAvatarUrl(url);
   };
+
+  const onSubmit = async (values: TutorFormValues) => {
+    try {
+      setIsLoading(true);
+      
+      await saveTutorProfile(values, profile.id, avatarFile, avatarUrl);
+      
+      toast({
+        title: "Профиль обновлен",
+        description: "Данные профиля успешно сохранены",
+      });
+      
+      // Обновляем локальные данные
+      setTutorProfile(prev => ({
+        ...prev!,
+        firstName: values.firstName,
+        lastName: values.lastName,
+        bio: values.bio,
+        city: values.city,
+        educationInstitution: values.educationInstitution || "",
+        degree: values.degree || "",
+        graduationYear: values.graduationYear || new Date().getFullYear(),
+      }));
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      toast({
+        title: "Ошибка сохранения",
+        description: error instanceof Error ? error.message : "Произошла ошибка при сохранении профиля",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (loadingProfile) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Profile completion reminder if profile is incomplete */}
-      {(!profile?.bio || !profile?.city) && (
-        <Card className="bg-amber-50 border-amber-200">
-          <CardContent className="flex items-start space-x-4 p-4">
-            <Info className="h-5 w-5 text-amber-500 mt-0.5" />
-            <div>
-              <h3 className="font-medium text-amber-800">Завершите свой профиль</h3>
-              <p className="text-amber-700 text-sm mt-1">
-                Заполните все разделы профиля, чтобы повысить шансы привлечь больше учеников.
-              </p>
-              <Button 
-                variant="outline" 
-                className="mt-3 border-amber-300 text-amber-700 hover:bg-amber-100 hover:text-amber-800"
-                size="sm"
-                onClick={() => window.location.href = "/profile/tutor/complete"}
-              >
-                Заполнить профиль
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Bio section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <Info className="h-5 w-5 mr-2" />
-            О себе
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {profile?.bio ? (
-            <p className="text-gray-700">{profile.bio}</p>
-          ) : (
-            <p className="text-gray-500 italic">Добавьте информацию о себе.</p>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Subjects section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <BookOpen className="h-5 w-5 mr-2" />
-            Предметы
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {mockData.subjects.map(subject => (
-              <div key={subject.id} className="border rounded-lg p-3">
-                <h3 className="font-medium">{subject.name}</h3>
-                {subject.specializations.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {subject.specializations.map((spec, idx) => (
-                      <Badge key={idx} variant="outline" className="bg-gray-50">
-                        {spec}
-                      </Badge>
-                    ))}
+      <h2 className="text-2xl font-semibold">О себе</h2>
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-6">
+              <TabsTrigger value="personal">Основная информация</TabsTrigger>
+              <TabsTrigger value="education">Образование</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="personal">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Основная информация</CardTitle>
+                  <CardDescription>
+                    Расскажите о себе и своем опыте преподавания
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Avatar upload */}
+                  <AvatarUpload
+                    avatarUrl={avatarUrl}
+                    firstName={form.getValues("firstName")}
+                    onChange={handleAvatarChange}
+                  />
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* First name */}
+                    <FormField
+                      control={form.control}
+                      name="firstName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Имя *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Иван" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    {/* Last name */}
+                    <FormField
+                      control={form.control}
+                      name="lastName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Фамилия *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Иванов" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Education section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <GraduationCap className="h-5 w-5 mr-2" />
-            Образование
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {mockData.education.map(edu => (
-              <div key={edu.id} className="border rounded-lg p-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-medium">{edu.institution}</h3>
-                    <p className="text-gray-600">{edu.degree}, {edu.year}</p>
+                  
+                  {/* City */}
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Город *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Москва" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Bio / Teaching experience */}
+                  <FormField
+                    control={form.control}
+                    name="bio"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>О себе и опыт преподавания *</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Расскажите о своем опыте и методике преподавания..."
+                            className="min-h-[120px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="education">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Образование</CardTitle>
+                  <CardDescription>
+                    Информация о вашем образовании и квалификации
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Education Institution */}
+                  <FormField
+                    control={form.control}
+                    name="educationInstitution"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Учебное заведение *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="МГУ им. Ломоносова" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Degree */}
+                  <FormField
+                    control={form.control}
+                    name="degree"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Степень/специальность *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Магистр физико-математических наук" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Graduation Year */}
+                  <FormField
+                    control={form.control}
+                    name="graduationYear"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Год окончания *</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="1950" max={new Date().getFullYear()} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Education verification status */}
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <h4 className="text-sm font-medium mb-2">Статус верификации</h4>
+                    <div className="flex items-center">
+                      <div className={`h-3 w-3 rounded-full mr-2 ${tutorProfile?.educationVerified ? 'bg-green-500' : 'bg-amber-500'}`}></div>
+                      <p className="text-sm text-gray-700">
+                        {tutorProfile?.educationVerified 
+                          ? 'Образование подтверждено' 
+                          : 'Ожидает верификации'}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {tutorProfile?.educationVerified 
+                        ? 'Ваше образование было проверено и подтверждено администрацией.' 
+                        : 'Для верификации образования может потребоваться предоставление документов.'}
+                    </p>
                   </div>
-                  {edu.verified && (
-                    <Badge className="bg-green-500 hover:bg-green-600">
-                      Проверено
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+          
+          <div className="flex justify-end mt-6">
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Сохранение..." : "Сохранить изменения"}
+            </Button>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Experience section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <Briefcase className="h-5 w-5 mr-2" />
-            Опыт работы
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {mockData.experience.map(exp => (
-              <div key={exp.id} className="border rounded-lg p-3">
-                <h3 className="font-medium">{exp.place}</h3>
-                <div className="flex justify-between text-sm text-gray-600 mt-1">
-                  <span>{exp.position}</span>
-                  <span>{exp.period}</span>
-                </div>
-                <p className="text-gray-700 mt-2">{exp.description}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Teaching approach */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <Award className="h-5 w-5 mr-2" />
-            Методика преподавания
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-700">{mockData.teachingApproach}</p>
-        </CardContent>
-      </Card>
-
-      {/* Achievements */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <Award className="h-5 w-5 mr-2" />
-            Достижения
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {mockData.achievements.map(achievement => (
-              <div key={achievement.id} className="border rounded-lg p-3">
-                <h3 className="font-medium">{achievement.title}</h3>
-                <div className="flex justify-between text-sm text-gray-600 mt-1">
-                  <span>{achievement.issuer}</span>
-                  <span>{achievement.year}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Teaching formats */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <VideoIcon className="h-5 w-5 mr-2" />
-            Форматы занятий
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {mockData.teachingFormats.map(format => (
-              <div key={format.id} className="border rounded-lg p-3">
-                <div className="flex justify-between">
-                  <h3 className="font-medium">{format.type}</h3>
-                  <span className="font-medium text-green-600">{format.price} ₽/час</span>
-                </div>
-                <p className="text-gray-600 text-sm mt-1">{format.details}</p>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+        </form>
+      </Form>
     </div>
   );
 };

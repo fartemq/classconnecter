@@ -125,6 +125,44 @@ export type Database = {
         }
         Relationships: []
       }
+      tutor_profiles: {
+        Row: {
+          created_at: string
+          degree: string
+          education_institution: string
+          education_verified: boolean
+          graduation_year: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          degree: string
+          education_institution: string
+          education_verified?: boolean
+          graduation_year: number
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          degree?: string
+          education_institution?: string
+          education_verified?: boolean
+          graduation_year?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tutor_subjects: {
         Row: {
           category_id: string

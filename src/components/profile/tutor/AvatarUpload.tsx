@@ -17,7 +17,7 @@ export const AvatarUpload = ({ avatarUrl, firstName, onChange }: AvatarUploadPro
     }
     
     const file = e.target.files[0];
-    const fileSize = file.size / 1024 / 1024; // in MB
+    const fileSize = file.size / 1024 / 1024; // в МБ
     
     if (fileSize > 2) {
       toast({

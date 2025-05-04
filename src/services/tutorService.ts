@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues } from "@/types/tutor";
 import { toast } from "@/hooks/use-toast";
@@ -49,6 +48,39 @@ export const saveTutorProfile = async (values: TutorFormValues, userId: string, 
     
     if (profileError) {
       throw profileError;
+    }
+    
+    // Update or create tutor_profiles record
+    const { data: existingTutorProfile } = await supabase
+      .from("tutor_profiles")
+      .select()
+      .eq("id", userId)
+      .single();
+    
+    if (existingTutorProfile) {
+      // Update existing record
+      const { error: tutorProfileError } = await supabase.from("tutor_profiles").update({
+        education_institution: values.educationInstitution,
+        degree: values.degree,
+        graduation_year: values.graduationYear,
+        updated_at: new Date().toISOString(),
+      }).eq("id", userId);
+      
+      if (tutorProfileError) {
+        throw tutorProfileError;
+      }
+    } else {
+      // Create new record
+      const { error: tutorProfileError } = await supabase.from("tutor_profiles").insert({
+        id: userId,
+        education_institution: values.educationInstitution || '',
+        degree: values.degree || '',
+        graduation_year: values.graduationYear || new Date().getFullYear(),
+      });
+      
+      if (tutorProfileError) {
+        throw tutorProfileError;
+      }
     }
     
     return { success: true, avatarUrl: finalAvatarUrl };
@@ -113,6 +145,72 @@ export const fetchSubjectsAndCategories = async () => {
     return { subjects: subjects || [], categories: categories || [] };
   } catch (error) {
     console.error("Error fetching subjects and categories:", error);
+    throw error;
+  }
+};
+
+export const fetchTutorProfile = async (userId: string) => {
+  try {
+    // Fetch basic profile information
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    
+    if (profileError) {
+      throw profileError;
+    }
+    
+    // Fetch tutor specific information
+    const { data: tutorProfileData, error: tutorProfileError } = await supabase
+      .from("tutor_profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+    
+    if (tutorProfileError) {
+      throw tutorProfileError;
+    }
+    
+    // Fetch tutor subjects
+    const { data: subjectsData, error: subjectsError } = await supabase
+      .from("tutor_subjects")
+      .select(`
+        *,
+        subjects:subject_id (
+          id, name
+        )
+      `)
+      .eq("tutor_id", userId);
+    
+    if (subjectsError) {
+      throw subjectsError;
+    }
+    
+    const formattedSubjects = subjectsData.map(item => ({
+      id: item.subject_id,
+      name: item.subjects.name,
+      hourlyRate: item.hourly_rate,
+      experienceYears: item.experience_years,
+      description: item.description
+    }));
+    
+    return {
+      id: profileData.id,
+      firstName: profileData.first_name,
+      lastName: profileData.last_name || "",
+      bio: profileData.bio || "",
+      city: profileData.city || "",
+      avatarUrl: profileData.avatar_url,
+      educationInstitution: tutorProfileData?.education_institution || "",
+      degree: tutorProfileData?.degree || "",
+      graduationYear: tutorProfileData?.graduation_year || null,
+      educationVerified: tutorProfileData?.education_verified || false,
+      subjects: formattedSubjects
+    };
+  } catch (error) {
+    console.error("Error fetching tutor profile:", error);
     throw error;
   }
 };
