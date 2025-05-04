@@ -25,6 +25,11 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
     studentsCount: 8
   };
 
+  // Only render content if we're on the main dashboard
+  if (!isMainDashboard) {
+    return null; // Don't render anything if not on main dashboard
+  }
+
   return (
     <div className="space-y-4">
       <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
@@ -86,19 +91,7 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
         </CardContent>
       </Card>
       
-      {/* Quick stats card - only show on main dashboard page */}
-      {isMainDashboard && (
-        <Card className="shadow-sm hover:shadow-md transition-all">
-          <CardHeader className="pb-2">
-            <h3 className="text-sm font-medium">Ближайшие занятия</h3>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <p className="text-gray-500 text-sm text-center py-2">
-              У вас нет запланированных занятий на ближайшее время
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Removed the second card since we're only showing content on the main dashboard */}
     </div>
   );
 };

@@ -22,6 +22,9 @@ const TutorProfilePage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
 
+  // Check if we're on the main tutor dashboard page
+  const isMainDashboard = location.pathname === "/profile/tutor" && !location.search;
+
   // Get tab from URL query parameter
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -76,13 +79,15 @@ const TutorProfilePage = () => {
           <h1 className="text-2xl md:text-3xl font-bold mb-8">Личный кабинет репетитора</h1>
           
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Enhanced sidebar with user info */}
-            <div className="col-span-1">
-              {profile && <TutorSidebar profile={profile} />}
-            </div>
+            {/* Only render sidebar on main dashboard */}
+            {isMainDashboard && (
+              <div className="col-span-1">
+                {profile && <TutorSidebar profile={profile} />}
+              </div>
+            )}
             
-            {/* Main content without the tabs list */}
-            <div className="col-span-1 lg:col-span-3">
+            {/* Adjust main content width based on presence of sidebar */}
+            <div className={`col-span-1 ${isMainDashboard ? 'lg:col-span-3' : 'lg:col-span-4'}`}>
               <Card className="p-6 shadow-md border-none">
                 <Tabs value={activeTab} defaultValue="dashboard">
                   <TabsContent value={activeTab} className="mt-0 p-0">
