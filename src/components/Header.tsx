@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { TutorNavigation } from "./header/TutorNavigation";
 import { GuestNavigation } from "./header/GuestNavigation";
 import { MobileNavigation } from "./header/MobileNavigation";
@@ -10,6 +10,10 @@ import { useAuth } from "@/hooks/useAuth";
 export const Header = () => {
   const { user, userRole } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const location = useLocation();
+  
+  // Check if we're on a tutor profile page
+  const isTutorProfile = location.pathname.startsWith('/profile/tutor');
 
   // Generate navigation items based on user role
   const getNavigationItems = () => {
@@ -38,7 +42,10 @@ export const Header = () => {
           {getNavigationItems()}
         </nav>
         
-        <AuthButtons isAuthenticated={!!user} userRole={userRole} />
+        {/* Only show auth buttons if not on tutor profile page */}
+        {!isTutorProfile && (
+          <AuthButtons isAuthenticated={!!user} userRole={userRole} />
+        )}
       </div>
       
       {/* Mobile navigation menu */}
