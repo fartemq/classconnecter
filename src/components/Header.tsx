@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { TutorNavigation } from "./header/TutorNavigation";
 import { StudentNavigation } from "./header/StudentNavigation";
@@ -10,7 +10,6 @@ import { useAuth } from "@/hooks/useAuth";
 
 export const Header = () => {
   const { user, userRole } = useAuth();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   
   // Check if we're on a profile page
@@ -20,15 +19,15 @@ export const Header = () => {
 
   // Generate navigation items based on user role and path
   const getNavigationItems = () => {
-    // Only show student navigation when on student profile pages but not on main dashboard
-    if (user && userRole === "student" && isStudentProfile && !isMainStudentPage) {
+    // If user is a student, show student navigation on all student profile pages
+    if (user && userRole === "student" && isStudentProfile) {
       return <StudentNavigation />;
     }
     // If user is a tutor, show tutor navigation
     else if (user && userRole === "tutor" && isTutorProfile) {
       return <TutorNavigation />;
     } 
-    // For unauthenticated users or student not on profile page, show standard menu
+    // For unauthenticated users or non-profile pages, show standard menu
     else if (!isStudentProfile && !isTutorProfile) {
       return <GuestNavigation />;
     }
@@ -58,8 +57,8 @@ export const Header = () => {
       <MobileNavigation 
         isAuthenticated={!!user}
         userRole={userRole}
-        isMenuOpen={isMenuOpen}
-        setIsMenuOpen={setIsMenuOpen}
+        isMenuOpen={false}
+        setIsMenuOpen={() => {}}
       />
     </header>
   );

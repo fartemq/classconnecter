@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useProfile } from "@/hooks/useProfile";
@@ -12,9 +12,9 @@ import { HomeworkTab } from "@/components/profile/student/HomeworkTab";
 import { SettingsTab } from "@/components/profile/student/SettingsTab";
 import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { ChatConversation } from "@/components/profile/student/ChatConversation";
-import { StudentProfileSidebar } from "@/components/profile/student/StudentProfileSidebar";
+import { StudentSidebar } from "@/components/profile/student/StudentSidebar";
 
 const StudentProfilePage = () => {
   const { profile, isLoading } = useProfile("student");
@@ -71,7 +71,7 @@ const StudentProfilePage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
               {/* Sidebar - only shown on main dashboard */}
               <div className="lg:col-span-1">
-                <StudentProfileSidebar />
+                <StudentSidebar profile={profile} />
               </div>
               
               {/* Main content area */}
@@ -82,9 +82,11 @@ const StudentProfilePage = () => {
               </div>
             </div>
           ) : (
-            <Card className="p-6 shadow-md border-none">
-              {getTabContent()}
-            </Card>
+            <div className="max-w-4xl mx-auto">
+              <Card className="p-6 shadow-md border-none">
+                {getTabContent()}
+              </Card>
+            </div>
           )}
         </div>
       </main>

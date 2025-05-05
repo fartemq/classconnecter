@@ -3,8 +3,9 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   Home, Calendar, Users, Heart, MessageSquare, 
-  FileText, Settings, User, Sparkles
+  FileText, Settings, User
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 // Student navigation tabs
 const studentTabs = [
@@ -12,10 +13,10 @@ const studentTabs = [
   { name: "Расписание", path: "/profile/student/schedule", icon: Calendar },
   { name: "Репетиторы", path: "/profile/student/tutors", icon: Users },
   { name: "Избранное", path: "/profile/student/favorites", icon: Heart },
-  { name: "Сообщения", path: "/profile/student/chats", icon: MessageSquare, notificationKey: "messages" },
-  { name: "Домашние задания", path: "/profile/student/homework", icon: FileText },
-  { name: "Настройки", path: "/profile/student/settings", icon: Settings },
+  { name: "Сообщения", path: "/profile/student/chats", icon: MessageSquare, notificationCount: 2 },
+  { name: "Домашние задания", path: "/profile/student/homework", icon: FileText, notificationCount: 1 },
   { name: "Профиль", path: "/profile/student/edit", icon: User },
+  { name: "Настройки", path: "/profile/student/settings", icon: Settings },
 ];
 
 export const StudentNavigation = () => {
@@ -41,6 +42,15 @@ export const StudentNavigation = () => {
         >
           <tab.icon className="h-4 w-4" />
           <span>{tab.name}</span>
+          
+          {tab.notificationCount && tab.notificationCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center"
+            >
+              {tab.notificationCount}
+            </Badge>
+          )}
         </Link>
       ))}
     </div>
