@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { TutorNavigation } from "./header/TutorNavigation";
+import { StudentNavigation } from "./header/StudentNavigation";
 import { GuestNavigation } from "./header/GuestNavigation";
 import { MobileNavigation } from "./header/MobileNavigation";
 import { AuthButtons } from "./header/AuthButtons";
@@ -12,23 +13,27 @@ export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   
-  // Check if we're on a tutor profile page
+  // Check if we're on a profile page
+  const isStudentProfile = location.pathname.startsWith('/profile/student');
   const isTutorProfile = location.pathname.startsWith('/profile/tutor');
 
   // Generate navigation items based on user role
   const getNavigationItems = () => {
-    // If user is a student, don't show navigation in header (it's moved to dashboard)
-    if (user && userRole === "student") {
-      return null;
+    // If user is a student and we're on the student profile page, show student navigation
+    if (user && userRole === "student" && isStudentProfile) {
+      return <StudentNavigation />;
     }
-    
     // If user is a tutor, show tutor navigation
     else if (user && userRole === "tutor") {
       return <TutorNavigation />;
     } 
+    // For unauthenticated users or student not on profile page, show standard menu
+    else if (!isStudentProfile) {
+      return <GuestNavigation />;
+    }
     
-    // For unauthenticated users, show standard menu
-    return <GuestNavigation />;
+    // Return null for other cases
+    return null;
   };
 
   return (
@@ -42,8 +47,8 @@ export const Header = () => {
           {getNavigationItems()}
         </nav>
         
-        {/* Only show auth buttons if not on tutor profile page */}
-        {!isTutorProfile && (
+        {/* Only show auth buttons if not on profile pages */}
+        {!isStudentProfile && !isTutorProfile && (
           <AuthButtons isAuthenticated={!!user} userRole={userRole} />
         )}
       </div>

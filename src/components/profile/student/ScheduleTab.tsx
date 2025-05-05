@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Calendar, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +29,7 @@ export const ScheduleTab = () => {
                 variant="outline" 
                 className="mt-4"
               >
-                Перейти к расписанию
+                Найти репетитора
               </Button>
             </div>
           )}
