@@ -9,8 +9,8 @@ import { StudentContactDialog } from "./students/StudentContactDialog";
 
 export const StudentsTab = () => {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedLevel, setSelectedLevel] = useState("");
-  const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState("all");
+  const [selectedSubject, setSelectedSubject] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
   const [selectedStudent, setSelectedStudent] = useState<typeof mockStudents[0] | null>(null);
   const [showContactDialog, setShowContactDialog] = useState(false);
@@ -30,10 +30,10 @@ export const StudentsTab = () => {
       student.city.toLowerCase().includes(searchTerm.toLowerCase());
     
     // Level filter
-    const matchesLevel = selectedLevel === "" || student.level === selectedLevel;
+    const matchesLevel = selectedLevel === "all" || student.level === selectedLevel;
     
     // Subject filter
-    const matchesSubject = selectedSubject === "" || 
+    const matchesSubject = selectedSubject === "all" || 
       student.subjects.some(subj => subj === selectedSubject);
     
     // Tab/status filter
