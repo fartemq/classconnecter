@@ -16,7 +16,7 @@ const tutorTabs = [
   { name: "Главная", path: "/profile/tutor", icon: Home },
   { name: "Информация о преподавании", path: "/profile/tutor?tab=teaching", icon: FileText },
   { name: "Расписание", path: "/profile/tutor?tab=schedule", icon: Calendar },
-  { name: "Ученики", path: "/profile/tutor?tab=students", icon: Users },
+  { name: "Управление учениками", path: "/profile/tutor?tab=students", icon: Users },
   { name: "Сообщения", path: "/profile/tutor?tab=chats", icon: MessageSquare },
   { name: "Статистика", path: "/profile/tutor?tab=stats", icon: BarChart },
   { name: "Настройки", path: "/profile/tutor?tab=settings", icon: Settings },

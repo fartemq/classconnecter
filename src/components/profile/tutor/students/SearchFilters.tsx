@@ -36,7 +36,7 @@ export const SearchFilters = ({
       <CardHeader className="pb-3">
         <CardTitle>Поиск учеников</CardTitle>
         <CardDescription>
-          Найдите новых учеников или посмотрите своих текущих учеников
+          Найдите новых учеников и отправьте им запрос на подключение
         </CardDescription>
       </CardHeader>
       <CardContent>
