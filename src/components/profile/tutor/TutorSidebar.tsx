@@ -2,14 +2,14 @@
 import React from "react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Profile } from "@/hooks/useProfile";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { MapPin, Star, BookOpen, Users, Pencil, CheckCircle, Calendar, BarChart } from "lucide-react";
+import { TutorProfile } from "@/types/tutor";
 
 interface TutorSidebarProps {
-  profile: Profile;
+  profile: TutorProfile;
 }
 
 export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
@@ -18,10 +18,10 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
   
   // This would ideally come from the database in a real implementation
   const tutorStats = {
-    rating: 4.8,
-    reviewsCount: 12,
-    lessonsCount: 45,
-    studentsCount: 8,
+    rating: profile.rating || 4.8,
+    reviewsCount: profile.reviewsCount || 12,
+    lessonsCount: profile.completedLessons || 45,
+    studentsCount: profile.activeStudents || 8,
     profileCompleteness: 65
   };
   
@@ -38,8 +38,8 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
   
   // Проверить, заполнены ли основные разделы профиля
   const profileSections = [
-    { name: "О себе", completed: Boolean(profile?.first_name && profile?.last_name && profile?.bio), tab: "about" },
-    { name: "Методология", completed: false, tab: "methodology" },
+    { name: "О себе", completed: Boolean(profile?.firstName && profile?.lastName && profile?.bio), tab: "about" },
+    { name: "Методология", completed: Boolean(profile?.methodology), tab: "methodology" },
     { name: "Учебные материалы", completed: false, tab: "materials" },
     { name: "Расписание", completed: false, tab: "schedule" }
   ];
@@ -51,15 +51,15 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
         <CardHeader className="text-center pb-2">
           <div className="relative mx-auto mb-4">
             <div className="w-32 h-32 rounded-full bg-gray-200 mx-auto overflow-hidden">
-              {profile?.avatar_url ? (
+              {profile?.avatarUrl ? (
                 <img 
-                  src={profile.avatar_url} 
-                  alt={`${profile.first_name} ${profile.last_name || ''}`}
+                  src={profile.avatarUrl} 
+                  alt={`${profile.firstName} ${profile.lastName || ''}`}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400 text-4xl">
-                  {profile?.first_name?.charAt(0) || "Р"}
+                  {profile?.firstName?.charAt(0) || "Р"}
                 </div>
               )}
             </div>
@@ -71,7 +71,7 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
           </div>
           
           <h2 className="text-xl font-semibold mb-1">
-            {profile?.first_name} {profile?.last_name}
+            {profile?.firstName} {profile?.lastName}
           </h2>
           
           {profile?.city && (
