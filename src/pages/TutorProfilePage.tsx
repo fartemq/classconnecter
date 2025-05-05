@@ -101,7 +101,7 @@ const TutorProfilePage = () => {
       case "stats":
         return <AdvancedStatsTab tutorId={profile.id} />;
       case "settings":
-        return <TutorSettingsTab profile={tutorProfile} />;
+        return <TutorSettingsTab profile={profile} />;
       default:
         return <TutorDashboard profile={profile} />;
     }
