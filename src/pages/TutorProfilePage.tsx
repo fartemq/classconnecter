@@ -17,7 +17,6 @@ import { TutorDashboard } from "@/components/profile/tutor/TutorDashboard";
 import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
 import { useLocation, useNavigate } from "react-router-dom";
-import { TutorProfile } from "@/types/tutor";
 
 const TutorProfilePage = () => {
   const { profile, isLoading } = useProfile("tutor");
@@ -57,49 +56,31 @@ const TutorProfilePage = () => {
     );
   }
 
-  // Convert profile from useProfile to TutorProfile format
-  const tutorProfile: TutorProfile = profile ? {
-    id: profile.id,
-    firstName: profile.first_name,
-    lastName: profile.last_name || "",
-    bio: profile.bio || "",
-    city: profile.city || "",
-    avatarUrl: profile.avatar_url || undefined,
-    subjects: [], // Initialize with empty array, will be populated elsewhere if needed
-  } : {
-    id: "",
-    firstName: "",
-    lastName: "",
-    bio: "",
-    city: "",
-    subjects: [],
-  };
-
   // Function to render the active tab content
   const renderTabContent = () => {
-    if (!tutorProfile) return null;
+    if (!profile) return null;
     
     switch (activeTab) {
       case "dashboard":
-        return <TutorDashboard profile={tutorProfile} />;
+        return <TutorDashboard profile={profile} />;
       case "about":
-        return <TutorAboutTab profile={tutorProfile} />;
+        return <TutorAboutTab profile={profile} />;
       case "methodology":
-        return <MethodologyTab profile={tutorProfile} />;
+        return <MethodologyTab profile={profile} />;
       case "materials":
-        return <MaterialsTab tutorId={tutorProfile.id} />;
+        return <MaterialsTab tutorId={profile.id} />;
       case "schedule":
-        return <AdvancedScheduleTab tutorId={tutorProfile.id} />;
+        return <AdvancedScheduleTab tutorId={profile.id} />;
       case "students":
         return <StudentsTab />;
       case "chats":
         return <ChatsTab />;
       case "stats":
-        return <AdvancedStatsTab tutorId={tutorProfile.id} />;
+        return <AdvancedStatsTab tutorId={profile.id} />;
       case "settings":
-        return <TutorSettingsTab profile={tutorProfile} />;
+        return <TutorSettingsTab profile={profile} />;
       default:
-        return <TutorDashboard profile={tutorProfile} />;
+        return <TutorDashboard profile={profile} />;
     }
   };
 
@@ -113,7 +94,7 @@ const TutorProfilePage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Sidebar always visible */}
             <div className="col-span-1">
-              {tutorProfile && <TutorSidebar profile={tutorProfile} />}
+              {profile && <TutorSidebar profile={profile} />}
             </div>
             
             {/* Main content */}
