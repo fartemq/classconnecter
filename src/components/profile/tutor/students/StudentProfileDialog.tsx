@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Mail, MapPin, Book, Graduation, Info, Calendar, Heart } from "lucide-react";
+import { Mail, MapPin, Book, GraduationCap, Info, Calendar, Heart } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
@@ -69,7 +69,7 @@ export const StudentProfileDialog = ({
               
               <div className="mt-3 flex flex-wrap gap-2">
                 <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
-                  <Graduation className="h-3.5 w-3.5 mr-1" />
+                  <GraduationCap className="h-3.5 w-3.5 mr-1" />
                   {student.level}{student.grade ? `, ${student.grade}` : ''}
                 </Badge>
                 {student.subjects.map(subject => (

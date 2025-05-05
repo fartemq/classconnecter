@@ -11,7 +11,7 @@ import {
   Mail, 
   Eye, 
   BookOpen,
-  Graduation
+  GraduationCap
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -324,7 +324,7 @@ const StudentsList = ({ students, onContact, onViewProfile }: StudentsListProps)
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Уровень</p>
                     <div className="flex items-center">
-                      <Graduation className="h-4 w-4 mr-1.5 text-gray-600" />
+                      <GraduationCap className="h-4 w-4 mr-1.5 text-gray-600" />
                       <span>{student.level}{student.grade ? `, ${student.grade}` : ''}</span>
                     </div>
                   </div>
