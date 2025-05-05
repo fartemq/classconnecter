@@ -16,19 +16,20 @@ export const Header = () => {
   // Check if we're on a profile page
   const isStudentProfile = location.pathname.startsWith('/profile/student');
   const isTutorProfile = location.pathname.startsWith('/profile/tutor');
+  const isMainStudentPage = location.pathname === '/profile/student';
 
-  // Generate navigation items based on user role
+  // Generate navigation items based on user role and path
   const getNavigationItems = () => {
-    // If user is a student and we're on the student profile page, show student navigation
-    if (user && userRole === "student" && isStudentProfile) {
+    // Only show student navigation when on student profile pages but not on main dashboard
+    if (user && userRole === "student" && isStudentProfile && !isMainStudentPage) {
       return <StudentNavigation />;
     }
     // If user is a tutor, show tutor navigation
-    else if (user && userRole === "tutor") {
+    else if (user && userRole === "tutor" && isTutorProfile) {
       return <TutorNavigation />;
     } 
     // For unauthenticated users or student not on profile page, show standard menu
-    else if (!isStudentProfile) {
+    else if (!isStudentProfile && !isTutorProfile) {
       return <GuestNavigation />;
     }
     

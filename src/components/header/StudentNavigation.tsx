@@ -6,7 +6,7 @@ import {
   FileText, Settings, User, Sparkles
 } from "lucide-react";
 
-// Student navigation tabs - updated to match the image
+// Student navigation tabs
 const studentTabs = [
   { name: "Главная", path: "/profile/student", icon: Home },
   { name: "Расписание", path: "/profile/student/schedule", icon: Calendar },
@@ -28,7 +28,7 @@ export const StudentNavigation = () => {
   };
 
   return (
-    <div className="flex items-center gap-1 overflow-x-auto">
+    <div className="flex items-center gap-1 overflow-x-auto py-1">
       {studentTabs.map((tab) => (
         <Link 
           key={tab.path}
@@ -37,7 +37,7 @@ export const StudentNavigation = () => {
             isStudentTabActive(tab.path) 
               ? "text-primary font-medium bg-primary/10 shadow-sm" 
               : "text-gray-700 hover:bg-gray-100"
-          } px-2 py-1.5 rounded-md flex items-center gap-1.5 transition-all relative text-sm whitespace-nowrap`}
+          } px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all relative text-xs whitespace-nowrap`}
         >
           <tab.icon className="h-3.5 w-3.5" />
           <span>{tab.name}</span>

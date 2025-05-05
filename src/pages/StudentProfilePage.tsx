@@ -14,10 +14,14 @@ import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChatConversation } from "@/components/profile/student/ChatConversation";
+import { StudentProfileSidebar } from "@/components/profile/student/StudentProfileSidebar";
 
 const StudentProfilePage = () => {
   const { profile, isLoading } = useProfile("student");
   const location = useLocation();
+  
+  // Check if we're on the main student dashboard page
+  const isMainDashboard = location.pathname === "/profile/student";
   
   // Parse URL to determine the active tab and any tutor ID for chat
   const getTabContent = () => {
@@ -63,9 +67,25 @@ const StudentProfilePage = () => {
       <Header />
       <main className="flex-grow bg-gray-50 py-8">
         <div className="container mx-auto px-4">
-          <Card className="p-6 shadow-md border-none">
-            {getTabContent()}
-          </Card>
+          {isMainDashboard ? (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Sidebar - only shown on main dashboard */}
+              <div className="lg:col-span-1">
+                <StudentProfileSidebar />
+              </div>
+              
+              {/* Main content area */}
+              <div className="lg:col-span-3">
+                <Card className="p-6 shadow-md border-none">
+                  {getTabContent()}
+                </Card>
+              </div>
+            </div>
+          ) : (
+            <Card className="p-6 shadow-md border-none">
+              {getTabContent()}
+            </Card>
+          )}
         </div>
       </main>
       <Footer className="py-2" />

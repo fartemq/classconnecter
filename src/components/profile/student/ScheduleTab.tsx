@@ -61,26 +61,26 @@ export const ScheduleTab = () => {
   };
   
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-blue-600">Расписание занятий</h2>
-        <Calendar size={22} className="text-blue-600" />
+        <h2 className="text-lg font-semibold text-blue-600">Расписание занятий</h2>
+        <Calendar size={20} className="text-blue-600" />
       </div>
       
-      <Card>
+      <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg">
+            <CardTitle className="text-base">
               {format(selectedWeek, 'LLLL yyyy', { locale: ru })}
             </CardTitle>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="icon" onClick={goToPreviousWeek}>
+              <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={() => setSelectedWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))}>
+              <Button variant="outline" size="sm" onClick={() => setSelectedWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))}>
                 Сегодня
               </Button>
-              <Button variant="outline" size="icon" onClick={goToNextWeek}>
+              <Button variant="outline" size="sm" onClick={goToNextWeek}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -97,11 +97,11 @@ export const ScheduleTab = () => {
                 <Button 
                   key={day.dayNumber} 
                   variant={isSameDay(day.date, currentDate) ? "default" : "outline"}
-                  className={`flex flex-col items-center justify-center h-16 relative ${isToday ? 'border-blue-500' : ''}`}
+                  className={`flex flex-col items-center justify-center h-14 relative ${isToday ? 'border-blue-500' : ''}`}
                   onClick={() => setCurrentDate(day.date)}
                 >
                   <span className="text-xs">{day.dayName}</span>
-                  <span className={`text-lg ${isToday ? 'font-bold' : ''}`}>{day.dayNumber}</span>
+                  <span className={`text-base ${isToday ? 'font-bold' : ''}`}>{day.dayNumber}</span>
                   {hasLessons && (
                     <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                   )}
@@ -111,13 +111,13 @@ export const ScheduleTab = () => {
           </div>
           
           {/* Lessons for the selected day */}
-          <div className="space-y-4 mt-6">
-            <h3 className="font-medium">{format(currentDate, 'EEEE, d MMMM', { locale: ru })}</h3>
+          <div className="space-y-4 mt-4">
+            <h3 className="font-medium text-sm">{format(currentDate, 'EEEE, d MMMM', { locale: ru })}</h3>
             
             {getLessonsForDate(currentDate).length > 0 ? (
               getLessonsForDate(currentDate).map((lesson) => (
-                <div key={lesson.id} className="flex items-center p-4 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mr-4">
+                <div key={lesson.id} className="flex items-center p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
                     {lesson.tutorAvatar ? (
                       <img 
                         src={lesson.tutorAvatar} 
@@ -130,25 +130,26 @@ export const ScheduleTab = () => {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center">
-                      <h4 className="font-medium">{lesson.subject}</h4>
+                      <h4 className="font-medium text-sm">{lesson.subject}</h4>
                       <Badge className="ml-2" variant="outline">
                         {lesson.duration} мин
                       </Badge>
                     </div>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-xs text-gray-600">
                       {lesson.tutorName} • {format(lesson.date, 'HH:mm')}
                     </p>
                   </div>
-                  <Button size="sm" variant="outline">Детали</Button>
+                  <Button size="sm" variant="outline" className="text-xs">Детали</Button>
                 </div>
               ))
             ) : (
-              <div className="text-center py-12 text-gray-500">
-                <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-lg font-medium">На этот день занятий не запланировано</p>
+              <div className="text-center py-8 text-gray-500">
+                <Clock className="h-10 w-10 mx-auto mb-3 text-gray-300" />
+                <p className="text-base font-medium">На этот день занятий не запланировано</p>
                 <Button 
                   variant="outline" 
-                  className="mt-4"
+                  className="mt-3 text-xs"
+                  size="sm"
                 >
                   Найти репетитора
                 </Button>
