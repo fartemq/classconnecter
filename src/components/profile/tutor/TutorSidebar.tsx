@@ -4,7 +4,9 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Profile } from "@/hooks/useProfile";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, BookOpen, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { MapPin, Star, BookOpen, Users, Pencil, CheckCircle, Calendar, BarChart } from "lucide-react";
 
 interface TutorSidebarProps {
   profile: Profile;
@@ -14,24 +16,37 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Check if we're on the main tutor dashboard page
-  const isMainDashboard = location.pathname === "/profile/tutor" && !location.search;
-  
   // This would ideally come from the database in a real implementation
   const tutorStats = {
     rating: 4.8,
     reviewsCount: 12,
     lessonsCount: 45,
-    studentsCount: 8
+    studentsCount: 8,
+    profileCompleteness: 65
+  };
+  
+  // Определить активную вкладку из URL
+  const getActiveTab = () => {
+    const params = new URLSearchParams(location.search);
+    return params.get("tab") || "dashboard";
   };
 
-  // Only render content if we're on the main dashboard
-  if (!isMainDashboard) {
-    return null; // Don't render anything if not on main dashboard
-  }
+  // Перейти на вкладку заполнения профиля
+  const navigateToProfileTab = (tab: string) => {
+    navigate(`/profile/tutor?tab=${tab}`);
+  };
+  
+  // Проверить, заполнены ли основные разделы профиля
+  const profileSections = [
+    { name: "О себе", completed: Boolean(profile?.first_name && profile?.last_name && profile?.bio), tab: "about" },
+    { name: "Методология", completed: false, tab: "methodology" },
+    { name: "Учебные материалы", completed: false, tab: "materials" },
+    { name: "Расписание", completed: false, tab: "schedule" }
+  ];
 
   return (
     <div className="space-y-4">
+      {/* Профиль репетитора */}
       <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
         <CardHeader className="text-center pb-2">
           <div className="relative mx-auto mb-4">
@@ -88,10 +103,95 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
               <p className="font-medium">{tutorStats.studentsCount}</p>
             </div>
           </div>
+
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="w-full"
+            onClick={() => navigateToProfileTab("about")}
+          >
+            <Pencil className="h-4 w-4 mr-2" />
+            Редактировать профиль
+          </Button>
         </CardContent>
       </Card>
-      
-      {/* Removed the second card since we're only showing content on the main dashboard */}
+
+      {/* Заполнение профиля */}
+      <Card>
+        <CardHeader className="pb-2">
+          <h3 className="text-lg font-medium">Заполнение профиля</h3>
+          <div className="flex items-center justify-between text-sm mt-1">
+            <span>Прогресс</span>
+            <span className="font-medium">{tutorStats.profileCompleteness}%</span>
+          </div>
+          <Progress value={tutorStats.profileCompleteness} className="h-2" />
+        </CardHeader>
+        <CardContent className="pt-2">
+          <div className="space-y-3">
+            {profileSections.map((section) => (
+              <div 
+                key={section.name}
+                className="flex items-center justify-between py-1 cursor-pointer hover:bg-gray-50 px-2 rounded-md transition-colors"
+                onClick={() => navigateToProfileTab(section.tab)}
+              >
+                <div className="flex items-center">
+                  {section.completed ? (
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                  ) : (
+                    <div className="h-5 w-5 border-2 border-gray-300 rounded-full mr-2" />
+                  )}
+                  <span className={section.completed ? "text-gray-700" : "text-gray-500"}>
+                    {section.name}
+                  </span>
+                </div>
+                <Pencil className="h-4 w-4 text-gray-400" />
+              </div>
+            ))}
+          </div>
+
+          <div className="mt-4 pt-4 border-t">
+            <h4 className="text-sm font-medium mb-3">Быстрый доступ</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs justify-start"
+                onClick={() => navigateToProfileTab("schedule")}
+              >
+                <Calendar className="h-3 w-3 mr-1" />
+                Расписание
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs justify-start"
+                onClick={() => navigateToProfileTab("students")}
+              >
+                <Users className="h-3 w-3 mr-1" />
+                Ученики
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs justify-start"
+                onClick={() => navigateToProfileTab("stats")}
+              >
+                <BarChart className="h-3 w-3 mr-1" />
+                Статистика
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="text-xs justify-start"
+                onClick={() => navigateToProfileTab("materials")}
+              >
+                <BookOpen className="h-3 w-3 mr-1" />
+                Материалы
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues } from "@/types/tutor";
 import { toast } from "@/hooks/use-toast";
@@ -63,6 +64,10 @@ export const saveTutorProfile = async (values: TutorFormValues, userId: string, 
         education_institution: values.educationInstitution,
         degree: values.degree,
         graduation_year: values.graduationYear,
+        methodology: values.methodology,
+        experience: values.experience,
+        achievements: values.achievements,
+        video_url: values.videoUrl,
         updated_at: new Date().toISOString(),
       }).eq("id", userId);
       
@@ -76,6 +81,10 @@ export const saveTutorProfile = async (values: TutorFormValues, userId: string, 
         education_institution: values.educationInstitution || '',
         degree: values.degree || '',
         graduation_year: values.graduationYear || new Date().getFullYear(),
+        methodology: values.methodology || '',
+        experience: values.experience || 0,
+        achievements: values.achievements || '',
+        video_url: values.videoUrl || ''
       });
       
       if (tutorProfileError) {
@@ -207,10 +216,79 @@ export const fetchTutorProfile = async (userId: string) => {
       degree: tutorProfileData?.degree || "",
       graduationYear: tutorProfileData?.graduation_year || null,
       educationVerified: tutorProfileData?.education_verified || false,
-      subjects: formattedSubjects
+      methodology: tutorProfileData?.methodology || "",
+      experience: tutorProfileData?.experience || 0,
+      achievements: tutorProfileData?.achievements || "",
+      videoUrl: tutorProfileData?.video_url || "",
+      subjects: formattedSubjects,
+      rating: 0, // В будущем эти данные могут быть получены из базы данных
+      reviewsCount: 0,
+      completedLessons: 0,
+      activeStudents: 0
     };
   } catch (error) {
     console.error("Error fetching tutor profile:", error);
+    throw error;
+  }
+};
+
+export const fetchTutorMaterials = async (tutorId: string, subjectId?: string) => {
+  try {
+    let query = supabase
+      .from("tutor_materials")
+      .select("*")
+      .eq("tutor_id", tutorId);
+      
+    if (subjectId) {
+      query = query.eq("subject_id", subjectId);
+    }
+    
+    const { data, error } = await query.order("created_at", { ascending: false });
+    
+    if (error) throw error;
+    
+    return data || [];
+  } catch (error) {
+    console.error("Error fetching tutor materials:", error);
+    throw error;
+  }
+};
+
+export const saveTutorMaterial = async (tutorId: string, material: any) => {
+  try {
+    const { data, error } = await supabase
+      .from("tutor_materials")
+      .insert({
+        tutor_id: tutorId,
+        subject_id: material.subjectId || null,
+        title: material.title,
+        type: material.type,
+        url: material.url,
+        description: material.description || null
+      })
+      .select();
+      
+    if (error) throw error;
+    
+    return data[0];
+  } catch (error) {
+    console.error("Error saving tutor material:", error);
+    throw error;
+  }
+};
+
+export const deleteTutorMaterial = async (materialId: string) => {
+  try {
+    const { error } = await supabase
+      .from("tutor_materials")
+      .delete()
+      .eq("id", materialId);
+      
+    if (error) throw error;
+    
+    return true;
+  } catch (error) {
+    console.error("Error deleting tutor material:", error);
     throw error;
   }
 };

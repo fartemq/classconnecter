@@ -11,6 +11,10 @@ export interface TutorFormValues {
   educationInstitution?: string;
   degree?: string;
   graduationYear?: number;
+  methodology?: string;
+  experience?: number;
+  achievements?: string;
+  videoUrl?: string;
 }
 
 export interface TutorProfile {
@@ -25,6 +29,14 @@ export interface TutorProfile {
   graduationYear?: number;
   educationVerified?: boolean;
   subjects: TutorSubject[];
+  methodology?: string;
+  experience?: number;
+  achievements?: string;
+  videoUrl?: string;
+  rating?: number;
+  reviewsCount?: number;
+  completedLessons?: number;
+  activeStudents?: number;
 }
 
 export interface TutorSubject {
@@ -33,4 +45,44 @@ export interface TutorSubject {
   hourlyRate: number;
   experienceYears?: number;
   description?: string;
+  materials?: TutorMaterial[];
+}
+
+export interface TutorMaterial {
+  id: string;
+  title: string;
+  type: 'document' | 'video' | 'audio' | 'link';
+  url: string;
+  description?: string;
+}
+
+export interface TutorSchedule {
+  id: string;
+  tutorId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+}
+
+export interface TutorReview {
+  id: string;
+  tutorId: string;
+  studentId: string;
+  studentName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
+
+export interface TutorStatistics {
+  totalLessons: number;
+  totalHours: number;
+  totalStudents: number;
+  averageRating: number;
+  totalEarnings: number;
+  monthlyEarnings: {
+    month: string;
+    earnings: number;
+  }[];
 }
