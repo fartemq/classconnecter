@@ -29,6 +29,7 @@ export interface Student {
   lastActive: string;
   level: string;
   grade: string | null;
+  school: string | null;
   subjects: string[];
   city: string;
   about: string;

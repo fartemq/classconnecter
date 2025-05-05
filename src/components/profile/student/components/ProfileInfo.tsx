@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { User, MapPin, Phone, GraduationCap } from "lucide-react";
+import { User, MapPin, Phone, GraduationCap, School } from "lucide-react";
 
 interface ProfileInfoProps {
   firstName: string;
@@ -10,6 +10,8 @@ interface ProfileInfoProps {
   phone?: string | null;
   bio?: string | null;
   level?: string;
+  school?: string | null;
+  grade?: string | null;
 }
 
 export const ProfileInfo = ({ 
@@ -18,7 +20,9 @@ export const ProfileInfo = ({
   city, 
   phone, 
   bio,
-  level = "Ученик" 
+  level = "Ученик",
+  school,
+  grade
 }: ProfileInfoProps) => {
   return (
     <>
@@ -31,6 +35,13 @@ export const ProfileInfo = ({
           <GraduationCap className="mr-1 h-3.5 w-3.5" />
           {level}
         </Badge>
+        
+        {grade && (
+          <Badge className="bg-green-100 text-green-800 border-green-200">
+            <School className="mr-1 h-3.5 w-3.5" />
+            {grade}
+          </Badge>
+        )}
       </div>
       
       {city && (
@@ -44,6 +55,13 @@ export const ProfileInfo = ({
         <div className="flex items-center justify-center text-sm text-gray-600 mt-1">
           <Phone size={16} className="mr-1" />
           <span>{phone}</span>
+        </div>
+      )}
+      
+      {school && (
+        <div className="flex items-center justify-center text-sm text-gray-600 mt-1">
+          <School size={16} className="mr-1" />
+          <span>{school}</span>
         </div>
       )}
       

@@ -14,6 +14,8 @@ export interface Profile {
   city: string | null;
   phone: string | null;
   role: string;
+  school?: string | null;
+  grade?: string | null;
 }
 
 export const useProfile = (requiredRole?: string) => {
