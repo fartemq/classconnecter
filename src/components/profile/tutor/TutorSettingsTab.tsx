@@ -3,10 +3,10 @@ import React from "react";
 import { Profile } from "@/hooks/useProfile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Settings, LogOut, User, Bell, Lock } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TutorSettingsTabProps {
   profile: Profile;
@@ -14,15 +14,12 @@ interface TutorSettingsTabProps {
 
 export const TutorSettingsTab = ({ profile }: TutorSettingsTabProps) => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Выход выполнен успешно",
-        description: "Вы вышли из своего аккаунта",
-      });
-      navigate("/login");
+      await signOut();
+      // Переадресация и уведомления происходят в функции signOut
     } catch (error) {
       console.error("Ошибка выхода:", error);
       toast({

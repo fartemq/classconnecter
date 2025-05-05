@@ -21,7 +21,7 @@ export const AuthButtons = ({ isAuthenticated, userRole }: AuthButtonsProps) => 
         title: "Выход выполнен",
         description: "Вы успешно вышли из системы"
       });
-      navigate("/");
+      // Перенаправление происходит в функции logoutUser
     } catch (error) {
       console.error("Ошибка выхода:", error);
       toast({

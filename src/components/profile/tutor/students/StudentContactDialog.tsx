@@ -14,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Send, Book } from "lucide-react";
 import { Student } from "@/types/student";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface StudentContactDialogProps {
   student: Student;
@@ -29,20 +31,57 @@ export const StudentContactDialog = ({
   const [subject, setSubject] = useState(`Приглашение на пробное занятие по предмету ${student.subjects[0] || "N/A"}`);
   const [message, setMessage] = useState(`Здравствуйте, ${student.name}!\n\nЯ заинтересован в проведении занятий с вами. Давайте обсудим детали и возможность организации пробного урока.\n\nС уважением,\n[Ваше имя]`);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!user) {
+      toast({
+        title: "Ошибка",
+        description: "Вы должны быть авторизованы для отправки сообщений",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
-    // Имитация отправки сообщения
-    setTimeout(() => {
+    try {
+      // Получаем ID студента из объекта student
+      const studentId = student.id;
+      
+      // Создаем новое сообщение в базе данных
+      const { data, error } = await supabase
+        .from("messages")
+        .insert({
+          sender_id: user.id,
+          receiver_id: studentId,
+          subject: subject,
+          content: message,
+          is_read: false
+        });
+      
+      if (error) {
+        throw error;
+      }
+      
       toast({
         title: "Сообщение отправлено",
         description: `Ваше сообщение ученику ${student.name} успешно отправлено`,
       });
-      setIsSubmitting(false);
+      
       onClose();
-    }, 1000);
+    } catch (error) {
+      console.error("Ошибка при отправке сообщения:", error);
+      toast({
+        title: "Ошибка отправки",
+        description: "Не удалось отправить сообщение. Пожалуйста, попробуйте позже.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (

@@ -103,8 +103,16 @@ export const loginUser = async (email: string, password: string) => {
 
 export const logoutUser = async () => {
   try {
+    // Исправленная функция выхода из системы
     const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    
+    if (error) {
+      console.error("Logout error:", error);
+      throw error;
+    }
+    
+    // После успешного выхода перенаправляем на главную страницу
+    window.location.href = "/";
     return true;
   } catch (error) {
     console.error("Logout error:", error);

@@ -103,12 +103,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = async () => {
     try {
-      await supabase.auth.signOut();
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        console.error("Error signing out:", error);
+        toast({
+          title: "Ошибка",
+          description: "Произошла ошибка при выходе",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      // Очищаем состояние после успешного выхода
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      
       toast({
         title: "Выход выполнен успешно",
         description: "Вы вышли из своей учетной записи",
       });
-      navigate("/login");
+      
+      // Перенаправляем на главную страницу
+      navigate("/");
     } catch (error) {
       console.error("Error signing out:", error);
       toast({
