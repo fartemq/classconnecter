@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Users, Star, MapPin, Filter, Clock, MessageSquare, Calendar, Phone, Mail } from "lucide-react";
+import { Search, Users, Star, MapPin, Filter, Clock, MessageSquare, Calendar, Phone, Mail, User } from "lucide-react";
 import { TutorRequestsSection } from "./TutorRequestsSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
