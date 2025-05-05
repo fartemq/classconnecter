@@ -23,9 +23,9 @@ export const HomeworkTab = () => {
   const renderHomeworkList = (homeworkList: any[], emptyMessage: string) => {
     if (homeworkList.length === 0) {
       return (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-12 bg-gray-50 rounded-lg">
           <FileText className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-          <p className="text-base font-medium">{emptyMessage}</p>
+          <p className="text-base font-medium text-gray-500">{emptyMessage}</p>
           <Button className="mt-3" size="sm">Создать новое задание</Button>
         </div>
       );
@@ -34,7 +34,7 @@ export const HomeworkTab = () => {
     return (
       <div className="space-y-3">
         {homeworkList.map((homework) => (
-          <Card key={homework.id} className="overflow-hidden shadow-sm rounded-lg">
+          <Card key={homework.id} className="overflow-hidden shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <div>
@@ -84,7 +84,7 @@ export const HomeworkTab = () => {
   };
   
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-green-600">Домашние задания</h2>
         <FileText size={20} className="text-green-600" />

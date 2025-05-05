@@ -37,9 +37,9 @@ export const StudentNavigation = () => {
             isStudentTabActive(tab.path) 
               ? "text-primary font-medium bg-primary/10 shadow-sm" 
               : "text-gray-700 hover:bg-gray-100"
-          } px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all relative text-xs whitespace-nowrap`}
+          } px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all relative text-sm whitespace-nowrap`}
         >
-          <tab.icon className="h-3.5 w-3.5" />
+          <tab.icon className="h-4 w-4" />
           <span>{tab.name}</span>
         </Link>
       ))}

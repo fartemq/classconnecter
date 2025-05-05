@@ -1,6 +1,6 @@
 
 import React, { useState } from "react";
-import { Calendar, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -60,27 +60,36 @@ export const ScheduleTab = () => {
     setSelectedWeek(addDays(selectedWeek, 7));
   };
   
+  // Get month and year in Russian
+  const currentMonth = format(selectedWeek, 'LLLL yyyy', { locale: ru });
+  const formattedCurrentDate = format(currentDate, 'EEEE, d MMMM', { locale: ru });
+  
   return (
-    <div className="space-y-4 max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-blue-600">Расписание занятий</h2>
-        <Calendar size={20} className="text-blue-600" />
+        <CalendarIcon size={20} className="text-blue-600" />
       </div>
       
       <Card className="shadow-sm">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-base">
-              {format(selectedWeek, 'LLLL yyyy', { locale: ru })}
+            <CardTitle className="text-base capitalize">
+              {currentMonth}
             </CardTitle>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={goToPreviousWeek}>
+              <Button variant="outline" size="sm" onClick={goToPreviousWeek} className="h-8 w-8 p-0">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setSelectedWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))}>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setSelectedWeek(startOfWeek(new Date(), { weekStartsOn: 1 }))}
+                className="h-8 text-xs px-3"
+              >
                 Сегодня
               </Button>
-              <Button variant="outline" size="sm" onClick={goToNextWeek}>
+              <Button variant="outline" size="sm" onClick={goToNextWeek} className="h-8 w-8 p-0">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
@@ -92,17 +101,21 @@ export const ScheduleTab = () => {
             {weekDays.map((day) => {
               const isToday = isSameDay(day.date, new Date());
               const hasLessons = getLessonsForDate(day.date).length > 0;
+              const isSelected = isSameDay(day.date, currentDate);
               
               return (
                 <Button 
                   key={day.dayNumber} 
-                  variant={isSameDay(day.date, currentDate) ? "default" : "outline"}
-                  className={`flex flex-col items-center justify-center h-14 relative ${isToday ? 'border-blue-500' : ''}`}
+                  variant={isSelected ? "default" : "outline"}
+                  className={`flex flex-col items-center justify-center h-14 relative 
+                    ${isToday ? 'border-blue-500' : ''}
+                    ${isSelected ? 'bg-blue-600 text-white' : ''}
+                  `}
                   onClick={() => setCurrentDate(day.date)}
                 >
                   <span className="text-xs">{day.dayName}</span>
                   <span className={`text-base ${isToday ? 'font-bold' : ''}`}>{day.dayNumber}</span>
-                  {hasLessons && (
+                  {hasLessons && !isSelected && (
                     <span className="absolute bottom-1 w-1.5 h-1.5 rounded-full bg-blue-500"></span>
                   )}
                 </Button>
@@ -111,44 +124,46 @@ export const ScheduleTab = () => {
           </div>
           
           {/* Lessons for the selected day */}
-          <div className="space-y-4 mt-4">
-            <h3 className="font-medium text-sm">{format(currentDate, 'EEEE, d MMMM', { locale: ru })}</h3>
+          <div className="mt-4">
+            <h3 className="font-medium text-sm capitalize mb-3">{formattedCurrentDate}</h3>
             
             {getLessonsForDate(currentDate).length > 0 ? (
-              getLessonsForDate(currentDate).map((lesson) => (
-                <div key={lesson.id} className="flex items-center p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                    {lesson.tutorAvatar ? (
-                      <img 
-                        src={lesson.tutorAvatar} 
-                        alt={lesson.tutorName} 
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-blue-500 font-medium">{lesson.tutorName.charAt(0)}</span>
-                    )}
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center">
-                      <h4 className="font-medium text-sm">{lesson.subject}</h4>
-                      <Badge className="ml-2" variant="outline">
-                        {lesson.duration} мин
-                      </Badge>
+              <div className="space-y-3">
+                {getLessonsForDate(currentDate).map((lesson) => (
+                  <div key={lesson.id} className="flex items-center p-3 border rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                      {lesson.tutorAvatar ? (
+                        <img 
+                          src={lesson.tutorAvatar} 
+                          alt={lesson.tutorName} 
+                          className="w-full h-full rounded-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-blue-500 font-medium">{lesson.tutorName.charAt(0)}</span>
+                      )}
                     </div>
-                    <p className="text-xs text-gray-600">
-                      {lesson.tutorName} • {format(lesson.date, 'HH:mm')}
-                    </p>
+                    <div className="flex-1">
+                      <div className="flex items-center">
+                        <h4 className="font-medium text-sm">{lesson.subject}</h4>
+                        <Badge className="ml-2" variant="outline">
+                          {lesson.duration} мин
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-600">
+                        {lesson.tutorName} • {format(lesson.date, 'HH:mm')}
+                      </p>
+                    </div>
+                    <Button size="sm" variant="outline" className="text-xs">Детали</Button>
                   </div>
-                  <Button size="sm" variant="outline" className="text-xs">Детали</Button>
-                </div>
-              ))
+                ))}
+              </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
+              <div className="text-center py-12 bg-gray-50 rounded-lg">
                 <Clock className="h-10 w-10 mx-auto mb-3 text-gray-300" />
-                <p className="text-base font-medium">На этот день занятий не запланировано</p>
+                <p className="text-base font-medium text-gray-500">На этот день занятий не запланировано</p>
                 <Button 
                   variant="outline" 
-                  className="mt-3 text-xs"
+                  className="mt-3"
                   size="sm"
                 >
                   Найти репетитора
