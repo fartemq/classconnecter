@@ -56,18 +56,15 @@ const App = () => {
                 <Route path="/profile/tutor/complete" element={<TutorCompletePage />} />
                 <Route path="/profile/tutor" element={<TutorProfilePage />} />
                 
-                {/* Student profile routes */}
-                <Route path="/profile/student" element={<StudentProfilePage />}>
-                  <Route path="schedule" element={<StudentSchedulePage />} />
-                  <Route path="tutors" element={<StudentTutorsPage />} />
-                  <Route path="favorites" element={<StudentFavoritesPage />} />
-                  <Route path="chats" element={<StudentChatsPage />} />
-                  <Route path="chats/:tutorId" element={<StudentChatsPage />} />
-                  <Route path="homework" element={<StudentHomeworkPage />} />
-                  <Route path="settings" element={<StudentSettingsPage />} />
-                </Route>
-                
-                {/* Separate route for edit profile */}
+                {/* Student profile routes - updated to use individual page components */}
+                <Route path="/profile/student" element={<StudentProfilePage />} />
+                <Route path="/profile/student/schedule" element={<StudentSchedulePage />} />
+                <Route path="/profile/student/tutors" element={<StudentTutorsPage />} />
+                <Route path="/profile/student/favorites" element={<StudentFavoritesPage />} />
+                <Route path="/profile/student/chats" element={<StudentChatsPage />} />
+                <Route path="/profile/student/chats/:tutorId" element={<StudentChatsPage />} />
+                <Route path="/profile/student/homework" element={<StudentHomeworkPage />} />
+                <Route path="/profile/student/settings" element={<StudentSettingsPage />} />
                 <Route path="/profile/student/edit" element={<StudentEditProfilePage />} />
               </Route>
               
