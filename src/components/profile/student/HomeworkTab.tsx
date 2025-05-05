@@ -4,19 +4,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { FileText, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export const HomeworkTab = () => {
   // Mock data - would come from database in real app
-  const currentHomework = [
-    {
-      id: 1,
-      title: "Решение квадратных уравнений",
-      subject: "Математика",
-      dueDate: "10 апреля 2025",
-      priority: "high",
-      status: "in progress"
-    }
-  ];
+  const currentHomework = [];
   
   const completedHomework = [
     {
@@ -34,6 +26,7 @@ export const HomeworkTab = () => {
         <div className="text-center py-12 text-gray-500">
           <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
           <p className="text-lg font-medium">{emptyMessage}</p>
+          <Button className="mt-4">Создать новое задание</Button>
         </div>
       );
     }
@@ -93,32 +86,11 @@ export const HomeworkTab = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-800">Домашние задания</h2>
-        <FileText size={22} className="text-gray-700" />
+        <h2 className="text-xl font-bold text-green-600">Домашние задания</h2>
+        <FileText size={22} className="text-green-600" />
       </div>
       
-      <Tabs defaultValue="current" className="space-y-6">
-        <TabsList className="mb-4 rounded-full p-1 w-full max-w-md mx-auto grid grid-cols-2">
-          <TabsTrigger value="current" className="flex items-center justify-center rounded-full py-2 px-4">
-            <Clock size={16} className="mr-2" />
-            Текущие
-            <Badge className="ml-2 bg-amber-500">{currentHomework.length}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="completed" className="flex items-center justify-center rounded-full py-2 px-4">
-            <CheckCircle size={16} className="mr-2" />
-            Выполненные
-            <Badge className="ml-2 bg-green-500">{completedHomework.length}</Badge>
-          </TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="current">
-          {renderHomeworkList(currentHomework, "У вас нет текущих домашних заданий.")}
-        </TabsContent>
-        
-        <TabsContent value="completed">
-          {renderHomeworkList(completedHomework, "У вас нет выполненных домашних заданий.")}
-        </TabsContent>
-      </Tabs>
+      {renderHomeworkList(currentHomework, "Нет активных домашних заданий для проверки")}
     </div>
   );
 };

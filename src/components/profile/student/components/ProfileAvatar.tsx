@@ -6,14 +6,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { Camera } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface ProfileAvatarProps {
   avatarUrl: string | null;
   firstName: string;
   lastName: string | null;
+  verified?: boolean;
 }
 
-export const ProfileAvatar = ({ avatarUrl, firstName, lastName }: ProfileAvatarProps) => {
+export const ProfileAvatar = ({ 
+  avatarUrl, 
+  firstName, 
+  lastName, 
+  verified = false 
+}: ProfileAvatarProps) => {
   const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
 
@@ -80,11 +87,15 @@ export const ProfileAvatar = ({ avatarUrl, firstName, lastName }: ProfileAvatarP
         {avatarUrl ? (
           <AvatarImage src={avatarUrl} alt={`${firstName} ${lastName || ""}`} />
         ) : (
-          <AvatarFallback className="text-lg bg-primary text-primary-foreground">
+          <AvatarFallback className="text-lg bg-gray-200 text-gray-500">
             {getInitials(firstName, lastName)}
           </AvatarFallback>
         )}
       </Avatar>
+      
+      {verified && (
+        <Badge className="absolute bottom-1 right-0 bg-green-500">Проверено</Badge>
+      )}
       
       <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
         <div className="flex flex-col items-center text-white">

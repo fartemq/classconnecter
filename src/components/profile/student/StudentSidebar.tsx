@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 interface StudentSidebarProps {
   profile: {
@@ -20,6 +21,8 @@ interface StudentSidebarProps {
     bio?: string | null;
     phone?: string | null;
     city?: string | null;
+    school?: string | null;
+    grade?: string | null;
   };
 }
 
@@ -47,6 +50,9 @@ export const StudentSidebar = ({ profile }: StudentSidebarProps) => {
     }
     return false;
   };
+
+  // Profile completion calculation
+  const profileProgress = 65;
   
   return (
     <div className="space-y-6">
@@ -59,6 +65,7 @@ export const StudentSidebar = ({ profile }: StudentSidebarProps) => {
             avatarUrl={profile.avatar_url}
             firstName={profile.first_name}
             lastName={profile.last_name}
+            verified={true}
           />
           
           <ProfileInfo 
@@ -67,10 +74,22 @@ export const StudentSidebar = ({ profile }: StudentSidebarProps) => {
             city={profile.city}
             phone={profile.phone}
             bio={profile.bio}
+            school={profile.school}
+            grade={profile.grade}
+            rating={4.8}
+            ratingCount={12}
           />
         </CardHeader>
         
         <CardContent>
+          <div className="p-4 bg-gray-50 rounded-lg mb-4">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm text-gray-600">Заполнение профиля</span>
+              <span className="text-sm font-medium">{profileProgress}%</span>
+            </div>
+            <Progress value={profileProgress} className="h-2" />
+          </div>
+          
           <Button 
             className="w-full mb-2" 
             onClick={() => navigate("/tutors")}

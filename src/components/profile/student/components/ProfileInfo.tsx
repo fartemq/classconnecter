@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Badge } from "@/components/ui/badge";
-import { User, MapPin, Phone, GraduationCap, School } from "lucide-react";
+import { User, MapPin, Phone, GraduationCap, School, Star } from "lucide-react";
 
 interface ProfileInfoProps {
   firstName: string;
@@ -12,6 +12,8 @@ interface ProfileInfoProps {
   level?: string;
   school?: string | null;
   grade?: string | null;
+  rating?: number;
+  ratingCount?: number;
 }
 
 export const ProfileInfo = ({ 
@@ -22,13 +24,25 @@ export const ProfileInfo = ({
   bio,
   level = "Ученик",
   school,
-  grade
+  grade,
+  rating,
+  ratingCount = 0
 }: ProfileInfoProps) => {
   return (
     <>
       <div className="text-xl font-medium mb-1">
         {firstName} {lastName}
       </div>
+      
+      {rating && (
+        <div className="flex items-center justify-center gap-1 text-amber-500 mb-2">
+          <Star className="h-4 w-4 fill-current" />
+          <span className="font-bold">{rating}</span>
+          {ratingCount > 0 && (
+            <span className="text-xs text-gray-500">({ratingCount} отзывов)</span>
+          )}
+        </div>
+      )}
       
       <div className="flex items-center justify-center gap-2 mb-3">
         <Badge className="bg-blue-100 text-blue-800 border-blue-200">

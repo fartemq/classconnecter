@@ -3,17 +3,21 @@ import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Calendar, Clock, Users, BookOpen, MessageSquare, 
-  BookText, GraduationCap, BookMarked 
+  BookText, GraduationCap, BookMarked, Edit, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 
 interface StudentDashboardProps {
   profile: {
     first_name: string;
     last_name: string | null;
     avatar_url: string | null;
+    city?: string | null;
+    school?: string | null;
+    grade?: string | null;
   };
 }
 
@@ -21,22 +25,7 @@ export const StudentDashboard = ({ profile }: StudentDashboardProps) => {
   const navigate = useNavigate();
   
   // Mock data for demonstration
-  const upcomingLessons = [
-    { 
-      id: 1, 
-      subject: "Математика", 
-      tutor: "Анна Петрова", 
-      time: "15:30 - 17:00", 
-      date: "Сегодня" 
-    },
-    { 
-      id: 2, 
-      subject: "Английский язык", 
-      tutor: "Иван Иванов", 
-      time: "10:00 - 11:30", 
-      date: "Завтра" 
-    }
-  ];
+  const upcomingLessons = [];
   
   const tutorMessages = [
     { 
@@ -52,59 +41,71 @@ export const StudentDashboard = ({ profile }: StudentDashboardProps) => {
       time: "Вчера" 
     }
   ];
+
+  const profileProgress = 65;
   
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">
-        Добро пожаловать, {profile.first_name}!
-      </h2>
-      
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-blue-50 border-blue-100">
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div className="flex flex-col">
-                <span className="text-lg font-medium">2</span>
-                <span className="text-sm text-gray-600">Занятия сегодня</span>
+    <div className="space-y-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Profile card */}
+        <Card className="md:col-span-1 overflow-hidden">
+          <CardContent className="p-0">
+            <div className="flex flex-col items-center pt-6 pb-4">
+              <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-4xl mb-3 relative">
+                {profile.avatar_url ? (
+                  <img 
+                    src={profile.avatar_url} 
+                    alt={`${profile.first_name} ${profile.last_name || ""}`} 
+                    className="w-full h-full rounded-full object-cover"
+                  />
+                ) : (
+                  <span>{(profile.first_name[0] || "").toUpperCase()}</span>
+                )}
+                <Badge className="absolute bottom-1 right-0 bg-green-500 text-xs px-2">Проверено</Badge>
               </div>
-              <Calendar className="h-8 w-8 text-blue-500" />
+              
+              <h3 className="text-xl font-bold mb-1">
+                {profile.first_name} {profile.last_name}
+              </h3>
+              
+              <p className="text-gray-500 text-sm mb-3">
+                {profile.city || "Не указан"}
+              </p>
+              
+              <div className="flex items-center space-x-1 text-amber-500 mb-2">
+                <span className="text-lg font-bold">4.8</span>
+                <span className="text-xs">(12 отзывов)</span>
+              </div>
+              
+              <div className="grid grid-cols-2 w-full px-6 gap-4 mt-2">
+                <div className="flex flex-col items-center">
+                  <Calendar className="h-6 w-6 text-blue-500 mb-1" />
+                  <span className="text-xs text-gray-500">Занятий</span>
+                  <span className="font-bold">12</span>
+                </div>
+                <div className="flex flex-col items-center">
+                  <Users className="h-6 w-6 text-purple-500 mb-1" />
+                  <span className="text-xs text-gray-500">Репетиторов</span>
+                  <span className="font-bold">3</span>
+                </div>
+              </div>
+              
+              <Button 
+                variant="outline" 
+                className="mt-4 w-full mx-6"
+                onClick={() => navigate("/profile/student/edit")}
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                Редактировать профиль
+              </Button>
             </div>
           </CardContent>
         </Card>
         
-        <Card className="bg-amber-50 border-amber-100">
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div className="flex flex-col">
-                <span className="text-lg font-medium">3</span>
-                <span className="text-sm text-gray-600">Активных репетиторов</span>
-              </div>
-              <Users className="h-8 w-8 text-amber-500" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-emerald-50 border-emerald-100">
-          <CardContent className="pt-6">
-            <div className="flex justify-between items-start">
-              <div className="flex flex-col">
-                <span className="text-lg font-medium">5</span>
-                <span className="text-sm text-gray-600">Предметов изучается</span>
-              </div>
-              <BookMarked className="h-8 w-8 text-emerald-500" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming lessons */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center">
-              <Clock className="mr-2 h-5 w-5 text-blue-500" />
-              Ближайшие занятия
-            </CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-blue-600">Ближайшие занятия</CardTitle>
           </CardHeader>
           <CardContent>
             {upcomingLessons.length > 0 ? (
@@ -125,125 +126,113 @@ export const StudentDashboard = ({ profile }: StudentDashboardProps) => {
                     </Button>
                   </div>
                 ))}
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full" 
-                  onClick={() => navigate("/profile/student/schedule")}
-                >
-                  Смотреть расписание
-                </Button>
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
-                <Calendar className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                <p>У вас нет предстоящих занятий</p>
+                <p>У вас нет запланированных занятий на ближайшее время</p>
                 <Button 
                   variant="outline" 
                   className="mt-4" 
-                  onClick={() => navigate("/tutors")}
+                  onClick={() => navigate("/profile/student/schedule")}
                 >
-                  Найти репетитора
+                  Перейти к расписанию
                 </Button>
               </div>
             )}
           </CardContent>
         </Card>
         
-        {/* Recent messages */}
+        {/* Homework section */}
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg flex items-center">
-              <MessageSquare className="mr-2 h-5 w-5 text-blue-500" />
-              Сообщения от репетиторов
-            </CardTitle>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg text-green-600">Домашние задания</CardTitle>
           </CardHeader>
           <CardContent>
-            {tutorMessages.length > 0 ? (
-              <div className="space-y-4">
-                {tutorMessages.map(message => (
-                  <div key={message.id} className="flex items-start p-3 border rounded-lg hover:bg-gray-50 transition-colors">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center mr-3">
-                      <span className="text-gray-600 font-medium">{message.name.charAt(0)}</span>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between">
-                        <h4 className="font-medium">{message.name}</h4>
-                        <span className="text-xs text-gray-500">{message.time}</span>
-                      </div>
-                      <p className="text-sm text-gray-600 line-clamp-1">
-                        {message.message}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full" 
-                  onClick={() => navigate("/profile/student/chats")}
-                >
-                  Просмотреть все сообщения
-                </Button>
-              </div>
-            ) : (
-              <div className="text-center py-8 text-gray-500">
-                <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                <p>У вас нет новых сообщений</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      
-      <div className="grid grid-cols-1 gap-6">
-        {/* Quick actions */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg">Быстрые действия</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center py-8 text-gray-500">
+              <p>Нет активных домашних заданий для проверки</p>
               <Button 
                 variant="outline" 
-                className="h-auto py-6 px-4 flex flex-col items-center justify-center gap-2"
-                onClick={() => navigate("/tutors")}
-              >
-                <Users className="h-6 w-6 text-blue-500" />
-                <span>Найти репетитора</span>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="h-auto py-6 px-4 flex flex-col items-center justify-center gap-2"
-                onClick={() => navigate("/profile/student/schedule")}
-              >
-                <Calendar className="h-6 w-6 text-green-500" />
-                <span>Расписание</span>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="h-auto py-6 px-4 flex flex-col items-center justify-center gap-2"
+                className="mt-4" 
                 onClick={() => navigate("/profile/student/homework")}
               >
-                <BookText className="h-6 w-6 text-amber-500" />
-                <span>Домашние задания</span>
-                <Badge className="absolute -top-2 -right-2">1</Badge>
-              </Button>
-              
-              <Button 
-                variant="outline" 
-                className="h-auto py-6 px-4 flex flex-col items-center justify-center gap-2"
-                onClick={() => navigate("/profile/student/favorites")}
-              >
-                <GraduationCap className="h-6 w-6 text-purple-500" />
-                <span>Избранные репетиторы</span>
+                Создать новое задание
               </Button>
             </div>
           </CardContent>
         </Card>
       </div>
+      
+      {/* Profile completion */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">Заполнение профиля</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span>Прогресс</span>
+              <span className="font-medium">{profileProgress}%</span>
+            </div>
+            <Progress value={profileProgress} className="h-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500" />
+            
+            <div className="space-y-2 mt-4">
+              <div className="flex items-center justify-between p-3 rounded-md border">
+                <div className="flex items-center">
+                  <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                    <span className="text-green-600 text-xs">✓</span>
+                  </div>
+                  <span>О себе</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/profile/student/edit")}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-md border">
+                <div className="flex items-center">
+                  <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                    <span className="text-gray-400 text-xs">○</span>
+                  </div>
+                  <span className="text-gray-500">Цели обучения</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => navigate("/profile/student/edit")}>
+                  <Edit className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+      
+      {/* Stats Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center text-lg text-purple-600">
+            <BookText className="mr-2 h-5 w-5" />
+            Статистика
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-center font-medium mb-4">Количество занятий по месяцам</h3>
+              <div className="h-64 border rounded-lg flex items-center justify-center text-gray-400">
+                График занятий
+              </div>
+            </div>
+            <div>
+              <h3 className="text-center font-medium mb-4">Количество репетиторов по месяцам</h3>
+              <div className="h-64 border rounded-lg flex items-center justify-center text-gray-400">
+                График репетиторов
+              </div>
+            </div>
+          </div>
+          <div className="flex justify-center">
+            <Button variant="link" className="text-purple-600">
+              Подробная статистика <ChevronRight className="h-4 w-4 ml-1" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
