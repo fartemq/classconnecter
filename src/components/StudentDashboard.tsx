@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Calendar, Clock, Users, BookOpen, MessageSquare, 
@@ -18,11 +18,28 @@ interface StudentDashboardProps {
     city?: string | null;
     school?: string | null;
     grade?: string | null;
+    bio?: string | null;
+    phone?: string | null;
   };
 }
 
 export const StudentDashboard = ({ profile }: StudentDashboardProps) => {
   const navigate = useNavigate();
+  
+  // Calculate profile completion percentage
+  const profileProgress = useMemo(() => {
+    let completedFields = 0;
+    let totalFields = 6; // Total number of important profile fields
+    
+    if (profile.first_name) completedFields++;
+    if (profile.last_name) completedFields++;
+    if (profile.city) completedFields++;
+    if (profile.school) completedFields++;
+    if (profile.grade) completedFields++;
+    if (profile.bio) completedFields++;
+    
+    return Math.round((completedFields / totalFields) * 100);
+  }, [profile]);
   
   // Mock data for demonstration
   const upcomingLessons = [];
@@ -41,8 +58,9 @@ export const StudentDashboard = ({ profile }: StudentDashboardProps) => {
       time: "Вчера" 
     }
   ];
-
-  const profileProgress = 65;
+  
+  // Only show the profile completion card if profile is not 100% complete
+  const showProfileCompletion = profileProgress < 100;
   
   return (
     <div className="space-y-8">
@@ -162,46 +180,63 @@ export const StudentDashboard = ({ profile }: StudentDashboardProps) => {
         </Card>
       </div>
       
-      {/* Profile completion */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">Заполнение профиля</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span>Прогресс</span>
-              <span className="font-medium">{profileProgress}%</span>
-            </div>
-            <Progress value={profileProgress} className="h-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500" />
-            
-            <div className="space-y-2 mt-4">
-              <div className="flex items-center justify-between p-3 rounded-md border">
-                <div className="flex items-center">
-                  <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mr-3">
-                    <span className="text-green-600 text-xs">✓</span>
-                  </div>
-                  <span>О себе</span>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/profile/student/edit")}>
-                  <Edit className="h-4 w-4" />
-                </Button>
+      {/* Profile completion - only show if not 100% complete */}
+      {showProfileCompletion && (
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Заполнение профиля</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span>Прогресс</span>
+                <span className="font-medium">{profileProgress}%</span>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-md border">
-                <div className="flex items-center">
-                  <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center mr-3">
-                    <span className="text-gray-400 text-xs">○</span>
+              <Progress value={profileProgress} className="h-2 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500" />
+              
+              <div className="space-y-2 mt-4">
+                <div className="flex items-center justify-between p-3 rounded-md border">
+                  <div className="flex items-center">
+                    <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mr-3">
+                      <span className="text-green-600 text-xs">✓</span>
+                    </div>
+                    <span>О себе</span>
                   </div>
-                  <span className="text-gray-500">Цели обучения</span>
+                  <Button variant="ghost" size="sm" onClick={() => navigate("/profile/student/edit")}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => navigate("/profile/student/edit")}>
-                  <Edit className="h-4 w-4" />
-                </Button>
+                {!profile.school && (
+                  <div className="flex items-center justify-between p-3 rounded-md border">
+                    <div className="flex items-center">
+                      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                        <span className="text-gray-400 text-xs">○</span>
+                      </div>
+                      <span className="text-gray-500">Учебное заведение</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => navigate("/profile/student/edit")}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+                {!profile.grade && (
+                  <div className="flex items-center justify-between p-3 rounded-md border">
+                    <div className="flex items-center">
+                      <div className="w-6 h-6 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                        <span className="text-gray-400 text-xs">○</span>
+                      </div>
+                      <span className="text-gray-500">Класс/Курс</span>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={() => navigate("/profile/student/edit")}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
       
       {/* Stats Section */}
       <Card>

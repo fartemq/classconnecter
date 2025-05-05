@@ -3,7 +3,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   Home, Calendar, Users, Heart, MessageSquare, 
-  FileText, Settings, User 
+  FileText, Settings, User, Sparkles
 } from "lucide-react";
 
 // Student navigation tabs - updated to match the image
@@ -28,7 +28,7 @@ export const StudentNavigation = () => {
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-1 overflow-x-auto">
       {studentTabs.map((tab) => (
         <Link 
           key={tab.path}
@@ -37,9 +37,9 @@ export const StudentNavigation = () => {
             isStudentTabActive(tab.path) 
               ? "text-primary font-medium bg-primary/10 shadow-sm" 
               : "text-gray-700 hover:bg-gray-100"
-          } px-3 py-2 rounded-md flex items-center gap-2 transition-all relative`}
+          } px-2 py-1.5 rounded-md flex items-center gap-1.5 transition-all relative text-sm whitespace-nowrap`}
         >
-          <tab.icon className="h-4 w-4" />
+          <tab.icon className="h-3.5 w-3.5" />
           <span>{tab.name}</span>
         </Link>
       ))}
