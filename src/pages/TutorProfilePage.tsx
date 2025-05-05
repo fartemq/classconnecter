@@ -57,32 +57,31 @@ const TutorProfilePage = () => {
     );
   }
 
-  // Convert Profile to TutorProfile
-  const tutorProfile = profile ? ({
-    id: profile.id,
-    firstName: profile.first_name,
-    lastName: profile.last_name || "",
-    bio: profile.bio || "",
-    city: profile.city || "",
-    avatarUrl: profile.avatar_url,
-    subjects: [],
-    rating: 0,
-    reviewsCount: 0,
-    completedLessons: 0,
-    activeStudents: 0,
-    // Add other required properties with default values
-    educationInstitution: "",
-    degree: "",
-    graduationYear: null,
-    educationVerified: false,
-    experience: 0,
-    achievements: "",
-    videoUrl: "",
-  } as TutorProfile) : null;
-
   // Function to render the active tab content
   const renderTabContent = () => {
     if (!profile) return null;
+    
+    // Convert Profile to TutorProfile only when needed for components that require TutorProfile
+    const tutorProfile: TutorProfile = {
+      id: profile.id,
+      firstName: profile.first_name,
+      lastName: profile.last_name || "",
+      bio: profile.bio || "",
+      city: profile.city || "",
+      avatarUrl: profile.avatar_url,
+      subjects: [],
+      rating: 0,
+      reviewsCount: 0,
+      completedLessons: 0,
+      activeStudents: 0,
+      educationInstitution: "",
+      degree: "",
+      graduationYear: null,
+      educationVerified: false,
+      experience: 0,
+      achievements: "",
+      videoUrl: "",
+    };
     
     switch (activeTab) {
       case "dashboard":
