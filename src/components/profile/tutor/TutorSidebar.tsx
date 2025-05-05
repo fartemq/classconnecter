@@ -6,10 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { MapPin, Star, BookOpen, Users, Pencil, CheckCircle, Calendar, BarChart } from "lucide-react";
-import { TutorProfile } from "@/types/tutor";
+import { Profile } from "@/hooks/useProfile";
 
 interface TutorSidebarProps {
-  profile: TutorProfile;
+  profile: Profile;
 }
 
 export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
@@ -18,48 +18,48 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
   
   // This would ideally come from the database in a real implementation
   const tutorStats = {
-    rating: profile.rating || 4.8,
-    reviewsCount: profile.reviewsCount || 12,
-    lessonsCount: profile.completedLessons || 45,
-    studentsCount: profile.activeStudents || 8,
+    rating: 4.8,
+    reviewsCount: 12,
+    lessonsCount: 45,
+    studentsCount: 8,
     profileCompleteness: 65
   };
   
-  // Определить активную вкладку из URL
+  // Determine the active tab from the URL
   const getActiveTab = () => {
     const params = new URLSearchParams(location.search);
     return params.get("tab") || "dashboard";
   };
 
-  // Перейти на вкладку заполнения профиля
+  // Navigate to the profile tab
   const navigateToProfileTab = (tab: string) => {
     navigate(`/profile/tutor?tab=${tab}`);
   };
   
-  // Проверить, заполнены ли основные разделы профиля
+  // Check if main profile sections are completed
   const profileSections = [
-    { name: "О себе", completed: Boolean(profile?.firstName && profile?.lastName && profile?.bio), tab: "about" },
-    { name: "Методология", completed: Boolean(profile?.methodology), tab: "methodology" },
+    { name: "О себе", completed: Boolean(profile?.first_name && profile?.last_name && profile?.bio), tab: "about" },
+    { name: "Методология", completed: false, tab: "methodology" },
     { name: "Учебные материалы", completed: false, tab: "materials" },
     { name: "Расписание", completed: false, tab: "schedule" }
   ];
 
   return (
     <div className="space-y-4">
-      {/* Профиль репетитора */}
+      {/* Tutor profile */}
       <Card className="overflow-hidden shadow-sm hover:shadow-md transition-all">
         <CardHeader className="text-center pb-2">
           <div className="relative mx-auto mb-4">
             <div className="w-32 h-32 rounded-full bg-gray-200 mx-auto overflow-hidden">
-              {profile?.avatarUrl ? (
+              {profile?.avatar_url ? (
                 <img 
-                  src={profile.avatarUrl} 
-                  alt={`${profile.firstName} ${profile.lastName || ''}`}
+                  src={profile.avatar_url} 
+                  alt={`${profile.first_name} ${profile.last_name || ''}`}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-gray-400 text-4xl">
-                  {profile?.firstName?.charAt(0) || "Р"}
+                  {profile?.first_name?.charAt(0) || "Р"}
                 </div>
               )}
             </div>
@@ -71,7 +71,7 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
           </div>
           
           <h2 className="text-xl font-semibold mb-1">
-            {profile?.firstName} {profile?.lastName}
+            {profile?.first_name} {profile?.last_name}
           </h2>
           
           {profile?.city && (
@@ -116,7 +116,7 @@ export const TutorSidebar = ({ profile }: TutorSidebarProps) => {
         </CardContent>
       </Card>
 
-      {/* Заполнение профиля */}
+      {/* Profile completion */}
       <Card>
         <CardHeader className="pb-2">
           <h3 className="text-lg font-medium">Заполнение профиля</h3>
