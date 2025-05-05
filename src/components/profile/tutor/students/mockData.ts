@@ -1,6 +1,8 @@
 
+import { Student } from "@/types/student";
+
 // Mock data for student profiles
-export const mockStudents = [
+export const mockStudents: Student[] = [
   {
     id: "1",
     name: "Мария Иванова",
@@ -54,18 +56,3 @@ export const mockStudents = [
     status: "inactive"
   }
 ];
-
-// Type definition for a student
-export type Student = {
-  id: string;
-  name: string;
-  avatar: null | string;
-  lastActive: string;
-  level: string;
-  grade: string | null;
-  subjects: string[];
-  city: string;
-  about: string;
-  interests: string[];
-  status: string;
-};
