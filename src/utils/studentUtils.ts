@@ -8,6 +8,7 @@ export const createStudentFromRequest = (request: StudentRequest): Student => {
     status: request.status,
     level: 'N/A', // We don't have this info in the current DB schema
     grade: null,
+    school: null, // Added school property with null value as default
     subjects: request.subject ? [request.subject.name] : [],
     city: request.student?.city || 'N/A',
     lastActive: new Date(request.updated_at).toLocaleDateString('ru-RU'),
