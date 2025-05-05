@@ -16,6 +16,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { PageHeader } from "./common/PageHeader";
+import { EmptyState } from "./common/EmptyState";
 
 interface Homework {
   id: number;
@@ -30,6 +32,90 @@ interface Homework {
   tutorName: string;
   tutorAvatar?: string;
 }
+
+// Компонент карточки домашнего задания
+const HomeworkCard: React.FC<{ homework: Homework }> = ({ homework }) => {
+  return (
+    <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between mb-3">
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-medium">{homework.title}</h3>
+              {homework.status === "in progress" ? (
+                <Badge className="bg-amber-500">В процессе</Badge>
+              ) : homework.status === "pending" ? (
+                <Badge className="bg-blue-500">Ожидает</Badge>
+              ) : (
+                <Badge className="bg-green-500">Завершено</Badge>
+              )}
+            </div>
+            <p className="text-gray-600 text-sm">{homework.subject}</p>
+          </div>
+        </div>
+        
+        <div className="flex flex-wrap items-center text-xs text-gray-500 mt-3 gap-y-1">
+          {homework.dueDate && (
+            <div className="flex items-center mr-3">
+              <Clock className="h-3.5 w-3.5 mr-1" />
+              <span>Срок сдачи: {homework.dueDate}</span>
+            </div>
+          )}
+          
+          {homework.completedDate && (
+            <div className="flex items-center mr-3">
+              <CheckCircle className="h-3.5 w-3.5 mr-1 text-green-500" />
+              <span>Сдано: {homework.completedDate}</span>
+            </div>
+          )}
+          
+          {homework.grade && (
+            <div className="flex items-center mr-3 text-green-600 font-medium">
+              <span>Оценка: {homework.grade}</span>
+            </div>
+          )}
+          
+          {homework.priority === "high" && (
+            <div className="flex items-center text-red-500">
+              <AlertCircle className="h-3.5 w-3.5 mr-1" />
+              <span>Высокий приоритет</span>
+            </div>
+          )}
+          
+          {homework.attachments && (
+            <div className="flex items-center ml-auto">
+              <FileText className="h-3.5 w-3.5 mr-1" />
+              <span>Файлов: {homework.attachments}</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center mt-3 pt-3 border-t">
+          <div className="flex items-center">
+            <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center mr-2 overflow-hidden">
+              {homework.tutorAvatar ? (
+                <img 
+                  src={homework.tutorAvatar} 
+                  alt={homework.tutorName}
+                  className="w-full h-full object-cover" 
+                />
+              ) : (
+                <span className="text-xs">{homework.tutorName.charAt(0)}</span>
+              )}
+            </div>
+            <span className="text-xs text-gray-600">{homework.tutorName}</span>
+          </div>
+          
+          <div className="ml-auto">
+            <Button size="sm" variant="outline">
+              Открыть
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export const HomeworkTab = () => {
   const [activeTab, setActiveTab] = useState("current");
@@ -96,105 +182,63 @@ export const HomeworkTab = () => {
     hw.tutorName.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
+  // Создаем поисковую строку с фильтрами
+  const SearchBar = () => (
+    <div className="mb-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+          <Input 
+            placeholder="Поиск по заданиям..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon">
+              <Filter size={18} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Фильтры</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>По дате сдачи</DropdownMenuItem>
+            <DropdownMenuItem>По приоритету</DropdownMenuItem>
+            <DropdownMenuItem>По предмету</DropdownMenuItem>
+            <DropdownMenuItem>По репетитору</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
+        <Button>
+          <Plus size={16} className="mr-2" />
+          Новое задание
+        </Button>
+      </div>
+    </div>
+  );
+  
   const renderHomeworkList = (homeworkList: Homework[]) => {
     if (homeworkList.length === 0) {
       return (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <p className="text-lg font-medium text-gray-500 mb-2">
-            {activeTab === "current" 
-              ? "У вас нет активных домашних заданий" 
-              : "У вас нет выполненных домашних заданий"}
-          </p>
-          <Button className="mt-2" size="sm">
-            <Plus size={16} className="mr-1.5" />
-            Создать новое задание
-          </Button>
-        </div>
+        <EmptyState 
+          icon={<FileText size={48} />}
+          title={activeTab === "current" 
+            ? "У вас нет активных домашних заданий" 
+            : "У вас нет выполненных домашних заданий"
+          }
+          actionLabel="Создать новое задание"
+          onAction={() => console.log("Create new homework")}
+        />
       );
     }
     
     return (
       <div className="space-y-4">
         {homeworkList.map((homework) => (
-          <Card key={homework.id} className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="font-medium">{homework.title}</h3>
-                    {homework.status === "in progress" ? (
-                      <Badge className="bg-amber-500">В процессе</Badge>
-                    ) : homework.status === "pending" ? (
-                      <Badge className="bg-blue-500">Ожидает</Badge>
-                    ) : (
-                      <Badge className="bg-green-500">Завершено</Badge>
-                    )}
-                  </div>
-                  <p className="text-gray-600 text-sm">{homework.subject}</p>
-                </div>
-              </div>
-              
-              <div className="flex flex-wrap items-center text-xs text-gray-500 mt-3 gap-y-1">
-                {homework.dueDate && (
-                  <div className="flex items-center mr-3">
-                    <Clock className="h-3.5 w-3.5 mr-1" />
-                    <span>Срок сдачи: {homework.dueDate}</span>
-                  </div>
-                )}
-                
-                {homework.completedDate && (
-                  <div className="flex items-center mr-3">
-                    <CheckCircle className="h-3.5 w-3.5 mr-1 text-green-500" />
-                    <span>Сдано: {homework.completedDate}</span>
-                  </div>
-                )}
-                
-                {homework.grade && (
-                  <div className="flex items-center mr-3 text-green-600 font-medium">
-                    <span>Оценка: {homework.grade}</span>
-                  </div>
-                )}
-                
-                {homework.priority === "high" && (
-                  <div className="flex items-center text-red-500">
-                    <AlertCircle className="h-3.5 w-3.5 mr-1" />
-                    <span>Высокий приоритет</span>
-                  </div>
-                )}
-                
-                {homework.attachments && (
-                  <div className="flex items-center ml-auto">
-                    <FileText className="h-3.5 w-3.5 mr-1" />
-                    <span>Файлов: {homework.attachments}</span>
-                  </div>
-                )}
-              </div>
-              
-              <div className="flex items-center mt-3 pt-3 border-t">
-                <div className="flex items-center">
-                  <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center mr-2 overflow-hidden">
-                    {homework.tutorAvatar ? (
-                      <img 
-                        src={homework.tutorAvatar} 
-                        alt={homework.tutorName}
-                        className="w-full h-full object-cover" 
-                      />
-                    ) : (
-                      <span className="text-xs">{homework.tutorName.charAt(0)}</span>
-                    )}
-                  </div>
-                  <span className="text-xs text-gray-600">{homework.tutorName}</span>
-                </div>
-                
-                <div className="ml-auto">
-                  <Button size="sm" variant="outline">
-                    Открыть
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <HomeworkCard key={homework.id} homework={homework} />
         ))}
       </div>
     );
@@ -202,45 +246,13 @@ export const HomeworkTab = () => {
   
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-green-600">Домашние задания</h2>
-        <FileText size={24} className="text-green-600" />
-      </div>
+      <PageHeader 
+        title="Домашние задания" 
+        icon={<FileText size={24} />} 
+        iconColor="text-green-600" 
+      />
       
-      <div className="mb-6 space-y-4">
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
-            <Input 
-              placeholder="Поиск по заданиям..." 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon">
-                <Filter size={18} />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Фильтры</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>По дате сдачи</DropdownMenuItem>
-              <DropdownMenuItem>По приоритету</DropdownMenuItem>
-              <DropdownMenuItem>По предмету</DropdownMenuItem>
-              <DropdownMenuItem>По репетитору</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          <Button>
-            <Plus size={16} className="mr-2" />
-            Новое задание
-          </Button>
-        </div>
-      </div>
+      <SearchBar />
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="mb-6">

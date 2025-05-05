@@ -4,9 +4,11 @@ import { Calendar as CalendarIcon, Clock, ChevronLeft, ChevronRight, MapPin, Use
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { format, startOfWeek, addDays, isSameDay, isToday, getDay } from "date-fns";
+import { format, startOfWeek, addDays, isSameDay, isToday } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PageHeader } from "./common/PageHeader";
+import { EmptyState } from "./common/EmptyState";
 
 // Mock data for upcoming lessons
 const mockLessons = [
@@ -71,10 +73,11 @@ export const ScheduleTab = () => {
   
   return (
     <div className="w-full max-w-4xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-blue-600">Расписание занятий</h2>
-        <CalendarIcon size={24} className="text-blue-600" />
-      </div>
+      <PageHeader 
+        title="Расписание занятий" 
+        icon={<CalendarIcon size={24} />} 
+        iconColor="text-blue-600" 
+      />
       
       <Card className="shadow-sm mb-6">
         <CardHeader className="pb-2 flex flex-row items-center justify-between">
@@ -165,13 +168,12 @@ export const ScheduleTab = () => {
                 ))}
               </div>
             ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p className="text-base font-medium text-gray-500 mb-2">На этот день занятий не запланировано</p>
-                <Button variant="outline" className="mt-2">
-                  Найти репетитора
-                </Button>
-              </div>
+              <EmptyState 
+                icon={<Clock size={48} />}
+                title="На этот день занятий не запланировано"
+                actionLabel="Найти репетитора"
+                onAction={() => window.location.href = "/tutors"}
+              />
             )}
           </div>
         </CardContent>
@@ -210,10 +212,12 @@ export const ScheduleTab = () => {
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <p>У вас нет запланированных занятий</p>
-                <Button variant="outline" className="mt-4">Найти репетитора</Button>
-              </div>
+              <EmptyState 
+                icon={<Clock size={48} />}
+                title="У вас нет запланированных занятий"
+                actionLabel="Найти репетитора"
+                onAction={() => window.location.href = "/tutors"}
+              />
             )}
           </div>
         </CardContent>
