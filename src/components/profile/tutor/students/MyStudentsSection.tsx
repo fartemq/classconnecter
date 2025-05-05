@@ -65,7 +65,7 @@ export const MyStudentsSection = () => {
         .from('student_requests')
         .select(`
           *,
-          student:student_id(id, first_name, last_name, avatar_url, role, city),
+          student:profiles!student_id(id, first_name, last_name, avatar_url, role, city),
           subject:subject_id(id, name)
         `)
         .eq('tutor_id', user?.id)
@@ -81,7 +81,7 @@ export const MyStudentsSection = () => {
         return;
       }
       
-      setStudentRequests(data || []);
+      setStudentRequests(data as StudentRequest[] || []);
     } catch (err) {
       console.error('Exception fetching student requests:', err);
       toast({
@@ -154,10 +154,9 @@ export const MyStudentsSection = () => {
       subjects: request.subject ? [request.subject.name] : [],
       city: request.student?.city || 'N/A',
       lastActive: new Date(request.updated_at).toLocaleDateString('ru-RU'),
-      contactInfo: {
-        email: '',
-        phone: ''
-      }
+      avatar: null,
+      about: '',
+      interests: []
     };
   };
 

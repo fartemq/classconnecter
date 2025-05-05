@@ -13,13 +13,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Send, Book } from "lucide-react";
+import { Student } from "./mockData";
 
 interface StudentContactDialogProps {
-  student: {
-    id: string;
-    name: string;
-    subjects: string[];
-  };
+  student: Student;
   open: boolean;
   onClose: () => void;
 }
@@ -29,7 +26,7 @@ export const StudentContactDialog = ({
   open, 
   onClose 
 }: StudentContactDialogProps) => {
-  const [subject, setSubject] = useState(`Приглашение на пробное занятие по предмету ${student.subjects[0]}`);
+  const [subject, setSubject] = useState(`Приглашение на пробное занятие по предмету ${student.subjects[0] || "N/A"}`);
   const [message, setMessage] = useState(`Здравствуйте, ${student.name}!\n\nЯ заинтересован в проведении занятий с вами. Давайте обсудим детали и возможность организации пробного урока.\n\nС уважением,\n[Ваше имя]`);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -65,7 +62,7 @@ export const StudentContactDialog = ({
                 <h3 className="font-medium">{student.name}</h3>
                 <div className="flex items-center text-sm text-gray-500">
                   <Book className="h-3.5 w-3.5 mr-1" />
-                  {student.subjects.join(", ")}
+                  {student.subjects.join(", ") || "Предмет не указан"}
                 </div>
               </div>
             </div>

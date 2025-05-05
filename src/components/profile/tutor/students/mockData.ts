@@ -56,4 +56,16 @@ export const mockStudents = [
 ];
 
 // Type definition for a student
-export type Student = typeof mockStudents[0];
+export type Student = {
+  id: string;
+  name: string;
+  avatar: null | string;
+  lastActive: string;
+  level: string;
+  grade: string | null;
+  subjects: string[];
+  city: string;
+  about: string;
+  interests: string[];
+  status: string;
+};
