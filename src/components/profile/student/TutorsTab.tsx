@@ -10,7 +10,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "./common/PageHeader";
 import { LoadingState } from "./common/LoadingState";
 import { EmptyState } from "./common/EmptyState";
-import { TutorCard } from "@/components/tutors/TutorCard";
+import { TutorCard } from "./tutors/TutorCard";
 import { TutorSearchBar } from "./tutors/TutorSearchBar";
 import { Tutor } from "@/pages/TutorsPage";
 
@@ -52,6 +52,7 @@ export const TutorsTab = () => {
       id: "3",
       first_name: "Сидоров",
       last_name: "Алексей",
+      avatar_url: "https://i.pravatar.cc/150?img=3", // Added the missing avatar_url property
       subjects: [
         { name: "Химия", hourly_rate: 1100, experience_years: 4 },
         { name: "Биология", hourly_rate: 1000, experience_years: 2 }
