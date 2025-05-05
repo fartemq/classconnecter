@@ -1,57 +1,125 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
-import { TutorStatistics } from "@/types/tutor";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader } from "@/components/ui/loader";
 import { toast } from "@/hooks/use-toast";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TutorStatistics } from "@/types/tutor";
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend
+} from "recharts";
 
 interface AdvancedStatsTabProps {
   tutorId: string;
 }
 
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+
 export const AdvancedStatsTab = ({ tutorId }: AdvancedStatsTabProps) => {
-  const [statistics, setStatistics] = useState<TutorStatistics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState("month");
+  const [stats, setStats] = useState<TutorStatistics | null>(null);
+  const [reviewsDistribution, setReviewsDistribution] = useState<any[]>([]);
 
   useEffect(() => {
     fetchStatistics();
-  }, [tutorId, period]);
+  }, [tutorId]);
 
   const fetchStatistics = async () => {
     try {
       setLoading(true);
-      
-      // В реальном приложении здесь был бы запрос к API для получения статистики
-      // Поскольку мы еще не имеем полной структуры БД, создаем тестовые данные
-      
-      // Имитация задержки загрузки данных
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Генерируем тестовые данные для месячного заработка
-      const monthlyEarnings = [];
-      const months = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек'];
-      
-      for (let i = 0; i < 12; i++) {
-        monthlyEarnings.push({
-          month: months[i],
-          earnings: Math.floor(Math.random() * 50000) + 10000
-        });
+
+      // Получаем количество отзывов
+      const { data: reviewsData, error: reviewsError } = await supabase
+        .from("tutor_reviews")
+        .select("rating")
+        .eq("tutor_id", tutorId);
+
+      if (reviewsError) throw reviewsError;
+
+      // Получаем материалы
+      const { data: materialsData, error: materialsError } = await supabase
+        .from("tutor_materials")
+        .select("*")
+        .eq("tutor_id", tutorId);
+
+      if (materialsError) throw materialsError;
+
+      // Получаем слоты расписания
+      const { data: scheduleData, error: scheduleError } = await supabase
+        .from("tutor_schedule")
+        .select("*")
+        .eq("tutor_id", tutorId);
+
+      if (scheduleError) throw scheduleError;
+
+      // Получаем предметы
+      const { data: subjectsData, error: subjectsError } = await supabase
+        .from("tutor_subjects")
+        .select("hourly_rate")
+        .eq("tutor_id", tutorId);
+
+      if (subjectsError) throw subjectsError;
+
+      // Вычисляем среднюю оценку
+      let averageRating = 0;
+      if (reviewsData && reviewsData.length > 0) {
+        averageRating = reviewsData.reduce((sum, review) => sum + review.rating, 0) / reviewsData.length;
       }
-      
-      const mockStatistics = {
-        totalLessons: 156,
-        totalHours: 234,
-        totalStudents: 15,
-        averageRating: 4.8,
-        totalEarnings: 425600,
-        monthlyEarnings
-      };
-      
-      setStatistics(mockStatistics);
+
+      // Распределение оценок
+      const ratingDistribution = [1, 2, 3, 4, 5].map(rating => {
+        const count = reviewsData ? reviewsData.filter(r => r.rating === rating).length : 0;
+        return {
+          name: `${rating} ${rating === 1 ? 'звезда' : rating < 5 ? 'звезды' : 'звезд'}`,
+          value: count
+        };
+      });
+      setReviewsDistribution(ratingDistribution);
+
+      // Вычисляем среднюю ставку
+      let averageRate = 0;
+      if (subjectsData && subjectsData.length > 0) {
+        averageRate = subjectsData.reduce((sum, subject) => sum + subject.hourly_rate, 0) / subjectsData.length;
+      }
+
+      // Пример для демонстрации - в реальности эти данные должны быть получены из базы данных
+      const monthlyEarnings = [
+        { month: "Январь", earnings: 0 },
+        { month: "Февраль", earnings: 0 },
+        { month: "Март", earnings: 0 },
+        { month: "Апрель", earnings: 0 },
+        { month: "Май", earnings: 0 },
+        { month: "Июнь", earnings: 0 },
+        { month: "Июль", earnings: 0 },
+        { month: "Август", earnings: 0 },
+        { month: "Сентябрь", earnings: 0 },
+        { month: "Октябрь", earnings: 0 },
+        { month: "Ноябрь", earnings: 0 },
+        { month: "Декабрь", earnings: 0 },
+      ];
+
+      setStats({
+        totalLessons: 0, // В будущем можно получать из таблицы уроков
+        totalHours: 0, // В будущем можно вычислять из продолжительности уроков
+        totalStudents: 0, // В будущем можно вычислять из уникальных студентов
+        averageRating: averageRating,
+        totalEarnings: 0, // В будущем можно вычислять из уроков и ставок
+        monthlyEarnings: monthlyEarnings,
+        totalReviews: reviewsData?.length || 0,
+        totalMaterials: materialsData?.length || 0,
+        scheduledSlots: scheduleData?.length || 0,
+        averageRate: averageRate
+      });
     } catch (error) {
       console.error("Error fetching statistics:", error);
       toast({
@@ -68,13 +136,13 @@ export const AdvancedStatsTab = ({ tutorId }: AdvancedStatsTabProps) => {
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
       currency: 'RUB',
-      maximumFractionDigits: 0
+      minimumFractionDigits: 0
     }).format(value);
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center p-12">
+      <div className="flex justify-center items-center h-64">
         <Loader size="lg" />
       </div>
     );
@@ -82,118 +150,98 @@ export const AdvancedStatsTab = ({ tutorId }: AdvancedStatsTabProps) => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Анализ работы</h2>
+      <h2 className="text-2xl font-semibold">Статистика вашего профиля</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-6 flex flex-col items-center">
-            <span className="text-4xl font-bold text-primary">{statistics?.totalLessons}</span>
-            <span className="text-sm text-gray-500 mt-2">Всего занятий</span>
+          <CardContent className="pt-6">
+            <p className="text-gray-500">Средний рейтинг</p>
+            <div className="flex items-baseline">
+              <p className="text-3xl font-bold">{stats?.averageRating.toFixed(1) || "0.0"}</p>
+              <p className="ml-2 text-yellow-500">★</p>
+              <p className="ml-1 text-gray-400">({stats?.totalReviews || 0} отзывов)</p>
+            </div>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-6 flex flex-col items-center">
-            <span className="text-4xl font-bold text-primary">{statistics?.totalHours}</span>
-            <span className="text-sm text-gray-500 mt-2">Общие часы</span>
+          <CardContent className="pt-6">
+            <p className="text-gray-500">Учебные материалы</p>
+            <p className="text-3xl font-bold">{stats?.totalMaterials || 0}</p>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-6 flex flex-col items-center">
-            <span className="text-4xl font-bold text-primary">{statistics?.totalStudents}</span>
-            <span className="text-sm text-gray-500 mt-2">Учеников обучено</span>
+          <CardContent className="pt-6">
+            <p className="text-gray-500">Средняя ставка</p>
+            <p className="text-3xl font-bold">{formatCurrency(stats?.averageRate || 0)}/час</p>
           </CardContent>
         </Card>
         
         <Card>
-          <CardContent className="p-6 flex flex-col items-center">
-            <span className="text-4xl font-bold text-primary">{statistics?.averageRating}</span>
-            <span className="text-sm text-gray-500 mt-2">Средний рейтинг</span>
+          <CardContent className="pt-6">
+            <p className="text-gray-500">Временных слотов</p>
+            <p className="text-3xl font-bold">{stats?.scheduledSlots || 0}</p>
           </CardContent>
         </Card>
       </div>
       
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-center">
-            <CardTitle>Финансовая статистика</CardTitle>
-            <Select
-              value={period}
-              onValueChange={setPeriod}
-            >
-              <SelectTrigger className="w-36">
-                <SelectValue placeholder="Выберите период" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="month">За месяц</SelectItem>
-                <SelectItem value="quarter">За квартал</SelectItem>
-                <SelectItem value="year">За год</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row justify-between items-center mb-6">
-            <div>
-              <span className="text-sm text-gray-500">Общий доход</span>
-              <div className="text-2xl font-bold">{formatCurrency(statistics?.totalEarnings || 0)}</div>
+      {stats?.totalReviews ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Распределение оценок</CardTitle>
+            <CardDescription>Анализ отзывов и оценок ваших учеников</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={reviewsDistribution}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                  >
+                    {reviewsDistribution.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Legend />
+                  <Tooltip formatter={(value) => [`${value} отзывов`, 'Количество']} />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
-            <div className="mt-4 sm:mt-0">
-              <span className="text-sm text-gray-500">Средний доход в месяц</span>
-              <div className="text-2xl font-bold">
-                {formatCurrency((statistics?.totalEarnings || 0) / 12)}
-              </div>
-            </div>
-          </div>
-          
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={statistics?.monthlyEarnings}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis tickFormatter={(value) => `${value / 1000}K`} />
-                <Tooltip formatter={(value) => [`${formatCurrency(Number(value))}`, 'Доход']} />
-                <Bar dataKey="earnings" fill="#3b82f6" name="Доход" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      ) : null}
       
       <Card>
         <CardHeader>
-          <CardTitle>Динамика активных учеников</CardTitle>
+          <CardTitle>Доход по месяцам</CardTitle>
+          <CardDescription>Данные будут отображаться по мере проведения занятий</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-72">
+          <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart
-                data={[
-                  { month: 'Янв', students: 3 },
-                  { month: 'Фев', students: 5 },
-                  { month: 'Мар', students: 6 },
-                  { month: 'Апр', students: 8 },
-                  { month: 'Май', students: 7 },
-                  { month: 'Июн', students: 11 },
-                  { month: 'Июл', students: 13 },
-                  { month: 'Авг', students: 12 },
-                  { month: 'Сен', students: 14 },
-                  { month: 'Окт', students: 15 },
-                  { month: 'Ноя', students: 15 },
-                  { month: 'Дек', students: 15 }
-                ]}
-                margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+              <BarChart
+                data={stats?.monthlyEarnings}
+                margin={{
+                  top: 5,
+                  right: 30,
+                  left: 20,
+                  bottom: 5,
+                }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip formatter={(value) => [`${value} учеников`, 'Активные']} />
-                <Line type="monotone" dataKey="students" stroke="#10b981" strokeWidth={2} />
-              </LineChart>
+                <YAxis tickFormatter={(value) => formatCurrency(value)} />
+                <Tooltip formatter={(value) => [formatCurrency(Number(value)), 'Доход']} />
+                <Bar dataKey="earnings" fill="#8884d8" />
+              </BarChart>
             </ResponsiveContainer>
           </div>
         </CardContent>

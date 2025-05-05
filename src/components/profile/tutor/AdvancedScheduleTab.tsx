@@ -7,7 +7,7 @@ import { TutorSchedule } from "@/types/tutor";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader } from "@/components/ui/loader";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, addMinutes } from "date-fns";
+import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
 interface AdvancedScheduleTabProps {
@@ -44,22 +44,23 @@ export const AdvancedScheduleTab = ({ tutorId }: AdvancedScheduleTabProps) => {
       const { data, error } = await supabase
         .from("tutor_schedule")
         .select("*")
-        .eq("tutor_id", tutorId)
-        .order("day_of_week", { ascending: true })
-        .order("start_time", { ascending: true });
+        .eq("tutor_id", tutorId);
 
       if (error) throw error;
       
-      const formattedData = data.map(item => ({
-        id: item.id,
-        tutorId: item.tutor_id,
-        dayOfWeek: item.day_of_week,
-        startTime: item.start_time,
-        endTime: item.end_time,
-        isAvailable: item.is_available
-      }));
+      // Type checking the data before mapping
+      if (data) {
+        const formattedData = data.map(item => ({
+          id: item.id as string,
+          tutorId: item.tutor_id as string,
+          dayOfWeek: item.day_of_week as number,
+          startTime: item.start_time as string,
+          endTime: item.end_time as string,
+          isAvailable: item.is_available as boolean
+        }));
 
-      setSchedule(formattedData);
+        setSchedule(formattedData);
+      }
     } catch (error) {
       console.error("Error fetching schedule:", error);
       toast({
@@ -116,21 +117,23 @@ export const AdvancedScheduleTab = ({ tutorId }: AdvancedScheduleTabProps) => {
 
       if (error) throw error;
 
-      const newSlot = {
-        id: data[0].id,
-        tutorId,
-        dayOfWeek: selectedDay,
-        startTime,
-        endTime,
-        isAvailable: true
-      };
+      if (data && data[0]) {
+        const newSlot: TutorSchedule = {
+          id: data[0].id,
+          tutorId: data[0].tutor_id,
+          dayOfWeek: data[0].day_of_week,
+          startTime: data[0].start_time,
+          endTime: data[0].end_time,
+          isAvailable: data[0].is_available
+        };
 
-      setSchedule([...schedule, newSlot]);
-      
-      toast({
-        title: "Расписание обновлено",
-        description: "Новый временной слот успешно добавлен"
-      });
+        setSchedule([...schedule, newSlot]);
+        
+        toast({
+          title: "Расписание обновлено",
+          description: "Новый временной слот успешно добавлен"
+        });
+      }
     } catch (error) {
       console.error("Error adding time slot:", error);
       toast({
@@ -198,15 +201,7 @@ export const AdvancedScheduleTab = ({ tutorId }: AdvancedScheduleTabProps) => {
   };
 
   const formatTimeRange = (start: string, end: string) => {
-    const startDate = new Date();
-    const [startHours, startMinutes] = start.split(':').map(Number);
-    startDate.setHours(startHours, startMinutes);
-    
-    const endDate = new Date();
-    const [endHours, endMinutes] = end.split(':').map(Number);
-    endDate.setHours(endHours, endMinutes);
-    
-    return `${format(startDate, 'HH:mm')} - ${format(endDate, 'HH:mm')}`;
+    return `${start} - ${end}`;
   };
 
   return (

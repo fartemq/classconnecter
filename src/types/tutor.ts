@@ -85,4 +85,9 @@ export interface TutorStatistics {
     month: string;
     earnings: number;
   }[];
+  // Added extended stats
+  totalReviews: number;
+  totalMaterials: number;
+  scheduledSlots: number;
+  averageRate: number;
 }

@@ -125,39 +125,191 @@ export type Database = {
         }
         Relationships: []
       }
+      tutor_materials: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          subject_id: string | null
+          title: string
+          tutor_id: string
+          type: string
+          updated_at: string
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          subject_id?: string | null
+          title: string
+          tutor_id: string
+          type: string
+          updated_at?: string
+          url: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          subject_id?: string | null
+          title?: string
+          tutor_id?: string
+          type?: string
+          updated_at?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_materials_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tutor_materials_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tutor_profiles: {
         Row: {
+          achievements: string | null
           created_at: string
           degree: string
           education_institution: string
           education_verified: boolean
+          experience: number | null
           graduation_year: number
           id: string
+          methodology: string | null
           updated_at: string
+          video_url: string | null
         }
         Insert: {
+          achievements?: string | null
           created_at?: string
           degree: string
           education_institution: string
           education_verified?: boolean
+          experience?: number | null
           graduation_year: number
           id: string
+          methodology?: string | null
           updated_at?: string
+          video_url?: string | null
         }
         Update: {
+          achievements?: string | null
           created_at?: string
           degree?: string
           education_institution?: string
           education_verified?: boolean
+          experience?: number | null
           graduation_year?: number
           id?: string
+          methodology?: string | null
           updated_at?: string
+          video_url?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "tutor_profiles_id_fkey"
             columns: ["id"]
             isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tutor_reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          id: string
+          lesson_id: string | null
+          rating: number
+          student_id: string
+          tutor_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          lesson_id?: string | null
+          rating: number
+          student_id: string
+          tutor_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          id?: string
+          lesson_id?: string | null
+          rating?: number
+          student_id?: string
+          tutor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_reviews_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tutor_reviews_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tutor_schedule: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_available: boolean
+          start_time: string
+          tutor_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_available?: boolean
+          start_time: string
+          tutor_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_available?: boolean
+          start_time?: string
+          tutor_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_schedule_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
