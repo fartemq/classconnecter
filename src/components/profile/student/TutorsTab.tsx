@@ -29,8 +29,8 @@ export const TutorsTab = () => {
       last_name: "Иван",
       avatar_url: "https://i.pravatar.cc/150?img=1",
       subjects: [
-        { name: "Математика", hourly_rate: 1200 },
-        { name: "Физика", hourly_rate: 1300 }
+        { name: "Математика", hourly_rate: 1200, experience_years: 5 },
+        { name: "Физика", hourly_rate: 1300, experience_years: 3 }
       ],
       rating: 4.8,
       bio: "Опытный репетитор по математике и физике",
@@ -42,7 +42,7 @@ export const TutorsTab = () => {
       last_name: "Анна",
       avatar_url: "https://i.pravatar.cc/150?img=2",
       subjects: [
-        { name: "Английский язык", hourly_rate: 1500 }
+        { name: "Английский язык", hourly_rate: 1500, experience_years: 7 }
       ],
       rating: 4.9,
       bio: "Преподаватель английского языка с опытом работы за рубежом",
@@ -53,8 +53,8 @@ export const TutorsTab = () => {
       first_name: "Сидоров",
       last_name: "Алексей",
       subjects: [
-        { name: "Химия", hourly_rate: 1100 },
-        { name: "Биология", hourly_rate: 1000 }
+        { name: "Химия", hourly_rate: 1100, experience_years: 4 },
+        { name: "Биология", hourly_rate: 1000, experience_years: 2 }
       ],
       rating: 4.7,
       bio: "Преподаватель химии и биологии",
