@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
 import { Send, Book } from "lucide-react";
-import { Student } from "./mockData";
+import { Student } from "@/types/student";
 
 interface StudentContactDialogProps {
   student: Student;
