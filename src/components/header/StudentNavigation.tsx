@@ -3,7 +3,7 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
   Home, Calendar, Users, Heart, MessageSquare, 
-  FileText, Settings, User
+  FileText, Settings, User, Sparkles
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -15,6 +15,7 @@ const studentTabs = [
   { name: "Избранное", path: "/profile/student/favorites", icon: Heart },
   { name: "Сообщения", path: "/profile/student/chats", icon: MessageSquare, notificationCount: 2 },
   { name: "Домашние задания", path: "/profile/student/homework", icon: FileText, notificationCount: 1 },
+  { name: "Мой прогресс", path: "/profile/student/progress", icon: Sparkles },
   { name: "Профиль", path: "/profile/student/edit", icon: User },
   { name: "Настройки", path: "/profile/student/settings", icon: Settings },
 ];

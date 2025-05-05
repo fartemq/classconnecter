@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Search, Users, Star, MapPin, Filter, Clock, Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Search, Users, Star, MapPin, Filter, Clock, MessageSquare, Calendar, Phone, Mail } from "lucide-react";
 import { TutorRequestsSection } from "./TutorRequestsSection";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -33,6 +33,9 @@ interface Tutor {
   reviewsCount: number;
   location: string;
   lastActive?: string;
+  isOnline?: boolean;
+  phone?: string;
+  email?: string;
 }
 
 export const TutorsTab = () => {
@@ -43,123 +46,110 @@ export const TutorsTab = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("tutors");
   
+  // Mock data for demonstration
+  const mockTutors: Tutor[] = [
+    {
+      id: "1",
+      name: "Иванов Иван",
+      avatar: "https://i.pravatar.cc/150?img=1",
+      subjects: [
+        { name: "Математика", hourly_rate: 1200 },
+        { name: "Физика", hourly_rate: 1300 }
+      ],
+      rating: 4.8,
+      reviewsCount: 24,
+      location: "Москва",
+      lastActive: "только что",
+      isOnline: true,
+      phone: "+7 (999) 123-45-67",
+      email: "ivanov@example.com"
+    },
+    {
+      id: "2",
+      name: "Петрова Анна",
+      avatar: "https://i.pravatar.cc/150?img=2",
+      subjects: [
+        { name: "Английский язык", hourly_rate: 1500 }
+      ],
+      rating: 4.9,
+      reviewsCount: 32,
+      location: "Санкт-Петербург",
+      lastActive: "2 часа назад",
+      isOnline: false,
+      phone: "+7 (999) 987-65-43",
+      email: "petrova@example.com"
+    },
+    {
+      id: "3",
+      name: "Сидоров Алексей",
+      subjects: [
+        { name: "Химия", hourly_rate: 1100 },
+        { name: "Биология", hourly_rate: 1000 }
+      ],
+      rating: 4.7,
+      reviewsCount: 18,
+      location: "Новосибирск",
+      lastActive: "вчера",
+      isOnline: false,
+      email: "sidorov@example.com"
+    }
+  ];
+  
   useEffect(() => {
     if (user) {
-      fetchMyTutors();
+      // In a real app, this would fetch real data
+      // For now, we'll use mock data
+      setMyTutors(mockTutors);
+      setLoading(false);
     }
   }, [user]);
   
-  const fetchMyTutors = async () => {
-    try {
-      setLoading(true);
-      
-      // Get all accepted requests for the current student
-      const { data: requestsData, error: requestsError } = await supabase
-        .from('student_requests')
-        .select(`
-          tutor_id,
-          status,
-          tutor:profiles!tutor_id(
-            id,
-            first_name,
-            last_name,
-            avatar_url,
-            city
-          )
-        `)
-        .eq('student_id', user!.id)
-        .eq('status', 'accepted');
-      
-      if (requestsError) {
-        console.error("Error fetching requests:", requestsError);
-        toast({
-          title: "Ошибка загрузки",
-          description: "Не удалось загрузить данные о репетиторах",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      if (!requestsData || requestsData.length === 0) {
-        setMyTutors([]);
-        setLoading(false);
-        return;
-      }
-      
-      // Get tutor subjects for each tutor
-      const tutorsWithSubjects = await Promise.all(
-        requestsData.map(async (request) => {
-          // Get tutor subjects
-          const { data: subjectsData, error: subjectsError } = await supabase
-            .from('tutor_subjects')
-            .select(`
-              hourly_rate,
-              subject:subject_id(name)
-            `)
-            .eq('tutor_id', request.tutor_id);
-          
-          if (subjectsError) {
-            console.error("Error fetching tutor subjects:", subjectsError);
-            return null;
-          }
-          
-          // Format subjects
-          const subjects = subjectsData?.map(subject => ({
-            name: subject.subject?.name || "Unknown",
-            hourly_rate: subject.hourly_rate
-          })) || [];
-          
-          // Create tutor object
-          return {
-            id: request.tutor.id,
-            name: `${request.tutor.first_name} ${request.tutor.last_name || ''}`.trim(),
-            avatar: request.tutor.avatar_url,
-            subjects,
-            rating: 4 + Math.random(), // Mock rating
-            reviewsCount: Math.floor(Math.random() * 30), // Mock review count
-            location: request.tutor.city || "Не указан",
-            lastActive: "недавно" // Mock last active
-          };
-        })
-      );
-      
-      // Filter out null values (failed fetches)
-      setMyTutors(tutorsWithSubjects.filter(Boolean) as Tutor[]);
-    } catch (error) {
-      console.error("Error fetching my tutors:", error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось загрузить данные о репетиторах",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-  
   const filteredTutors = myTutors.filter(tutor => 
     tutor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tutor.subjects.some(subject => subject.name.toLowerCase().includes(searchTerm.toLowerCase()))
+    tutor.subjects.some(subject => subject.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    tutor.location.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  const renderTutorContactInfo = (tutor: Tutor) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t">
+      {tutor.phone && (
+        <Button variant="outline" size="sm" className="flex items-center justify-start">
+          <Phone size={14} className="mr-2" />
+          <span className="text-xs">{tutor.phone}</span>
+        </Button>
+      )}
+      
+      {tutor.email && (
+        <Button variant="outline" size="sm" className="flex items-center justify-start">
+          <Mail size={14} className="mr-2" />
+          <span className="text-xs truncate">{tutor.email}</span>
+        </Button>
+      )}
+    </div>
   );
   
   return (
-    <div>
+    <div className="w-full max-w-4xl mx-auto">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-purple-600">Мои репетиторы</h2>
+          <Users size={24} className="text-purple-600" />
+        </div>
+        
         <TabsList className="mb-6">
           <TabsTrigger value="tutors" className="relative">
             Мои репетиторы
+            {myTutors.length > 0 && (
+              <Badge className="ml-1.5 bg-primary">{myTutors.length}</Badge>
+            )}
           </TabsTrigger>
           <TabsTrigger value="requests" className="relative">
             Запросы от репетиторов
+            <Badge className="ml-1.5 bg-amber-500">2</Badge>
           </TabsTrigger>
         </TabsList>
         
         <TabsContent value="tutors" className="mt-0">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold">Мои репетиторы</h2>
-            <Users size={20} />
-          </div>
-          
           <div className="mb-6 space-y-4">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
@@ -197,77 +187,88 @@ export const TutorsTab = () => {
           
           {loading ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent"></div>
             </div>
           ) : filteredTutors.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
               {filteredTutors.map((tutor) => (
                 <Card key={tutor.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                  <div className="p-4 flex flex-col sm:flex-row gap-4">
-                    <Avatar className="w-16 h-16">
-                      {tutor.avatar ? (
-                        <AvatarImage src={tutor.avatar} alt={tutor.name} />
-                      ) : (
-                        <AvatarFallback>{tutor.name.charAt(0)}</AvatarFallback>
-                      )}
-                    </Avatar>
-                    
-                    <div className="flex-1">
-                      <h3 className="font-medium mb-1">{tutor.name}</h3>
-                      
-                      <div className="flex items-center text-sm text-gray-500 mb-2">
-                        <MapPin size={14} className="mr-1" />
-                        <span>{tutor.location}</span>
-                        <span className="mx-2">•</span>
-                        <Clock size={14} className="mr-1" />
-                        <span>{tutor.lastActive}</span>
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      <div className="md:w-1/4 flex flex-col items-center text-center">
+                        <Avatar className="w-24 h-24 mb-2">
+                          {tutor.avatar ? (
+                            <AvatarImage src={tutor.avatar} alt={tutor.name} />
+                          ) : (
+                            <AvatarFallback>{tutor.name.charAt(0)}</AvatarFallback>
+                          )}
+                        </Avatar>
+                        
+                        <h3 className="font-medium text-lg mb-1">{tutor.name}</h3>
+                        
+                        <div className="flex items-center text-sm mb-2">
+                          <Star size={16} className="text-yellow-500 mr-1" />
+                          <span className="font-medium">{tutor.rating}</span>
+                          <span className="text-gray-500 ml-1">({tutor.reviewsCount})</span>
+                        </div>
+                        
+                        <div className="flex items-center text-sm text-gray-500 mb-1">
+                          <div className={`w-2 h-2 rounded-full mr-1.5 ${tutor.isOnline ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                          <span>{tutor.isOnline ? 'Онлайн' : tutor.lastActive}</span>
+                        </div>
+                        
+                        <div className="flex items-center text-sm text-gray-500">
+                          <MapPin size={14} className="mr-1" />
+                          <span>{tutor.location}</span>
+                        </div>
                       </div>
                       
-                      <div className="flex flex-wrap gap-1 mb-2">
-                        {tutor.subjects.map((subject, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">
-                            {subject.name}
-                          </Badge>
-                        ))}
-                      </div>
-                      
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <Star size={14} className="text-yellow-500 mr-1" />
-                          <span className="text-sm font-medium">{tutor.rating.toFixed(1)}</span>
-                          <span className="text-xs text-gray-500 ml-1">({tutor.reviewsCount})</span>
+                      <div className="md:w-3/4">
+                        <div className="flex flex-wrap gap-2 mb-3">
+                          {tutor.subjects.map((subject, idx) => (
+                            <Badge key={idx} variant="outline" className="text-sm px-3 py-1">
+                              {subject.name} - {subject.hourly_rate} ₽/час
+                            </Badge>
+                          ))}
                         </div>
-                        <div className="text-sm font-medium">
-                          {tutor.subjects.length > 0 
-                            ? `от ${Math.min(...tutor.subjects.map(s => s.hourly_rate))} ₽/час` 
-                            : "Цена не указана"}
+                        
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-2">
+                          <Button 
+                            variant="outline" 
+                            className="flex items-center justify-center"
+                            onClick={() => navigate(`/profile/student/chats/${tutor.id}`)}
+                          >
+                            <MessageSquare size={16} className="mr-2" />
+                            Написать
+                          </Button>
+                          <Button 
+                            variant="outline"
+                            className="flex items-center justify-center"
+                            onClick={() => navigate(`/tutors/${tutor.id}`)}
+                          >
+                            <User size={16} className="mr-2" />
+                            Профиль
+                          </Button>
+                          <Button 
+                            variant="default"
+                            className="flex items-center justify-center"
+                          >
+                            <Calendar size={16} className="mr-2" />
+                            Запланировать занятие
+                          </Button>
                         </div>
+                        
+                        {renderTutorContactInfo(tutor)}
                       </div>
                     </div>
-                  </div>
-                  <div className="bg-gray-50 p-3 grid grid-cols-2 gap-2 border-t">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => navigate(`/profile/student/chats/${tutor.id}`)}
-                    >
-                      Написать
-                    </Button>
-                    <Button 
-                      variant="default" 
-                      size="sm" 
-                      onClick={() => navigate(`/tutors/${tutor.id}`)}
-                    >
-                      Профиль
-                    </Button>
-                  </div>
+                  </CardContent>
                 </Card>
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
               <Users size={48} className="mx-auto mb-4 text-gray-300" />
-              <div className="text-gray-500 mb-4">
+              <div className="text-gray-500 mb-4 text-lg">
                 {searchTerm 
                   ? "По вашему запросу ничего не найдено" 
                   : "У вас пока нет репетиторов"}

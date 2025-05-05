@@ -14,7 +14,6 @@ import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
 import { useLocation } from "react-router-dom";
 import { ChatConversation } from "@/components/profile/student/ChatConversation";
-import { StudentSidebar } from "@/components/profile/student/StudentSidebar";
 
 const StudentProfilePage = () => {
   const { profile, isLoading } = useProfile("student");
@@ -68,19 +67,7 @@ const StudentProfilePage = () => {
       <main className="flex-grow bg-gray-50 py-8">
         <div className="container mx-auto px-4">
           {isMainDashboard ? (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Sidebar - only shown on main dashboard */}
-              <div className="lg:col-span-1">
-                <StudentSidebar profile={profile} />
-              </div>
-              
-              {/* Main content area */}
-              <div className="lg:col-span-3">
-                <Card className="p-6 shadow-md border-none">
-                  {getTabContent()}
-                </Card>
-              </div>
-            </div>
+            <StudentDashboard profile={profile} />
           ) : (
             <div className="max-w-4xl mx-auto">
               <Card className="p-6 shadow-md border-none">
