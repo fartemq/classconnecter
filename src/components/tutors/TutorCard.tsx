@@ -5,6 +5,9 @@ import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tutor } from "@/pages/TutorsPage";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
 
 interface TutorCardProps {
   tutor: Tutor;
@@ -12,6 +15,8 @@ interface TutorCardProps {
 
 export function TutorCard({ tutor }: TutorCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Get lowest hourly rate from all subjects
   const lowestRate = tutor.subjects.length > 0
@@ -28,6 +33,20 @@ export function TutorCard({ tutor }: TutorCardProps) {
     // For now, just toggle the state locally
     // In a real app, you would save this to the database
     setIsFavorite(!isFavorite);
+  };
+
+  const handleContact = () => {
+    if (!user) {
+      toast({
+        title: "Необходима авторизация",
+        description: "Войдите в систему, чтобы связаться с репетитором",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+    
+    navigate(`/profile/student/chats/${tutor.id}`);
   };
 
   return (
@@ -92,7 +111,7 @@ export function TutorCard({ tutor }: TutorCardProps) {
           {isFavorite ? 'В избранном' : 'В избранное'}
         </Button>
         
-        <Button size="sm">
+        <Button size="sm" onClick={handleContact}>
           <MessageSquare className="h-4 w-4 mr-1" />
           Связаться
         </Button>
