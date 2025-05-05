@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { TabsContent } from "@/components/ui/tabs";
 import { useProfile } from "@/hooks/useProfile";
 import { TutorSidebar } from "@/components/profile/tutor/TutorSidebar";
 import { StudentsTab } from "@/components/profile/tutor/StudentsTab";
@@ -25,9 +25,6 @@ const TutorProfilePage = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
 
-  // Check if we're on the main tutor dashboard page
-  const isMainDashboard = location.pathname === "/profile/tutor" && !location.search;
-
   // Get tab from URL query parameter
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -39,11 +36,6 @@ const TutorProfilePage = () => {
       setActiveTab("dashboard");
     }
   }, [location.search]);
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    navigate(`/profile/tutor?tab=${value}`);
-  };
 
   if (isLoading) {
     return (
@@ -123,22 +115,7 @@ const TutorProfilePage = () => {
             {/* Main content */}
             <div className="col-span-1 lg:col-span-3">
               <Card className="p-6 shadow-md border-none">
-                <Tabs value={activeTab} onValueChange={handleTabChange}>
-                  <TabsList className="mb-6 flex flex-wrap gap-2">
-                    <TabsTrigger value="dashboard">Главная</TabsTrigger>
-                    <TabsTrigger value="about">О себе</TabsTrigger>
-                    <TabsTrigger value="methodology">Методология</TabsTrigger>
-                    <TabsTrigger value="materials">Материалы</TabsTrigger>
-                    <TabsTrigger value="schedule">Расписание</TabsTrigger>
-                    <TabsTrigger value="students">Ученики</TabsTrigger>
-                    <TabsTrigger value="chats">Сообщения</TabsTrigger>
-                    <TabsTrigger value="stats">Статистика</TabsTrigger>
-                    <TabsTrigger value="settings">Настройки</TabsTrigger>
-                  </TabsList>
-                  <TabsContent value={activeTab} className="mt-0 p-0">
-                    {renderTabContent()}
-                  </TabsContent>
-                </Tabs>
+                {renderTabContent()}
               </Card>
             </div>
           </div>
