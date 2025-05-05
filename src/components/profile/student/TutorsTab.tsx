@@ -10,62 +10,55 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "./common/PageHeader";
 import { LoadingState } from "./common/LoadingState";
 import { EmptyState } from "./common/EmptyState";
-import { TutorCard, TutorCardProps } from "./tutors/TutorCard";
+import { TutorCard } from "@/components/tutors/TutorCard";
 import { TutorSearchBar } from "./tutors/TutorSearchBar";
+import { Tutor } from "@/pages/TutorsPage";
 
 export const TutorsTab = () => {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState("");
-  const [myTutors, setMyTutors] = useState<TutorCardProps["tutor"][]>([]);
+  const [myTutors, setMyTutors] = useState<Tutor[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("tutors");
   
   // Mock data for demonstration
-  const mockTutors: TutorCardProps["tutor"][] = [
+  const mockTutors: Tutor[] = [
     {
       id: "1",
-      name: "Иванов Иван",
-      avatar: "https://i.pravatar.cc/150?img=1",
+      first_name: "Иванов",
+      last_name: "Иван",
+      avatar_url: "https://i.pravatar.cc/150?img=1",
       subjects: [
         { name: "Математика", hourly_rate: 1200 },
         { name: "Физика", hourly_rate: 1300 }
       ],
       rating: 4.8,
-      reviewsCount: 24,
-      location: "Москва",
-      lastActive: "только что",
-      isOnline: true,
-      phone: "+7 (999) 123-45-67",
-      email: "ivanov@example.com"
+      bio: "Опытный репетитор по математике и физике",
+      city: "Москва",
     },
     {
       id: "2",
-      name: "Петрова Анна",
-      avatar: "https://i.pravatar.cc/150?img=2",
+      first_name: "Петрова",
+      last_name: "Анна",
+      avatar_url: "https://i.pravatar.cc/150?img=2",
       subjects: [
         { name: "Английский язык", hourly_rate: 1500 }
       ],
       rating: 4.9,
-      reviewsCount: 32,
-      location: "Санкт-Петербург",
-      lastActive: "2 часа назад",
-      isOnline: false,
-      phone: "+7 (999) 987-65-43",
-      email: "petrova@example.com"
+      bio: "Преподаватель английского языка с опытом работы за рубежом",
+      city: "Санкт-Петербург",
     },
     {
       id: "3",
-      name: "Сидоров Алексей",
+      first_name: "Сидоров",
+      last_name: "Алексей",
       subjects: [
         { name: "Химия", hourly_rate: 1100 },
         { name: "Биология", hourly_rate: 1000 }
       ],
       rating: 4.7,
-      reviewsCount: 18,
-      location: "Новосибирск",
-      lastActive: "вчера",
-      isOnline: false,
-      email: "sidorov@example.com"
+      bio: "Преподаватель химии и биологии",
+      city: "Новосибирск",
     }
   ];
   
@@ -78,11 +71,14 @@ export const TutorsTab = () => {
     }
   }, [user]);
   
-  const filteredTutors = myTutors.filter(tutor => 
-    tutor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    tutor.subjects.some(subject => subject.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    tutor.location.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredTutors = myTutors.filter(tutor => {
+    const fullName = `${tutor.first_name} ${tutor.last_name || ""}`.toLowerCase();
+    const searchTermLower = searchTerm.toLowerCase();
+    
+    return fullName.includes(searchTermLower) ||
+      tutor.subjects.some(subject => subject.name.toLowerCase().includes(searchTermLower)) ||
+      (tutor.city && tutor.city.toLowerCase().includes(searchTermLower));
+  });
   
   return (
     <div className="w-full max-w-4xl mx-auto">

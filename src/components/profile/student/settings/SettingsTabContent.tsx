@@ -10,6 +10,7 @@ import { Settings, Bell, Lock, HelpCircle, LogOut } from "lucide-react";
 
 export const SettingsTabContent = () => {
   const [activeTab, setActiveTab] = useState("account");
+  const [notificationFrequency, setNotificationFrequency] = useState("realtime");
 
   return (
     <div className="w-full max-w-4xl mx-auto">
@@ -70,7 +71,10 @@ export const SettingsTabContent = () => {
               <AccountTab />
             </TabsContent>
             <TabsContent value="notifications">
-              <NotificationsTab />
+              <NotificationsTab 
+                notificationFrequency={notificationFrequency}
+                setNotificationFrequency={setNotificationFrequency}
+              />
             </TabsContent>
             <TabsContent value="privacy">
               <PrivacyTab />
