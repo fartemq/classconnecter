@@ -87,7 +87,7 @@ const TutorProfilePage = () => {
       case "dashboard":
         return <TutorDashboard profile={profile} />;
       case "about":
-        return <TutorAboutTab profile={tutorProfile} />;
+        return <TutorAboutTab profile={profile} />;
       case "methodology":
         return <MethodologyTab profile={tutorProfile} />;
       case "materials":
