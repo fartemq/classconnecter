@@ -107,13 +107,15 @@ const TutorProfilePage = () => {
           <h1 className="text-2xl md:text-3xl font-bold mb-8">Личный кабинет репетитора</h1>
           
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-            {/* Sidebar always visible */}
-            <div className="col-span-1">
-              {profile && <TutorSidebar profile={profile} />}
-            </div>
+            {/* Sidebar only visible on dashboard */}
+            {activeTab === "dashboard" ? (
+              <div className="col-span-1">
+                {profile && <TutorSidebar profile={profile} />}
+              </div>
+            ) : null}
             
-            {/* Main content */}
-            <div className="col-span-1 lg:col-span-3">
+            {/* Main content - takes full width when sidebar is hidden */}
+            <div className={`col-span-1 lg:col-span-${activeTab === "dashboard" ? "3" : "4"}`}>
               <Card className="p-6 shadow-md border-none">
                 {renderTabContent()}
               </Card>
