@@ -7,18 +7,15 @@ import {
   MessageSquare, 
   BarChart, 
   Settings, 
-  User, 
   Home, 
-  BookOpen, 
-  FileText 
+  Book,
+  FileText
 } from "lucide-react";
 
 // Tutor navigation tabs
 const tutorTabs = [
   { name: "Главная", path: "/profile/tutor", icon: Home },
-  { name: "О себе", path: "/profile/tutor?tab=about", icon: User },
-  { name: "Методология", path: "/profile/tutor?tab=methodology", icon: BookOpen },
-  { name: "Материалы", path: "/profile/tutor?tab=materials", icon: FileText },
+  { name: "Информация о преподавании", path: "/profile/tutor?tab=teaching", icon: Book },
   { name: "Расписание", path: "/profile/tutor?tab=schedule", icon: Calendar },
   { name: "Ученики", path: "/profile/tutor?tab=students", icon: Users },
   { name: "Сообщения", path: "/profile/tutor?tab=chats", icon: MessageSquare },

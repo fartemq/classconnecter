@@ -2,22 +2,18 @@
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { TabsContent } from "@/components/ui/tabs";
 import { useProfile } from "@/hooks/useProfile";
 import { TutorSidebar } from "@/components/profile/tutor/TutorSidebar";
 import { StudentsTab } from "@/components/profile/tutor/StudentsTab";
-import { MethodologyTab } from "@/components/profile/tutor/MethodologyTab";
-import { MaterialsTab } from "@/components/profile/tutor/MaterialsTab";
+import { TeachingInfoTab } from "@/components/profile/tutor/TeachingInfoTab";
 import { AdvancedScheduleTab } from "@/components/profile/tutor/AdvancedScheduleTab";
 import { ChatsTab } from "@/components/profile/tutor/ChatsTab";
 import { AdvancedStatsTab } from "@/components/profile/tutor/AdvancedStatsTab";
-import { TutorAboutTab } from "@/components/profile/tutor/TutorAboutTab";
 import { TutorSettingsTab } from "@/components/profile/tutor/TutorSettingsTab";
 import { TutorDashboard } from "@/components/profile/tutor/TutorDashboard";
 import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
 import { useLocation, useNavigate } from "react-router-dom";
-import { TutorProfile } from "@/types/tutor";
 
 const TutorProfilePage = () => {
   const { profile, isLoading } = useProfile("tutor");
@@ -29,7 +25,7 @@ const TutorProfilePage = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
-    if (tab && ["about", "methodology", "materials", "schedule", "students", "chats", "stats", "settings"].includes(tab)) {
+    if (tab && ["teaching", "schedule", "students", "chats", "stats", "settings"].includes(tab)) {
       setActiveTab(tab);
     } else if (!tab) {
       // If no tab is specified, set to dashboard
@@ -53,37 +49,11 @@ const TutorProfilePage = () => {
   const renderTabContent = () => {
     if (!profile) return null;
     
-    // Convert Profile to TutorProfile only when needed for components that require TutorProfile
-    const tutorProfile: TutorProfile = {
-      id: profile.id,
-      firstName: profile.first_name,
-      lastName: profile.last_name || "",
-      bio: profile.bio || "",
-      city: profile.city || "",
-      avatarUrl: profile.avatar_url,
-      subjects: [],
-      rating: 0,
-      reviewsCount: 0,
-      completedLessons: 0,
-      activeStudents: 0,
-      educationInstitution: "",
-      degree: "",
-      graduationYear: null,
-      educationVerified: false,
-      experience: 0,
-      achievements: "",
-      videoUrl: "",
-    };
-    
     switch (activeTab) {
       case "dashboard":
         return <TutorDashboard profile={profile} />;
-      case "about":
-        return <TutorAboutTab profile={profile} />;
-      case "methodology":
-        return <MethodologyTab profile={tutorProfile} />;
-      case "materials":
-        return <MaterialsTab tutorId={profile.id} />;
+      case "teaching":
+        return <TeachingInfoTab profile={profile} />;
       case "schedule":
         return <AdvancedScheduleTab tutorId={profile.id} />;
       case "students":
