@@ -51,7 +51,7 @@ export interface TutorSubject {
 export interface TutorMaterial {
   id: string;
   title: string;
-  type: 'document' | 'video' | 'audio' | 'link';
+  type: "document" | "video" | "audio" | "link";
   url: string;
   description?: string;
 }

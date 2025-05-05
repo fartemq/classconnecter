@@ -43,10 +43,11 @@ export const MaterialsTab = ({ tutorId, subjectId }: MaterialsTabProps) => {
 
       if (error) throw error;
       
+      // Explicitly cast the type property to ensure it matches TutorMaterial type
       setMaterials(data.map(item => ({
         id: item.id,
         title: item.title,
-        type: item.type,
+        type: item.type as "document" | "video" | "audio" | "link",
         url: item.url,
         description: item.description
       })));
