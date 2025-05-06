@@ -6,6 +6,11 @@ export interface Lesson {
     first_name: string;
     last_name: string | null;
   };
+  student?: {
+    id: string;
+    first_name: string;
+    last_name: string | null;
+  };
   subject: {
     name: string;
   };

@@ -19,14 +19,14 @@ export const ScheduleTab = () => {
         
         const today = format(new Date(), 'yyyy-MM-dd');
         
-        // Use type assertions to avoid constraint errors
+        // Fix the type assertion
         const { data, error } = await supabase.rpc(
           "get_tutor_lessons_by_date", 
           { 
             p_tutor_id: userData.user.id,
             p_date: today
           }
-        ) as { data: Lesson[] | null, error: any };
+        ) as unknown as { data: Lesson[] | null, error: any };
           
         if (error) throw error;
         
@@ -84,9 +84,11 @@ export const ScheduleTab = () => {
                   <p className="text-sm text-gray-500">
                     {format(new Date(lesson.date), 'dd MMMM yyyy', { locale: ru })} в {lesson.time.substring(0, 5)}
                   </p>
-                  <p className="text-sm text-gray-600">
-                    Студент: {lesson.student.first_name} {lesson.student.last_name || ''}
-                  </p>
+                  {lesson.student && (
+                    <p className="text-sm text-gray-600">
+                      Студент: {lesson.student.first_name} {lesson.student.last_name || ''}
+                    </p>
+                  )}
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-medium text-blue-600">
