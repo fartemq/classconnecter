@@ -4,11 +4,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useProfile } from "@/hooks/useProfile";
 import { StudentDashboard } from "@/components/StudentDashboard";
-import { ScheduleTab } from "@/components/profile/student/ScheduleTab";
-import { TutorsTab } from "@/components/profile/student/TutorsTab";
-import { FavoriteTutorsTab } from "@/components/profile/student/FavoriteTutorsTab";
 import { ChatsTab } from "@/components/profile/student/ChatsTab";
-import { HomeworkTab } from "@/components/profile/student/HomeworkTab";
 import { SettingsTab } from "@/components/profile/student/SettingsTab";
 import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
@@ -23,6 +19,7 @@ const StudentProfilePage = () => {
   const isMainDashboard = location.pathname === "/profile/student";
   
   // Parse URL to determine the active tab and any tutor ID for chat
+  // Удалены вкладки для расписания, репетиторов, избранного и домашних заданий
   const getTabContent = () => {
     const path = location.pathname;
     
@@ -30,16 +27,8 @@ const StudentProfilePage = () => {
     
     const tutorId = path.split("/chats/")[1];
     
-    if (path.includes("/schedule")) {
-      return <ScheduleTab />;
-    } else if (path.includes("/tutors")) {
-      return <TutorsTab />;
-    } else if (path.includes("/favorites")) {
-      return <FavoriteTutorsTab />;
-    } else if (path.includes("/chats")) {
+    if (path.includes("/chats")) {
       return tutorId ? <ChatConversation /> : <ChatsTab />;
-    } else if (path.includes("/homework")) {
-      return <HomeworkTab />;
     } else if (path.includes("/settings")) {
       return <SettingsTab />;
     } else if (path.includes("/edit")) {

@@ -5,8 +5,7 @@ import { ProfileAvatar } from "./components/ProfileAvatar";
 import { ProfileInfo } from "./components/ProfileInfo";
 import { Button } from "@/components/ui/button";
 import { 
-  Calendar, Users, Heart, MessageSquare, 
-  FileText, Settings, User, BookOpen, Home
+  MessageSquare, Settings, User, Home
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -30,13 +29,10 @@ export const StudentSidebar = ({ profile }: StudentSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   
+  // Обновленное навигационное меню - удалены пункты для расписания, репетиторов, избранного и домашних заданий
   const navItems = [
     { label: "Главная", icon: Home, path: "/profile/student" },
-    { label: "Расписание", icon: Calendar, path: "/profile/student/schedule" },
-    { label: "Репетиторы", icon: Users, path: "/profile/student/tutors" },
-    { label: "Избранное", icon: Heart, path: "/profile/student/favorites" },
     { label: "Сообщения", icon: MessageSquare, path: "/profile/student/chats", badge: 2 },
-    { label: "Домашние задания", icon: FileText, path: "/profile/student/homework", badge: 1 },
     { label: "Мой профиль", icon: User, path: "/profile/student/edit" },
     { label: "Настройки", icon: Settings, path: "/profile/student/settings" },
   ];
@@ -89,14 +85,6 @@ export const StudentSidebar = ({ profile }: StudentSidebarProps) => {
             </div>
             <Progress value={profileProgress} className="h-2" />
           </div>
-          
-          <Button 
-            className="w-full mb-2" 
-            onClick={() => navigate("/tutors")}
-          >
-            <BookOpen className="mr-2 h-4 w-4" />
-            Найти репетитора
-          </Button>
         </CardContent>
       </Card>
       
