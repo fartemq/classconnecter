@@ -16,12 +16,11 @@ interface UpdateHomeworkParams extends Record<string, any> {
 
 export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | null> => {
   try {
-    const { data, error } = await supabase.rpc<Homework, GetHomeworkByIdParams>(
-      "get_homework_by_id", 
-      { 
+    const { data, error } = await supabase
+      .rpc("get_homework_by_id", { 
         p_homework_id: homeworkId 
-      }
-    );
+      })
+      .returns<Homework>();
 
     if (error) {
       throw error;
@@ -36,10 +35,9 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
 
 export const createHomework = async (homeworkData: HomeworkData): Promise<{ data: Homework | null, error: any }> => {
   try {
-    const { data, error } = await supabase.rpc<Homework, CreateHomeworkParams>(
-      "create_homework", 
-      homeworkData as CreateHomeworkParams
-    );
+    const { data, error } = await supabase
+      .rpc("create_homework", homeworkData as CreateHomeworkParams)
+      .returns<Homework>();
 
     return { data: data as Homework, error };
   } catch (error) {
@@ -55,10 +53,9 @@ export const updateHomework = async (homeworkId: string, updateData: Partial<Hom
       ...updateData
     };
 
-    const { data, error } = await supabase.rpc<Homework, UpdateHomeworkParams>(
-      "update_homework", 
-      params
-    );
+    const { data, error } = await supabase
+      .rpc("update_homework", params)
+      .returns<Homework>();
 
     return { data: data as Homework, error };
   } catch (error) {

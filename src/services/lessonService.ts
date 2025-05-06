@@ -13,19 +13,18 @@ interface CreateLessonParams extends Record<string, any> {
 
 export const fetchLessonsByDate = async (studentId: string, date: string): Promise<Lesson[]> => {
   try {
-    const { data, error } = await supabase.rpc<Lesson[], GetStudentLessonsByDateParams>(
-      "get_student_lessons_by_date", 
-      { 
+    const { data, error } = await supabase
+      .rpc("get_student_lessons_by_date", { 
         p_student_id: studentId,
         p_date: date
-      }
-    );
+      })
+      .returns<Lesson[]>();
 
     if (error) {
       throw error;
     }
 
-    return data as Lesson[] || [];
+    return data || [];
   } catch (error) {
     console.error('Error fetching lessons:', error);
     return [];
@@ -34,10 +33,9 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
 
 export const createLesson = async (lessonData: LessonData): Promise<{ data: Lesson | null, error: any }> => {
   try {
-    const { data, error } = await supabase.rpc<Lesson, CreateLessonParams>(
-      "create_lesson", 
-      lessonData as CreateLessonParams
-    );
+    const { data, error } = await supabase
+      .rpc("create_lesson", lessonData as CreateLessonParams)
+      .returns<Lesson>();
 
     return { data: data as Lesson, error };
   } catch (error) {

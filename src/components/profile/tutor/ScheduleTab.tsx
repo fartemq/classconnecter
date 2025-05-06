@@ -24,17 +24,16 @@ export const ScheduleTab = () => {
         
         const today = format(new Date(), 'yyyy-MM-dd');
         
-        const { data, error } = await supabase.rpc<Lesson[], GetTutorLessonsByDateParams>(
-          "get_tutor_lessons_by_date", 
-          { 
+        const { data, error } = await supabase
+          .rpc("get_tutor_lessons_by_date", { 
             p_tutor_id: userData.user.id,
             p_date: today
-          }
-        );
+          })
+          .returns<Lesson[]>();
           
         if (error) throw error;
         
-        setLessons(data as Lesson[] || []);
+        setLessons(data || []);
       } catch (error) {
         console.error('Error fetching lessons:', error);
       } finally {
