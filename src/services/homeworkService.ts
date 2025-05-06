@@ -6,7 +6,7 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
   try {
     // Use RPC function to fetch homework by id
     const { data, error } = await supabase
-      .rpc('get_homework_by_id', { p_homework_id: homeworkId });
+      .rpc('get_homework_by_id', { p_homework_id: homeworkId } as any);
 
     if (error) {
       throw error;
@@ -23,7 +23,7 @@ export const createHomework = async (homeworkData: HomeworkData): Promise<{ data
   try {
     // Use RPC function for homework creation
     const { data, error } = await supabase
-      .rpc('create_homework', homeworkData);
+      .rpc('create_homework', homeworkData as any);
 
     return { data: data as unknown as Homework, error };
   } catch (error) {
@@ -39,7 +39,7 @@ export const updateHomework = async (homeworkId: string, updateData: Partial<Hom
       .rpc('update_homework', { 
         p_homework_id: homeworkId,
         ...updateData 
-      });
+      } as any);
 
     return { data: data as unknown as Homework, error };
   } catch (error) {

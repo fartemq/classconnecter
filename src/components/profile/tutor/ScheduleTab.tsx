@@ -22,7 +22,7 @@ export const ScheduleTab = () => {
           .rpc('get_tutor_lessons_by_date', { 
             p_tutor_id: userData.user.id,
             p_date: today
-          });
+          } as any);
           
         if (error) throw error;
         
