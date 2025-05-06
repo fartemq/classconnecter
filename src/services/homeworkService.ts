@@ -6,7 +6,7 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
   try {
     // Use RPC function to fetch homework by id
     const { data, error } = await supabase
-      .rpc('get_homework_by_id', { homework_id: homeworkId });
+      .rpc('get_homework_by_id', { p_homework_id: homeworkId });
 
     if (error) {
       throw error;
@@ -37,7 +37,7 @@ export const updateHomework = async (homeworkId: string, updateData: Partial<Hom
     // Use RPC function for homework update
     const { data, error } = await supabase
       .rpc('update_homework', { 
-        homework_id: homeworkId,
+        p_homework_id: homeworkId,
         ...updateData 
       });
 
