@@ -1,16 +1,25 @@
 
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Settings, User } from "lucide-react";
+import { 
+  Calendar, Search, Users, 
+  MessageSquare, FileText, Settings, 
+  User, Activity
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 export const StudentDashboardButtons = () => {
   const navigate = useNavigate();
   
-  // Обновленный список кнопок - удалены кнопки для расписания, репетиторов, избранного и домашних заданий
+  // Updated list of buttons with all requested sections
   const studentNavItems = [
+    { name: "Расписание", path: "/profile/student/schedule", icon: Calendar },
+    { name: "Поиск репетиторов", path: "/profile/student/find-tutors", icon: Search },
+    { name: "Мои репетиторы", path: "/profile/student/my-tutors", icon: Users },
+    { name: "Моя анкета", path: "/profile/student/profile", icon: User },
+    { name: "Мой прогресс", path: "/profile/student/progress", icon: Activity },
     { name: "Сообщения", path: "/profile/student/chats", icon: MessageSquare, badge: 2 },
-    { name: "Мой профиль", path: "/profile/student/edit", icon: User },
+    { name: "Домашние задания", path: "/profile/student/homework", icon: FileText, badge: 1 },
     { name: "Настройки", path: "/profile/student/settings", icon: Settings },
   ];
   
@@ -18,7 +27,7 @@ export const StudentDashboardButtons = () => {
     <div className="py-8">
       <h2 className="text-2xl md:text-3xl font-bold mb-6 text-center text-gray-800">Личный кабинет ученика</h2>
       
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
         {studentNavItems.map((item) => (
           <div 
             key={item.path}

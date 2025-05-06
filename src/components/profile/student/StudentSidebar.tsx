@@ -5,7 +5,8 @@ import { ProfileAvatar } from "./components/ProfileAvatar";
 import { ProfileInfo } from "./components/ProfileInfo";
 import { Button } from "@/components/ui/button";
 import { 
-  MessageSquare, Settings, User, Home
+  Calendar, Search, Users, Heart, MessageSquare, 
+  FileText, Settings, User, Home, Activity
 } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
@@ -29,11 +30,16 @@ export const StudentSidebar = ({ profile }: StudentSidebarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Обновленное навигационное меню - удалены пункты для расписания, репетиторов, избранного и домашних заданий
+  // Updated navigation menu with all requested sections
   const navItems = [
     { label: "Главная", icon: Home, path: "/profile/student" },
+    { label: "Расписание", icon: Calendar, path: "/profile/student/schedule" },
+    { label: "Поиск репетиторов", icon: Search, path: "/profile/student/find-tutors" },
+    { label: "Мои репетиторы", icon: Users, path: "/profile/student/my-tutors" },
+    { label: "Моя анкета", icon: User, path: "/profile/student/profile" },
+    { label: "Мой прогресс", icon: Activity, path: "/profile/student/progress" },
     { label: "Сообщения", icon: MessageSquare, path: "/profile/student/chats", badge: 2 },
-    { label: "Мой профиль", icon: User, path: "/profile/student/edit" },
+    { label: "Домашние задания", icon: FileText, path: "/profile/student/homework", badge: 1 },
     { label: "Настройки", icon: Settings, path: "/profile/student/settings" },
   ];
   

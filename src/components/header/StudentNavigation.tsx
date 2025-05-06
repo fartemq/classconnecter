@@ -2,15 +2,21 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { 
-  Home, MessageSquare, Settings, User
+  Home, Calendar, Search, Users, Heart, MessageSquare, 
+  FileText, Settings, User, Activity
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-// Student navigation tabs - удалены вкладки расписания, репетиторов, избранного и домашних заданий
+// Student navigation tabs - restored and updated with all requested sections
 const studentTabs = [
   { name: "Главная", path: "/profile/student", icon: Home },
+  { name: "Расписание", path: "/profile/student/schedule", icon: Calendar },
+  { name: "Поиск репетиторов", path: "/profile/student/find-tutors", icon: Search },
+  { name: "Мои репетиторы", path: "/profile/student/my-tutors", icon: Users },
+  { name: "Моя анкета", path: "/profile/student/profile", icon: User },
+  { name: "Мой прогресс", path: "/profile/student/progress", icon: Activity },
   { name: "Сообщения", path: "/profile/student/chats", icon: MessageSquare, notificationCount: 2 },
-  { name: "Профиль", path: "/profile/student/edit", icon: User },
+  { name: "Домашние задания", path: "/profile/student/homework", icon: FileText, notificationCount: 1 },
   { name: "Настройки", path: "/profile/student/settings", icon: Settings },
 ];
 
