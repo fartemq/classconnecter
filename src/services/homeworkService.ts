@@ -4,7 +4,7 @@ import { Homework, HomeworkData } from "@/types/homework";
 
 export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | null> => {
   try {
-    // Use raw query with explicit casting since the types don't know about the homework table yet
+    // Use RPC function to fetch homework by id
     const { data, error } = await supabase
       .rpc('get_homework_by_id', { homework_id: homeworkId });
 
@@ -21,7 +21,7 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
 
 export const createHomework = async (homeworkData: HomeworkData): Promise<{ data: Homework | null, error: any }> => {
   try {
-    // Use raw query with explicit casting since the types don't know about the homework table yet
+    // Use RPC function for homework creation
     const { data, error } = await supabase
       .rpc('create_homework', homeworkData);
 
@@ -34,7 +34,7 @@ export const createHomework = async (homeworkData: HomeworkData): Promise<{ data
 
 export const updateHomework = async (homeworkId: string, updateData: Partial<HomeworkData>): Promise<{ data: Homework | null, error: any }> => {
   try {
-    // Use raw query with explicit casting since the types don't know about the homework table yet
+    // Use RPC function for homework update
     const { data, error } = await supabase
       .rpc('update_homework', { 
         homework_id: homeworkId,

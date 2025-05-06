@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarIcon, Clock } from "lucide-react";
@@ -206,7 +207,7 @@ export const ScheduleTab = () => {
         date: lessonDate,
         time: slot.startTime,
         duration: 60, // Default duration, could be calculated from start/end time
-        status: 'upcoming'
+        status: "upcoming" as const  // Explicitly cast to the literal type
       };
       
       const { data: lessonResult, error: lessonError } = await createLesson(lessonData);
@@ -228,7 +229,7 @@ export const ScheduleTab = () => {
           date: lessonDate,
           time: slot.startTime,
           duration: 60,
-          status: 'upcoming'
+          status: "upcoming"
         };
         
         setLessons([...lessons, newLesson]);
