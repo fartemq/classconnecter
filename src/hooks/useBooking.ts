@@ -1,0 +1,126 @@
+
+import { useState } from "react";
+import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { createLesson } from "@/services/lessonService";
+import { Lesson } from "@/types/lesson";
+import { TimeSlot } from "./useTutorSlots";
+
+export const useBooking = (setLessons?: React.Dispatch<React.SetStateAction<Lesson[]>>, lessons?: Lesson[]) => {
+  const [bookingSlot, setBookingSlot] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handleBookSlot = async (slot: TimeSlot, date: Date, subjectId: string) => {
+    try {
+      setBookingSlot(slot.id);
+      
+      const { data: userData } = await supabase.auth.getUser();
+      if (!userData?.user) {
+        toast({
+          title: "Ошибка",
+          description: "Необходимо войти в систему.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!subjectId) {
+        // Get student's subjects with this tutor if no subject is provided
+        const { data: subjectData, error: subjectError } = await supabase
+          .from('student_requests')
+          .select(`
+            subject_id,
+            subject:subjects(id, name)
+          `)
+          .eq('student_id', userData.user.id)
+          .eq('tutor_id', slot.tutorId)
+          .eq('status', 'accepted')
+          .maybeSingle();
+          
+        if (subjectError) throw subjectError;
+        
+        if (!subjectData || !subjectData.subject_id) {
+          toast({
+            title: "Ошибка",
+            description: "Не удалось определить предмет для занятия.",
+            variant: "destructive"
+          });
+          return;
+        }
+        
+        subjectId = subjectData.subject_id;
+      }
+      
+      // Format date for the database
+      const lessonDate = format(date, 'yyyy-MM-dd');
+      
+      // Create a new lesson using our service
+      const lessonData = {
+        student_id: userData.user.id,
+        tutor_id: slot.tutorId,
+        subject_id: subjectId,
+        date: lessonDate,
+        time: slot.startTime,
+        duration: 60, // Default duration
+        status: "upcoming" as const
+      };
+      
+      const { data: lessonResult, error: lessonError } = await createLesson(lessonData);
+      
+      if (lessonError) throw lessonError;
+      
+      if (lessonResult) {
+        // Add the new lesson to the list if we have access to the lessons state
+        if (setLessons && lessons) {
+          const newLesson: Lesson = {
+            id: lessonResult.id,
+            tutor_id: slot.tutorId,
+            student_id: userData.user.id,
+            subject_id: subjectId,
+            date: lessonDate,
+            time: slot.startTime,
+            duration: 60,
+            status: "upcoming",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            tutor: {
+              id: slot.tutorId,
+              first_name: slot.tutorName?.split(' ')[0] || '',
+              last_name: slot.tutorName?.split(' ')[1] || null
+            },
+            subject: {
+              id: subjectId,
+              name: lessonResult.subject.name
+            }
+          };
+          
+          setLessons([...lessons, newLesson]);
+        }
+        
+        toast({
+          title: "Успешно",
+          description: "Занятие успешно забронировано.",
+        });
+        
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error booking slot:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось забронировать занятие. Пожалуйста, попробуйте позже.",
+        variant: "destructive"
+      });
+      return false;
+    } finally {
+      setBookingSlot(null);
+    }
+  };
+
+  return {
+    bookingSlot,
+    handleBookSlot
+  };
+};
