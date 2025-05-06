@@ -9,7 +9,7 @@ interface GetStudentLessonsByDateParams {
 
 export const fetchLessonsByDate = async (studentId: string, date: string): Promise<Lesson[]> => {
   try {
-    const { data, error } = await supabase.rpc(
+    const { data, error } = await supabase.rpc<Lesson[]>(
       "get_student_lessons_by_date", 
       { 
         p_student_id: studentId,
@@ -30,7 +30,7 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
 
 export const createLesson = async (lessonData: LessonData): Promise<{ data: Lesson | null, error: any }> => {
   try {
-    const { data, error } = await supabase.rpc(
+    const { data, error } = await supabase.rpc<Lesson>(
       "create_lesson", 
       lessonData as Record<string, any>
     );

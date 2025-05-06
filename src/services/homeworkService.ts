@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Homework, HomeworkData } from "@/types/homework";
 
@@ -16,7 +17,7 @@ interface UpdateHomeworkParams extends Record<string, any> {
 
 export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | null> => {
   try {
-    const { data, error } = await supabase.rpc(
+    const { data, error } = await supabase.rpc<Homework>(
       "get_homework_by_id", 
       { 
         p_homework_id: homeworkId 
@@ -36,7 +37,7 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
 
 export const createHomework = async (homeworkData: HomeworkData): Promise<{ data: Homework | null, error: any }> => {
   try {
-    const { data, error } = await supabase.rpc(
+    const { data, error } = await supabase.rpc<Homework>(
       "create_homework", 
       homeworkData as CreateHomeworkParams
     );
@@ -55,7 +56,7 @@ export const updateHomework = async (homeworkId: string, updateData: Partial<Hom
       ...updateData
     };
 
-    const { data, error } = await supabase.rpc(
+    const { data, error } = await supabase.rpc<Homework>(
       "update_homework", 
       params
     );
