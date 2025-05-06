@@ -24,12 +24,12 @@ export const ScheduleTab = () => {
         
         const today = format(new Date(), 'yyyy-MM-dd');
         
-        const { data, error } = await supabase.rpc<Lesson[]>(
+        const { data, error } = await supabase.rpc<Lesson[], GetTutorLessonsByDateParams>(
           "get_tutor_lessons_by_date", 
           { 
             p_tutor_id: userData.user.id,
             p_date: today
-          } as GetTutorLessonsByDateParams
+          }
         );
           
         if (error) throw error;
