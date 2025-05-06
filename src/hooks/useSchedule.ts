@@ -216,6 +216,7 @@ export const useSchedule = () => {
           duration: 60,
           status: "upcoming",
           created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(), // Add the updated_at property
           tutor: {
             id: slot.tutorId,
             first_name: slot.tutorName?.split(' ')[0] || '',
