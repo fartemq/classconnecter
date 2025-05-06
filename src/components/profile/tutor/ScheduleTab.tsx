@@ -32,14 +32,17 @@ export const ScheduleTab = () => {
         
         const today = format(new Date(), 'yyyy-MM-dd');
         
-        // Use type assertion to work around TypeScript constraints
-        const { data, error } = await supabase.rpc(
+        // Use type parameters to properly define the function return and params types
+        const { data, error } = await supabase.rpc<Lesson[], {
+          p_tutor_id: string;
+          p_date: string;
+        }>(
           "get_tutor_lessons_by_date", 
           { 
             p_tutor_id: userData.user.id,
             p_date: today
           }
-        ) as unknown as { data: Lesson[] | null; error: any };
+        );
           
         if (error) throw error;
         
