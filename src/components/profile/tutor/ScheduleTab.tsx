@@ -32,18 +32,14 @@ export const ScheduleTab = () => {
         
         const today = format(new Date(), 'yyyy-MM-dd');
         
-        // Define parameter type for the RPC call
-        type GetTutorLessonsParams = {
-          p_tutor_id: string;
-          p_date: string;
-        };
-        
-        // Using `any` as a workaround for the TypeScript constraints issue
-        const { data, error } = await supabase
-          .rpc<Lesson[], GetTutorLessonsParams>("get_tutor_lessons_by_date", { 
+        // Use type assertion to work around TypeScript constraints
+        const { data, error } = await supabase.rpc(
+          "get_tutor_lessons_by_date", 
+          { 
             p_tutor_id: userData.user.id,
             p_date: today
-          }) as { data: Lesson[] | null; error: any };
+          }
+        ) as unknown as { data: Lesson[] | null; error: any };
           
         if (error) throw error;
         

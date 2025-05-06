@@ -91,35 +91,6 @@ serve(async (req) => {
         })
       }
       
-      case 'get-student-lessons': {
-        const { studentId, date } = body
-        
-        // Use explicit parameter names matching SQL function
-        const { data, error } = await supabaseClient.rpc('get_student_lessons_by_date', { 
-          p_student_id: studentId,
-          p_date: date 
-        })
-        
-        if (error) throw error
-        
-        return new Response(JSON.stringify({ data }), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-      
-      case 'create-lesson': {
-        // Direct pass of body parameters to create_lesson RPC function
-        const { data, error } = await supabaseClient.rpc('create_lesson', body)
-        
-        if (error) throw error
-        
-        return new Response(JSON.stringify({ data }), {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        })
-      }
-      
       default:
         return new Response(JSON.stringify({ error: 'Not found' }), {
           status: 404,

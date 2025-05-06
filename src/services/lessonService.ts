@@ -11,12 +11,14 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
     };
     
     // Use RPC function to fetch lessons for a specific date
-    // Using `any` as a workaround for the TypeScript constraints issue
-    const { data, error } = await supabase
-      .rpc<Lesson[], GetLessonsParams>("get_student_lessons_by_date", { 
+    // Use type assertion to work around TypeScript constraints
+    const { data, error } = await supabase.rpc(
+      "get_student_lessons_by_date", 
+      { 
         p_student_id: studentId,
         p_date: date
-      }) as { data: Lesson[] | null; error: any };
+      }
+    ) as unknown as { data: Lesson[] | null; error: any };
 
     if (error) {
       throw error;
@@ -31,20 +33,12 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
 
 export const createLesson = async (lessonData: LessonData): Promise<{ data: Lesson | null, error: any }> => {
   try {
-    // Define parameters type for create_lesson RPC
-    type CreateLessonParams = {
-      student_id: string;
-      tutor_id: string;
-      subject_id: string;
-      date: string;
-      time: string;
-      duration: number;
-      status: string;
-    };
-    
-    // Using `any` as a workaround for the TypeScript constraints issue
-    const { data, error } = await supabase
-      .rpc<Lesson, CreateLessonParams>("create_lesson", lessonData) as { data: Lesson | null; error: any };
+    // Use RPC function for lesson creation
+    // Use type assertion to work around TypeScript constraints
+    const { data, error } = await supabase.rpc(
+      "create_lesson", 
+      lessonData
+    ) as unknown as { data: Lesson | null; error: any };
 
     return { data, error };
   } catch (error) {
