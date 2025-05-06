@@ -7,6 +7,11 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Lesson } from "@/types/lesson";
 
+interface GetTutorLessonsByDateParams {
+  p_tutor_id: string;
+  p_date: string;
+}
+
 export const ScheduleTab = () => {
   const [loading, setLoading] = useState(true);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -24,7 +29,7 @@ export const ScheduleTab = () => {
           { 
             p_tutor_id: userData.user.id,
             p_date: today
-          } as { p_tutor_id: string; p_date: string }
+          } as GetTutorLessonsByDateParams
         );
           
         if (error) throw error;

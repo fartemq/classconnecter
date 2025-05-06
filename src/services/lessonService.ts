@@ -2,6 +2,11 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Lesson, LessonData } from "@/types/lesson";
 
+interface GetStudentLessonsByDateParams {
+  p_student_id: string;
+  p_date: string;
+}
+
 export const fetchLessonsByDate = async (studentId: string, date: string): Promise<Lesson[]> => {
   try {
     const { data, error } = await supabase.rpc(
@@ -9,7 +14,7 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
       { 
         p_student_id: studentId,
         p_date: date
-      } as { p_student_id: string; p_date: string }
+      } as GetStudentLessonsByDateParams
     );
 
     if (error) {

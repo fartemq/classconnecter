@@ -1,6 +1,18 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Homework, HomeworkData } from "@/types/homework";
+
+interface GetHomeworkByIdParams {
+  p_homework_id: string;
+}
+
+interface CreateHomeworkParams extends Record<string, any> {
+  // This will be filled with the HomeworkData properties
+}
+
+interface UpdateHomeworkParams extends Record<string, any> {
+  p_homework_id: string;
+  // Other optional parameters will be dynamically added
+}
 
 export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | null> => {
   try {
@@ -8,7 +20,7 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
       "get_homework_by_id", 
       { 
         p_homework_id: homeworkId 
-      } as { p_homework_id: string }
+      } as GetHomeworkByIdParams
     );
 
     if (error) {
@@ -26,7 +38,7 @@ export const createHomework = async (homeworkData: HomeworkData): Promise<{ data
   try {
     const { data, error } = await supabase.rpc(
       "create_homework", 
-      homeworkData as Record<string, any>
+      homeworkData as CreateHomeworkParams
     );
 
     return { data: data as Homework, error };
@@ -38,12 +50,14 @@ export const createHomework = async (homeworkData: HomeworkData): Promise<{ data
 
 export const updateHomework = async (homeworkId: string, updateData: Partial<HomeworkData>): Promise<{ data: Homework | null, error: any }> => {
   try {
+    const params: UpdateHomeworkParams = {
+      p_homework_id: homeworkId,
+      ...updateData
+    };
+
     const { data, error } = await supabase.rpc(
       "update_homework", 
-      { 
-        p_homework_id: homeworkId,
-        ...updateData 
-      } as Record<string, any>
+      params
     );
 
     return { data: data as Homework, error };
