@@ -4,15 +4,20 @@ import { Homework, HomeworkData } from "@/types/homework";
 
 export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | null> => {
   try {
+    // Define parameter type for the RPC call
+    type GetHomeworkParams = { p_homework_id: string };
+    
     // Use RPC function to fetch homework by id
     const { data, error } = await supabase
-      .rpc('get_homework_by_id', { p_homework_id: homeworkId } as any);
+      .rpc<Homework>('get_homework_by_id', { 
+        p_homework_id: homeworkId 
+      } as GetHomeworkParams);
 
     if (error) {
       throw error;
     }
 
-    return data as unknown as Homework;
+    return data as Homework;
   } catch (error) {
     console.error('Error fetching homework:', error);
     return null;
@@ -21,11 +26,11 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
 
 export const createHomework = async (homeworkData: HomeworkData): Promise<{ data: Homework | null, error: any }> => {
   try {
-    // Use RPC function for homework creation
+    // Use RPC function for homework creation with proper type
     const { data, error } = await supabase
-      .rpc('create_homework', homeworkData as any);
+      .rpc<Homework>('create_homework', homeworkData as any);
 
-    return { data: data as unknown as Homework, error };
+    return { data: data as Homework, error };
   } catch (error) {
     console.error('Error creating homework:', error);
     return { data: null, error };
@@ -34,14 +39,20 @@ export const createHomework = async (homeworkData: HomeworkData): Promise<{ data
 
 export const updateHomework = async (homeworkId: string, updateData: Partial<HomeworkData>): Promise<{ data: Homework | null, error: any }> => {
   try {
+    // Define parameter type for the RPC call
+    type UpdateHomeworkParams = { 
+      p_homework_id: string;
+      [key: string]: any;
+    };
+    
     // Use RPC function for homework update
     const { data, error } = await supabase
-      .rpc('update_homework', { 
+      .rpc<Homework>('update_homework', { 
         p_homework_id: homeworkId,
         ...updateData 
-      } as any);
+      } as UpdateHomeworkParams);
 
-    return { data: data as unknown as Homework, error };
+    return { data: data as Homework, error };
   } catch (error) {
     console.error('Error updating homework:', error);
     return { data: null, error };

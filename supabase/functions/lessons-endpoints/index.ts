@@ -49,7 +49,7 @@ serve(async (req) => {
       case 'get-student-lessons': {
         const { studentId, date } = body
         
-        // Use explicit casting in the RPC function
+        // Use explicit parameter names matching SQL function
         const { data, error } = await supabaseClient.rpc('get_student_lessons_by_date', { 
           p_student_id: studentId,
           p_date: date 
@@ -66,7 +66,7 @@ serve(async (req) => {
       case 'get-tutor-lessons': {
         const { tutorId, date } = body
         
-        // Use explicit casting in the RPC function
+        // Use explicit parameter names matching SQL function
         const { data, error } = await supabaseClient.rpc('get_tutor_lessons_by_date', { 
           p_tutor_id: tutorId,
           p_date: date 
@@ -81,7 +81,7 @@ serve(async (req) => {
       }
       
       case 'create-lesson': {
-        // Use explicit casting in the RPC function
+        // Direct pass of body parameters to create_lesson RPC function
         const { data, error } = await supabaseClient.rpc('create_lesson', body)
         
         if (error) throw error
