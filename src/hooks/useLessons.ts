@@ -1,6 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 import { fetchLessonsByDate } from "@/services/lessonService";
 import { Lesson } from "@/types/lesson";
 
