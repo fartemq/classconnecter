@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -37,12 +38,12 @@ export const ScheduleTab = () => {
           p_date: string;
         };
         
-        // Add both type arguments to rpc<>
+        // Using `any` as a workaround for the TypeScript constraints issue
         const { data, error } = await supabase
-          .rpc<Lesson[], GetTutorLessonsParams>('get_tutor_lessons_by_date', { 
+          .rpc<Lesson[], GetTutorLessonsParams>("get_tutor_lessons_by_date", { 
             p_tutor_id: userData.user.id,
             p_date: today
-          });
+          }) as { data: Lesson[] | null; error: any };
           
         if (error) throw error;
         

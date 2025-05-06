@@ -10,17 +10,17 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
     };
     
     // Use RPC function to fetch homework by id
-    // Adding both return type and parameters type to rpc<>
+    // Using `any` as a workaround for the TypeScript constraints issue
     const { data, error } = await supabase
-      .rpc<Homework, GetHomeworkParams>('get_homework_by_id', { 
+      .rpc<Homework, GetHomeworkParams>("get_homework_by_id", { 
         p_homework_id: homeworkId 
-      });
+      }) as { data: Homework | null; error: any };
 
     if (error) {
       throw error;
     }
 
-    return data || null;
+    return data;
   } catch (error) {
     console.error('Error fetching homework:', error);
     return null;
@@ -32,11 +32,11 @@ export const createHomework = async (homeworkData: HomeworkData): Promise<{ data
     // Define parameters type for create_homework RPC
     type CreateHomeworkParams = HomeworkData;
     
-    // Adding both return type and parameters type to rpc<>
+    // Using `any` as a workaround for the TypeScript constraints issue
     const { data, error } = await supabase
-      .rpc<Homework, CreateHomeworkParams>('create_homework', homeworkData);
+      .rpc<Homework, CreateHomeworkParams>("create_homework", homeworkData) as { data: Homework | null; error: any };
 
-    return { data: data || null, error };
+    return { data, error };
   } catch (error) {
     console.error('Error creating homework:', error);
     return { data: null, error };
@@ -52,14 +52,14 @@ export const updateHomework = async (homeworkId: string, updateData: Partial<Hom
     };
     
     // Use RPC function for homework update
-    // Adding both return type and parameters type to rpc<>
+    // Using `any` as a workaround for the TypeScript constraints issue
     const { data, error } = await supabase
-      .rpc<Homework, UpdateHomeworkParams>('update_homework', { 
+      .rpc<Homework, UpdateHomeworkParams>("update_homework", { 
         p_homework_id: homeworkId,
         ...updateData 
-      });
+      }) as { data: Homework | null; error: any };
 
-    return { data: data || null, error };
+    return { data, error };
   } catch (error) {
     console.error('Error updating homework:', error);
     return { data: null, error };
