@@ -4,7 +4,6 @@ import { Lesson, LessonData } from "@/types/lesson";
 
 export const fetchLessonsByDate = async (studentId: string, date: string): Promise<Lesson[]> => {
   try {
-    // Instead of using RPC, let's use direct table access with proper joins
     const { data, error } = await supabase
       .from('lessons')
       .select(`
@@ -17,6 +16,7 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
         duration,
         status,
         created_at,
+        updated_at,
         tutor:profiles!tutor_id (id, first_name, last_name),
         student:profiles!student_id (id, first_name, last_name, avatar_url),
         subject:subjects (id, name)
@@ -28,7 +28,7 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
       throw error;
     }
 
-    return (data as Lesson[]) || [];
+    return (data || []) as Lesson[];
   } catch (error) {
     console.error('Error fetching lessons:', error);
     return [];
@@ -37,7 +37,6 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
 
 export const createLesson = async (lessonData: LessonData): Promise<{ data: Lesson | null, error: any }> => {
   try {
-    // Insert directly into the lessons table
     const { data, error } = await supabase
       .from('lessons')
       .insert(lessonData)
@@ -51,6 +50,7 @@ export const createLesson = async (lessonData: LessonData): Promise<{ data: Less
         duration,
         status,
         created_at,
+        updated_at,
         tutor:profiles!tutor_id (id, first_name, last_name),
         student:profiles!student_id (id, first_name, last_name, avatar_url),
         subject:subjects (id, name)

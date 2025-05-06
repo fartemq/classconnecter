@@ -9,6 +9,7 @@ export interface Lesson {
   duration: number;
   status: string;
   created_at: string;
+  updated_at: string;
   student?: {
     id: string;
     first_name: string;
@@ -20,7 +21,7 @@ export interface Lesson {
     first_name: string;
     last_name: string | null;
   };
-  subject: {
+  subject?: {
     id: string;
     name: string;
   };

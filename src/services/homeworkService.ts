@@ -4,7 +4,6 @@ import { Homework, HomeworkData } from "@/types/homework";
 
 export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | null> => {
   try {
-    // Use direct table access with proper joins
     const { data, error } = await supabase
       .from('homework')
       .select(`
@@ -43,7 +42,6 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
 
 export const createHomework = async (homeworkData: HomeworkData): Promise<{ data: Homework | null, error: any }> => {
   try {
-    // Insert directly into the homework table
     const { data, error } = await supabase
       .from('homework')
       .insert(homeworkData)
@@ -78,7 +76,6 @@ export const createHomework = async (homeworkData: HomeworkData): Promise<{ data
 
 export const updateHomework = async (homeworkId: string, updateData: Partial<HomeworkData>): Promise<{ data: Homework | null, error: any }> => {
   try {
-    // Update the homework table directly
     const { data, error } = await supabase
       .from('homework')
       .update(updateData)

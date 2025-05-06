@@ -16,6 +16,7 @@ export interface Homework {
   grade: number | null;
   feedback: string | null;
   subject?: {
+    id: string;
     name: string;
   };
   tutor?: {

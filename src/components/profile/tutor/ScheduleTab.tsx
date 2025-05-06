@@ -19,7 +19,7 @@ export const ScheduleTab = () => {
         
         const today = format(new Date(), 'yyyy-MM-dd');
 
-        // Fetch lessons directly from the database with proper joins
+        // Fetch lessons with proper type handling
         const { data, error } = await supabase
           .from('lessons')
           .select(`
@@ -32,6 +32,7 @@ export const ScheduleTab = () => {
             duration,
             status,
             created_at,
+            updated_at,
             student:profiles!student_id (id, first_name, last_name, avatar_url),
             subject:subjects (id, name)
           `)
@@ -40,8 +41,8 @@ export const ScheduleTab = () => {
           
         if (error) throw error;
         
-        // Cast the result to the expected Lesson type
-        setLessons((data as Lesson[]) || []);
+        // Properly cast the data
+        setLessons((data || []) as Lesson[]);
       } catch (error) {
         console.error('Error fetching lessons:', error);
       } finally {
@@ -91,7 +92,7 @@ export const ScheduleTab = () => {
             <div key={lesson.id} className="p-4 border rounded-lg">
               <div className="flex justify-between">
                 <div>
-                  <h3 className="font-medium">{lesson.subject.name}</h3>
+                  <h3 className="font-medium">{lesson.subject?.name}</h3>
                   <p className="text-sm text-gray-500">
                     {format(new Date(lesson.date), 'dd MMMM yyyy', { locale: ru })} в {lesson.time.substring(0, 5)}
                   </p>
