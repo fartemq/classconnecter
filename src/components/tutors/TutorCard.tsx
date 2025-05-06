@@ -1,4 +1,3 @@
-
 import { Heart, MessageSquare, Star, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -9,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { PublicTutorProfile } from "@/services/publicTutorService";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TutorScheduleView } from "@/components/profile/student/TutorScheduleView";
+import { TutorScheduleView } from "@/components/profile/student/schedule/TutorScheduleView";
 
 interface TutorCardProps {
   tutor: PublicTutorProfile;

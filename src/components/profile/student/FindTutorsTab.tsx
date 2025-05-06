@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -27,7 +26,7 @@ import { fetchPublicTutors, PublicTutorProfile } from "@/services/publicTutorSer
 import { Loader } from "@/components/ui/loader";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { TutorScheduleView } from "./TutorScheduleView";
+import { TutorScheduleView } from "./schedule/TutorScheduleView";
 import { Button as ShadcnButton } from "@/components/ui/button";
 
 export const FindTutorsTab = () => {
