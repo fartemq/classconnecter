@@ -24,7 +24,7 @@ export const ScheduleTab = () => {
           { 
             p_tutor_id: userData.user.id,
             p_date: today
-          }
+          } as { p_tutor_id: string; p_date: string }
         );
           
         if (error) throw error;

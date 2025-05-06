@@ -8,7 +8,7 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
       "get_homework_by_id", 
       { 
         p_homework_id: homeworkId 
-      }
+      } as { p_homework_id: string }
     );
 
     if (error) {
@@ -26,7 +26,7 @@ export const createHomework = async (homeworkData: HomeworkData): Promise<{ data
   try {
     const { data, error } = await supabase.rpc(
       "create_homework", 
-      homeworkData
+      homeworkData as Record<string, any>
     );
 
     return { data: data as Homework, error };
@@ -43,7 +43,7 @@ export const updateHomework = async (homeworkId: string, updateData: Partial<Hom
       { 
         p_homework_id: homeworkId,
         ...updateData 
-      }
+      } as Record<string, any>
     );
 
     return { data: data as Homework, error };

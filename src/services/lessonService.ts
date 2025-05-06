@@ -9,7 +9,7 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
       { 
         p_student_id: studentId,
         p_date: date
-      }
+      } as { p_student_id: string; p_date: string }
     );
 
     if (error) {
@@ -27,7 +27,7 @@ export const createLesson = async (lessonData: LessonData): Promise<{ data: Less
   try {
     const { data, error } = await supabase.rpc(
       "create_lesson", 
-      lessonData
+      lessonData as Record<string, any>
     );
 
     return { data: data as Lesson, error };
