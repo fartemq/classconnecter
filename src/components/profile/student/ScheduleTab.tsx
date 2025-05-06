@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { CalendarIcon, Clock } from "lucide-react";
@@ -17,6 +16,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { createLesson, fetchLessonsByDate } from "@/services/lessonService";
+import { Lesson } from "@/types/lesson";
 
 interface TimeSlot {
   id: string;
@@ -26,22 +27,6 @@ interface TimeSlot {
   endTime: string;
   isAvailable: boolean;
   tutorName?: string;
-}
-
-interface Lesson {
-  id: string;
-  tutor: {
-    id: string;
-    first_name: string;
-    last_name: string | null;
-  };
-  subject: {
-    name: string;
-  };
-  date: string;
-  time: string;
-  duration: number;
-  status: "upcoming" | "completed";
 }
 
 export const ScheduleTab = () => {
@@ -65,7 +50,7 @@ export const ScheduleTab = () => {
           .from('student_requests')
           .select(`
             tutor_id,
-            tutor:tutor_id(
+            tutor:profiles!tutor_id(
               id,
               first_name,
               last_name
@@ -78,7 +63,7 @@ export const ScheduleTab = () => {
         
         if (data && data.length > 0) {
           const formattedTutors = data.map(item => ({
-            id: item.tutor.id,
+            id: item.tutor_id,
             name: `${item.tutor.first_name} ${item.tutor.last_name || ''}`
           }));
           
@@ -162,33 +147,9 @@ export const ScheduleTab = () => {
         // Format date as ISO string for the database query
         const dateStr = format(date, 'yyyy-MM-dd');
         
-        const { data, error } = await supabase
-          .from('lessons')
-          .select(`
-            id,
-            tutor:tutor_id(
-              id,
-              first_name,
-              last_name
-            ),
-            subject:subject_id(
-              name
-            ),
-            date,
-            time,
-            duration,
-            status
-          `)
-          .eq('student_id', userData.user.id)
-          .eq('date', dateStr);
-          
-        if (error) throw error;
-        
-        if (data) {
-          setLessons(data as Lesson[]);
-        } else {
-          setLessons([]);
-        }
+        // Use our service to fetch lessons
+        const lessonsData = await fetchLessonsByDate(userData.user.id, dateStr);
+        setLessons(lessonsData || []);
       } catch (error) {
         console.error('Error fetching lessons:', error);
       }
@@ -216,7 +177,7 @@ export const ScheduleTab = () => {
         .from('student_requests')
         .select(`
           subject_id,
-          subject:subject_id(id, name)
+          subject:subjects(id, name)
         `)
         .eq('student_id', userData.user.id)
         .eq('tutor_id', slot.tutorId)
@@ -237,27 +198,25 @@ export const ScheduleTab = () => {
       // Format date for the database
       const lessonDate = format(date!, 'yyyy-MM-dd');
       
-      // Create a new lesson
-      const { data: lessonData, error: lessonError } = await supabase
-        .from('lessons')
-        .insert({
-          student_id: userData.user.id,
-          tutor_id: slot.tutorId,
-          subject_id: subjectData.subject_id,
-          date: lessonDate,
-          time: slot.startTime,
-          duration: 60, // Default duration, could be calculated from start/end time
-          status: 'upcoming'
-        })
-        .select()
-        .single();
-        
+      // Create a new lesson using our service
+      const lessonData = {
+        student_id: userData.user.id,
+        tutor_id: slot.tutorId,
+        subject_id: subjectData.subject_id,
+        date: lessonDate,
+        time: slot.startTime,
+        duration: 60, // Default duration, could be calculated from start/end time
+        status: 'upcoming'
+      };
+      
+      const { data: lessonResult, error: lessonError } = await createLesson(lessonData);
+      
       if (lessonError) throw lessonError;
       
-      if (lessonData) {
+      if (lessonResult) {
         // Add the new lesson to the list
         const newLesson: Lesson = {
-          id: lessonData.id,
+          id: lessonResult.id,
           tutor: {
             id: slot.tutorId,
             first_name: slot.tutorName?.split(' ')[0] || '',

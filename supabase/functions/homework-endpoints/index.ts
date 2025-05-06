@@ -48,7 +48,12 @@ serve(async (req) => {
     switch (path) {
       case 'get-homework': {
         const { homeworkId } = body
-        const { data, error } = await supabaseClient.rpc('get_homework_by_id', { homework_id: homeworkId })
+        
+        // Use explicit casting in the RPC function
+        const { data, error } = await supabaseClient.rpc('get_homework_by_id', { 
+          homework_id: homeworkId 
+        })
+        
         if (error) throw error
         
         return new Response(JSON.stringify({ data }), {
@@ -58,7 +63,9 @@ serve(async (req) => {
       }
       
       case 'create-homework': {
+        // Use explicit casting in the RPC function
         const { data, error } = await supabaseClient.rpc('create_homework', body)
+        
         if (error) throw error
         
         return new Response(JSON.stringify({ data }), {
@@ -69,10 +76,42 @@ serve(async (req) => {
       
       case 'update-homework': {
         const { homeworkId, ...updateData } = body
+        
+        // Use explicit casting in the RPC function
         const { data, error } = await supabaseClient.rpc('update_homework', { 
           homework_id: homeworkId, 
           ...updateData 
         })
+        
+        if (error) throw error
+        
+        return new Response(JSON.stringify({ data }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      
+      case 'get-student-lessons': {
+        const { studentId, date } = body
+        
+        // Use explicit casting in the RPC function
+        const { data, error } = await supabaseClient.rpc('get_student_lessons_by_date', { 
+          p_student_id: studentId,
+          p_date: date 
+        })
+        
+        if (error) throw error
+        
+        return new Response(JSON.stringify({ data }), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+      
+      case 'create-lesson': {
+        // Use explicit casting in the RPC function
+        const { data, error } = await supabaseClient.rpc('create_lesson', body)
+        
         if (error) throw error
         
         return new Response(JSON.stringify({ data }), {
