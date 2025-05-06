@@ -36,9 +36,11 @@ export const LessonsList = ({ lessons }: LessonsListProps) => {
             </div>
             <div>
               <h4 className="font-medium">{lesson.subject.name}</h4>
-              <p className="text-sm text-gray-600">
-                {lesson.tutor.first_name} {lesson.tutor.last_name}
-              </p>
+              {lesson.tutor && (
+                <p className="text-sm text-gray-600">
+                  {lesson.tutor.first_name} {lesson.tutor.last_name || ''}
+                </p>
+              )}
               <p className="text-sm text-gray-500">
                 {lesson.time.substring(0, 5)} • {lesson.duration} мин.
               </p>

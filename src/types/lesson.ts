@@ -15,6 +15,11 @@ export interface Lesson {
     last_name: string | null;
     avatar_url: string | null;
   };
+  tutor?: {
+    id: string;
+    first_name: string;
+    last_name: string | null;
+  };
   subject: {
     id: string;
     name: string;

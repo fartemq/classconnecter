@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
@@ -209,18 +208,23 @@ export const useSchedule = () => {
         // Add the new lesson to the list
         const newLesson: Lesson = {
           id: lessonResult.id,
+          tutor_id: slot.tutorId,
+          student_id: userData.user.id,
+          subject_id: subjectData.subject_id,
+          date: lessonDate,
+          time: slot.startTime,
+          duration: 60,
+          status: "upcoming",
+          created_at: new Date().toISOString(),
           tutor: {
             id: slot.tutorId,
             first_name: slot.tutorName?.split(' ')[0] || '',
             last_name: slot.tutorName?.split(' ')[1] || null
           },
           subject: {
+            id: subjectData.subject_id,
             name: subjectData.subject.name
-          },
-          date: lessonDate,
-          time: slot.startTime,
-          duration: 60,
-          status: "upcoming"
+          }
         };
         
         setLessons([...lessons, newLesson]);
