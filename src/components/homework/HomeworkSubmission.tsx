@@ -13,27 +13,8 @@ import { ru } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
-
-interface Homework {
-  id: string;
-  title: string;
-  description: string;
-  file_path: string | null;
-  due_date: string;
-  created_at: string;
-  status: string;
-  answer: string | null;
-  answer_file_path: string | null;
-  grade: number | null;
-  feedback: string | null;
-  subject: { 
-    name: string;
-  };
-  tutor: {
-    first_name: string;
-    last_name: string | null;
-  };
-}
+import { fetchHomeworkById, submitHomeworkAnswer } from "@/services/homeworkService";
+import { Homework } from "@/types/homework";
 
 const HomeworkSubmission = () => {
   const { homeworkId } = useParams<{ homeworkId: string }>();
@@ -47,37 +28,21 @@ const HomeworkSubmission = () => {
   const [submitting, setSubmitting] = useState(false);
   
   useEffect(() => {
-    const fetchHomework = async () => {
+    const getHomeworkDetails = async () => {
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
-          .from('homework')
-          .select(`
-            id,
-            title,
-            description,
-            file_path,
-            due_date,
-            created_at,
-            status,
-            answer,
-            answer_file_path,
-            grade,
-            feedback,
-            subject:subject_id(name),
-            tutor:tutor_id(first_name, last_name)
-          `)
-          .eq('id', homeworkId)
-          .single();
-          
-        if (error) {
-          throw error;
+        if (!homeworkId) return;
+        
+        const homeworkData = await fetchHomeworkById(homeworkId);
+        
+        if (!homeworkData) {
+          throw new Error("Failed to fetch homework data");
         }
         
-        setHomework(data as Homework);
-        if (data.answer) {
-          setAnswer(data.answer);
+        setHomework(homeworkData);
+        if (homeworkData.answer) {
+          setAnswer(homeworkData.answer);
         }
       } catch (error) {
         console.error('Error fetching homework:', error);
@@ -92,9 +57,7 @@ const HomeworkSubmission = () => {
       }
     };
     
-    if (homeworkId) {
-      fetchHomework();
-    }
+    getHomeworkDetails();
   }, [homeworkId, navigate, toast]);
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -178,6 +141,8 @@ const HomeworkSubmission = () => {
       return;
     }
     
+    if (!homeworkId) return;
+    
     try {
       setSubmitting(true);
       
@@ -186,7 +151,7 @@ const HomeworkSubmission = () => {
       // If there's a file, upload it
       if (file) {
         const fileExt = file.name.split('.').pop();
-        const fileName = `${homework?.id}-${Date.now()}.${fileExt}`;
+        const fileName = `${homeworkId}-${Date.now()}.${fileExt}`;
         const filePath = `homework_answers/${fileName}`;
         
         const { error: uploadError } = await supabase
@@ -202,17 +167,10 @@ const HomeworkSubmission = () => {
       }
       
       // Update homework with answer
-      const { error: updateError } = await supabase
-        .from('homework')
-        .update({ 
-          answer,
-          answer_file_path: answerFilePath,
-          status: 'submitted'
-        })
-        .eq('id', homework?.id);
+      const { error } = await submitHomeworkAnswer(homeworkId, answer, answerFilePath);
         
-      if (updateError) {
-        throw updateError;
+      if (error) {
+        throw error;
       }
       
       toast({
@@ -277,7 +235,7 @@ const HomeworkSubmission = () => {
           <div>
             <CardTitle>{homework.title}</CardTitle>
             <CardDescription>
-              {homework.subject.name} • {homework.tutor.first_name} {homework.tutor.last_name}
+              {homework.subject?.name} • {homework.tutor?.first_name} {homework.tutor?.last_name}
             </CardDescription>
           </div>
           <Badge className={

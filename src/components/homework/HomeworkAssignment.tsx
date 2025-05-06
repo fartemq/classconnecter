@@ -14,6 +14,8 @@ import { ru } from "date-fns/locale";
 import { CalendarIcon, Upload } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { HomeworkData } from "@/types/homework";
+import { createHomework } from "@/services/homeworkService";
 
 const HomeworkAssignment = () => {
   const { studentId } = useParams<{ studentId: string }>();
@@ -73,7 +75,7 @@ const HomeworkAssignment = () => {
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !subject || !dueDate) {
+    if (!title || !description || !subject || !dueDate || !studentId) {
       toast({
         title: "Ошибка",
         description: "Пожалуйста, заполните все обязательные поля.",
@@ -94,49 +96,43 @@ const HomeworkAssignment = () => {
         return;
       }
       
-      // First create the homework assignment record
-      const { data: homeworkData, error: homeworkError } = await supabase
-        .from('homework')
-        .insert({
-          tutor_id: userData.user.id,
-          student_id: studentId,
-          subject_id: subject,
-          title,
-          description,
-          due_date: dueDate?.toISOString(),
-          status: 'assigned'
-        })
-        .select()
-        .single();
-        
-      if (homeworkError) {
-        throw homeworkError;
-      }
+      let filePath = null;
       
-      // If there's a file, upload it
-      if (file && homeworkData) {
+      // If there's a file, upload it first
+      if (file) {
         const fileExt = file.name.split('.').pop();
-        const fileName = `${homeworkData.id}-${Date.now()}.${fileExt}`;
-        const filePath = `homework/${userData.user.id}/${fileName}`;
+        const fileName = `${Date.now()}.${fileExt}`;
+        const uploadPath = `homework_files/${userData.user.id}/${fileName}`;
         
         const { error: uploadError } = await supabase
           .storage
           .from('homework_files')
-          .upload(filePath, file);
+          .upload(uploadPath, file);
           
         if (uploadError) {
           throw uploadError;
         }
         
-        // Update homework with file path
-        const { error: updateError } = await supabase
-          .from('homework')
-          .update({ file_path: filePath })
-          .eq('id', homeworkData.id);
-          
-        if (updateError) {
-          throw updateError;
-        }
+        filePath = uploadPath;
+      }
+      
+      // Create the homework record using our helper function
+      const homeworkData: HomeworkData = {
+        tutor_id: userData.user.id,
+        student_id: studentId,
+        subject_id: subject,
+        title,
+        description,
+        file_path: filePath,
+        due_date: dueDate.toISOString(),
+        status: 'assigned'
+      };
+      
+      // Call RPC function instead of direct table access
+      const { data, error } = await createHomework(homeworkData);
+        
+      if (error) {
+        throw error;
       }
       
       toast({
