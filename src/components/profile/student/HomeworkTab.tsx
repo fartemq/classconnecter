@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -157,7 +156,7 @@ export const HomeworkTab = () => {
             <SelectValue placeholder="Все предметы" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Все предметы</SelectItem>
+            <SelectItem value="all_subjects">Все предметы</SelectItem>
             {subjects.map((subject) => (
               <SelectItem key={subject} value={subject}>
                 {subject}

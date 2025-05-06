@@ -60,7 +60,7 @@ export const SearchFilters = ({
                   <SelectValue placeholder="Уровень обучения" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Все уровни</SelectItem>
+                  <SelectItem value="all_levels">Все уровни</SelectItem>
                   <SelectItem value="Школьник">Школьник</SelectItem>
                   <SelectItem value="Студент">Студент</SelectItem>
                   <SelectItem value="Взрослый">Взрослый</SelectItem>
@@ -74,7 +74,7 @@ export const SearchFilters = ({
                   <SelectValue placeholder="Предмет" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Все предметы</SelectItem>
+                  <SelectItem value="all_subjects">Все предметы</SelectItem>
                   {uniqueSubjects.map(subject => (
                     <SelectItem key={subject} value={subject}>{subject}</SelectItem>
                   ))}
