@@ -1,31 +1,13 @@
 
 import React, { useState, useEffect } from "react";
-import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
-import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Clock, CalendarDays } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Lesson } from "@/types/lesson";
-import { createLesson } from "@/services/lessonService";
-
-interface TimeSlot {
-  id: string;
-  tutorId: string;
-  dayOfWeek: number;
-  startTime: string;
-  endTime: string;
-  isAvailable: boolean;
-}
+import { TutorCalendar } from "./TutorCalendar";
+import { TutorScheduleSlots } from "./TutorScheduleSlots";
+import { TutorScheduleFooter } from "./TutorScheduleFooter";
+import { TutorSubjectSelect } from "./TutorSubjectSelect";
 
 interface TutorScheduleViewProps {
   tutorId: string;
@@ -34,7 +16,7 @@ interface TutorScheduleViewProps {
 
 export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) => {
   const [date, setDate] = useState<Date>(new Date());
-  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bookingSlot, setBookingSlot] = useState<string | null>(null);
   const [subjects, setSubjects] = useState<{id: string, name: string}[]>([]);
@@ -148,7 +130,7 @@ export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) 
     fetchTutorSlots();
   }, [tutorId, date, toast]);
   
-  const handleBookSlot = async (slot: TimeSlot) => {
+  const handleBookSlot = async (slot: any) => {
     if (!selectedSubject) {
       toast({
         title: "Выберите предмет",
@@ -185,7 +167,9 @@ export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) 
         status: "upcoming" as const
       };
       
-      const { data: lessonResult, error: lessonError } = await createLesson(lessonData);
+      const { data: lessonResult, error: lessonError } = await import("@/services/lessonService").then(
+        module => module.createLesson(lessonData)
+      );
       
       if (lessonError) throw lessonError;
       
@@ -212,84 +196,33 @@ export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) 
     <div className="flex flex-col space-y-4 md:space-y-6">
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
         {/* Calendar section */}
-        <div className="md:w-1/2">
-          <h3 className="font-medium mb-2">Выберите дату:</h3>
-          <div className="border rounded-lg p-2">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={(newDate) => newDate && setDate(newDate)}
-              className="rounded-md border"
-              locale={ru}
-              disabled={{ before: new Date() }}
-            />
-          </div>
-        </div>
+        <TutorCalendar date={date} onDateChange={setDate} />
         
         {/* Available slots section */}
         <div className="md:w-1/2">
           <div className="flex items-center justify-between mb-2">
             <h3 className="font-medium">Доступное время на {format(date, 'd MMMM', { locale: ru })}</h3>
-            {loading && <Loader className="w-4 h-4" />}
+            {loading && <div className="animate-spin h-4 w-4 border-2 border-blue-600 rounded-full border-t-transparent"></div>}
           </div>
           
           {/* Select subject */}
-          <div className="mb-4">
-            <h4 className="text-sm text-gray-500 mb-1">Выберите предмет:</h4>
-            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Выберите предмет" />
-              </SelectTrigger>
-              <SelectContent>
-                {subjects.map((subject) => (
-                  <SelectItem key={subject.id} value={subject.id}>
-                    {subject.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <TutorSubjectSelect 
+            subjects={subjects} 
+            selectedSubject={selectedSubject} 
+            onSubjectChange={setSelectedSubject} 
+          />
           
           {/* Time slots */}
-          <div className="border rounded-lg p-3 min-h-[180px] flex flex-col">
-            {!loading && availableSlots.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500 text-center">
-                <CalendarDays className="h-10 w-10 mb-2 text-gray-400" />
-                <p>На выбранную дату нет доступного времени.</p>
-                <p className="text-sm">Пожалуйста, выберите другую дату.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-2 gap-2">
-                {availableSlots.map(slot => (
-                  <Button
-                    key={slot.id}
-                    variant="outline"
-                    className="py-2 h-auto"
-                    onClick={() => handleBookSlot(slot)}
-                    disabled={bookingSlot === slot.id}
-                  >
-                    {bookingSlot === slot.id ? (
-                      <Loader className="w-4 h-4 mr-2" />
-                    ) : (
-                      <Clock className="w-4 h-4 mr-2" />
-                    )}
-                    {slot.startTime.substring(0, 5)} - {slot.endTime.substring(0, 5)}
-                  </Button>
-                ))}
-              </div>
-            )}
-          </div>
+          <TutorScheduleSlots 
+            loading={loading} 
+            availableSlots={availableSlots} 
+            bookingSlot={bookingSlot} 
+            onBookSlot={handleBookSlot} 
+          />
         </div>
       </div>
       
-      <div className="flex justify-between">
-        <p className="text-sm text-gray-500">
-          Репетитор: {tutorName}
-        </p>
-        <Button variant="outline" onClick={onClose}>
-          Закрыть
-        </Button>
-      </div>
+      <TutorScheduleFooter tutorName={tutorName} onClose={onClose} />
     </div>
   );
 };

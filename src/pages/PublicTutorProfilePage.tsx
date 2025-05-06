@@ -7,7 +7,7 @@ import { Loader } from "@/components/ui/loader";
 import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TutorScheduleView } from "@/components/profile/student/TutorScheduleView";
+import { TutorScheduleView } from "@/components/profile/student/schedule/TutorScheduleView";
 import { fetchPublicTutorById } from "@/services/publicTutorService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
