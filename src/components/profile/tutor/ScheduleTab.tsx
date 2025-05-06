@@ -18,46 +18,18 @@ export const ScheduleTab = () => {
         if (!userData?.user) return;
         
         const today = format(new Date(), 'yyyy-MM-dd');
-        
+
+        // Use a custom RPC function to fetch lessons
         const { data, error } = await supabase
-          .from('lessons')
-          .select(`
-            id,
-            date,
-            time,
-            duration,
-            status,
-            student:profiles!student_id (
-              id,
-              first_name, 
-              last_name
-            ),
-            subject:subjects (
-              id,
-              name
-            )
-          `)
-          .eq('tutor_id', userData.user.id)
-          .eq('date', today);
+          .rpc('get_tutor_lessons_by_date', {
+            p_tutor_id: userData.user.id,
+            p_date: today
+          });
           
         if (error) throw error;
         
-        // Transform data to match Lesson type
-        const formattedLessons: Lesson[] = data?.map(item => ({
-          id: item.id,
-          tutor_id: userData.user.id,
-          student_id: item.student.id,
-          subject_id: item.subject.id,
-          date: item.date,
-          time: item.time,
-          duration: item.duration,
-          status: item.status,
-          created_at: '',
-          student: item.student,
-          subject: item.subject
-        })) || [];
-        
-        setLessons(formattedLessons);
+        // Cast the result to the expected Lesson type
+        setLessons((data as Lesson[]) || []);
       } catch (error) {
         console.error('Error fetching lessons:', error);
       } finally {
