@@ -4,10 +4,31 @@ import { Homework, HomeworkData } from "@/types/homework";
 
 export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | null> => {
   try {
+    // Use direct table access with proper joins
     const { data, error } = await supabase
-      .rpc('get_homework_by_id', { 
-        p_homework_id: homeworkId 
-      });
+      .from('homework')
+      .select(`
+        id,
+        tutor_id,
+        student_id,
+        subject_id,
+        title,
+        description,
+        file_path,
+        due_date,
+        created_at,
+        updated_at,
+        status,
+        answer,
+        answer_file_path,
+        grade,
+        feedback,
+        tutor:profiles!tutor_id (first_name, last_name),
+        student:profiles!student_id (first_name, last_name),
+        subject:subjects (id, name)
+      `)
+      .eq('id', homeworkId)
+      .single();
 
     if (error) {
       throw error;
@@ -22,10 +43,33 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
 
 export const createHomework = async (homeworkData: HomeworkData): Promise<{ data: Homework | null, error: any }> => {
   try {
+    // Insert directly into the homework table
     const { data, error } = await supabase
-      .rpc('create_homework', homeworkData);
+      .from('homework')
+      .insert(homeworkData)
+      .select(`
+        id,
+        tutor_id,
+        student_id,
+        subject_id,
+        title,
+        description,
+        file_path,
+        due_date,
+        created_at,
+        updated_at,
+        status,
+        answer,
+        answer_file_path,
+        grade,
+        feedback,
+        tutor:profiles!tutor_id (first_name, last_name),
+        student:profiles!student_id (first_name, last_name),
+        subject:subjects (id, name)
+      `)
+      .single();
 
-    return { data: data ? (data as Homework) : null, error };
+    return { data: data as Homework | null, error };
   } catch (error) {
     console.error('Error creating homework:', error);
     return { data: null, error };
@@ -34,15 +78,34 @@ export const createHomework = async (homeworkData: HomeworkData): Promise<{ data
 
 export const updateHomework = async (homeworkId: string, updateData: Partial<HomeworkData>): Promise<{ data: Homework | null, error: any }> => {
   try {
-    const params = {
-      p_homework_id: homeworkId,
-      ...updateData
-    };
-
+    // Update the homework table directly
     const { data, error } = await supabase
-      .rpc('update_homework', params);
+      .from('homework')
+      .update(updateData)
+      .eq('id', homeworkId)
+      .select(`
+        id,
+        tutor_id,
+        student_id,
+        subject_id,
+        title,
+        description,
+        file_path,
+        due_date,
+        created_at,
+        updated_at,
+        status,
+        answer,
+        answer_file_path,
+        grade,
+        feedback,
+        tutor:profiles!tutor_id (first_name, last_name),
+        student:profiles!student_id (first_name, last_name),
+        subject:subjects (id, name)
+      `)
+      .single();
 
-    return { data: data ? (data as Homework) : null, error };
+    return { data: data as Homework | null, error };
   } catch (error) {
     console.error('Error updating homework:', error);
     return { data: null, error };

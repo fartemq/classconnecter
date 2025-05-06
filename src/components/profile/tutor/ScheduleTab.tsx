@@ -19,12 +19,24 @@ export const ScheduleTab = () => {
         
         const today = format(new Date(), 'yyyy-MM-dd');
 
-        // Use a custom RPC function to fetch lessons
+        // Fetch lessons directly from the database with proper joins
         const { data, error } = await supabase
-          .rpc('get_tutor_lessons_by_date', {
-            p_tutor_id: userData.user.id,
-            p_date: today
-          });
+          .from('lessons')
+          .select(`
+            id,
+            tutor_id,
+            student_id,
+            subject_id,
+            date,
+            time,
+            duration,
+            status,
+            created_at,
+            student:profiles!student_id (id, first_name, last_name, avatar_url),
+            subject:subjects (id, name)
+          `)
+          .eq('tutor_id', userData.user.id)
+          .eq('date', today);
           
         if (error) throw error;
         
