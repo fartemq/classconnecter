@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,9 +5,23 @@ import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
+interface Lesson {
+  id: string;
+  subject: {
+    name: string;
+  };
+  date: string;
+  time: string;
+  duration: number;
+  student: {
+    first_name: string;
+    last_name: string | null;
+  };
+}
+
 export const ScheduleTab = () => {
   const [loading, setLoading] = useState(true);
-  const [lessons, setLessons] = useState<any[]>([]);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
   
   useEffect(() => {
     const fetchLessons = async () => {
@@ -24,11 +37,12 @@ export const ScheduleTab = () => {
           p_date: string;
         };
         
+        // Add both type arguments to rpc<>
         const { data, error } = await supabase
-          .rpc<any[]>('get_tutor_lessons_by_date', { 
+          .rpc<Lesson[], GetTutorLessonsParams>('get_tutor_lessons_by_date', { 
             p_tutor_id: userData.user.id,
             p_date: today
-          } as GetTutorLessonsParams);
+          });
           
         if (error) throw error;
         
