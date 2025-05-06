@@ -26,6 +26,7 @@ import StudentProfileEditPage from "./pages/StudentProfileEditPage";
 import StudentProgressPage from "./pages/StudentProgressPage";
 import StudentHomeworkPage from "./pages/StudentHomeworkPage";
 import TutorProfilePage from "./pages/TutorProfilePage";
+import PublicTutorProfilePage from "./pages/PublicTutorProfilePage";
 import SchoolStudentPage from "./pages/SchoolStudentPage";
 import AdultStudentPage from "./pages/AdultStudentPage";
 import BecomeTutorPage from "./pages/BecomeTutorPage";
@@ -51,7 +52,7 @@ const App = () => {
               <Route path="/adult-student" element={<AdultStudentPage />} />
               <Route path="/become-tutor" element={<BecomeTutorPage />} />
               <Route path="/tutors" element={<TutorsPage />} />
-              <Route path="/tutors/:id" element={<TutorProfilePage />} />
+              <Route path="/tutors/:id" element={<PublicTutorProfilePage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/subjects" element={<SubjectsPage />} />
               <Route path="/register" element={<RegisterPage />} />

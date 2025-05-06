@@ -3,14 +3,14 @@ import { Heart, MessageSquare, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tutor } from "@/pages/TutorsPage";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { PublicTutorProfile } from "@/services/publicTutorService";
 
 interface TutorCardProps {
-  tutor: Tutor;
+  tutor: PublicTutorProfile;
 }
 
 export function TutorCard({ tutor }: TutorCardProps) {
@@ -111,9 +111,9 @@ export function TutorCard({ tutor }: TutorCardProps) {
           {isFavorite ? 'В избранном' : 'В избранное'}
         </Button>
         
-        <Button size="sm" onClick={handleContact}>
+        <Button size="sm" onClick={() => navigate(`/tutors/${tutor.id}`)}>
           <MessageSquare className="h-4 w-4 mr-1" />
-          Связаться
+          Подробнее
         </Button>
       </CardFooter>
     </Card>

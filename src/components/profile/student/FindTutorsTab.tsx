@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,54 +23,59 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
+import { fetchPublicTutors, PublicTutorProfile } from "@/services/publicTutorService";
+import { Loader } from "@/components/ui/loader";
+import { useToast } from "@/hooks/use-toast";
 
 export const FindTutorsTab = () => {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [priceRange, setPriceRange] = useState([1000, 5000]);
+  const [tutors, setTutors] = useState<PublicTutorProfile[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  // Mock data for tutors
-  const tutors = [
-    {
-      id: "1",
-      name: "Иванова Анна",
-      avatar: "/placeholder.svg",
-      subjects: ["Математика", "Физика"],
-      rating: 4.8,
-      reviews: 24,
-      price: 1200,
-      location: "Москва",
-      experience: 5,
-      online: true,
-      verified: true
-    },
-    {
-      id: "2",
-      name: "Петров Сергей",
-      avatar: "/placeholder.svg",
-      subjects: ["Английский язык", "Немецкий язык"],
-      rating: 4.6,
-      reviews: 18,
-      price: 1500,
-      location: "Санкт-Петербург",
-      experience: 7,
-      online: true,
-      verified: true
-    },
-    {
-      id: "3",
-      name: "Смирнова Ольга",
-      avatar: "/placeholder.svg",
-      subjects: ["Литература", "Русский язык"],
-      rating: 4.9,
-      reviews: 32,
-      price: 1300,
-      location: "Казань",
-      experience: 10,
-      online: false,
-      verified: true
-    }
-  ];
+  // Fetch tutors on component mount
+  useEffect(() => {
+    const loadTutors = async () => {
+      try {
+        setLoading(true);
+        const tutorsData = await fetchPublicTutors();
+        setTutors(tutorsData);
+      } catch (error) {
+        console.error("Error fetching tutors:", error);
+        toast({
+          title: "Ошибка загрузки",
+          description: "Не удалось загрузить список репетиторов",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadTutors();
+  }, [toast]);
+  
+  // Filter tutors based on search term and price range
+  const filteredTutors = tutors.filter(tutor => {
+    const fullName = `${tutor.first_name} ${tutor.last_name || ''}`.toLowerCase();
+    const subjectNames = tutor.subjects.map(s => s.name.toLowerCase()).join(' ');
+    const cityMatch = tutor.city ? tutor.city.toLowerCase().includes(searchTerm.toLowerCase()) : false;
+    
+    // Search match
+    const searchMatch = searchTerm === '' || 
+      fullName.includes(searchTerm.toLowerCase()) || 
+      subjectNames.includes(searchTerm.toLowerCase()) ||
+      cityMatch;
+      
+    // Price match - check if any subject's hourly rate is within the range
+    const priceMatch = tutor.subjects.some(
+      subject => subject.hourly_rate >= priceRange[0] && subject.hourly_rate <= priceRange[1]
+    );
+    
+    return searchMatch && priceMatch;
+  });
   
   return (
     <div className="space-y-6">
@@ -99,7 +104,15 @@ export const FindTutorsTab = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-medium">Фильтры</h3>
-              <Button variant="ghost" size="sm" className="text-xs h-auto py-1">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs h-auto py-1"
+                onClick={() => {
+                  setSearchTerm('');
+                  setPriceRange([1000, 5000]);
+                }}
+              >
                 Сбросить
               </Button>
             </div>
@@ -210,86 +223,115 @@ export const FindTutorsTab = () => {
         
         {/* Tutors list */}
         <div className="lg:col-span-3 space-y-4">
-          {tutors.map(tutor => (
-            <Card key={tutor.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
-                <div className="flex flex-col md:flex-row gap-4">
-                  {/* Tutor avatar and rating */}
-                  <div className="flex flex-col items-center">
-                    <div className="w-24 h-24 rounded-full border flex items-center justify-center overflow-hidden bg-gray-100">
-                      <img 
-                        src={tutor.avatar} 
-                        alt={tutor.name} 
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    
-                    <div className="flex items-center mt-2 text-amber-500">
-                      <Star className="h-4 w-4 fill-current" />
-                      <span className="ml-1 font-medium">{tutor.rating}</span>
-                      <span className="text-xs text-gray-500 ml-1">({tutor.reviews})</span>
-                    </div>
-                  </div>
-                  
-                  {/* Tutor info */}
-                  <div className="flex-grow space-y-2">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold text-lg">
-                          {tutor.name}
-                          {tutor.verified && (
-                            <Badge className="ml-2 bg-green-100 text-green-800 border-green-200">
-                              ✓ Проверен
-                            </Badge>
+          {loading ? (
+            <div className="flex justify-center items-center py-16">
+              <Loader size="lg" />
+              <span className="ml-4 text-gray-600">Загрузка репетиторов...</span>
+            </div>
+          ) : filteredTutors.length > 0 ? (
+            filteredTutors.map(tutor => {
+              const fullName = `${tutor.first_name} ${tutor.last_name || ''}`.trim();
+              const lowestPrice = tutor.subjects.length > 0 
+                ? Math.min(...tutor.subjects.map(s => s.hourly_rate)) 
+                : 0;
+              
+              return (
+                <Card key={tutor.id} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex flex-col md:flex-row gap-4">
+                      {/* Tutor avatar and rating */}
+                      <div className="flex flex-col items-center">
+                        <div className="w-24 h-24 rounded-full border flex items-center justify-center overflow-hidden bg-gray-100">
+                          {tutor.avatar_url ? (
+                            <img 
+                              src={tutor.avatar_url} 
+                              alt={fullName} 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <span className="text-3xl text-gray-400">{tutor.first_name[0]}</span>
                           )}
-                        </h3>
-                        <div className="flex items-center text-gray-500 text-sm">
-                          <MapPin className="h-3 w-3 mr-1" />
-                          {tutor.location}
+                        </div>
+                        
+                        <div className="flex items-center mt-2 text-amber-500">
+                          <Star className="h-4 w-4 fill-current" />
+                          <span className="ml-1 font-medium">{tutor.rating ? tutor.rating.toFixed(1) : 'N/A'}</span>
                         </div>
                       </div>
-                      <div>
-                        <div className="text-right">
-                          <span className="font-medium text-lg">{tutor.price} ₽</span>
-                          <span className="text-gray-500 text-sm"> / час</span>
+                      
+                      {/* Tutor info */}
+                      <div className="flex-grow space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h3 className="font-semibold text-lg">
+                              {fullName}
+                            </h3>
+                            {tutor.city && (
+                              <div className="flex items-center text-gray-500 text-sm">
+                                <MapPin className="h-3 w-3 mr-1" />
+                                {tutor.city}
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="text-right">
+                              <span className="font-medium text-lg">{lowestPrice} ₽</span>
+                              <span className="text-gray-500 text-sm"> / час</span>
+                            </div>
+                          </div>
                         </div>
-                        {tutor.online && (
-                          <Badge className="bg-green-100 text-green-800 border-green-200">
-                            Онлайн
-                          </Badge>
+                        
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <Book className="h-4 w-4 text-gray-500" />
+                          {tutor.subjects.map(subject => (
+                            <Badge key={subject.id} variant="outline" className="bg-gray-50">
+                              {subject.name}
+                            </Badge>
+                          ))}
+                        </div>
+                        
+                        {tutor.experience !== null && (
+                          <div className="flex items-center text-gray-600 text-sm">
+                            <Clock className="h-4 w-4 mr-1" />
+                            Опыт: {tutor.experience} лет
+                          </div>
                         )}
+                        
+                        <div className="flex justify-end mt-2">
+                          <Button 
+                            onClick={() => navigate(`/tutors/${tutor.id}`)}
+                            className="sm:text-sm"
+                            size="sm"
+                          >
+                            Подробнее
+                            <ChevronRight className="ml-1 h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Book className="h-4 w-4 text-gray-500" />
-                      {tutor.subjects.map(subject => (
-                        <Badge key={subject} variant="outline" className="bg-gray-50">
-                          {subject}
-                        </Badge>
-                      ))}
-                    </div>
-                    
-                    <div className="flex items-center text-gray-600 text-sm">
-                      <Clock className="h-4 w-4 mr-1" />
-                      Опыт: {tutor.experience} лет
-                    </div>
-                    
-                    <div className="flex justify-end mt-2">
-                      <Button 
-                        onClick={() => navigate(`/tutors/${tutor.id}`)}
-                        className="sm:text-sm"
-                        size="sm"
-                      >
-                        Подробнее
-                        <ChevronRight className="ml-1 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
+              );
+            })
+          ) : (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <h3 className="text-xl font-medium mb-2">Репетиторы не найдены</h3>
+                <p className="text-gray-600 mb-4">
+                  По заданным критериям не найдено ни одного репетитора. Попробуйте изменить параметры поиска.
+                </p>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm('');
+                    setPriceRange([1000, 5000]);
+                  }}
+                >
+                  Сбросить фильтры
+                </Button>
               </CardContent>
             </Card>
-          ))}
+          )}
         </div>
       </div>
     </div>

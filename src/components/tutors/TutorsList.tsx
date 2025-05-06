@@ -1,9 +1,9 @@
 
-import { Tutor } from "@/pages/TutorsPage";
 import { TutorCard } from "./TutorCard";
+import { PublicTutorProfile } from "@/services/publicTutorService";
 
 interface TutorsListProps {
-  tutors: Tutor[];
+  tutors: PublicTutorProfile[];
 }
 
 export function TutorsList({ tutors }: TutorsListProps) {

@@ -4,19 +4,18 @@ import { Homework, HomeworkData } from "@/types/homework";
 
 export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | null> => {
   try {
-    // Fix the type assertion
     const { data, error } = await supabase.rpc(
       "get_homework_by_id", 
       { 
         p_homework_id: homeworkId 
       }
-    ) as unknown as { data: Homework | null, error: any };
+    );
 
     if (error) {
       throw error;
     }
 
-    return data;
+    return data as Homework;
   } catch (error) {
     console.error('Error fetching homework:', error);
     return null;
@@ -25,13 +24,12 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
 
 export const createHomework = async (homeworkData: HomeworkData): Promise<{ data: Homework | null, error: any }> => {
   try {
-    // Fix the type assertion
     const { data, error } = await supabase.rpc(
       "create_homework", 
       homeworkData
-    ) as unknown as { data: Homework | null, error: any };
+    );
 
-    return { data, error };
+    return { data: data as Homework, error };
   } catch (error) {
     console.error('Error creating homework:', error);
     return { data: null, error };
@@ -40,16 +38,15 @@ export const createHomework = async (homeworkData: HomeworkData): Promise<{ data
 
 export const updateHomework = async (homeworkId: string, updateData: Partial<HomeworkData>): Promise<{ data: Homework | null, error: any }> => {
   try {
-    // Fix the type assertion
     const { data, error } = await supabase.rpc(
       "update_homework", 
       { 
         p_homework_id: homeworkId,
         ...updateData 
       }
-    ) as unknown as { data: Homework | null, error: any };
+    );
 
-    return { data, error };
+    return { data: data as Homework, error };
   } catch (error) {
     console.error('Error updating homework:', error);
     return { data: null, error };

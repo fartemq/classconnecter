@@ -4,20 +4,19 @@ import { Lesson, LessonData } from "@/types/lesson";
 
 export const fetchLessonsByDate = async (studentId: string, date: string): Promise<Lesson[]> => {
   try {
-    // Fix the type assertion
     const { data, error } = await supabase.rpc(
       "get_student_lessons_by_date", 
       { 
         p_student_id: studentId,
         p_date: date
       }
-    ) as unknown as { data: Lesson[] | null, error: any };
+    );
 
     if (error) {
       throw error;
     }
 
-    return data || [];
+    return data as Lesson[] || [];
   } catch (error) {
     console.error('Error fetching lessons:', error);
     return [];
@@ -26,13 +25,12 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
 
 export const createLesson = async (lessonData: LessonData): Promise<{ data: Lesson | null, error: any }> => {
   try {
-    // Fix the type assertion
     const { data, error } = await supabase.rpc(
       "create_lesson", 
       lessonData
-    ) as unknown as { data: Lesson | null, error: any };
+    );
 
-    return { data, error };
+    return { data: data as Lesson, error };
   } catch (error) {
     console.error('Error creating lesson:', error);
     return { data: null, error };

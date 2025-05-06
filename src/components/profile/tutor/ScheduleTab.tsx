@@ -19,18 +19,17 @@ export const ScheduleTab = () => {
         
         const today = format(new Date(), 'yyyy-MM-dd');
         
-        // Fix the type assertion
         const { data, error } = await supabase.rpc(
           "get_tutor_lessons_by_date", 
           { 
             p_tutor_id: userData.user.id,
             p_date: today
           }
-        ) as unknown as { data: Lesson[] | null, error: any };
+        );
           
         if (error) throw error;
         
-        setLessons(data || []);
+        setLessons(data as Lesson[] || []);
       } catch (error) {
         console.error('Error fetching lessons:', error);
       } finally {

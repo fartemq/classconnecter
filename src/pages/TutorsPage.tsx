@@ -1,32 +1,17 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { TutorsList } from "@/components/tutors/TutorsList";
 import { TutorsFilter } from "@/components/tutors/TutorsFilter";
 import { Loader } from "@/components/ui/loader";
 import { useToast } from "@/hooks/use-toast";
-
-export type Tutor = {
-  id: string;
-  first_name: string;
-  last_name: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  city: string | null;
-  subjects: {
-    name: string;
-    hourly_rate: number;
-    experience_years: number | null;
-  }[];
-  rating?: number;
-};
+import { fetchPublicTutors, PublicTutorProfile } from "@/services/publicTutorService";
 
 const TutorsPage = () => {
   const [searchParams] = useSearchParams();
-  const [tutors, setTutors] = useState<Tutor[]>([]);
+  const [tutors, setTutors] = useState<PublicTutorProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
@@ -38,65 +23,18 @@ const TutorsPage = () => {
       try {
         setLoading(true);
         
-        // Start with the profiles that have role=tutor
-        let query = supabase
-          .from("profiles")
-          .select(`
-            id,
-            first_name,
-            last_name,
-            avatar_url,
-            bio,
-            city,
-            tutor_subjects(
-              hourly_rate,
-              experience_years,
-              subject:subject_id(name)
-            )
-          `)
-          .eq("role", "tutor");
-
-        const { data, error } = await query;
-
-        if (error) {
-          throw error;
-        }
-
-        if (data) {
-          // Transform data to the format we need
-          const formattedTutors: Tutor[] = data
-            .filter(tutor => tutor.tutor_subjects && tutor.tutor_subjects.length > 0) // Only include tutors with actual subjects
-            .map((tutor) => {
-              const subjects = tutor.tutor_subjects.map((subject: any) => ({
-                name: subject.subject?.name || "Unknown Subject",
-                hourly_rate: subject.hourly_rate,
-                experience_years: subject.experience_years
-              }));
-
-              return {
-                id: tutor.id,
-                first_name: tutor.first_name,
-                last_name: tutor.last_name,
-                avatar_url: tutor.avatar_url,
-                bio: tutor.bio,
-                city: tutor.city,
-                subjects,
-                // Get actual rating from reviews if available or default to null
-                rating: null
-              };
-            });
-
-          // Filter by subject if needed
-          const filteredTutors = subjectFilter 
-            ? formattedTutors.filter(tutor => 
-                tutor.subjects.some(s => 
-                  s.name.toLowerCase() === subjectFilter.toLowerCase()
-                )
+        const tutorData = await fetchPublicTutors();
+        
+        // Filter by subject if needed
+        const filteredTutors = subjectFilter 
+          ? tutorData.filter(tutor => 
+              tutor.subjects.some(s => 
+                s.name.toLowerCase() === subjectFilter.toLowerCase()
               )
-            : formattedTutors;
+            )
+          : tutorData;
 
-          setTutors(filteredTutors);
-        }
+        setTutors(filteredTutors);
       } catch (error) {
         console.error("Error fetching tutors:", error);
         toast({
