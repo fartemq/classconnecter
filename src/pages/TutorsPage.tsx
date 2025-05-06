@@ -64,25 +64,27 @@ const TutorsPage = () => {
 
         if (data) {
           // Transform data to the format we need
-          const formattedTutors: Tutor[] = data.map((tutor) => {
-            const subjects = tutor.tutor_subjects.map((subject: any) => ({
-              name: subject.subject?.name || "Unknown Subject",
-              hourly_rate: subject.hourly_rate,
-              experience_years: subject.experience_years
-            }));
+          const formattedTutors: Tutor[] = data
+            .filter(tutor => tutor.tutor_subjects && tutor.tutor_subjects.length > 0) // Only include tutors with actual subjects
+            .map((tutor) => {
+              const subjects = tutor.tutor_subjects.map((subject: any) => ({
+                name: subject.subject?.name || "Unknown Subject",
+                hourly_rate: subject.hourly_rate,
+                experience_years: subject.experience_years
+              }));
 
-            return {
-              id: tutor.id,
-              first_name: tutor.first_name,
-              last_name: tutor.last_name,
-              avatar_url: tutor.avatar_url,
-              bio: tutor.bio,
-              city: tutor.city,
-              subjects,
-              // In a real app, you might want to calculate this from reviews
-              rating: 4 + Math.random()
-            };
-          });
+              return {
+                id: tutor.id,
+                first_name: tutor.first_name,
+                last_name: tutor.last_name,
+                avatar_url: tutor.avatar_url,
+                bio: tutor.bio,
+                city: tutor.city,
+                subjects,
+                // Get actual rating from reviews if available or default to null
+                rating: null
+              };
+            });
 
           // Filter by subject if needed
           const filteredTutors = subjectFilter 
@@ -98,8 +100,8 @@ const TutorsPage = () => {
       } catch (error) {
         console.error("Error fetching tutors:", error);
         toast({
-          title: "Error",
-          description: "Failed to load tutors. Please try again later.",
+          title: "Ошибка",
+          description: "Не удалось загрузить список репетиторов. Пожалуйста, попробуйте позже.",
           variant: "destructive",
         });
       } finally {

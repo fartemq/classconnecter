@@ -31,6 +31,11 @@ import AdultStudentPage from "./pages/AdultStudentPage";
 import BecomeTutorPage from "./pages/BecomeTutorPage";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
+// New homework pages
+import HomeworkSubmissionPage from "./pages/HomeworkSubmissionPage";
+import HomeworkAssignmentPage from "./pages/HomeworkAssignmentPage";
+import HomeworkGradingPage from "./pages/HomeworkGradingPage";
+
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
 
@@ -58,7 +63,7 @@ const App = () => {
                 <Route path="/profile/tutor/complete" element={<TutorCompletePage />} />
                 <Route path="/profile/tutor" element={<TutorProfilePage />} />
                 
-                {/* Student profile routes - добавлены все запрошенные разделы */}
+                {/* Student profile routes */}
                 <Route path="/profile/student" element={<StudentProfilePage />} />
                 <Route path="/profile/student/chats" element={<StudentChatsPage />} />
                 <Route path="/profile/student/chats/:tutorId" element={<StudentChatsPage />} />
@@ -70,6 +75,11 @@ const App = () => {
                 <Route path="/profile/student/profile" element={<StudentProfileEditPage />} />
                 <Route path="/profile/student/progress" element={<StudentProgressPage />} />
                 <Route path="/profile/student/homework" element={<StudentHomeworkPage />} />
+                <Route path="/profile/student/homework/:homeworkId" element={<HomeworkSubmissionPage />} />
+
+                {/* Tutor homework routes */}
+                <Route path="/profile/tutor/assign-homework/:studentId" element={<HomeworkAssignmentPage />} />
+                <Route path="/profile/tutor/grade-homework/:homeworkId" element={<HomeworkGradingPage />} />
               </Route>
               
               <Route path="*" element={<NotFound />} />
