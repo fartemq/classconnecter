@@ -5,20 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-
-interface Lesson {
-  id: string;
-  subject: {
-    name: string;
-  };
-  date: string;
-  time: string;
-  duration: number;
-  student: {
-    first_name: string;
-    last_name: string | null;
-  };
-}
+import { Lesson } from "@/types/lesson";
 
 export const ScheduleTab = () => {
   const [loading, setLoading] = useState(true);
@@ -32,17 +19,14 @@ export const ScheduleTab = () => {
         
         const today = format(new Date(), 'yyyy-MM-dd');
         
-        // Use type parameters to properly define the function return and params types
-        const { data, error } = await supabase.rpc<Lesson[], {
-          p_tutor_id: string;
-          p_date: string;
-        }>(
+        // Use type assertions to avoid constraint errors
+        const { data, error } = await supabase.rpc(
           "get_tutor_lessons_by_date", 
           { 
             p_tutor_id: userData.user.id,
             p_date: today
           }
-        );
+        ) as { data: Lesson[] | null, error: any };
           
         if (error) throw error;
         

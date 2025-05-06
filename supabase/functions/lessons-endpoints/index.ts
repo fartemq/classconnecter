@@ -50,10 +50,13 @@ serve(async (req) => {
         const { studentId, date } = body
         
         // Use explicit parameter names matching SQL function
-        const { data, error } = await supabaseClient.rpc('get_student_lessons_by_date', { 
-          p_student_id: studentId,
-          p_date: date 
-        })
+        const { data, error } = await supabaseClient.rpc(
+          'get_student_lessons_by_date', 
+          { 
+            p_student_id: studentId,
+            p_date: date 
+          }
+        )
         
         if (error) throw error
         
@@ -67,10 +70,13 @@ serve(async (req) => {
         const { tutorId, date } = body
         
         // Use explicit parameter names matching SQL function
-        const { data, error } = await supabaseClient.rpc('get_tutor_lessons_by_date', { 
-          p_tutor_id: tutorId,
-          p_date: date 
-        })
+        const { data, error } = await supabaseClient.rpc(
+          'get_tutor_lessons_by_date', 
+          { 
+            p_tutor_id: tutorId,
+            p_date: date 
+          }
+        )
         
         if (error) throw error
         

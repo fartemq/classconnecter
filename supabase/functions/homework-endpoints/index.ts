@@ -50,9 +50,12 @@ serve(async (req) => {
         const { homeworkId } = body
         
         // Use explicit parameter names matching SQL function
-        const { data, error } = await supabaseClient.rpc('get_homework_by_id', { 
-          p_homework_id: homeworkId 
-        })
+        const { data, error } = await supabaseClient.rpc(
+          'get_homework_by_id', 
+          { 
+            p_homework_id: homeworkId 
+          }
+        )
         
         if (error) throw error
         
@@ -78,10 +81,13 @@ serve(async (req) => {
         const { homeworkId, ...updateData } = body
         
         // Use explicit parameter names matching SQL function
-        const { data, error } = await supabaseClient.rpc('update_homework', { 
-          p_homework_id: homeworkId, 
-          ...updateData 
-        })
+        const { data, error } = await supabaseClient.rpc(
+          'update_homework', 
+          { 
+            p_homework_id: homeworkId, 
+            ...updateData 
+          }
+        )
         
         if (error) throw error
         
