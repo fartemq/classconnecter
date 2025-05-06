@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Search, Filter, Star, MapPin, Book, Clock, ChevronRight
+  Search, Filter, Star, MapPin, Book, Clock, ChevronRight, Calendar
 } from "lucide-react";
 import {
   Select,
@@ -26,6 +26,9 @@ import { Slider } from "@/components/ui/slider";
 import { fetchPublicTutors, PublicTutorProfile } from "@/services/publicTutorService";
 import { Loader } from "@/components/ui/loader";
 import { useToast } from "@/hooks/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { TutorScheduleView } from "./TutorScheduleView";
+import { Button as ShadcnButton } from "@/components/ui/button";
 
 export const FindTutorsTab = () => {
   const navigate = useNavigate();
@@ -34,6 +37,8 @@ export const FindTutorsTab = () => {
   const [priceRange, setPriceRange] = useState([1000, 5000]);
   const [tutors, setTutors] = useState<PublicTutorProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   
   // Fetch tutors on component mount
   useEffect(() => {
@@ -76,6 +81,11 @@ export const FindTutorsTab = () => {
     
     return searchMatch && priceMatch;
   });
+
+  const handleOpenSchedule = (tutorId: string) => {
+    setSelectedTutorId(tutorId);
+    setScheduleOpen(true);
+  };
   
   return (
     <div className="space-y-6">
@@ -297,7 +307,26 @@ export const FindTutorsTab = () => {
                           </div>
                         )}
                         
-                        <div className="flex justify-end mt-2">
+                        <div className="flex items-center justify-end gap-2 mt-2">
+                          <Button 
+                            variant="outline"
+                            onClick={() => navigate(`/profile/student/chats/${tutor.id}`)}
+                            className="sm:text-sm"
+                            size="sm"
+                          >
+                            Связаться
+                          </Button>
+                          
+                          <Button
+                            variant="outline"
+                            onClick={() => handleOpenSchedule(tutor.id)}
+                            className="sm:text-sm"
+                            size="sm"
+                          >
+                            <Calendar className="mr-1 h-4 w-4" />
+                            Расписание
+                          </Button>
+                          
                           <Button 
                             onClick={() => navigate(`/tutors/${tutor.id}`)}
                             className="sm:text-sm"
@@ -334,6 +363,18 @@ export const FindTutorsTab = () => {
           )}
         </div>
       </div>
+
+      {/* Tutor Schedule Dialog */}
+      <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Расписание репетитора</DialogTitle>
+          </DialogHeader>
+          {selectedTutorId && (
+            <TutorScheduleView tutorId={selectedTutorId} onClose={() => setScheduleOpen(false)} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

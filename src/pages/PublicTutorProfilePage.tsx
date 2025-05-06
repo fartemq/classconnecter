@@ -12,11 +12,14 @@ import { AlertCircle, BookOpen, Calendar, Clock, MapPin, MessageSquare, Star, Us
 import { fetchPublicTutorById, PublicTutorProfile } from "@/services/publicTutorService";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TutorScheduleView } from "@/components/profile/student/TutorScheduleView";
 
 const PublicTutorProfilePage = () => {
   const [tutor, setTutor] = useState<PublicTutorProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("about");
+  const [scheduleOpen, setScheduleOpen] = useState(false);
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -67,6 +70,20 @@ const PublicTutorProfilePage = () => {
     }
     
     navigate(`/profile/student/chats/${id}`);
+  };
+
+  const handleBookLesson = () => {
+    if (!user) {
+      toast({
+        title: "Требуется авторизация",
+        description: "Войдите в систему, чтобы забронировать занятие",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+
+    setScheduleOpen(true);
   };
   
   if (loading) {
@@ -132,14 +149,25 @@ const PublicTutorProfilePage = () => {
                     </span>
                   </div>
                   
-                  {/* Contact button */}
-                  <Button 
-                    onClick={handleContactTutor}
-                    className="mt-4 w-full"
-                  >
-                    <MessageSquare className="mr-2 h-4 w-4" />
-                    Связаться
-                  </Button>
+                  {/* Action buttons */}
+                  <div className="mt-4 w-full flex flex-col gap-2">
+                    <Button 
+                      onClick={handleContactTutor}
+                      className="w-full"
+                    >
+                      <MessageSquare className="mr-2 h-4 w-4" />
+                      Связаться
+                    </Button>
+                    
+                    <Button 
+                      variant="outline"
+                      onClick={handleBookLesson}
+                      className="w-full"
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      Забронировать занятие
+                    </Button>
+                  </div>
                 </div>
                 
                 {/* Profile info */}
@@ -295,16 +323,16 @@ const PublicTutorProfilePage = () => {
                   <TabsContent value="schedule">
                     <div className="text-center py-8">
                       <Calendar className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-                      <h3 className="text-lg font-medium mb-2">Расписание недоступно</h3>
-                      <p className="text-gray-500">
-                        Для просмотра доступного расписания, пожалуйста, свяжитесь с репетитором
+                      <h3 className="text-lg font-medium mb-2">Забронировать занятие</h3>
+                      <p className="text-gray-500 mb-4">
+                        Чтобы забронировать занятие с репетитором в удобное для вас время, нажмите кнопку ниже
                       </p>
                       <Button 
-                        onClick={handleContactTutor}
+                        onClick={handleBookLesson}
                         className="mt-4"
                       >
-                        <MessageSquare className="mr-2 h-4 w-4" />
-                        Связаться с репетитором
+                        <Calendar className="mr-2 h-4 w-4" />
+                        Забронировать занятие
                       </Button>
                     </div>
                   </TabsContent>
@@ -315,6 +343,18 @@ const PublicTutorProfilePage = () => {
         </div>
       </main>
       <Footer />
+      
+      {/* Tutor Schedule Dialog */}
+      <Dialog open={scheduleOpen} onOpenChange={setScheduleOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Расписание репетитора: {fullName}</DialogTitle>
+          </DialogHeader>
+          {id && (
+            <TutorScheduleView tutorId={id} onClose={() => setScheduleOpen(false)} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
