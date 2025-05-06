@@ -7,11 +7,6 @@ import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Lesson } from "@/types/lesson";
 
-interface GetTutorLessonsByDateParams {
-  p_tutor_id: string;
-  p_date: string;
-}
-
 export const ScheduleTab = () => {
   const [loading, setLoading] = useState(true);
   const [lessons, setLessons] = useState<Lesson[]>([]);
@@ -25,15 +20,44 @@ export const ScheduleTab = () => {
         const today = format(new Date(), 'yyyy-MM-dd');
         
         const { data, error } = await supabase
-          .rpc("get_tutor_lessons_by_date", { 
-            p_tutor_id: userData.user.id,
-            p_date: today
-          })
-          .returns<Lesson[]>();
+          .from('lessons')
+          .select(`
+            id,
+            date,
+            time,
+            duration,
+            status,
+            student:profiles!student_id (
+              id,
+              first_name, 
+              last_name
+            ),
+            subject:subjects (
+              id,
+              name
+            )
+          `)
+          .eq('tutor_id', userData.user.id)
+          .eq('date', today);
           
         if (error) throw error;
         
-        setLessons(data || []);
+        // Transform data to match Lesson type
+        const formattedLessons: Lesson[] = data?.map(item => ({
+          id: item.id,
+          tutor_id: userData.user.id,
+          student_id: item.student.id,
+          subject_id: item.subject.id,
+          date: item.date,
+          time: item.time,
+          duration: item.duration,
+          status: item.status,
+          created_at: '',
+          student: item.student,
+          subject: item.subject
+        })) || [];
+        
+        setLessons(formattedLessons);
       } catch (error) {
         console.error('Error fetching lessons:', error);
       } finally {

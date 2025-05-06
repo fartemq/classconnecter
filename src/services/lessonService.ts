@@ -2,23 +2,14 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Lesson, LessonData } from "@/types/lesson";
 
-interface GetStudentLessonsByDateParams {
-  p_student_id: string;
-  p_date: string;
-}
-
-interface CreateLessonParams extends Record<string, any> {
-  // This will be filled with the LessonData properties
-}
-
 export const fetchLessonsByDate = async (studentId: string, date: string): Promise<Lesson[]> => {
   try {
     const { data, error } = await supabase
-      .rpc("get_student_lessons_by_date", { 
+      .rpc('get_student_lessons_by_date', {
         p_student_id: studentId,
         p_date: date
       })
-      .returns<Lesson[]>();
+      .select('*');
 
     if (error) {
       throw error;
@@ -34,10 +25,10 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
 export const createLesson = async (lessonData: LessonData): Promise<{ data: Lesson | null, error: any }> => {
   try {
     const { data, error } = await supabase
-      .rpc("create_lesson", lessonData as CreateLessonParams)
-      .returns<Lesson>();
+      .rpc('create_lesson', lessonData)
+      .select('*');
 
-    return { data: data as Lesson, error };
+    return { data: data ? data[0] as Lesson : null, error };
   } catch (error) {
     console.error('Error creating lesson:', error);
     return { data: null, error };

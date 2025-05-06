@@ -1,32 +1,20 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Homework, HomeworkData } from "@/types/homework";
-
-interface GetHomeworkByIdParams {
-  p_homework_id: string;
-}
-
-interface CreateHomeworkParams extends Record<string, any> {
-  // This will be filled with the HomeworkData properties
-}
-
-interface UpdateHomeworkParams extends Record<string, any> {
-  p_homework_id: string;
-  // Other optional parameters will be dynamically added
-}
 
 export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | null> => {
   try {
     const { data, error } = await supabase
-      .rpc("get_homework_by_id", { 
+      .rpc('get_homework_by_id', { 
         p_homework_id: homeworkId 
       })
-      .returns<Homework>();
+      .select('*');
 
     if (error) {
       throw error;
     }
 
-    return data as Homework;
+    return data && data.length > 0 ? data[0] as Homework : null;
   } catch (error) {
     console.error('Error fetching homework:', error);
     return null;
@@ -36,10 +24,10 @@ export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | 
 export const createHomework = async (homeworkData: HomeworkData): Promise<{ data: Homework | null, error: any }> => {
   try {
     const { data, error } = await supabase
-      .rpc("create_homework", homeworkData as CreateHomeworkParams)
-      .returns<Homework>();
+      .rpc('create_homework', homeworkData)
+      .select('*');
 
-    return { data: data as Homework, error };
+    return { data: data && data.length > 0 ? data[0] as Homework : null, error };
   } catch (error) {
     console.error('Error creating homework:', error);
     return { data: null, error };
@@ -48,16 +36,16 @@ export const createHomework = async (homeworkData: HomeworkData): Promise<{ data
 
 export const updateHomework = async (homeworkId: string, updateData: Partial<HomeworkData>): Promise<{ data: Homework | null, error: any }> => {
   try {
-    const params: UpdateHomeworkParams = {
+    const params = {
       p_homework_id: homeworkId,
       ...updateData
     };
 
     const { data, error } = await supabase
-      .rpc("update_homework", params)
-      .returns<Homework>();
+      .rpc('update_homework', params)
+      .select('*');
 
-    return { data: data as Homework, error };
+    return { data: data && data.length > 0 ? data[0] as Homework : null, error };
   } catch (error) {
     console.error('Error updating homework:', error);
     return { data: null, error };
