@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
 import { useLocation } from "react-router-dom";
 import { ChatConversation } from "@/components/profile/student/ChatConversation";
+import { StudentProfileCard } from "@/components/profile/student/StudentProfileCard";
 
 const StudentProfilePage = () => {
   const { profile, isLoading } = useProfile("student");
@@ -19,7 +20,6 @@ const StudentProfilePage = () => {
   const isMainDashboard = location.pathname === "/profile/student";
   
   // Parse URL to determine the active tab and any tutor ID for chat
-  // Удалены вкладки для расписания, репетиторов, избранного и домашних заданий
   const getTabContent = () => {
     const path = location.pathname;
     
@@ -56,7 +56,14 @@ const StudentProfilePage = () => {
       <main className="flex-grow bg-gray-50 py-8">
         <div className="container mx-auto px-4">
           {isMainDashboard ? (
-            <StudentDashboard profile={profile} />
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              <div className="lg:col-span-1">
+                {profile && <StudentProfileCard profile={profile} />}
+              </div>
+              <div className="lg:col-span-3">
+                <StudentDashboard profile={profile} />
+              </div>
+            </div>
           ) : (
             <div className="max-w-4xl mx-auto">
               <Card className="p-6 shadow-md border-none">

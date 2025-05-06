@@ -2,7 +2,6 @@
 import React, { useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { StudentSidebar } from "@/components/profile/student/StudentSidebar";
 import { ChatsTab } from "@/components/profile/student/ChatsTab";
 import { useParams, useNavigate } from "react-router-dom";
 import { ChatConversation } from "@/components/profile/student/ChatConversation";
@@ -16,7 +15,7 @@ const StudentChatsPage = () => {
   const { tutorId } = useParams<{ tutorId: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { profile, isLoading } = useProfile("student");
+  const { isLoading } = useProfile("student");
   
   useEffect(() => {
     if (!user) {
@@ -46,23 +45,13 @@ const StudentChatsPage = () => {
       <Header />
       <main className="flex-grow bg-gray-50 py-8">
         <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Sidebar */}
-            <div className="hidden lg:block">
-              {profile && <StudentSidebar profile={profile} />}
-            </div>
-            
-            {/* Main content */}
-            <div className="lg:col-span-3">
-              <h1 className="text-2xl md:text-3xl font-bold mb-6">
-                {tutorId ? "Чат с репетитором" : "Сообщения"}
-              </h1>
-              
-              <Card className="shadow-md border-none p-4">
-                {tutorId ? <ChatConversation /> : <ChatsTab />}
-              </Card>
-            </div>
-          </div>
+          <h1 className="text-2xl md:text-3xl font-bold mb-6">
+            {tutorId ? "Чат с репетитором" : "Сообщения"}
+          </h1>
+          
+          <Card className="shadow-md border-none p-4">
+            {tutorId ? <ChatConversation /> : <ChatsTab />}
+          </Card>
         </div>
       </main>
       <Footer className="py-2" />

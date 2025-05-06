@@ -2,12 +2,11 @@
 import React, { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
-  Calendar, Clock, Users, BookOpen, MessageSquare, 
-  BookText, GraduationCap, BookMarked, Edit, ChevronRight
+  BookOpen, MessageSquare, 
+  BookText, Edit, ChevronRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 
 interface StudentDashboardProps {
@@ -44,82 +43,12 @@ export const StudentDashboard = ({ profile }: StudentDashboardProps) => {
   // Mock data for demonstration
   const upcomingLessons = [];
   
-  const tutorMessages = [
-    { 
-      id: 1, 
-      name: "Анна Петрова", 
-      message: "Не забудьте подготовить задания к занятию", 
-      time: "12:30" 
-    },
-    { 
-      id: 2, 
-      name: "Иван Иванов", 
-      message: "Проверил ваше домашнее задание, отличная работа!", 
-      time: "Вчера" 
-    }
-  ];
-  
   // Only show the profile completion card if profile is not 100% complete
   const showProfileCompletion = profileProgress < 100;
   
   return (
     <div className="space-y-8">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Profile card */}
-        <Card className="md:col-span-1 overflow-hidden">
-          <CardContent className="p-0">
-            <div className="flex flex-col items-center pt-6 pb-4">
-              <div className="w-24 h-24 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-4xl mb-3 relative">
-                {profile.avatar_url ? (
-                  <img 
-                    src={profile.avatar_url} 
-                    alt={`${profile.first_name} ${profile.last_name || ""}`} 
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : (
-                  <span>{(profile.first_name[0] || "").toUpperCase()}</span>
-                )}
-                <Badge className="absolute bottom-1 right-0 bg-green-500 text-xs px-2">Проверено</Badge>
-              </div>
-              
-              <h3 className="text-xl font-bold mb-1">
-                {profile.first_name} {profile.last_name}
-              </h3>
-              
-              <p className="text-gray-500 text-sm mb-3">
-                {profile.city || "Не указан"}
-              </p>
-              
-              <div className="flex items-center space-x-1 text-amber-500 mb-2">
-                <span className="text-lg font-bold">4.8</span>
-                <span className="text-xs">(12 отзывов)</span>
-              </div>
-              
-              <div className="grid grid-cols-2 w-full px-6 gap-4 mt-2">
-                <div className="flex flex-col items-center">
-                  <Calendar className="h-6 w-6 text-blue-500 mb-1" />
-                  <span className="text-xs text-gray-500">Занятий</span>
-                  <span className="font-bold">12</span>
-                </div>
-                <div className="flex flex-col items-center">
-                  <Users className="h-6 w-6 text-purple-500 mb-1" />
-                  <span className="text-xs text-gray-500">Репетиторов</span>
-                  <span className="font-bold">3</span>
-                </div>
-              </div>
-              
-              <Button 
-                variant="outline" 
-                className="mt-4 w-full mx-6"
-                onClick={() => navigate("/profile/student/edit")}
-              >
-                <Edit className="mr-2 h-4 w-4" />
-                Редактировать профиль
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-        
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Upcoming lessons */}
         <Card>
           <CardHeader className="pb-3">
@@ -151,29 +80,29 @@ export const StudentDashboard = ({ profile }: StudentDashboardProps) => {
                 <Button 
                   variant="outline" 
                   className="mt-4" 
-                  onClick={() => navigate("/profile/student/schedule")}
+                  onClick={() => navigate("/tutors")}
                 >
-                  Перейти к расписанию
+                  Найти репетитора
                 </Button>
               </div>
             )}
           </CardContent>
         </Card>
         
-        {/* Homework section */}
+        {/* Messages section */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg text-green-600">Домашние задания</CardTitle>
+            <CardTitle className="text-lg text-green-600">Сообщения</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-center py-8 text-gray-500">
-              <p>Нет активных домашних заданий для проверки</p>
+              <p>У вас нет новых сообщений</p>
               <Button 
                 variant="outline" 
                 className="mt-4" 
-                onClick={() => navigate("/profile/student/homework")}
+                onClick={() => navigate("/profile/student/chats")}
               >
-                Создать новое задание
+                Перейти к сообщениям
               </Button>
             </div>
           </CardContent>
