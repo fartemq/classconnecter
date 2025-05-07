@@ -293,6 +293,42 @@ export type Database = {
         }
         Relationships: []
       }
+      student_profiles: {
+        Row: {
+          created_at: string | null
+          educational_level: string | null
+          grade: string | null
+          id: string
+          learning_goals: string | null
+          preferred_format: string[] | null
+          school: string | null
+          subjects: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          educational_level?: string | null
+          grade?: string | null
+          id: string
+          learning_goals?: string | null
+          preferred_format?: string[] | null
+          school?: string | null
+          subjects?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          educational_level?: string | null
+          grade?: string | null
+          id?: string
+          learning_goals?: string | null
+          preferred_format?: string[] | null
+          school?: string | null
+          subjects?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       student_requests: {
         Row: {
           created_at: string

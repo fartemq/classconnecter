@@ -32,6 +32,7 @@ import {
   Video,
   Users
 } from "lucide-react";
+import { StudentProfileDB, StudentProfileUpdate } from "./StudentProfileTypes";
 
 export function ProfileTab() {
   const { profile, isLoading } = useProfile("student");
@@ -81,8 +82,9 @@ export function ProfileTab() {
       // Получаем дополнительные данные профиля студента
       const fetchStudentProfile = async () => {
         try {
+          // Используем явную типизацию для data
           const { data, error } = await supabase
-            .from('student_profiles')
+            .from<StudentProfileDB>('student_profiles')
             .select('*')
             .eq('id', profile.id)
             .single();
@@ -98,7 +100,7 @@ export function ProfileTab() {
             bio: profile.bio || "",
             city: profile.city || "",
             phone: profile.phone || "",
-            educationalLevel: data?.educational_level || "school",
+            educationalLevel: (data?.educational_level as "school" | "university" | "adult") || "school",
             school: profile.school || "",
             grade: profile.grade || "",
             subjects: data?.subjects || [],
@@ -147,22 +149,25 @@ export function ProfileTab() {
       
       if (checkError && checkError.code !== 'PGRST116') throw checkError;
       
+      // Создаем объект для обновления student_profiles с явной типизацией
+      const studentProfileData: StudentProfileUpdate = {
+        id: profile.id,
+        educational_level: values.educationalLevel,
+        subjects: values.subjects,
+        learning_goals: values.learningGoals,
+        preferred_format: values.preferredFormat
+      };
+      
       // Если записи нет, создаем новую, иначе обновляем существующую
       if (!existingProfile) {
         const { error: insertError } = await supabase
-          .from('student_profiles')
-          .insert({
-            id: profile.id,
-            educational_level: values.educationalLevel,
-            subjects: values.subjects,
-            learning_goals: values.learningGoals,
-            preferred_format: values.preferredFormat,
-          });
+          .from<StudentProfileUpdate>('student_profiles')
+          .insert(studentProfileData);
         
         if (insertError) throw insertError;
       } else {
         const { error: updateError } = await supabase
-          .from('student_profiles')
+          .from<StudentProfileUpdate>('student_profiles')
           .update({
             educational_level: values.educationalLevel,
             subjects: values.subjects,

@@ -1,4 +1,3 @@
-
 import { z } from "zod";
 
 // Расширенная схема для регистрационной формы
@@ -33,14 +32,14 @@ export const registerFormSchema = z.object({
 
 export type RegisterFormValues = z.infer<typeof registerFormSchema>;
 
-// Создадим отдельную схему для профиля студента
+// Обновленная схема для профиля студента
 export const studentProfileSchema = z.object({
   firstName: z.string().min(2, { message: "Имя должно быть не менее 2 символов" }),
   lastName: z.string().optional(),
   bio: z.string().optional(),
   city: z.string().optional(),
   phone: z.string().optional(),
-  educationalLevel: z.enum(["school", "university", "adult"]).optional(),
+  educationalLevel: z.enum(["school", "university", "adult"]),
   school: z.string().optional(),
   grade: z.string().optional(),
   subjects: z.array(z.string()).optional(),
