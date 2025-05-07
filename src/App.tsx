@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -37,6 +36,9 @@ import HomeworkSubmissionPage from "./pages/HomeworkSubmissionPage";
 import HomeworkAssignmentPage from "./pages/HomeworkAssignmentPage";
 import HomeworkGradingPage from "./pages/HomeworkGradingPage";
 
+// Add the import for the new page
+import StudentMaterialsPage from "./pages/StudentMaterialsPage";
+
 // Create a new QueryClient instance
 const queryClient = new QueryClient();
 
@@ -73,6 +75,14 @@ const App = () => {
                 <Route path="/profile/student/progress" element={<StudentProgressPage />} />
                 <Route path="/profile/student/homework" element={<StudentHomeworkPage />} />
                 <Route path="/profile/student/homework/:homeworkId" element={<HomeworkSubmissionPage />} />
+                {
+                  path: "/profile/student/materials",
+                  element: (
+                    <ProtectedRoute allowedRoles={["student"]}>
+                      <StudentMaterialsPage />
+                    </ProtectedRoute>
+                  ),
+                }
               </Route>
               
               {/* Защищенные маршруты для репетиторов */}

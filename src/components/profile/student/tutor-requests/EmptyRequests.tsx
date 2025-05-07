@@ -5,8 +5,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
 
-interface EmptyRequestsProps {
-  message: string; // Adding message prop to match how it's being used
+export interface EmptyRequestsProps {
+  message: string;
   activeTab?: string;
 }
 

@@ -7,11 +7,15 @@ import { Lesson } from "@/types/lesson";
 
 export const useLessons = (date: Date | undefined) => {
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchLessons = useCallback(async () => {
     if (!date) return;
     
     try {
+      setIsLoading(true);
+      setError(null);
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) return;
       
@@ -21,8 +25,11 @@ export const useLessons = (date: Date | undefined) => {
       // Use our service to fetch lessons
       const lessonsData = await fetchLessonsByDate(userData.user.id, dateStr);
       setLessons(lessonsData || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error fetching lessons:', error);
+      setError(error.message || 'Failed to fetch lessons');
+    } finally {
+      setIsLoading(false);
     }
   }, [date]);
 
@@ -33,6 +40,8 @@ export const useLessons = (date: Date | undefined) => {
   return {
     lessons,
     setLessons,
-    refreshLessons: fetchLessons
+    refreshLessons: fetchLessons,
+    isLoading,
+    error
   };
 };

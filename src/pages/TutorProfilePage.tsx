@@ -11,6 +11,7 @@ import { ChatsTab } from "@/components/profile/tutor/ChatsTab";
 import { AdvancedStatsTab } from "@/components/profile/tutor/AdvancedStatsTab";
 import { TutorSettingsTab } from "@/components/profile/tutor/TutorSettingsTab";
 import { TutorDashboard } from "@/components/profile/tutor/TutorDashboard";
+import { MaterialsTab } from "@/components/profile/tutor/MaterialsTab";
 import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -25,7 +26,7 @@ const TutorProfilePage = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
-    if (tab && ["teaching", "schedule", "students", "chats", "stats", "settings"].includes(tab)) {
+    if (tab && ["teaching", "schedule", "students", "chats", "stats", "settings", "materials"].includes(tab)) {
       setActiveTab(tab);
     } else if (!tab) {
       // If no tab is specified, set to dashboard
@@ -64,6 +65,8 @@ const TutorProfilePage = () => {
         return <AdvancedStatsTab tutorId={profile.id} />;
       case "settings":
         return <TutorSettingsTab profile={profile} />;
+      case "materials":
+        return <MaterialsTab tutorId={profile.id} />;
       default:
         return <TutorDashboard profile={profile} />;
     }

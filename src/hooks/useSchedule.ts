@@ -14,7 +14,7 @@ export const useSchedule = () => {
   
   const { tutors } = useStudentTutors();
   const { availableSlots, loading, refreshSlots } = useTutorSlots(selectedTutorId, date);
-  const { lessons, setLessons, refreshLessons } = useLessons(date);
+  const { lessons, setLessons, refreshLessons, isLoading: lessonsLoading } = useLessons(date);
   const { bookingSlot, handleBookSlot } = useBooking(setLessons, lessons);
 
   // Initialize selectedTutorId when tutors are loaded
@@ -90,7 +90,7 @@ export const useSchedule = () => {
     tutors,
     availableSlots,
     lessons,
-    loading,
+    loading: loading || lessonsLoading,
     bookingSlot,
     handleBookSlot: (slot: Parameters<typeof handleBookSlot>[0]) => {
       if (date) {
