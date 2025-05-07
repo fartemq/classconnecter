@@ -10,10 +10,11 @@ import { Loader } from "@/components/ui/loader";
 import { useState } from "react";
 
 export const MyStudentsSection = () => {
-  const { isLoading, myStudents, contactStudent } = useStudents();
+  const { isLoading, myStudents, contactStudent, refreshStudents } = useStudents();
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showRequests, setShowRequests] = useState(false);
   
   // Обработчики
   const handleContactStudent = (student: Student) => {
@@ -35,6 +36,15 @@ export const MyStudentsSection = () => {
     }
   };
 
+  const handleCheckRequests = () => {
+    // Переключение на вкладку запросов в родительском компоненте
+    // В реальном приложении здесь можно было бы использовать событие или navigateState
+    // для перехода к соответствующему разделу
+    setShowRequests(true);
+    // Также можно обновить список студентов
+    refreshStudents();
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-12">
@@ -44,7 +54,7 @@ export const MyStudentsSection = () => {
   }
 
   if (myStudents.length === 0) {
-    return <EmptyStudentsList />;
+    return <EmptyStudentsList onCheckRequests={handleCheckRequests} />;
   }
 
   return (
