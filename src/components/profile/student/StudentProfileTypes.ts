@@ -14,7 +14,7 @@ export interface StudentProfileDB {
 
 // Тип для обновления профиля студента
 export interface StudentProfileUpdate {
-  id?: string;
+  id: string; // Изменено с id?: string на id: string, т.к. это обязательное поле
   educational_level?: string | null;
   subjects?: string[] | null;
   learning_goals?: string | null;

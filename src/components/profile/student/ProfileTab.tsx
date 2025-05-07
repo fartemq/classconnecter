@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
@@ -150,19 +149,17 @@ export function ProfileTab() {
       
       if (checkError && checkError.code !== 'PGRST116') throw checkError;
       
-      const studentProfileData: StudentProfileUpdate = {
-        id: profile.id,
-        educational_level: values.educationalLevel,
-        subjects: values.subjects,
-        learning_goals: values.learningGoals,
-        preferred_format: values.preferredFormat
-      };
-      
       // Если записи нет, создаем новую, иначе обновляем существующую
       if (!existingProfile) {
         const { error: insertError } = await supabase
           .from('student_profiles')
-          .insert([studentProfileData]);
+          .insert({
+            id: profile.id,  // Обязательно указываем id
+            educational_level: values.educationalLevel,
+            subjects: values.subjects,
+            learning_goals: values.learningGoals,
+            preferred_format: values.preferredFormat
+          });
         
         if (insertError) throw insertError;
       } else {
