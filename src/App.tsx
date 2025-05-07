@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -75,14 +76,7 @@ const App = () => {
                 <Route path="/profile/student/progress" element={<StudentProgressPage />} />
                 <Route path="/profile/student/homework" element={<StudentHomeworkPage />} />
                 <Route path="/profile/student/homework/:homeworkId" element={<HomeworkSubmissionPage />} />
-                {
-                  path: "/profile/student/materials",
-                  element: (
-                    <ProtectedRoute allowedRoles={["student"]}>
-                      <StudentMaterialsPage />
-                    </ProtectedRoute>
-                  ),
-                }
+                <Route path="/profile/student/materials" element={<StudentMaterialsPage />} />
               </Route>
               
               {/* Защищенные маршруты для репетиторов */}
