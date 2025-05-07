@@ -1,105 +1,74 @@
-
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Profile } from "@/hooks/useProfile";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { toast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
-import { Settings, LogOut, User, Bell, Lock } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { PublishProfileSection } from "./PublishProfileSection";
+import { fetchTutorProfile } from "@/services/tutorProfileService";
+import { Loader } from "@/components/ui/loader";
 
 interface TutorSettingsTabProps {
   profile: Profile;
 }
 
 export const TutorSettingsTab = ({ profile }: TutorSettingsTabProps) => {
-  const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const [isPublished, setIsPublished] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleLogout = async () => {
-    try {
-      await signOut();
-      // Переадресация и уведомления происходят в функции signOut
-    } catch (error) {
-      console.error("Ошибка выхода:", error);
-      toast({
-        title: "Ошибка выхода",
-        description: "Произошла ошибка при выходе из аккаунта",
-        variant: "destructive",
-      });
-    }
+  // Загружаем информацию о публикации профиля
+  useEffect(() => {
+    const loadTutorProfile = async () => {
+      try {
+        setIsLoading(true);
+        const tutorProfile = await fetchTutorProfile(profile.id);
+        setIsPublished(tutorProfile.isPublished || false);
+      } catch (error) {
+        console.error("Error loading tutor profile:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadTutorProfile();
+  }, [profile.id]);
+
+  const handlePublishStatusChange = (newStatus: boolean) => {
+    setIsPublished(newStatus);
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader size="lg" />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      <h1 className="text-2xl font-bold">Настройки профиля</h1>
+
+      {/* Секция публикации профиля */}
+      <PublishProfileSection 
+        tutorId={profile.id} 
+        isPublished={isPublished}
+        onPublishStatusChange={handlePublishStatusChange}
+      />
+
+      {/* Другие секции настроек (будут добавлены позже) */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <Settings className="h-5 w-5 mr-2" />
-            Настройки профиля
-          </CardTitle>
+          <CardTitle>Настройки уведомлений</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600 mb-4">
-            Управляйте настройками вашего профиля репетитора
-          </p>
-          
-          <div className="space-y-4">
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => navigate("/profile/tutor/complete")}
-            >
-              <User className="h-4 w-4 mr-2" />
-              Редактировать основную информацию
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => navigate("/profile/tutor?tab=schedule")}
-            >
-              Управление расписанием
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => navigate("/profile/tutor/notifications")}
-            >
-              <Bell className="h-4 w-4 mr-2" />
-              Настройки уведомлений
-            </Button>
-            
-            <Button
-              variant="outline"
-              className="w-full justify-start"
-              onClick={() => navigate("/profile/tutor/password")}
-            >
-              <Lock className="h-4 w-4 mr-2" />
-              Изменить пароль
-            </Button>
-          </div>
+          <p className="text-gray-500">Настройки уведомлений будут доступны в ближайшее время.</p>
         </CardContent>
       </Card>
-      
+
       <Card>
         <CardHeader>
-          <CardTitle className="text-red-600 flex items-center text-lg">
-            <LogOut className="h-5 w-5 mr-2" />
-            Выход из системы
-          </CardTitle>
+          <CardTitle>Приватность и безопасность</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-gray-600 mb-4">
-            При выходе из системы вы будете перенаправлены на страницу входа
-          </p>
-          <Button 
-            variant="destructive" 
-            onClick={handleLogout}
-          >
-            Выйти
-          </Button>
+          <p className="text-gray-500">Настройки приватности и безопасности будут доступны в ближайшее время.</p>
         </CardContent>
       </Card>
     </div>

@@ -66,7 +66,8 @@ export const saveTutorProfile = async (
         methodology: values.methodology || '',
         experience: values.experience || 0,
         achievements: values.achievements || '',
-        video_url: values.videoUrl || ''
+        video_url: values.videoUrl || '',
+        is_published: false // По умолчанию профиль не опубликован
       });
       
       if (tutorProfileError) {
@@ -146,8 +147,9 @@ export const fetchTutorProfile = async (userId: string): Promise<TutorProfile> =
       experience: tutorProfileData?.experience || 0,
       achievements: tutorProfileData?.achievements || "",
       videoUrl: tutorProfileData?.video_url || "",
+      isPublished: tutorProfileData?.is_published || false,
       subjects: formattedSubjects,
-      rating: 0, // In future these could come from database
+      rating: 0, // В будущем эти данные могут поступать из базы
       reviewsCount: 0,
       completedLessons: 0,
       activeStudents: 0
@@ -157,3 +159,28 @@ export const fetchTutorProfile = async (userId: string): Promise<TutorProfile> =
     throw error;
   }
 };
+
+/**
+ * Publish or unpublish a tutor's profile
+ */
+export const publishTutorProfile = async (userId: string, isPublished: boolean): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from("tutor_profiles")
+      .update({
+        is_published: isPublished,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+    
+    if (error) {
+      throw error;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error publishing tutor profile:", error);
+    return false;
+  }
+};
+

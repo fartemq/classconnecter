@@ -6,6 +6,18 @@ import { createStudentFromProfile } from "@/utils/studentUtils";
 // Получение всех доступных учеников (не являющихся учениками данного репетитора)
 export const fetchAvailableStudents = async (tutorId: string): Promise<Student[]> => {
   try {
+    // Проверяем, что профиль репетитора опубликован
+    const { data: tutorProfile, error: tutorProfileError } = await supabase
+      .from('tutor_profiles')
+      .select('is_published')
+      .eq('id', tutorId)
+      .single();
+    
+    if (tutorProfileError || !tutorProfile || !tutorProfile.is_published) {
+      console.error('Error: Tutor profile is not published or does not exist');
+      return [];
+    }
+    
     // Получаем всех студентов из таблицы profiles
     const { data: studentProfiles, error: profilesError } = await supabase
       .from('profiles')
@@ -59,6 +71,18 @@ export const fetchAvailableStudents = async (tutorId: string): Promise<Student[]
 // Получение учеников репетитора (которые приняли запрос)
 export const fetchMyStudents = async (tutorId: string): Promise<Student[]> => {
   try {
+    // Проверяем, что профиль репетитора опубликован
+    const { data: tutorProfile, error: tutorProfileError } = await supabase
+      .from('tutor_profiles')
+      .select('is_published')
+      .eq('id', tutorId)
+      .single();
+    
+    if (tutorProfileError) {
+      console.error('Error fetching tutor profile:', tutorProfileError);
+      // Продолжаем выполнение, так как репетитор может увидеть своих студентов независимо от статуса публикации
+    }
+    
     const { data: acceptedRequests, error: requestsError } = await supabase
       .from('student_requests')
       .select(`
@@ -105,6 +129,18 @@ export const sendRequestToStudent = async (
   message: string | null = null
 ): Promise<boolean> => {
   try {
+    // Проверяем, что профиль репетитора опубликован
+    const { data: tutorProfile, error: tutorProfileError } = await supabase
+      .from('tutor_profiles')
+      .select('is_published')
+      .eq('id', tutorId)
+      .single();
+    
+    if (tutorProfileError || !tutorProfile || !tutorProfile.is_published) {
+      console.error('Error: Cannot send request - tutor profile is not published');
+      return false;
+    }
+    
     const { error } = await supabase
       .from('student_requests')
       .insert({

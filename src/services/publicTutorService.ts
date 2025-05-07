@@ -41,15 +41,16 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       return null;
     }
     
-    // Fetch tutor specific information
+    // Fetch tutor specific information and check if published
     const { data: tutorProfileData, error: tutorProfileError } = await supabase
       .from("tutor_profiles")
       .select("*")
       .eq("id", tutorId)
+      .eq("is_published", true) // Проверка на опубликованный профиль
       .maybeSingle();
     
-    if (tutorProfileError) {
-      console.error("Tutor profile fetch error:", tutorProfileError);
+    if (tutorProfileError || !tutorProfileData) {
+      console.error("Tutor profile fetch error or profile not published:", tutorProfileError);
       return null;
     }
     
@@ -114,8 +115,25 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
 
 export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorProfile[]> => {
   try {
-    // Start with the profiles that have role=tutor
-    let query = supabase
+    // Получаем только опубликованные профили репетиторов
+    const { data: tutorProfiles, error: tutorProfilesError } = await supabase
+      .from("tutor_profiles")
+      .select(`
+        id,
+        is_published
+      `)
+      .eq("is_published", true);
+
+    if (tutorProfilesError || !tutorProfiles || tutorProfiles.length === 0) {
+      console.error("No published tutor profiles found:", tutorProfilesError);
+      return [];
+    }
+
+    // Получаем IDs опубликованных профилей
+    const publishedTutorIds = tutorProfiles.map(profile => profile.id);
+    
+    // Получаем основную информацию о репетиторах по полученным ID
+    const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select(`
         id,
@@ -125,16 +143,15 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
         bio,
         city
       `)
-      .eq("role", "tutor");
-
-    const { data: profiles, error: profilesError } = await query;
+      .eq("role", "tutor")
+      .in("id", publishedTutorIds);
 
     if (profilesError || !profiles || profiles.length === 0) {
       console.error("No tutor profiles found:", profilesError);
       return [];
     }
 
-    // Get additional details for each tutor
+    // Получаем дополнительную информацию для каждого репетитора
     const tutors = await Promise.all(
       profiles.map(async (profile) => {
         const tutorProfile = await fetchPublicTutorById(profile.id);
@@ -142,7 +159,7 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
       })
     );
 
-    // Filter out any null results
+    // Отфильтровываем null значения
     return tutors.filter(tutor => tutor !== null) as PublicTutorProfile[];
   } catch (error) {
     console.error("Error fetching public tutors:", error);
