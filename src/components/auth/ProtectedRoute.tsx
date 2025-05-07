@@ -3,8 +3,12 @@ import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Loader } from "@/components/ui/loader";
 
-const ProtectedRoute = () => {
-  const { user, isLoading } = useAuth();
+interface ProtectedRouteProps {
+  allowedRoles?: string[];
+}
+
+const ProtectedRoute = ({ allowedRoles }: ProtectedRouteProps) => {
+  const { user, isLoading, userRole } = useAuth();
   const location = useLocation();
 
   if (isLoading) {
@@ -21,7 +25,22 @@ const ProtectedRoute = () => {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // If authenticated, render the child routes
+  // Check if user has required role
+  if (allowedRoles && allowedRoles.length > 0) {
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      // Redirect based on role
+      if (userRole === 'student') {
+        return <Navigate to="/profile/student" replace />;
+      } else if (userRole === 'tutor') {
+        return <Navigate to="/profile/tutor" replace />;
+      } else {
+        // If role is unknown, redirect to home
+        return <Navigate to="/" replace />;
+      }
+    }
+  }
+
+  // If authenticated and role check passes, render the child routes
   return <Outlet />;
 };
 

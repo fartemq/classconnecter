@@ -1,3 +1,4 @@
+
 import { Heart, MessageSquare, Star, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { toast } from "@/hooks/use-toast";
 import { PublicTutorProfile } from "@/services/publicTutorService";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TutorScheduleView } from "@/components/profile/student/schedule/TutorScheduleView";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TutorCardProps {
   tutor: PublicTutorProfile;
@@ -17,8 +19,9 @@ interface TutorCardProps {
 export function TutorCard({ tutor }: TutorCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
 
   // Get lowest hourly rate from all subjects
   const lowestRate = tutor.subjects.length > 0
@@ -31,10 +34,39 @@ export function TutorCard({ tutor }: TutorCardProps) {
   // Format the rating
   const rating = tutor.rating ? tutor.rating.toFixed(1) : "N/A";
   
-  const toggleFavorite = () => {
-    // For now, just toggle the state locally
-    // In a real app, you would save this to the database
-    setIsFavorite(!isFavorite);
+  const toggleFavorite = async () => {
+    if (!user) {
+      toast({
+        title: "Необходима авторизация",
+        description: "Войдите в систему, чтобы добавить репетитора в избранное",
+        variant: "destructive"
+      });
+      navigate("/login");
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      // В будущей реализации здесь будет код для сохранения в избранное
+      setIsFavorite(!isFavorite);
+      
+      toast({
+        title: isFavorite ? "Удалено из избранного" : "Добавлено в избранное",
+        description: isFavorite ? 
+          `Репетитор ${fullName} удален из избранного` : 
+          `Репетитор ${fullName} добавлен в избранное`,
+      });
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить статус избранного",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleContact = () => {
@@ -45,6 +77,16 @@ export function TutorCard({ tutor }: TutorCardProps) {
         variant: "destructive"
       });
       navigate("/login");
+      return;
+    }
+    
+    // Проверяем, является ли пользователь студентом
+    if (userRole !== 'student') {
+      toast({
+        title: "Доступ запрещен",
+        description: "Только студенты могут связываться с репетиторами",
+        variant: "destructive"
+      });
       return;
     }
     
@@ -62,7 +104,52 @@ export function TutorCard({ tutor }: TutorCardProps) {
       return;
     }
     
-    setScheduleOpen(true);
+    // Проверяем, является ли пользователь студентом
+    if (userRole !== 'student') {
+      toast({
+        title: "Доступ запрещен",
+        description: "Только студенты могут бронировать занятия",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Проверяем, является ли пользователь учеником данного репетитора
+    checkTutorStudent(tutor.id).then((isStudent) => {
+      if (isStudent) {
+        setScheduleOpen(true);
+      } else {
+        toast({
+          title: "Доступ запрещен",
+          description: "Сначала нужно стать учеником этого репетитора",
+          variant: "destructive"
+        });
+        
+        // Предложить отправить запрос
+        // В будущей реализации можно добавить автоматическое создание запроса
+      }
+    });
+  };
+  
+  // Проверка, является ли пользователь учеником данного репетитора
+  const checkTutorStudent = async (tutorId: string): Promise<boolean> => {
+    if (!user) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .from('student_requests')
+        .select('status')
+        .eq('student_id', user.id)
+        .eq('tutor_id', tutorId)
+        .eq('status', 'accepted')
+        .maybeSingle();
+        
+      if (error) throw error;
+      return !!data;
+    } catch (err) {
+      console.error('Error checking tutor-student relationship:', err);
+      return false;
+    }
   };
 
   return (
@@ -121,7 +208,12 @@ export function TutorCard({ tutor }: TutorCardProps) {
         </CardContent>
         
         <CardFooter className="p-4 pt-0 flex justify-between flex-wrap gap-2">
-          <Button variant="outline" size="sm" onClick={toggleFavorite}>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={toggleFavorite} 
+            disabled={isLoading}
+          >
             <Heart 
               className={`h-4 w-4 mr-1 ${isFavorite ? 'fill-red-500 text-red-500' : 'text-gray-500'}`} 
             />
@@ -129,17 +221,31 @@ export function TutorCard({ tutor }: TutorCardProps) {
           </Button>
           
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleBookLesson}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleBookLesson}
+              disabled={isLoading}
+            >
               <Calendar className="h-4 w-4 mr-1" />
               Записаться
             </Button>
             
-            <Button variant="outline" size="sm" onClick={handleContact}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleContact}
+              disabled={isLoading}
+            >
               <MessageSquare className="h-4 w-4 mr-1" />
               Связаться
             </Button>
             
-            <Button size="sm" onClick={() => navigate(`/tutors/${tutor.id}`)}>
+            <Button 
+              size="sm" 
+              onClick={() => navigate(`/tutors/${tutor.id}`)}
+              disabled={isLoading}
+            >
               Подробнее
             </Button>
           </div>
