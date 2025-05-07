@@ -1,109 +1,79 @@
 
-import React, { useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Loader } from "@/components/ui/loader";
-import { useStudentRequests } from "@/hooks/useStudentRequests";
+import React from "react";
+import { useStudents } from "@/hooks/useStudents";
+import { StudentsList } from "./StudentsList";
 import { EmptyStudentsList } from "./EmptyStudentsList";
-import { StudentRequestsTable } from "./StudentRequestsTable";
+import { StudentProfileDialog } from "./StudentProfileDialog";
 import { StudentContactDialog } from "./StudentContactDialog";
 import { Student } from "@/types/student";
-import { createStudentFromRequest } from "@/utils/studentUtils";
+import { Loader } from "@/components/ui/loader";
+import { useState } from "react";
 
 export const MyStudentsSection = () => {
-  const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>("accepted");
+  const { isLoading, myStudents, contactStudent } = useStudents();
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showContactDialog, setShowContactDialog] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
   
-  // Determine status filter based on active tab
-  const statusFilter = activeTab === 'all' 
-    ? ['pending', 'accepted', 'rejected', 'completed'] 
-    : [activeTab];
-  
-  const { 
-    isLoading, 
-    studentRequests, 
-    updateRequestStatus 
-  } = useStudentRequests(user?.id, statusFilter);
-
-  const handleContactStudent = (requestId: string) => {
-    const request = studentRequests.find(req => req.id === requestId);
-    if (request) {
-      const student = createStudentFromRequest(request);
-      setSelectedStudent(student);
-      setShowContactDialog(true);
-    }
+  // Обработчики
+  const handleContactStudent = (student: Student) => {
+    setSelectedStudent(student);
+    setShowContactDialog(true);
   };
 
-  // Helper to get counts for status badges
-  const getStatusCount = (status: string) => {
-    return studentRequests.filter(req => 
-      status === 'all' ? true : req.status === status
-    ).length;
+  const handleViewProfile = (student: Student) => {
+    setSelectedStudent(student);
+    setShowProfileDialog(true);
+  };
+  
+  const handleSendContactRequest = async (subjectId: string | null, message: string | null) => {
+    if (!selectedStudent) return;
+    
+    const success = await contactStudent(selectedStudent.id, subjectId, message);
+    if (success) {
+      setShowContactDialog(false);
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="h-64 flex items-center justify-center">
+      <div className="flex justify-center items-center p-12">
         <Loader size="lg" />
       </div>
     );
   }
 
-  if (studentRequests.length === 0) {
-    return (
-      <EmptyStudentsList onCheckRequests={() => setActiveTab("pending")} />
-    );
+  if (myStudents.length === 0) {
+    return <EmptyStudentsList />;
   }
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="all" className="relative">
-            Все
-            <Badge className="ml-1 text-xs">{getStatusCount('all')}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="pending" className="relative">
-            Ожидающие
-            <Badge variant="secondary" className="ml-1 text-xs bg-yellow-100">{getStatusCount('pending')}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="accepted" className="relative">
-            Активные
-            <Badge variant="secondary" className="ml-1 text-xs bg-green-100">{getStatusCount('accepted')}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="rejected" className="relative">
-            Отклоненные
-            <Badge variant="secondary" className="ml-1 text-xs bg-red-100">{getStatusCount('rejected')}</Badge>
-          </TabsTrigger>
-          <TabsTrigger value="completed" className="relative">
-            Завершенные
-            <Badge variant="secondary" className="ml-1 text-xs bg-blue-100">{getStatusCount('completed')}</Badge>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={activeTab} className="mt-0">
-          <Card>
-            <CardContent className="p-0">
-              <StudentRequestsTable 
-                requests={studentRequests}
-                onUpdateStatus={updateRequestStatus}
-                onContact={handleContactStudent}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {/* Contact Dialog */}
+      <StudentsList
+        students={myStudents}
+        onContact={handleContactStudent}
+        onViewProfile={handleViewProfile}
+      />
+      
+      {/* Диалоги */}
       {selectedStudent && showContactDialog && (
         <StudentContactDialog 
           student={selectedStudent} 
           open={showContactDialog} 
-          onClose={() => setShowContactDialog(false)} 
+          onClose={() => setShowContactDialog(false)}
+          onSubmit={handleSendContactRequest}
+        />
+      )}
+      
+      {selectedStudent && showProfileDialog && (
+        <StudentProfileDialog 
+          student={selectedStudent} 
+          open={showProfileDialog}
+          onClose={() => setShowProfileDialog(false)}
+          onContact={() => {
+            setShowProfileDialog(false);
+            setShowContactDialog(true);
+          }}
         />
       )}
     </div>

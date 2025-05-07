@@ -1,142 +1,100 @@
 
 import React, { useState } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "@/hooks/use-toast";
-import { Send, Book } from "lucide-react";
 import { Student } from "@/types/student";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 
 interface StudentContactDialogProps {
   student: Student;
   open: boolean;
   onClose: () => void;
+  onSubmit: (subjectId: string | null, message: string | null) => void;
 }
 
-export const StudentContactDialog = ({ 
-  student, 
-  open, 
-  onClose 
-}: StudentContactDialogProps) => {
-  const [subject, setSubject] = useState(`Приглашение на пробное занятие по предмету ${student.subjects[0] || "N/A"}`);
-  const [message, setMessage] = useState(`Здравствуйте, ${student.name}!\n\nЯ заинтересован в проведении занятий с вами. Давайте обсудим детали и возможность организации пробного урока.\n\nС уважением,\n[Ваше имя]`);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { user } = useAuth();
+export const StudentContactDialog = ({ student, open, onClose, onSubmit }: StudentContactDialogProps) => {
+  const [message, setMessage] = useState("");
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [subjects, setSubjects] = useState<{id: string, name: string}[]>([]);
+  
+  React.useEffect(() => {
+    const fetchSubjects = async () => {
+      const { data, error } = await supabase
+        .from('subjects')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
+        
+      if (error) {
+        console.error('Error fetching subjects:', error);
+        return;
+      }
+      
+      setSubjects(data || []);
+    };
+    
+    fetchSubjects();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!user) {
-      toast({
-        title: "Ошибка",
-        description: "Вы должны быть авторизованы для отправки сообщений",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
+    setIsLoading(true);
     
     try {
-      // Получаем ID студента из объекта student
-      const studentId = student.id;
-      
-      // Создаем новое сообщение в базе данных
-      const { data, error } = await supabase
-        .from("messages")
-        .insert({
-          sender_id: user.id,
-          receiver_id: studentId,
-          subject: subject,
-          content: message,
-          is_read: false
-        });
-      
-      if (error) {
-        throw error;
-      }
-      
-      toast({
-        title: "Сообщение отправлено",
-        description: `Ваше сообщение ученику ${student.name} успешно отправлено`,
-      });
-      
-      onClose();
-    } catch (error) {
-      console.error("Ошибка при отправке сообщения:", error);
-      toast({
-        title: "Ошибка отправки",
-        description: "Не удалось отправить сообщение. Пожалуйста, попробуйте позже.",
-        variant: "destructive"
-      });
+      await onSubmit(selectedSubject, message);
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Связаться с учеником</DialogTitle>
+          <DialogTitle>Связаться с учеником: {student.name}</DialogTitle>
         </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="mb-6">
-            <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-lg mr-3">
-                {student.name.charAt(0)}
-              </div>
-              <div>
-                <h3 className="font-medium">{student.name}</h3>
-                <div className="flex items-center text-sm text-gray-500">
-                  <Book className="h-3.5 w-3.5 mr-1" />
-                  {student.subjects.join(", ") || "Предмет не указан"}
-                </div>
-              </div>
-            </div>
-          </div>
-
+        
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
           <div className="space-y-2">
-            <Label htmlFor="subject">Тема сообщения</Label>
-            <Input
-              id="subject"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-              placeholder="Введите тему сообщения"
-              required
-            />
+            <Label htmlFor="subject">Предмет</Label>
+            <Select value={selectedSubject || ""} onValueChange={setSelectedSubject}>
+              <SelectTrigger>
+                <SelectValue placeholder="Выберите предмет" />
+              </SelectTrigger>
+              <SelectContent>
+                {subjects.map((subject) => (
+                  <SelectItem key={subject.id} value={subject.id}>{subject.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-
+          
           <div className="space-y-2">
             <Label htmlFor="message">Сообщение</Label>
             <Textarea
               id="message"
+              placeholder="Введите сообщение для ученика..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="Представьтесь и опишите ваше предложение"
-              rows={7}
-              required
+              rows={4}
+              className="resize-none"
             />
           </div>
-
-          <DialogFooter className="pt-4">
-            <Button variant="outline" type="button" onClick={onClose}>
-              Отмена
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              <Send className="h-4 w-4 mr-2" />
-              {isSubmitting ? "Отправка..." : "Отправить сообщение"}
+          
+          <DialogFooter>
+            <Button variant="outline" type="button" onClick={onClose}>Отмена</Button>
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Отправка..." : "Отправить запрос"}
             </Button>
           </DialogFooter>
         </form>

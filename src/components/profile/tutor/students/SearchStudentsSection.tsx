@@ -1,42 +1,49 @@
 
-import React, { useState } from "react";
-import { mockStudents } from "./mockData";
+import React, { useState, useEffect } from "react";
+import { useStudents } from "@/hooks/useStudents";
 import { SearchFilters } from "./SearchFilters";
 import { StudentsList } from "./StudentsList";
 import { StudentTabsFilter } from "./StudentTabsFilter";
 import { StudentProfileDialog } from "./StudentProfileDialog";
 import { StudentContactDialog } from "./StudentContactDialog";
+import { Student } from "@/types/student";
+import { Loader } from "@/components/ui/loader";
 
 export const SearchStudentsSection = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLevel, setSelectedLevel] = useState("all");
   const [selectedSubject, setSelectedSubject] = useState("all");
   const [activeTab, setActiveTab] = useState("all");
-  const [selectedStudent, setSelectedStudent] = useState<typeof mockStudents[0] | null>(null);
+  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
-
-  // Get unique subjects from all students
+  
+  const { isLoading, availableStudents, myStudents, contactStudent } = useStudents();
+  
+  // Объединяем все студенты для отображения
+  const allStudents = [...availableStudents, ...myStudents];
+  
+  // Получаем уникальные предметы из всех студентов
   const uniqueSubjects = Array.from(
-    new Set(mockStudents.flatMap(student => student.subjects))
+    new Set(allStudents.flatMap(student => student.subjects))
   );
 
-  // Filter students based on search criteria
-  const filteredStudents = mockStudents.filter(student => {
-    // Search filter
+  // Фильтруем студентов на основе критериев поиска
+  const filteredStudents = allStudents.filter(student => {
+    // Фильтр по поиску
     const matchesSearch = searchTerm === "" || 
       student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       student.subjects.some(subj => subj.toLowerCase().includes(searchTerm.toLowerCase())) ||
       student.city.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Level filter
+    // Фильтр по уровню
     const matchesLevel = selectedLevel === "all" || student.level === selectedLevel;
     
-    // Subject filter
+    // Фильтр по предмету
     const matchesSubject = selectedSubject === "all" || 
       student.subjects.some(subj => subj === selectedSubject);
     
-    // Tab/status filter
+    // Фильтр по статусу
     const matchesTab = activeTab === "all" || 
       (activeTab === "new" && student.status === "new") ||
       (activeTab === "active" && student.status === "active") ||
@@ -45,25 +52,42 @@ export const SearchStudentsSection = () => {
     return matchesSearch && matchesLevel && matchesSubject && matchesTab;
   });
 
-  // Counts for tab badges
-  const newStudentsCount = mockStudents.filter(s => s.status === "new").length;
-  const activeStudentsCount = mockStudents.filter(s => s.status === "active").length;
-  const inactiveStudentsCount = mockStudents.filter(s => s.status === "inactive").length;
+  // Подсчет для бейджей на вкладках
+  const newStudentsCount = allStudents.filter(s => s.status === "new").length;
+  const activeStudentsCount = allStudents.filter(s => s.status === "active").length;
+  const inactiveStudentsCount = allStudents.filter(s => s.status === "inactive").length;
 
-  // Handlers
-  const handleContactStudent = (student: typeof mockStudents[0]) => {
+  // Обработчики
+  const handleContactStudent = (student: Student) => {
     setSelectedStudent(student);
     setShowContactDialog(true);
   };
 
-  const handleViewProfile = (student: typeof mockStudents[0]) => {
+  const handleViewProfile = (student: Student) => {
     setSelectedStudent(student);
     setShowProfileDialog(true);
   };
+  
+  const handleSendContactRequest = async (subjectId: string | null, message: string | null) => {
+    if (!selectedStudent) return;
+    
+    const success = await contactStudent(selectedStudent.id, subjectId, message);
+    if (success) {
+      setShowContactDialog(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-12">
+        <Loader size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Search and filters */}
+      {/* Поиск и фильтры */}
       <SearchFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -74,11 +98,11 @@ export const SearchStudentsSection = () => {
         uniqueSubjects={uniqueSubjects}
       />
       
-      {/* Tabs and student list */}
+      {/* Вкладки и список студентов */}
       <StudentTabsFilter
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        allStudentsCount={mockStudents.length}
+        allStudentsCount={allStudents.length}
         newStudentsCount={newStudentsCount}
         activeStudentsCount={activeStudentsCount}
         inactiveStudentsCount={inactiveStudentsCount}
@@ -90,12 +114,13 @@ export const SearchStudentsSection = () => {
         />
       </StudentTabsFilter>
       
-      {/* Dialogs */}
+      {/* Диалоги */}
       {selectedStudent && showContactDialog && (
         <StudentContactDialog 
           student={selectedStudent} 
           open={showContactDialog} 
-          onClose={() => setShowContactDialog(false)} 
+          onClose={() => setShowContactDialog(false)}
+          onSubmit={handleSendContactRequest}
         />
       )}
       
