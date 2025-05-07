@@ -1,7 +1,8 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, BookOpen, Calendar, CheckCircle, Star, Users } from "lucide-react";
+import { AlertCircle, BookOpen, Calendar, CheckCircle, Star, Users, FileText, MessageSquare } from "lucide-react";
 import { Profile } from "@/hooks/useProfile";
 import { useTutorPublishStatus } from "@/hooks/useTutorPublishStatus";
 import { useNavigate } from "react-router-dom";
@@ -105,7 +106,7 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
         
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">Проведено занятий</CardHeader>
+            <CardTitle className="text-sm font-medium text-gray-500">Проведено занятий</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center">
