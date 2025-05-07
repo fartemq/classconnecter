@@ -8,6 +8,9 @@ export type RegisterUserData = {
   email: string;
   password: string;
   role: "student" | "tutor";
+  city?: string;
+  phone?: string;
+  bio?: string;
 };
 
 export const registerUser = async (userData: RegisterUserData) => {
@@ -46,12 +49,15 @@ export const registerUser = async (userData: RegisterUserData) => {
     
     console.log("User created successfully:", authData.user.id);
 
-    // Create profile in profiles table
+    // Create profile in profiles table with extended information
     const { error: profileError } = await supabase.from("profiles").insert({
       id: authData.user.id,
       first_name: userData.firstName,
       last_name: userData.lastName,
       role: userData.role,
+      city: userData.city,
+      phone: userData.phone,
+      bio: userData.bio,
     });
 
     if (profileError) {
@@ -64,6 +70,23 @@ export const registerUser = async (userData: RegisterUserData) => {
     }
     
     console.log("Profile created successfully for user:", authData.user.id);
+
+    // Если пользователь - репетитор, создаем запись в таблице tutor_profiles
+    if (userData.role === "tutor") {
+      const { error: tutorProfileError } = await supabase.from("tutor_profiles").insert({
+        id: authData.user.id,
+        education_institution: "",
+        degree: "",
+        graduation_year: new Date().getFullYear(),
+      });
+
+      if (tutorProfileError) {
+        console.error("Error creating tutor profile:", tutorProfileError);
+        // Не бросаем ошибку здесь, так как основной профиль уже создан
+      } else {
+        console.log("Tutor profile created successfully");
+      }
+    }
 
     return { user: authData.user, session: authData.session };
   } catch (error) {

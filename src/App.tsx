@@ -58,13 +58,9 @@ const App = () => {
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/login" element={<LoginPage />} />
               
-              {/* Protected routes */}
-              <Route element={<ProtectedRoute />}>
+              {/* Защищенные маршруты для студентов */}
+              <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
                 <Route path="/choose-subject" element={<ChooseSubjectPage />} />
-                <Route path="/profile/tutor/complete" element={<TutorCompletePage />} />
-                <Route path="/profile/tutor" element={<TutorProfilePage />} />
-                
-                {/* Student profile routes */}
                 <Route path="/profile/student" element={<StudentProfilePage />} />
                 <Route path="/profile/student/chats" element={<StudentChatsPage />} />
                 <Route path="/profile/student/chats/:tutorId" element={<StudentChatsPage />} />
@@ -77,8 +73,12 @@ const App = () => {
                 <Route path="/profile/student/progress" element={<StudentProgressPage />} />
                 <Route path="/profile/student/homework" element={<StudentHomeworkPage />} />
                 <Route path="/profile/student/homework/:homeworkId" element={<HomeworkSubmissionPage />} />
-
-                {/* Tutor homework routes */}
+              </Route>
+              
+              {/* Защищенные маршруты для репетиторов */}
+              <Route element={<ProtectedRoute allowedRoles={["tutor"]} />}>
+                <Route path="/profile/tutor" element={<TutorProfilePage />} />
+                <Route path="/profile/tutor/complete" element={<TutorCompletePage />} />
                 <Route path="/profile/tutor/assign-homework/:studentId" element={<HomeworkAssignmentPage />} />
                 <Route path="/profile/tutor/grade-homework/:homeworkId" element={<HomeworkGradingPage />} />
               </Route>
