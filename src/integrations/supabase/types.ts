@@ -472,6 +472,7 @@ export type Database = {
           experience: number | null
           graduation_year: number
           id: string
+          is_published: boolean | null
           methodology: string | null
           updated_at: string
           video_url: string | null
@@ -485,6 +486,7 @@ export type Database = {
           experience?: number | null
           graduation_year: number
           id: string
+          is_published?: boolean | null
           methodology?: string | null
           updated_at?: string
           video_url?: string | null
@@ -498,6 +500,7 @@ export type Database = {
           experience?: number | null
           graduation_year?: number
           id?: string
+          is_published?: boolean | null
           methodology?: string | null
           updated_at?: string
           video_url?: string | null

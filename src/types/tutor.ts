@@ -1,3 +1,4 @@
+
 export interface TutorFormValues {
   firstName: string;
   lastName: string;
@@ -36,7 +37,7 @@ export interface TutorProfile {
   reviewsCount?: number;
   completedLessons?: number;
   activeStudents?: number;
-  isPublished?: boolean; // Новое поле для статуса публикации
+  isPublished?: boolean;
 }
 
 export interface TutorSubject {

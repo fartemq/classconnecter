@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 
-interface SearchFiltersProps {
+export interface SearchFiltersProps {
   searchTerm: string;
   setSearchTerm: (value: string) => void;
   selectedLevel: string;

@@ -118,10 +118,7 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
     // Получаем только опубликованные профили репетиторов
     const { data: tutorProfiles, error: tutorProfilesError } = await supabase
       .from("tutor_profiles")
-      .select(`
-        id,
-        is_published
-      `)
+      .select("id, is_published")
       .eq("is_published", true);
 
     if (tutorProfilesError || !tutorProfiles || tutorProfiles.length === 0) {
@@ -152,15 +149,15 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
     }
 
     // Получаем дополнительную информацию для каждого репетитора
-    const tutors = await Promise.all(
-      profiles.map(async (profile) => {
-        const tutorProfile = await fetchPublicTutorById(profile.id);
-        return tutorProfile;
-      })
-    );
+    const tutorsPromises = profiles.map(async (profile) => {
+      const tutor = await fetchPublicTutorById(profile.id);
+      return tutor;
+    });
+    
+    const tutors = await Promise.all(tutorsPromises);
 
     // Отфильтровываем null значения
-    return tutors.filter(tutor => tutor !== null) as PublicTutorProfile[];
+    return tutors.filter((tutor): tutor is PublicTutorProfile => tutor !== null);
   } catch (error) {
     console.error("Error fetching public tutors:", error);
     return [];

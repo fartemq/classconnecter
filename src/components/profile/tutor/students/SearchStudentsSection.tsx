@@ -14,11 +14,19 @@ import { AlertCircle, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export const SearchStudentsSection = () => {
-  const { isLoading, availableStudents, contactStudent, isProfilePublished } = useStudents();
+  const { isLoading, availableStudents, contactStudent, isProfilePublished, refreshStudents } = useStudents();
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [showContactDialog, setShowContactDialog] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedLevel, setSelectedLevel] = useState("all_levels");
+  const [selectedSubject, setSelectedSubject] = useState("all_subjects");
   const navigate = useNavigate();
+  
+  // Get unique subjects from available students
+  const uniqueSubjects = Array.from(
+    new Set(availableStudents.flatMap(student => student.subjects || []))
+  );
   
   const handleViewProfile = (student: Student) => {
     setSelectedStudent(student);
@@ -41,6 +49,10 @@ export const SearchStudentsSection = () => {
 
   const handleNavigateToSettings = () => {
     navigate("/profile/tutor?tab=settings");
+  };
+
+  const handleFindNewStudents = () => {
+    refreshStudents();
   };
   
   if (isLoading) {
@@ -73,7 +85,15 @@ export const SearchStudentsSection = () => {
 
   return (
     <div className="space-y-6">
-      <SearchFilters />
+      <SearchFilters 
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        selectedLevel={selectedLevel}
+        setSelectedLevel={setSelectedLevel}
+        selectedSubject={selectedSubject}
+        setSelectedSubject={setSelectedSubject}
+        uniqueSubjects={uniqueSubjects}
+      />
       
       {availableStudents.length > 0 ? (
         <StudentsList 
@@ -82,7 +102,7 @@ export const SearchStudentsSection = () => {
           onContact={handleContactStudent}
         />
       ) : (
-        <EmptySearchResults />
+        <EmptySearchResults onFindNewStudents={handleFindNewStudents} />
       )}
       
       {/* Диалоги для просмотра профиля и связи со студентом */}
