@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -28,12 +27,13 @@ interface Tutor {
   last_seen?: string;
 }
 
-// Define proper Presence interface to match what's used in Supabase
-interface Presence {
+// Updated Presence interface to be more generic to work with Supabase's presence system
+interface Presence<T = Record<string, any>> {
   user_id: string;
   online_at: string;
-  // Add any other fields that might be in the actual presence data
-  presence_ref?: string;
+  presence_ref: string;
+  // Allow for additional dynamic properties
+  [key: string]: any;
 }
 
 export const ChatConversation = () => {
@@ -108,7 +108,7 @@ export const ChatConversation = () => {
       })
       .on('presence', { event: 'join' }, ({ newPresences }) => {
         const tutorJoined = newPresences.some(
-          (presence: Presence) => presence.user_id === tutorId
+          (presence: any) => presence.user_id === tutorId
         );
         if (tutorJoined) {
           setOnlineStatus(true);
@@ -117,7 +117,7 @@ export const ChatConversation = () => {
       })
       .on('presence', { event: 'leave' }, ({ leftPresences }) => {
         const tutorLeft = leftPresences.some(
-          (presence: Presence) => presence.user_id === tutorId
+          (presence: any) => presence.user_id === tutorId
         );
         if (tutorLeft) {
           setOnlineStatus(false);
