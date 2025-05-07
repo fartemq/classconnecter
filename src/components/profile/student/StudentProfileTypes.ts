@@ -1,5 +1,5 @@
 
-// Временные типы для работы с таблицей student_profiles
+// Типы для работы с таблицей student_profiles
 export interface StudentProfileDB {
   id: string;
   educational_level?: string | null;
