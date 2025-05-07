@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -26,16 +26,35 @@ interface TutorRequest {
   };
 }
 
+interface Subject {
+  id: string;
+  name: string;
+}
+
 export const useTutorRequests = (userId: string | undefined) => {
   const [isLoading, setIsLoading] = useState(true);
   const [tutorRequests, setTutorRequests] = useState<TutorRequest[]>([]);
   const [activeTab, setActiveTab] = useState<string>("all");
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   
   useEffect(() => {
     if (userId) {
       fetchTutorRequests();
     }
   }, [userId, activeTab]);
+  
+  // Fetch all unique subjects from requests
+  useEffect(() => {
+    const uniqueSubjects = new Map<string, Subject>();
+    
+    tutorRequests.forEach(request => {
+      if (request.subject && request.subject.id) {
+        uniqueSubjects.set(request.subject.id, request.subject);
+      }
+    });
+    
+    setSubjects(Array.from(uniqueSubjects.values()));
+  }, [tutorRequests]);
   
   const fetchTutorRequests = async () => {
     try {
@@ -65,7 +84,36 @@ export const useTutorRequests = (userId: string | undefined) => {
         return;
       }
       
+      // Set up real-time notification for new requests
+      const channel = supabase
+        .channel('request-changes')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'student_requests',
+          filter: `student_id=eq.${userId}`
+        }, () => {
+          toast({
+            title: "Новый запрос",
+            description: "Вы получили новый запрос от репетитора",
+          });
+          fetchTutorRequests();
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'student_requests',
+          filter: `student_id=eq.${userId}`
+        }, () => {
+          fetchTutorRequests();
+        })
+        .subscribe();
+      
       setTutorRequests(data as TutorRequest[] || []);
+      
+      return () => {
+        supabase.removeChannel(channel);
+      };
     } catch (err) {
       console.error('Exception fetching tutor requests:', err);
       toast({
@@ -128,5 +176,7 @@ export const useTutorRequests = (userId: string | undefined) => {
     setActiveTab,
     updateRequestStatus,
     getStatusCount,
+    subjects,
+    refreshRequests: fetchTutorRequests
   };
 };

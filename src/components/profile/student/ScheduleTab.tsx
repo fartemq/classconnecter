@@ -1,10 +1,18 @@
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { CalendarSidebar } from "./schedule/CalendarSidebar";
 import { ScheduleContent } from "./schedule/ScheduleContent";
 import { useSchedule } from "@/hooks/useSchedule";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 export const ScheduleTab = () => {
+  const [searchParams] = useSearchParams();
+  const tutorIdParam = searchParams.get('tutorId');
+  const { user } = useAuth();
+
   const {
     date,
     setDate,
@@ -17,6 +25,50 @@ export const ScheduleTab = () => {
     bookingSlot,
     handleBookSlot
   } = useSchedule();
+
+  // If tutorId is provided in query params, select that tutor
+  useEffect(() => {
+    if (tutorIdParam && tutorIdParam !== selectedTutorId) {
+      setSelectedTutorId(tutorIdParam);
+    }
+  }, [tutorIdParam, setSelectedTutorId, selectedTutorId]);
+  
+  // Set up notifications for lesson updates
+  useEffect(() => {
+    if (!user?.id) return;
+    
+    const channel = supabase
+      .channel('lesson-notifications')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'lessons',
+        filter: `student_id=eq.${user.id}`
+      }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          toast({
+            title: "Новое занятие",
+            description: "Занятие было успешно добавлено в ваше расписание",
+          });
+        } else if (payload.eventType === 'UPDATE' && payload.new.status === 'confirmed') {
+          toast({
+            title: "Занятие подтверждено",
+            description: "Репетитор подтвердил ваше занятие",
+          });
+        } else if (payload.eventType === 'UPDATE' && payload.new.status === 'canceled') {
+          toast({
+            title: "Занятие отменено",
+            description: "Ваше занятие было отменено",
+            variant: "destructive"
+          });
+        }
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
   
   return (
     <div className="space-y-6">

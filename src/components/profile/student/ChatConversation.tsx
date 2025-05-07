@@ -1,13 +1,13 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Send, ArrowLeft, Loader2 } from "lucide-react";
+import { Send, ArrowLeft, Loader2, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { Badge } from "@/components/ui/badge";
 
 interface Message {
   id: string;
@@ -15,6 +15,7 @@ interface Message {
   receiver_id: string;
   content: string;
   created_at: string;
+  is_read: boolean;
 }
 
 interface Tutor {
@@ -22,6 +23,13 @@ interface Tutor {
   first_name: string;
   last_name: string | null;
   avatar_url: string | null;
+  online_status?: boolean;
+  last_seen?: string;
+}
+
+interface Presence {
+  user_id: string;
+  online_at: string;
 }
 
 export const ChatConversation = () => {
@@ -34,12 +42,15 @@ export const ChatConversation = () => {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [onlineStatus, setOnlineStatus] = useState<boolean>(false);
+  const [lastSeen, setLastSeen] = useState<string | null>(null);
   
   useEffect(() => {
     if (user && tutorId) {
       fetchTutorDetails();
       fetchMessages();
       markMessagesAsRead();
+      setupPresenceTracking();
       
       // Set up realtime subscription for new messages
       const channel = supabase
@@ -55,6 +66,10 @@ export const ChatConversation = () => {
             setMessages(prev => [...prev, payload.new as Message]);
             // Mark it as read since we're in the chat
             markMessageAsRead(payload.new.id);
+            
+            // Play notification sound
+            const audio = new Audio('/notification-sound.mp3');
+            audio.play().catch(e => console.log('Audio play failed', e));
           }
         })
         .subscribe();
@@ -64,6 +79,57 @@ export const ChatConversation = () => {
       };
     }
   }, [user, tutorId]);
+  
+  const setupPresenceTracking = () => {
+    if (!tutorId) return;
+    
+    // Subscribe to online presence channel
+    const presenceChannel = supabase.channel('online-users');
+    
+    presenceChannel
+      .on('presence', { event: 'sync' }, () => {
+        const presenceState = presenceChannel.presenceState();
+        
+        // Check if tutor is online
+        const tutorPresence = Object.values(presenceState).flat().find(
+          (presence: any) => presence.user_id === tutorId
+        ) as Presence | undefined;
+        
+        if (tutorPresence) {
+          setOnlineStatus(true);
+          setLastSeen(tutorPresence.online_at);
+        } else {
+          setOnlineStatus(false);
+        }
+      })
+      .on('presence', { event: 'join' }, ({ newPresences }) => {
+        const tutorJoined = newPresences.some((presence: any) => presence.user_id === tutorId);
+        if (tutorJoined) {
+          setOnlineStatus(true);
+          setLastSeen(new Date().toISOString());
+        }
+      })
+      .on('presence', { event: 'leave' }, ({ leftPresences }) => {
+        const tutorLeft = leftPresences.some((presence: any) => presence.user_id === tutorId);
+        if (tutorLeft) {
+          setOnlineStatus(false);
+          setLastSeen(new Date().toISOString());
+        }
+      })
+      .subscribe();
+      
+    // Track current user's presence
+    if (user) {
+      presenceChannel.track({
+        user_id: user.id,
+        online_at: new Date().toISOString(),
+      });
+    }
+    
+    return () => {
+      supabase.removeChannel(presenceChannel);
+    };
+  };
   
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -200,8 +266,11 @@ export const ChatConversation = () => {
       // Optimistically add message to state
       setMessages(prev => [...prev, {
         id: crypto.randomUUID(),
-        ...messageData,
-        created_at: new Date().toISOString()
+        sender_id: user.id,
+        receiver_id: tutorId,
+        content: newMessage.trim(),
+        created_at: new Date().toISOString(),
+        is_read: false
       }]);
       
       setNewMessage("");
@@ -237,6 +306,22 @@ export const ChatConversation = () => {
     }
     
     return false;
+  };
+  
+  const formatLastSeen = (timestamp: string | null) => {
+    if (!timestamp) return "";
+    
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffMinutes < 1) return "только что";
+    if (diffMinutes < 60) return `${diffMinutes} мин. назад`;
+    
+    const diffHours = Math.floor(diffMinutes / 60);
+    if (diffHours < 24) return `${diffHours} ч. назад`;
+    
+    return date.toLocaleDateString('ru-RU');
   };
   
   if (loading) {
@@ -275,18 +360,39 @@ export const ChatConversation = () => {
           <ArrowLeft size={20} />
         </Button>
         
-        <Avatar className="h-10 w-10 mr-3">
+        <Avatar className="h-10 w-10 mr-3 relative">
           {tutor.avatar_url ? (
             <AvatarImage src={tutor.avatar_url} alt={`${tutor.first_name} ${tutor.last_name || ''}`} />
           ) : (
             <AvatarFallback>{tutor.first_name.charAt(0)}</AvatarFallback>
           )}
+          {onlineStatus && (
+            <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></span>
+          )}
         </Avatar>
         
-        <div>
-          <h4 className="font-medium">{`${tutor.first_name} ${tutor.last_name || ''}`}</h4>
+        <div className="flex-1">
+          <div className="flex items-center">
+            <h4 className="font-medium">{`${tutor.first_name} ${tutor.last_name || ''}`}</h4>
+            {onlineStatus ? (
+              <Badge variant="outline" className="ml-2 bg-green-50 text-green-600 text-xs">Онлайн</Badge>
+            ) : lastSeen ? (
+              <div className="ml-2 flex items-center text-xs text-gray-500">
+                <Clock className="w-3 h-3 mr-1" />
+                {formatLastSeen(lastSeen)}
+              </div>
+            ) : null}
+          </div>
           <p className="text-sm text-gray-500">Репетитор</p>
         </div>
+        
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => navigate(`/profile/student/schedule?tutorId=${tutorId}`)}
+        >
+          Забронировать
+        </Button>
       </div>
       
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -312,8 +418,11 @@ export const ChatConversation = () => {
                   }`}
                 >
                   <p className="whitespace-pre-wrap break-words">{message.content}</p>
-                  <div className={`text-xs mt-1 ${isUserMessage ? 'text-primary-foreground/70' : 'text-gray-500'}`}>
+                  <div className={`text-xs mt-1 flex items-center justify-end ${isUserMessage ? 'text-primary-foreground/70' : 'text-gray-500'}`}>
                     {formatMessageTime(message.created_at)}
+                    {isUserMessage && message.is_read && (
+                      <span className="ml-1 text-white opacity-70">✓</span>
+                    )}
                   </div>
                 </div>
               </div>

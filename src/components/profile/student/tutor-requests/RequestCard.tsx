@@ -11,7 +11,8 @@ import {
   MessageSquare, 
   Clock, 
   CheckCircle, 
-  XCircle 
+  XCircle,
+  Calendar 
 } from "lucide-react";
 
 interface Tutor {
@@ -38,6 +39,7 @@ interface RequestCardProps {
   tutor_id: string;
   onUpdateStatus: (requestId: string, status: 'accepted' | 'rejected' | 'completed') => void;
   onContactTutor: (tutorId: string) => void;
+  onScheduleLesson: (tutorId: string) => void;
 }
 
 export const RequestCard = ({
@@ -49,7 +51,8 @@ export const RequestCard = ({
   created_at,
   tutor_id,
   onUpdateStatus,
-  onContactTutor
+  onContactTutor,
+  onScheduleLesson
 }: RequestCardProps) => {
   const navigate = useNavigate();
 
@@ -127,9 +130,9 @@ export const RequestCard = ({
         </div>
       </div>
       
-      <div className="bg-gray-50 p-3 grid grid-cols-2 gap-2 border-t">
+      <div className="bg-gray-50 p-3">
         {status === 'pending' ? (
-          <>
+          <div className="grid grid-cols-2 gap-2">
             <Button 
               size="sm" 
               variant="outline" 
@@ -148,9 +151,27 @@ export const RequestCard = ({
               <UserMinus className="h-4 w-4 mr-1" />
               Отклонить
             </Button>
-          </>
+          </div>
+        ) : status === 'accepted' ? (
+          <div className="grid grid-cols-2 gap-2">
+            <Button 
+              size="sm" 
+              variant="outline"
+              onClick={() => onContactTutor(tutor_id)}
+            >
+              <MessageSquare className="h-4 w-4 mr-1" />
+              Связаться
+            </Button>
+            <Button 
+              size="sm"
+              onClick={() => onScheduleLesson(tutor_id)}
+            >
+              <Calendar className="h-4 w-4 mr-1" />
+              Расписание
+            </Button>
+          </div>
         ) : (
-          <>
+          <div className="grid grid-cols-2 gap-2">
             <Button 
               size="sm" 
               variant="outline"
@@ -165,7 +186,7 @@ export const RequestCard = ({
               <MessageSquare className="h-4 w-4 mr-1" />
               Связаться
             </Button>
-          </>
+          </div>
         )}
       </div>
     </Card>

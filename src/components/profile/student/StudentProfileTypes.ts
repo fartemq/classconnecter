@@ -8,6 +8,7 @@ export interface StudentProfileDB {
   preferred_format?: string[] | null;
   school?: string | null;
   grade?: string | null;
+  budget?: number | null;
   created_at?: string | null;
   updated_at?: string | null;
 }
@@ -21,4 +22,5 @@ export interface StudentProfileUpdate {
   preferred_format?: string[] | null;
   school?: string | null;
   grade?: string | null;
+  budget?: number | null;
 }
