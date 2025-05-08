@@ -140,7 +140,53 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
       return null;
     }
     
-    return { ...profileData, ...tutorData } as TutorProfile;
+    // Fetch tutor subjects
+    const { data: subjectsData, error: subjectsError } = await supabase
+      .from("tutor_subjects")
+      .select(`
+        id,
+        hourly_rate,
+        experience_years,
+        description,
+        subject_id,
+        subjects:subject_id (name)
+      `)
+      .eq("tutor_id", tutorId)
+      .eq("is_active", true);
+      
+    if (subjectsError) {
+      console.error("Error fetching tutor subjects:", subjectsError);
+      return null;
+    }
+    
+    // Transform subjects data to match TutorSubject type
+    const subjects = subjectsData.map(item => ({
+      id: item.id,
+      name: item.subjects?.name || "",
+      hourlyRate: item.hourly_rate,
+      experienceYears: item.experience_years || undefined,
+      description: item.description || undefined
+    }));
+    
+    // Combine data and map to TutorProfile type
+    return {
+      id: profileData.id,
+      firstName: profileData.first_name,
+      lastName: profileData.last_name || "",
+      bio: profileData.bio || "",
+      city: profileData.city || "",
+      avatarUrl: profileData.avatar_url || undefined,
+      educationInstitution: tutorData.education_institution,
+      degree: tutorData.degree,
+      graduationYear: tutorData.graduation_year,
+      educationVerified: tutorData.education_verified,
+      methodology: tutorData.methodology || undefined,
+      experience: tutorData.experience || undefined,
+      achievements: tutorData.achievements || undefined,
+      videoUrl: tutorData.video_url || undefined,
+      subjects: subjects,
+      isPublished: tutorData.is_published || false
+    };
   } catch (error) {
     console.error("Error in fetchTutorProfile:", error);
     return null;
