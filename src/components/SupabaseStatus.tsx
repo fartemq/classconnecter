@@ -11,10 +11,10 @@ export const SupabaseStatus = () => {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        // Simple query to test connection
+        // Check if subjects table exists - if not, handle gracefully
         const { error } = await supabase
           .from("profiles")
-          .select("*")
+          .select("id")
           .limit(1);
           
         if (error) {
@@ -42,7 +42,12 @@ export const SupabaseStatus = () => {
   }
 
   if (status === "error") {
-    return;
+    return (
+      <div className="flex items-center gap-2 opacity-70">
+        <AlertCircle className="h-4 w-4 text-red-500" />
+        <span className="text-sm text-red-500">Ошибка подключения к серверу</span>
+      </div>
+    );
   }
 
   return (

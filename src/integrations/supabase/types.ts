@@ -9,13 +9,374 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      homework: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          due_date: string | null
+          feedback: string | null
+          file_path: string | null
+          grade: number | null
+          id: string
+          status: string | null
+          student_id: string | null
+          subject_id: string | null
+          title: string
+          tutor_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          feedback?: string | null
+          file_path?: string | null
+          grade?: number | null
+          id?: string
+          status?: string | null
+          student_id?: string | null
+          subject_id?: string | null
+          title: string
+          tutor_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          due_date?: string | null
+          feedback?: string | null
+          file_path?: string | null
+          grade?: number | null
+          id?: string
+          status?: string | null
+          student_id?: string | null
+          subject_id?: string | null
+          title?: string
+          tutor_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homework_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "homework_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lessons: {
+        Row: {
+          created_at: string | null
+          end_time: string
+          id: string
+          start_time: string
+          status: string | null
+          student_id: string | null
+          subject_id: string | null
+          tutor_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          end_time: string
+          id?: string
+          start_time: string
+          status?: string | null
+          student_id?: string | null
+          subject_id?: string | null
+          tutor_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          end_time?: string
+          id?: string
+          start_time?: string
+          status?: string | null
+          student_id?: string | null
+          subject_id?: string | null
+          tutor_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessons_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lessons_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      messages: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          receiver_id: string | null
+          sender_id: string | null
+          subject: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          subject?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          receiver_id?: string | null
+          sender_id?: string | null
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_receiver_id_fkey"
+            columns: ["receiver_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          bio: string | null
+          city: string | null
+          created_at: string | null
+          first_name: string | null
+          id: string
+          last_name: string | null
+          phone: string | null
+          role: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          bio?: string | null
+          city?: string | null
+          created_at?: string | null
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          phone?: string | null
+          role?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      student_profiles: {
+        Row: {
+          budget: number | null
+          educational_level: string | null
+          grade: string | null
+          id: string
+          learning_goals: string | null
+          preferred_format: string[] | null
+          school: string | null
+          subjects: string[] | null
+        }
+        Insert: {
+          budget?: number | null
+          educational_level?: string | null
+          grade?: string | null
+          id: string
+          learning_goals?: string | null
+          preferred_format?: string[] | null
+          school?: string | null
+          subjects?: string[] | null
+        }
+        Update: {
+          budget?: number | null
+          educational_level?: string | null
+          grade?: string | null
+          id?: string
+          learning_goals?: string | null
+          preferred_format?: string[] | null
+          school?: string | null
+          subjects?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      tutor_profiles: {
+        Row: {
+          degree: string | null
+          education_institution: string | null
+          experience: number | null
+          graduation_year: number | null
+          id: string
+          is_published: boolean | null
+          methodology: string | null
+        }
+        Insert: {
+          degree?: string | null
+          education_institution?: string | null
+          experience?: number | null
+          graduation_year?: number | null
+          id: string
+          is_published?: boolean | null
+          methodology?: string | null
+        }
+        Update: {
+          degree?: string | null
+          education_institution?: string | null
+          experience?: number | null
+          graduation_year?: number | null
+          id?: string
+          is_published?: boolean | null
+          methodology?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tutor_subjects: {
+        Row: {
+          id: string
+          price_per_hour: number | null
+          subject_id: string | null
+          tutor_id: string | null
+        }
+        Insert: {
+          id?: string
+          price_per_hour?: number | null
+          subject_id?: string | null
+          tutor_id?: string | null
+        }
+        Update: {
+          id?: string
+          price_per_hour?: number | null
+          subject_id?: string | null
+          tutor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tutor_subjects_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tutor_subjects_tutor_id_fkey"
+            columns: ["tutor_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      create_homework: {
+        Args: {
+          tutor_id: string
+          student_id: string
+          subject_id: string
+          title: string
+          description: string
+          file_path: string
+          due_date: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

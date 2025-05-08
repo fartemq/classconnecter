@@ -20,12 +20,36 @@ export interface TutorRequest {
   id: string;
   tutor_id: string;
   student_id: string;
+  subject_id: string | null;
+  message: string | null;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   tutor?: {
     first_name: string;
     last_name: string | null;
     avatar_url: string | null;
+  };
+  subject?: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface StudentRequest {
+  id: string;
+  student_id: string;
+  tutor_id: string;
+  subject_id: string | null;
+  message: string | null;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  student?: {
+    id: string;
+    first_name: string;
+    last_name: string | null;
+    avatar_url: string | null;
+    role: string;
+    city: string | null;
   };
   subject?: {
     id: string;

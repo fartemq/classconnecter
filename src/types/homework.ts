@@ -24,15 +24,20 @@ export interface Homework {
   feedback: string | null;
   created_at: string;
   updated_at: string;
+  answer?: string | null;
+  answer_file_path?: string | null;
   subject?: {
     name: string;
+    id?: string;
   };
   tutor?: {
     first_name: string;
     last_name: string | null;
+    id?: string;
   };
   student?: {
     first_name: string;
     last_name: string | null;
+    id?: string;
   };
 }

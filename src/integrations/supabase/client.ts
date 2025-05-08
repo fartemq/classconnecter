@@ -131,6 +131,8 @@ export interface Database {
           feedback: string | null;
           created_at: string;
           updated_at: string;
+          answer: string | null;
+          answer_file_path: string | null;
         };
         Insert: {
           id?: string;
@@ -146,6 +148,8 @@ export interface Database {
           feedback?: string | null;
           created_at?: string;
           updated_at?: string;
+          answer?: string | null;
+          answer_file_path?: string | null;
         };
         Update: {
           id?: string;
@@ -159,6 +163,72 @@ export interface Database {
           status?: string;
           grade?: number | null;
           feedback?: string | null;
+          created_at?: string;
+          updated_at?: string;
+          answer?: string | null;
+          answer_file_path?: string | null;
+        };
+      };
+      student_requests: {
+        Row: {
+          id: string;
+          student_id: string;
+          tutor_id: string;
+          subject_id: string | null;
+          status: string;
+          message: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          tutor_id: string;
+          subject_id?: string | null;
+          status?: string;
+          message?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          tutor_id?: string;
+          subject_id?: string | null;
+          status?: string;
+          message?: string | null;
+          created_at?: string;
+        };
+      };
+      lessons: {
+        Row: {
+          id: string;
+          tutor_id: string;
+          student_id: string;
+          subject_id: string | null;
+          start_time: string;
+          end_time: string;
+          status: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          tutor_id: string;
+          student_id: string;
+          subject_id?: string | null;
+          start_time: string;
+          end_time: string;
+          status?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          tutor_id?: string;
+          student_id?: string;
+          subject_id?: string | null;
+          start_time?: string;
+          end_time?: string;
+          status?: string;
           created_at?: string;
           updated_at?: string;
         };

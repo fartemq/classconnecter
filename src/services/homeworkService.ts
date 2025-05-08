@@ -1,16 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-
-export interface HomeworkData {
-  tutor_id: string;
-  student_id: string;
-  subject_id: string;
-  title: string;
-  description: string;
-  file_path: string | null;
-  due_date: string;
-  status?: string;
-}
+import { Homework, HomeworkData } from "@/types/homework";
 
 export const createHomework = async (homework: HomeworkData) => {
   try {
@@ -28,6 +18,73 @@ export const createHomework = async (homework: HomeworkData) => {
   } catch (err) {
     console.error("Error in createHomework:", err);
     return { data: null, error: err };
+  }
+};
+
+export const fetchHomeworkById = async (homeworkId: string): Promise<{ data: Homework | null, error: any }> => {
+  try {
+    const { data, error } = await supabase
+      .from('homework')
+      .select(`
+        *,
+        subject:subject_id(*),
+        tutor:tutor_id(first_name, last_name),
+        student:student_id(first_name, last_name)
+      `)
+      .eq('id', homeworkId)
+      .single();
+      
+    return { 
+      data: data as Homework | null,
+      error 
+    };
+  } catch (err) {
+    console.error("Error in fetchHomeworkById:", err);
+    return { data: null, error: err };
+  }
+};
+
+export const submitHomeworkAnswer = async (
+  homeworkId: string, 
+  answer: string | null, 
+  answerFilePath: string | null
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('homework')
+      .update({ 
+        status: 'submitted',
+        answer,
+        answer_file_path: answerFilePath
+      })
+      .eq('id', homeworkId);
+      
+    return !error;
+  } catch (err) {
+    console.error("Error in submitHomeworkAnswer:", err);
+    return false;
+  }
+};
+
+export const gradeHomework = async (
+  homeworkId: string,
+  grade: number,
+  feedback: string | null
+): Promise<boolean> => {
+  try {
+    const { error } = await supabase
+      .from('homework')
+      .update({ 
+        status: 'graded',
+        grade,
+        feedback 
+      })
+      .eq('id', homeworkId);
+      
+    return !error;
+  } catch (err) {
+    console.error("Error in gradeHomework:", err);
+    return false;
   }
 };
 
