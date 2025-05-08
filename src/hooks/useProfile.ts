@@ -16,6 +16,12 @@ export interface Profile {
   role: string;
   school?: string | null;
   grade?: string | null;
+  // Tutor profile specific fields
+  education_institution?: string | null;
+  degree?: string | null;
+  graduation_year?: number | null;
+  experience?: number | null;
+  methodology?: string | null;
 }
 
 export const useProfile = (requiredRole?: string) => {
@@ -71,6 +77,20 @@ export const useProfile = (requiredRole?: string) => {
           return;
         }
         
+        // If this is a tutor, fetch additional tutor profile data
+        let tutorData = null;
+        if (profileData?.role === 'tutor') {
+          const { data: tutorProfileData, error: tutorProfileError } = await supabase
+            .from("tutor_profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle();
+          
+          if (!tutorProfileError && tutorProfileData) {
+            tutorData = tutorProfileData;
+          }
+        }
+        
         // Check if user role matches required role if specified
         if (requiredRole && profileData && profileData.role !== requiredRole) {
           console.log(`User role (${profileData.role}) doesn't match required role (${requiredRole})`);
@@ -86,7 +106,19 @@ export const useProfile = (requiredRole?: string) => {
         }
         
         console.log("Profile loaded successfully:", profileData);
-        if (isMounted && profileData) setProfile(profileData as Profile);
+        if (isMounted && profileData) {
+          // Combine regular profile data with tutor profile data if available
+          setProfile({
+            ...profileData,
+            ...(tutorData && {
+              education_institution: tutorData.education_institution,
+              degree: tutorData.degree,
+              graduation_year: tutorData.graduation_year,
+              experience: tutorData.experience,
+              methodology: tutorData.methodology
+            })
+          } as Profile);
+        }
       } catch (error) {
         console.error("Error in useProfile hook:", error);
         if (isMounted) {

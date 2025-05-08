@@ -41,9 +41,9 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
         <CardContent className="space-y-4">
           <div className="flex items-center">
             <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100 mr-6">
-              {profile.avatarUrl ? (
+              {profile.avatar_url ? (
                 <img 
-                  src={profile.avatarUrl} 
+                  src={profile.avatar_url} 
                   alt={`${profile.first_name} ${profile.last_name}`} 
                   className="w-full h-full object-cover"
                 />
@@ -86,9 +86,9 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
           <div className="pt-4">
             <h3 className="text-sm font-medium text-gray-500 mb-2">Образование</h3>
             <div className="bg-gray-50 p-3 rounded">
-              <p><strong>Учебное заведение:</strong> {profile.educationInstitution || "Не указано"}</p>
+              <p><strong>Учебное заведение:</strong> {profile.education_institution || "Не указано"}</p>
               <p><strong>Специальность:</strong> {profile.degree || "Не указана"}</p>
-              <p><strong>Год окончания:</strong> {profile.graduationYear || "Не указан"}</p>
+              <p><strong>Год окончания:</strong> {profile.graduation_year || "Не указан"}</p>
             </div>
           </div>
           

@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Lesson, LessonData } from "@/types/lesson";
 
-export const fetchLessonsByDate = async (studentId: string, date: string): Promise<Lesson[]> => {
+export const fetchLessonsByDate = async (userId: string, date: string): Promise<Lesson[]> => {
   try {
     const { data, error } = await supabase
       .from('lessons')
@@ -21,7 +21,7 @@ export const fetchLessonsByDate = async (studentId: string, date: string): Promi
         student:profiles!student_id (id, first_name, last_name, avatar_url),
         subject:subjects (id, name)
       `)
-      .eq('student_id', studentId)
+      .eq('student_id', userId)
       .eq('date', date);
 
     if (error) {

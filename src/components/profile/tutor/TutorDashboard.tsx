@@ -54,6 +54,8 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
             time,
             duration,
             status,
+            created_at,
+            updated_at,
             student:profiles!student_id (id, first_name, last_name, avatar_url),
             subject:subjects (id, name)
           `)
@@ -75,7 +77,7 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
         // Count active students (students with active requests)
         const { data: studentsData, error: studentsError } = await supabase
           .from('student_requests')
-          .select('student_id', { count: 'exact', head: true })
+          .select('student_id', { count: 'exact' })
           .eq('tutor_id', profile.id)
           .eq('status', 'accepted');
           
@@ -84,7 +86,7 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
         // Count completed lessons
         const { data: lessonsData, error: lessonsError } = await supabase
           .from('lessons')
-          .select('id', { count: 'exact', head: true })
+          .select('id', { count: 'exact' })
           .eq('tutor_id', profile.id)
           .eq('status', 'completed');
           
@@ -130,9 +132,9 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
           <CardContent className="pt-6">
             <div className="flex flex-col items-center text-center">
               <div className="h-24 w-24 rounded-full overflow-hidden bg-gray-100 mb-4">
-                {profile.avatarUrl ? (
+                {profile.avatar_url ? (
                   <img 
-                    src={profile.avatarUrl} 
+                    src={profile.avatar_url} 
                     alt={`${profile.first_name} ${profile.last_name}`} 
                     className="w-full h-full object-cover"
                   />
