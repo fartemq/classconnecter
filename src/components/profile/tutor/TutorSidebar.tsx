@@ -10,8 +10,12 @@ import {
   MessageSquare, 
   Settings, 
   Users,
-  User
+  User,
+  LogOut
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { useNavigate } from "react-router-dom";
 
 interface SidebarItem {
   label: string;
@@ -21,7 +25,26 @@ interface SidebarItem {
 
 export const TutorSidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const currentPath = location.search || "?tab=dashboard";
+  
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast({
+        title: "Выход выполнен успешно",
+        description: "Вы вышли из своего аккаунта",
+      });
+      navigate("/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось выйти из аккаунта",
+        variant: "destructive",
+      });
+    }
+  };
   
   const menuItems: SidebarItem[] = [
     {
@@ -68,7 +91,7 @@ export const TutorSidebar = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <nav className="mt-6 grid grid-cols-1 gap-1">
+      <nav className="mt-6 grid grid-cols-1 gap-1 flex-grow">
         {menuItems.map((item) => (
           <Link
             key={item.path}
@@ -87,6 +110,17 @@ export const TutorSidebar = () => {
           </Link>
         ))}
       </nav>
+      
+      {/* Logout button at the bottom */}
+      <div className="mt-auto pt-4 border-t">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-all"
+        >
+          <LogOut className="h-4 w-4" />
+          <span>Выйти</span>
+        </button>
+      </div>
     </div>
   );
 };

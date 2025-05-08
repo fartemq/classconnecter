@@ -28,7 +28,7 @@ export const useTutorPublishStatus = () => {
           
         if (error) throw error;
         
-        // Если данных нет, значит профиль не опубликован
+        // If data exists, set the published status
         setIsPublished(data?.is_published || false);
       } catch (error) {
         console.error("Error checking publish status:", error);
@@ -58,6 +58,7 @@ export const useTutorPublishStatus = () => {
             : "Ваш профиль больше не виден студентам",
           variant: newStatus ? "default" : "destructive",
         });
+        return true;
       } else {
         throw new Error("Не удалось изменить статус публикации");
       }
@@ -68,6 +69,7 @@ export const useTutorPublishStatus = () => {
         description: "Не удалось изменить статус публикации",
         variant: "destructive",
       });
+      return false;
     } finally {
       setIsLoading(false);
     }

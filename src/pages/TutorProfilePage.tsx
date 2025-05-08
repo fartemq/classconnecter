@@ -33,8 +33,9 @@ const TutorProfilePage = () => {
     } else if (!tab) {
       // If no tab is specified, set to dashboard
       setActiveTab("dashboard");
+      navigate({ search: "?tab=dashboard" }, { replace: true });
     }
-  }, [location.search]);
+  }, [location.search, navigate]);
 
   if (isLoading) {
     return (
