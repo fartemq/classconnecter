@@ -92,14 +92,14 @@ export const ChatsTab = () => {
       // Group messages by conversation partner
       const conversationMap = new Map<string, Conversation>();
       
-      (messagesData as MessageData[]).forEach(message => {
+      messagesData.forEach(message => {
         // Determine the other user in the conversation
         const isUserSender = message.sender_id === user!.id;
         const otherUserId = isUserSender ? message.receiver_id : message.sender_id;
         const otherUser = isUserSender ? message.receiver : message.sender;
         
-        if (!conversationMap.has(otherUserId)) {
-          const otherUserName = `${otherUser.first_name} ${otherUser.last_name || ''}`.trim();
+        if (!conversationMap.has(otherUserId) && otherUser) {
+          const otherUserName = `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim();
           
           conversationMap.set(otherUserId, {
             id: message.id, // Using the latest message id as the conversation id

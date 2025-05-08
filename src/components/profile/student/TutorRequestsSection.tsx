@@ -30,6 +30,7 @@ export const TutorRequestsSection = () => {
     subjects
   } = useTutorRequests(user?.id);
   
+  // Add compatibility layer for component
   const filteredRequests = filterSubject 
     ? tutorRequests.filter(req => req.subject?.id === filterSubject)
     : tutorRequests;

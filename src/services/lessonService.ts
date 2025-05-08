@@ -1,6 +1,16 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Lesson, LessonData } from "@/types/lesson";
+import { Lesson } from "@/types/lesson";
+
+export interface LessonData {
+  student_id: string;
+  tutor_id: string;
+  subject_id: string;
+  date: string;
+  time: string;
+  duration: number;
+  status: 'pending' | 'confirmed' | 'canceled' | 'completed' | 'upcoming';
+}
 
 export const createLesson = async (lessonData: LessonData) => {
   try {

@@ -118,14 +118,14 @@ export const ChatsTab = () => {
         const otherUserId = isUserSender ? message.receiver_id : message.sender_id;
         const otherUser = isUserSender ? message.receiver : message.sender;
         
-        if (!conversationMap.has(otherUserId)) {
-          const otherUserName = `${otherUser.first_name} ${otherUser.last_name || ''}`.trim();
+        if (!conversationMap.has(otherUserId) && otherUser) {
+          const otherUserName = `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim();
           
           conversationMap.set(otherUserId, {
             id: message.id, // Using the latest message id as the conversation id
             otherUserId,
             otherUserName,
-            otherUserAvatar: otherUser.avatar_url,
+            otherUserAvatar: otherUser.avatar_url || undefined,
             lastMessage: message.content,
             timestamp: formatTimestamp(message.created_at),
             unread: !isUserSender && !message.is_read

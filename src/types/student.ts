@@ -7,6 +7,13 @@ export interface Student {
   city: string | null;
   name?: string; // Added for compatibility with some components
   subjects?: string[]; // Added for compatibility with some components
+  avatar?: string; // Added for compatibility
+  lastActive?: string; // Added for compatibility
+  level?: string; // Added for compatibility
+  grade?: string; // Added for compatibility
+  about?: string; // Added for compatibility
+  interests?: string[]; // Added for compatibility
+  status?: string; // Added for compatibility
   student_profiles?: {
     educational_level: string | null;
     subjects: string[] | null;

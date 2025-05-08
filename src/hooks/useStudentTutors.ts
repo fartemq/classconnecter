@@ -32,10 +32,14 @@ export const useStudentTutors = () => {
         if (error) throw error;
         
         if (data && data.length > 0) {
-          const formattedTutors = data.map(item => ({
-            id: item.tutor_id,
-            name: `${item.tutor.first_name} ${item.tutor.last_name || ''}`
-          }));
+          const formattedTutors = data.map(item => {
+            if (!item.tutor) return { id: item.tutor_id, name: "Неизвестный репетитор" };
+            
+            return {
+              id: item.tutor_id,
+              name: `${item.tutor.first_name || ''} ${item.tutor.last_name || ''}`.trim()
+            };
+          });
           
           setTutors(formattedTutors);
         }

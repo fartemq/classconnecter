@@ -43,6 +43,7 @@ export interface Tutor {
   first_name: string;
   last_name: string | null;
   avatar_url: string | null;
+  name?: string; // Added for compatibility with components expecting name
 }
 
 export interface LessonData {

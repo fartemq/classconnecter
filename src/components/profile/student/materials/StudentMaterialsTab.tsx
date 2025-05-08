@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -49,54 +48,21 @@ export const StudentMaterialsTab = () => {
   
   const fetchSubjects = async () => {
     try {
-      if (!user) return;
-      
-      // First get all tutors that are connected to this student
-      const { data: tutorConnections, error: connectionError } = await supabase
-        .from("student_requests")
-        .select("tutor_id")
-        .eq("student_id", user.id)
-        .eq("status", "accepted");
-        
-      if (connectionError) throw connectionError;
-      
-      if (!tutorConnections || tutorConnections.length === 0) {
-        return;
-      }
-      
-      // Get all tutor IDs
-      const tutorIds = tutorConnections.map(conn => conn.tutor_id);
-      
-      // Get all subjects these tutors teach
       const { data, error } = await supabase
-        .from("tutor_subjects")
-        .select("subject_id, subjects(id, name)")
-        .in("tutor_id", tutorIds);
-      
+        .from('subjects')
+        .select('id, name');
+        
       if (error) throw error;
       
-      if (data) {
-        // Extract unique subjects
-        const uniqueSubjects = Array.from(
-          new Map(
-            data
-              .filter(item => item.subjects)
-              .map(item => [
-                item.subjects!.id, 
-                { id: item.subjects!.id, name: item.subjects!.name }
-              ])
-          ).values()
-        );
-        
-        setSubjects(uniqueSubjects);
+      if (data && data.length > 0) {
+        const formattedSubjects = data.map(subject => ({
+          id: subject.id,
+          name: subject.name
+        }));
+        setSubjects(formattedSubjects);
       }
     } catch (error) {
-      console.error("Error fetching subjects:", error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось загрузить список предметов",
-        variant: "destructive"
-      });
+      console.error('Error fetching subjects:', error);
     }
   };
   

@@ -41,8 +41,31 @@ export const ScheduleTab = () => {
           
         if (error) throw error;
         
-        // Properly cast the data
-        setLessons((data || []) as Lesson[]);
+        // Properly cast and transform the data
+        const transformedLessons: Lesson[] = (data || []).map(item => ({
+          id: item.id,
+          tutor_id: item.tutor_id,
+          student_id: item.student_id,
+          subject_id: item.subject_id,
+          date: item.date,
+          time: item.time,
+          duration: item.duration,
+          status: item.status,
+          created_at: item.created_at,
+          updated_at: item.updated_at,
+          student: item.student ? {
+            id: item.student.id,
+            first_name: item.student.first_name,
+            last_name: item.student.last_name,
+            avatar_url: item.student.avatar_url
+          } : undefined,
+          subject: item.subject ? {
+            id: item.subject.id,
+            name: item.subject.name
+          } : undefined
+        }));
+        
+        setLessons(transformedLessons);
       } catch (error) {
         console.error('Error fetching lessons:', error);
       } finally {

@@ -16,7 +16,23 @@ export const MyStudentsSection = () => {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showRequests, setShowRequests] = useState(false);
   
-  // Обработчики
+  // We'll use this adapter to make the Student type compatible with the component props
+  const adaptStudents = (students: Student[]) => {
+    return students.map(student => ({
+      ...student,
+      name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
+      avatar: student.avatar_url,
+      status: "active", // Default status if not provided
+      lastActive: "Недавно", // Default lastActive if not provided
+      level: student.student_profiles?.educational_level || "Не указан",
+      grade: student.student_profiles?.grade || "",
+      subjects: student.student_profiles?.subjects || []
+    }));
+  };
+  
+  const adaptedStudents = adaptStudents(myStudents);
+  
+  // Handlers
   const handleContactStudent = (student: Student) => {
     setSelectedStudent(student);
     setShowContactDialog(true);
@@ -37,11 +53,7 @@ export const MyStudentsSection = () => {
   };
 
   const handleCheckRequests = () => {
-    // Переключение на вкладку запросов в родительском компоненте
-    // В реальном приложении здесь можно было бы использовать событие или navigateState
-    // для перехода к соответствующему разделу
     setShowRequests(true);
-    // Также можно обновить список студентов
     refreshStudents();
   };
 
@@ -60,12 +72,12 @@ export const MyStudentsSection = () => {
   return (
     <div className="space-y-6">
       <StudentsList
-        students={myStudents}
+        students={adaptedStudents}
         onContact={handleContactStudent}
         onViewProfile={handleViewProfile}
       />
       
-      {/* Диалоги */}
+      {/* Dialogs */}
       {selectedStudent && showContactDialog && (
         <StudentContactDialog 
           student={selectedStudent} 

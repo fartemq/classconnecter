@@ -25,8 +25,27 @@ export const SearchStudentsSection = () => {
   
   // Get unique subjects from available students
   const uniqueSubjects = Array.from(
-    new Set(availableStudents.flatMap(student => student.subjects || []))
+    new Set(availableStudents.flatMap(student => 
+      student.subjects || 
+      student.student_profiles?.subjects || []
+    ))
   );
+  
+  // We'll use this adapter to make the Student type compatible with the component props
+  const adaptStudents = (students: Student[]) => {
+    return students.map(student => ({
+      ...student,
+      name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
+      avatar: student.avatar_url,
+      status: "active", // Default status if not provided
+      lastActive: "Недавно", // Default lastActive if not provided
+      level: student.student_profiles?.educational_level || "Не указан",
+      grade: student.student_profiles?.grade || "",
+      subjects: student.student_profiles?.subjects || []
+    }));
+  };
+  
+  const adaptedStudents = adaptStudents(availableStudents);
   
   const handleViewProfile = (student: Student) => {
     setSelectedStudent(student);
@@ -95,9 +114,9 @@ export const SearchStudentsSection = () => {
         uniqueSubjects={uniqueSubjects}
       />
       
-      {availableStudents.length > 0 ? (
+      {adaptedStudents.length > 0 ? (
         <StudentsList 
-          students={availableStudents}
+          students={adaptedStudents}
           onViewProfile={handleViewProfile}
           onContact={handleContactStudent}
         />
@@ -105,7 +124,7 @@ export const SearchStudentsSection = () => {
         <EmptySearchResults onFindNewStudents={handleFindNewStudents} />
       )}
       
-      {/* Диалоги для просмотра профиля и связи со студентом */}
+      {/* Dialogs */}
       {selectedStudent && showProfileDialog && (
         <StudentProfileDialog 
           student={selectedStudent}

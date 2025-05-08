@@ -70,6 +70,12 @@ export const ScheduleTab = () => {
     };
   }, [user]);
   
+  // Prepare tutor data for the CalendarSidebar component
+  const formattedTutors = tutors.map(tutor => ({
+    id: tutor.id,
+    name: tutor.first_name ? `${tutor.first_name} ${tutor.last_name || ''}` : "Unnamed"
+  }));
+  
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Расписание занятий</h2>
@@ -80,10 +86,7 @@ export const ScheduleTab = () => {
           setDate={setDate}
           selectedTutorId={selectedTutorId}
           setSelectedTutorId={setSelectedTutorId}
-          tutors={tutors.map(tutor => ({
-            id: tutor.id,
-            name: `${tutor.first_name} ${tutor.last_name || ''}`
-          }))}
+          tutors={formattedTutors}
         />
         
         <ScheduleContent

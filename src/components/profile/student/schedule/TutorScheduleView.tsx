@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -55,7 +54,7 @@ export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) 
         if (subjectData && subjectData.length > 0) {
           const formattedSubjects = subjectData.map(item => ({
             id: item.subject_id,
-            name: item.subjects.name
+            name: item.subjects ? item.subjects.name : ""
           }));
           
           setSubjects(formattedSubjects);
