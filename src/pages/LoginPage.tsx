@@ -27,6 +27,7 @@ const LoginPage = () => {
   useEffect(() => {
     // If user is logged in, redirect based on role
     if (user && userRole) {
+      console.log("User is logged in with role:", userRole);
       if (userRole === "tutor") {
         navigate("/profile/tutor");
       } else {
@@ -37,6 +38,7 @@ const LoginPage = () => {
 
   // Handle successful login
   const handleLoginSuccess = async (role: string) => {
+    console.log("Login successful, redirecting based on role:", role);
     if (role === "tutor") {
       navigate("/profile/tutor");
     } else {

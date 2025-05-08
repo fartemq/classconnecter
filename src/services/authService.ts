@@ -34,7 +34,7 @@ export const registerUser = async (userData: RegisterUserData) => {
     if (authError) {
       console.error("Auth error:", authError);
       
-      // Обработка специфических ошибок
+      // Handle specific errors
       if (authError.message.includes("User already registered")) {
         throw new Error("Пользователь с таким email уже существует");
       }
@@ -71,7 +71,7 @@ export const registerUser = async (userData: RegisterUserData) => {
     
     console.log("Profile created successfully for user:", authData.user.id);
 
-    // Если пользователь - репетитор, создаем запись в таблице tutor_profiles
+    // If user is a tutor, create a record in the tutor_profiles table
     if (userData.role === "tutor") {
       const { error: tutorProfileError } = await supabase.from("tutor_profiles").insert({
         id: authData.user.id,
@@ -82,7 +82,7 @@ export const registerUser = async (userData: RegisterUserData) => {
 
       if (tutorProfileError) {
         console.error("Error creating tutor profile:", tutorProfileError);
-        // Не бросаем ошибку здесь, так как основной профиль уже создан
+        // Don't throw an error since the main profile was already created
       } else {
         console.log("Tutor profile created successfully");
       }
@@ -126,7 +126,6 @@ export const loginUser = async (email: string, password: string) => {
 
 export const logoutUser = async () => {
   try {
-    // Исправленная функция выхода из системы
     const { error } = await supabase.auth.signOut();
     
     if (error) {
@@ -134,8 +133,6 @@ export const logoutUser = async () => {
       throw error;
     }
     
-    // После успешного выхода перенаправляем на главную страницу
-    window.location.href = "/";
     return true;
   } catch (error) {
     console.error("Logout error:", error);

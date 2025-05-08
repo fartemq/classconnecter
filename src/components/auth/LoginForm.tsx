@@ -57,8 +57,22 @@ export function LoginForm({ onSuccess, isLoading, setIsLoading, setLoginAttempte
         throw new Error("Ошибка входа: пользователь не найден");
       }
 
+      console.log("Login successful, fetching user role for:", data.user.id);
+      
       // Get user role from profiles table
       const role = await getUserRole(data.user.id);
+      console.log("User role:", role);
+      
+      if (!role) {
+        console.error("Role not found for user");
+        toast({
+          title: "Ошибка входа",
+          description: "Не удалось определить роль пользователя",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
 
       toast({
         title: "Вход выполнен успешно!",
@@ -66,7 +80,7 @@ export function LoginForm({ onSuccess, isLoading, setIsLoading, setLoginAttempte
       });
 
       // Call the onSuccess callback with the user role
-      onSuccess(role || 'student');
+      onSuccess(role);
     } catch (error) {
       console.error("Login error in form:", error);
       toast({

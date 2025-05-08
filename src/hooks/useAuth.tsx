@@ -34,11 +34,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // First set up auth listener to avoid race conditions
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
           async (event, currentSession) => {
+            console.log("Auth state change event:", event);
+            
             // Set session and user immediately from the event
             setSession(currentSession);
             setUser(currentSession?.user ?? null);
             
-            // If user exists, get their role in a separate process (use setTimeout to avoid supabase deadlocks)
+            // If user exists, get their role in a separate process to avoid deadlocks
             if (currentSession?.user) {
               setTimeout(async () => {
                 try {
@@ -51,6 +53,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   if (error) {
                     console.error("Error fetching user role:", error);
                   } else if (data) {
+                    console.log("Role from auth state change:", data.role);
                     setUserRole(data.role);
                   }
                 } catch (err) {
@@ -80,6 +83,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (error) {
               console.error("Error fetching initial user role:", error);
             } else if (data) {
+              console.log("Initial role:", data.role);
               setUserRole(data.role);
             }
           } catch (err) {
@@ -115,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
       
-      // Очищаем состояние после успешного выхода
+      // Clear state after successful logout
       setUser(null);
       setSession(null);
       setUserRole(null);
@@ -125,7 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: "Вы вышли из своей учетной записи",
       });
       
-      // Перенаправляем на главную страницу
+      // Redirect to home page
       navigate("/");
     } catch (error) {
       console.error("Error signing out:", error);
