@@ -10,10 +10,11 @@ export interface Student {
   avatar?: string; // Added for compatibility
   lastActive?: string; // Added for compatibility
   level?: string; // Added for compatibility
-  grade?: string; // Added for compatibility
+  grade?: string | null; // Added for compatibility
   about?: string; // Added for compatibility
   interests?: string[]; // Added for compatibility
   status?: string; // Added for compatibility
+  school?: string | null; // Added for compatibility
   student_profiles?: {
     educational_level: string | null;
     subjects: string[] | null;
@@ -22,7 +23,7 @@ export interface Student {
     school: string | null;
     grade: string | null;
     budget: number | null;
-  };
+  } | null;
 }
 
 export interface TutorRequest {
@@ -31,8 +32,9 @@ export interface TutorRequest {
   student_id: string;
   subject_id?: string | null;
   message?: string | null;
-  status: 'pending' | 'accepted' | 'rejected';
+  status: 'pending' | 'accepted' | 'rejected' | 'completed';
   created_at: string;
+  updated_at?: string;
   tutor: {
     id: string;
     first_name: string;
@@ -55,6 +57,7 @@ export interface StudentRequest {
   message: string | null;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
+  updated_at?: string;
   student?: {
     id: string;
     first_name: string;

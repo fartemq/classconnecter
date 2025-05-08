@@ -10,7 +10,7 @@ import { Loader } from "@/components/ui/loader";
 import { useState } from "react";
 
 // Define this interface explicitly to match what the StudentsList expects
-interface AdaptedStudent {
+interface StudentsListStudent {
   id: string;
   name: string;
   avatar: string;
@@ -32,7 +32,7 @@ export const MyStudentsSection = () => {
   const [showRequests, setShowRequests] = useState(false);
   
   // We'll use this adapter to make the Student type compatible with the component props
-  const adaptStudents = (students: Student[]): AdaptedStudent[] => {
+  const adaptStudents = (students: Student[]): StudentsListStudent[] => {
     return students.map(student => ({
       id: student.id,
       name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
@@ -43,12 +43,12 @@ export const MyStudentsSection = () => {
       grade: student.student_profiles?.grade || "",
       subjects: student.student_profiles?.subjects || [],
       city: student.city || "",
-      about: "",  // Default value
-      interests: [] // Default value
+      about: student.student_profiles?.learning_goals || "",
+      interests: student.student_profiles?.preferred_format || []
     }));
   };
   
-  const adaptedStudents: AdaptedStudent[] = adaptStudents(myStudents);
+  const adaptedStudents: StudentsListStudent[] = adaptStudents(myStudents);
   
   // Handlers
   const handleContactStudent = (student: Student) => {

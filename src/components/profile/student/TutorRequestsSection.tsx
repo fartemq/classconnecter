@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs } from "@/components/ui/tabs";
@@ -13,15 +14,14 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { TutorRequest } from "@/types/student";
 
 // Define the interface for the component's expected TutorRequest type
 interface ComponentTutorRequest {
   id: string;
   tutor_id: string;
   student_id: string;
-  subject_id: string | null;
-  message: string | null;
+  subject_id?: string | null;
+  message?: string | null;
   status: 'pending' | 'accepted' | 'rejected' | 'completed';
   created_at: string;
   tutor: {

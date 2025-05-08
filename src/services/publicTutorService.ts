@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { TutorProfile } from "@/types/tutor";
+import { ensureObject } from "@/utils/supabaseUtils";
 
 export interface PublicTutorProfile {
   id: string;
@@ -70,13 +71,16 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       return null;
     }
     
-    const formattedSubjects = subjectsData ? subjectsData.map(item => ({
-      id: item.subject_id,
-      name: item.subjects.name,
-      hourly_rate: item.hourly_rate,
-      experience_years: item.experience_years,
-      description: item.description
-    })) : [];
+    const formattedSubjects = subjectsData ? subjectsData.map(item => {
+      const subject = ensureObject(item.subjects);
+      return {
+        id: item.subject_id,
+        name: subject.name,
+        hourly_rate: item.hourly_rate,
+        experience_years: item.experience_years,
+        description: item.description
+      };
+    }) : [];
     
     // Fetch average rating
     const { data: ratingsData, error: ratingsError } = await supabase
@@ -90,6 +94,8 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       averageRating = totalRating / ratingsData.length;
     }
     
+    const tutorProfile = ensureObject(tutorProfileData);
+
     return {
       id: profileData.id,
       first_name: profileData.first_name,
@@ -97,13 +103,13 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       avatar_url: profileData.avatar_url,
       bio: profileData.bio,
       city: profileData.city,
-      education_institution: tutorProfileData?.education_institution || null,
-      degree: tutorProfileData?.degree || null,
-      graduation_year: tutorProfileData?.graduation_year || null,
-      methodology: tutorProfileData?.methodology || null,
-      experience: tutorProfileData?.experience || null,
-      achievements: tutorProfileData?.achievements || null,
-      video_url: tutorProfileData?.video_url || null,
+      education_institution: tutorProfile.education_institution || null,
+      degree: tutorProfile.degree || null,
+      graduation_year: tutorProfile.graduation_year || null,
+      methodology: tutorProfile.methodology || null,
+      experience: tutorProfile.experience || null,
+      achievements: tutorProfile.achievements || null,
+      video_url: tutorProfile.video_url || null,
       rating: averageRating,
       subjects: formattedSubjects
     };

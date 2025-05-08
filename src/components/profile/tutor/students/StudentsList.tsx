@@ -1,13 +1,27 @@
 
 import React from "react";
-import { Student } from "@/types/student";
 import { StudentCard } from "./StudentCard";
 import { EmptySearchResults } from "./EmptySearchResults";
 
+// Define the interface for the expected student format
+interface StudentsListStudent {
+  id: string;
+  name: string;
+  avatar: string;
+  lastActive: string;
+  level: string;
+  grade: string;
+  subjects: string[];
+  city: string;
+  about: string;
+  interests: string[];
+  status: string;
+}
+
 interface StudentsListProps {
-  students: Student[];
-  onContact: (student: Student) => void;
-  onViewProfile: (student: Student) => void;
+  students: StudentsListStudent[];
+  onContact: (student: StudentsListStudent) => void;
+  onViewProfile: (student: StudentsListStudent) => void;
   onFindNewStudents?: () => void;
 }
 

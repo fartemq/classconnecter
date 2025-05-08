@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TutorRequest } from "@/types/student";
@@ -89,7 +90,11 @@ export const useTutorRequests = (studentId?: string) => {
     }
   }, [studentId]);
   
-  const updateRequestStatus = async (requestId: string, status: 'accepted' | 'rejected') => {
+  useEffect(() => {
+    fetchTutorRequests();
+  }, [fetchTutorRequests]);
+  
+  const updateRequestStatus = async (requestId: string, status: 'accepted' | 'rejected' | 'completed') => {
     try {
       // In a real implementation, you'd update a tutor_requests table
       // For now, we'll just show a toast to simulate the action

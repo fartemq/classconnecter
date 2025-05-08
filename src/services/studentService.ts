@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Student } from "@/types/student";
+import { ensureObject } from "@/utils/supabaseUtils";
 
 export const fetchAvailableStudents = async (tutorId: string): Promise<Student[]> => {
   try {
@@ -21,7 +22,26 @@ export const fetchAvailableStudents = async (tutorId: string): Promise<Student[]
       return [];
     }
     
-    return data || [];
+    // Transform the data to match our Student type
+    const students: Student[] = (data || []).map(item => {
+      const studentProfiles = item.student_profiles ? ensureObject(item.student_profiles) : null;
+      
+      return {
+        id: item.id,
+        first_name: item.first_name,
+        last_name: item.last_name,
+        avatar_url: item.avatar_url,
+        city: item.city,
+        student_profiles: studentProfiles,
+        // Add compatibility fields
+        subjects: studentProfiles?.subjects || [],
+        level: studentProfiles?.educational_level || 'Не указан',
+        grade: studentProfiles?.grade || null,
+        school: studentProfiles?.school || null
+      };
+    });
+    
+    return students;
   } catch (err) {
     console.error("Error in fetchAvailableStudents:", err);
     return [];

@@ -4,32 +4,34 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Student } from "@/types/student";
 import { Eye, MessageCircle } from "lucide-react";
 
+interface StudentsListStudent {
+  id: string;
+  name: string;
+  avatar: string;
+  lastActive: string;
+  level: string;
+  grade: string;
+  subjects: string[];
+  city: string;
+  about: string;
+  interests: string[];
+  status: string;
+}
+
 interface StudentCardProps {
-  student: Student;
-  onViewProfile: (student: Student) => void;
-  onContact: (student: Student) => void;
+  student: StudentsListStudent;
+  onViewProfile: (student: StudentsListStudent) => void;
+  onContact: (student: StudentsListStudent) => void;
 }
 
 export const StudentCard = ({ student, onViewProfile, onContact }: StudentCardProps) => {
   // Get initials for avatar fallback
   const getInitials = () => {
-    const firstName = student.first_name || '';
-    const lastName = student.last_name || '';
-    return `${firstName.charAt(0)}${lastName.charAt(0)}`.toUpperCase();
+    const nameParts = student.name.split(' ');
+    return nameParts.map(part => part.charAt(0)).join('').toUpperCase().slice(0, 2);
   };
-
-  // Handle properties that might not exist in our Student type
-  const fullName = student.name || `${student.first_name || ''} ${student.last_name || ''}`.trim() || "Без имени";
-  const lastActive = student.lastActive || "Недавно";
-  const level = student.level || "Не указан";
-  const grade = student.grade || "";
-  const levelDisplay = grade ? `${level} • ${grade} класс` : level;
-  const subjects = student.subjects || student.student_profiles?.subjects || [];
-  const city = student.city || "Не указан";
-  const status = student.status || "active";
 
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -37,28 +39,28 @@ export const StudentCard = ({ student, onViewProfile, onContact }: StudentCardPr
         <div className="flex justify-between items-start">
           <div className="flex items-start space-x-4">
             <Avatar className="h-12 w-12">
-              <AvatarImage src={student.avatar_url || student.avatar} alt={fullName} />
+              <AvatarImage src={student.avatar} alt={student.name} />
               <AvatarFallback>{getInitials()}</AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-medium">{fullName}</h3>
+              <h3 className="font-medium">{student.name}</h3>
               <p className="text-sm text-gray-500">
-                {city} • Активность: {lastActive}
+                {student.city} • Активность: {student.lastActive}
               </p>
               <div className="mt-2">
                 <p className="text-sm text-gray-600">
-                  {levelDisplay}
+                  {student.grade ? `${student.level} • ${student.grade} класс` : student.level}
                 </p>
               </div>
               <div className="mt-1 flex flex-wrap gap-1">
-                {(subjects || []).slice(0, 3).map((subject, i) => (
+                {student.subjects.slice(0, 3).map((subject, i) => (
                   <Badge key={i} variant="outline" className="text-xs">
                     {subject}
                   </Badge>
                 ))}
-                {(subjects || []).length > 3 && (
+                {student.subjects.length > 3 && (
                   <Badge variant="outline" className="text-xs">
-                    +{(subjects || []).length - 3}
+                    +{student.subjects.length - 3}
                   </Badge>
                 )}
               </div>

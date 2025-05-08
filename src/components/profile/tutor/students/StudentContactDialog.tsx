@@ -55,7 +55,9 @@ export const StudentContactDialog: React.FC<StudentContactDialogProps> = ({
     
     if (open) {
       fetchSubjects();
-      setMessage(`Здравствуйте! Я хотел бы стать вашим репетитором${student.student_profiles?.subjects && student.student_profiles.subjects.length > 0 ? ` по предмету ${student.student_profiles.subjects[0]}` : ''}.`);
+      const studentSubjects = student.subjects || student.student_profiles?.subjects || [];
+      const defaultSubject = studentSubjects.length > 0 ? studentSubjects[0] : '';
+      setMessage(`Здравствуйте! Я хотел бы стать вашим репетитором${defaultSubject ? ` по предмету ${defaultSubject}` : ''}.`);
     }
   }, [open, student]);
 

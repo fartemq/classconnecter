@@ -1,236 +1,104 @@
-import React, { useState, useEffect } from "react";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { TutorCalendar } from "./TutorCalendar";
-import { TutorScheduleSlots } from "./TutorScheduleSlots";
-import { TutorScheduleFooter } from "./TutorScheduleFooter";
-import { TutorSubjectSelect } from "./TutorSubjectSelect";
-import { ensureObject } from "@/utils/supabaseUtils";
+
+// Import necessary libraries and components
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { CalendarSidebar } from './CalendarSidebar';
+import { AvailableSlots } from './AvailableSlots';
+import { TutorSubjectSelect } from './TutorSubjectSelect';
+import { TutorScheduleFooter } from './TutorScheduleFooter';
+import { Button } from '@/components/ui/button';
+import { Loader } from '@/components/ui/loader';
+import { addDays } from 'date-fns';
+import { ensureObject } from '@/utils/supabaseUtils';
 
 interface TutorScheduleViewProps {
   tutorId: string;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
-interface Subject {
-  id: string;
-  name: string;
-}
+export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, onClose }) => {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
+  const [subjectOptions, setSubjectOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
-export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) => {
-  const [date, setDate] = useState<Date>(new Date());
-  const [availableSlots, setAvailableSlots] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [bookingSlot, setBookingSlot] = useState<string | null>(null);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [selectedSubject, setSelectedSubject] = useState<string>("");
-  const [tutorName, setTutorName] = useState<string>("");
-  const { toast } = useToast();
-
-  // Fetch tutor's name and subjects
   useEffect(() => {
-    const fetchTutorDetails = async () => {
+    const fetchTutorSubjects = async () => {
+      setLoading(true);
       try {
-        // Fetch tutor profile
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', tutorId)
-          .single();
-          
-        if (profileError) throw profileError;
-        
-        if (profileData) {
-          setTutorName(`${profileData.first_name} ${profileData.last_name || ''}`);
-        }
-        
-        // Fetch subjects taught by tutor
-        const { data: subjectData, error: subjectError } = await supabase
+        const { data, error } = await supabase
           .from('tutor_subjects')
           .select(`
             subject_id,
             subjects:subject_id (id, name)
           `)
           .eq('tutor_id', tutorId);
-          
-        if (subjectError) throw subjectError;
-        
-        if (subjectData && subjectData.length > 0) {
-          const formattedSubjects = subjectData.map(item => {
+
+        if (error) throw error;
+
+        if (data && data.length > 0) {
+          const options = data.map(item => {
             const subject = ensureObject(item.subjects);
             return {
-              id: item.subject_id,
-              name: subject ? subject.name : ""
+              id: subject.id,
+              name: subject.name
             };
-          }).filter(subject => subject.name); // Filter out empty names
+          });
           
-          setSubjects(formattedSubjects);
-          if (formattedSubjects.length > 0) {
-            setSelectedSubject(formattedSubjects[0].id);
+          setSubjectOptions(options);
+          
+          // Set the first subject as selected by default
+          if (options.length > 0 && !selectedSubjectId) {
+            setSelectedSubjectId(options[0].id);
           }
         }
       } catch (error) {
-        console.error('Error fetching tutor details:', error);
-        toast({
-          title: "Ошибка",
-          description: "Не удалось загрузить информацию о репетиторе",
-          variant: "destructive"
-        });
-      }
-    };
-    
-    fetchTutorDetails();
-  }, [tutorId, toast]);
-  
-  // Fetch tutor's available slots
-  useEffect(() => {
-    const fetchTutorSlots = async () => {
-      if (!tutorId || !date) return;
-      
-      try {
-        setLoading(true);
-        
-        // Get day of week (1-7, where 1 is Monday)
-        const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
-        
-        const { data, error } = await supabase
-          .from('tutor_schedule')
-          .select(`
-            id,
-            tutor_id,
-            day_of_week,
-            start_time,
-            end_time,
-            is_available
-          `)
-          .eq('tutor_id', tutorId)
-          .eq('day_of_week', dayOfWeek)
-          .eq('is_available', true);
-          
-        if (error) throw error;
-        
-        if (data) {
-          setAvailableSlots(data.map(slot => ({
-            id: slot.id,
-            tutorId: slot.tutor_id,
-            dayOfWeek: slot.day_of_week,
-            startTime: slot.start_time,
-            endTime: slot.end_time,
-            isAvailable: slot.is_available
-          })));
-        } else {
-          setAvailableSlots([]);
-        }
-      } catch (error) {
-        console.error('Error fetching tutor slots:', error);
-        toast({
-          title: "Ошибка",
-          description: "Не удалось загрузить доступное время репетитора.",
-          variant: "destructive"
-        });
+        console.error('Error fetching tutor subjects:', error);
       } finally {
         setLoading(false);
       }
     };
-    
-    fetchTutorSlots();
-  }, [tutorId, date, toast]);
-  
-  const handleBookSlot = async (slot: any) => {
-    if (!selectedSubject) {
-      toast({
-        title: "Выберите предмет",
-        description: "Для бронирования занятия необходимо выбрать предмет",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    try {
-      setBookingSlot(slot.id);
-      
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) {
-        toast({
-          title: "Ошибка",
-          description: "Необходимо войти в систему.",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      // Format date for the database
-      const lessonDate = format(date, 'yyyy-MM-dd');
-      
-      // Create a new lesson using our service
-      const lessonData = {
-        student_id: userData.user.id,
-        tutor_id: slot.tutorId,
-        subject_id: selectedSubject,
-        date: lessonDate,
-        time: slot.startTime,
-        duration: 60, // Default duration, could be calculated from start/end time
-        status: "upcoming" as const
-      };
-      
-      const { data: lessonResult, error: lessonError } = await import("@/services/lessonService").then(
-        module => module.createLesson(lessonData)
-      );
-      
-      if (lessonError) throw lessonError;
-      
-      if (lessonResult) {
-        toast({
-          title: "Успешно",
-          description: "Занятие успешно забронировано.",
-        });
-        onClose();
-      }
-    } catch (error) {
-      console.error('Error booking slot:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось забронировать занятие. Пожалуйста, попробуйте позже.",
-        variant: "destructive"
-      });
-    } finally {
-      setBookingSlot(null);
-    }
+
+    fetchTutorSubjects();
+  }, [tutorId]);
+
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
   };
-  
-  return (
-    <div className="flex flex-col space-y-4 md:space-y-6">
-      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-        {/* Calendar section */}
-        <TutorCalendar date={date} onDateChange={setDate} />
-        
-        {/* Available slots section */}
-        <div className="md:w-1/2">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-medium">Доступное время на {format(date, 'd MMMM', { locale: ru })}</h3>
-            {loading && <div className="animate-spin h-4 w-4 border-2 border-blue-600 rounded-full border-t-transparent"></div>}
-          </div>
-          
-          {/* Select subject */}
-          <TutorSubjectSelect 
-            subjects={subjects} 
-            selectedSubject={selectedSubject} 
-            onSubjectChange={setSelectedSubject} 
-          />
-          
-          {/* Time slots */}
-          <TutorScheduleSlots 
-            loading={loading} 
-            availableSlots={availableSlots} 
-            bookingSlot={bookingSlot} 
-            onBookSlot={handleBookSlot} 
-          />
-        </div>
+
+  const handleSubjectChange = (subjectId: string) => {
+    setSelectedSubjectId(subjectId);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader size="lg" />
       </div>
-      
-      <TutorScheduleFooter tutorName={tutorName} onClose={onClose} />
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="md:col-span-1">
+        <CalendarSidebar selectedDate={selectedDate} onDateChange={handleDateChange} />
+      </div>
+      <div className="md:col-span-2 space-y-4">
+        <TutorSubjectSelect 
+          subjectOptions={subjectOptions}
+          selectedSubjectId={selectedSubjectId}
+          onChange={handleSubjectChange}
+        />
+        
+        <AvailableSlots 
+          tutorId={tutorId} 
+          selectedDate={selectedDate}
+          selectedSubjectId={selectedSubjectId}
+        />
+        
+        <TutorScheduleFooter onClose={onClose} />
+      </div>
     </div>
   );
 };

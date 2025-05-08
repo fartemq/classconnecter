@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { SearchFilters } from "./SearchFilters";
 import { StudentsList } from "./StudentsList";
@@ -7,13 +8,14 @@ import { StudentProfileDialog } from "./StudentProfileDialog";
 import { StudentContactDialog } from "./StudentContactDialog";
 import { EmptySearchResults } from "./EmptySearchResults";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Search } from "lucide-react";
+import { AlertTriangle, Search, Upload } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
+import { Student } from "@/types/student";
 
 // Define the interface for the expected student format by StudentsList
-interface AdaptedStudent {
+interface StudentsListStudent {
   id: string;
   name: string;
   avatar: string;
@@ -46,7 +48,7 @@ export const SearchStudentsSection = () => {
   );
   
   // We'll use this adapter to make the Student type compatible with the component props
-  const adaptStudents = (students: Student[]): AdaptedStudent[] => {
+  const adaptStudents = (students: Student[]): StudentsListStudent[] => {
     return students.map(student => ({
       id: student.id,
       name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
@@ -57,8 +59,8 @@ export const SearchStudentsSection = () => {
       grade: student.student_profiles?.grade || "",
       subjects: student.student_profiles?.subjects || [],
       city: student.city || "",
-      about: "",  // Default value
-      interests: [] // Default value
+      about: student.student_profiles?.learning_goals || "",
+      interests: student.student_profiles?.preferred_format || []
     }));
   };
   
@@ -134,8 +136,18 @@ export const SearchStudentsSection = () => {
       {adaptedStudents.length > 0 ? (
         <StudentsList 
           students={adaptedStudents}
-          onViewProfile={handleViewProfile}
-          onContact={handleContactStudent}
+          onViewProfile={(adaptedStudent) => {
+            const originalStudent = availableStudents.find(s => s.id === adaptedStudent.id);
+            if (originalStudent) {
+              handleViewProfile(originalStudent);
+            }
+          }}
+          onContact={(adaptedStudent) => {
+            const originalStudent = availableStudents.find(s => s.id === adaptedStudent.id);
+            if (originalStudent) {
+              handleContactStudent(originalStudent);
+            }
+          }}
         />
       ) : (
         <EmptySearchResults onFindNewStudents={handleFindNewStudents} />

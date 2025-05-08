@@ -1,29 +1,12 @@
 
 /**
- * Helper function to safely access nested objects from Supabase responses
- * This helps with TypeScript errors when Supabase returns objects that look like arrays
- * @param obj The object or array from Supabase
- * @returns The properly typed object
+ * Ensures that an object is treated as an object, not an array
+ * This is particularly useful when working with Supabase nested join results
+ * where sometimes a relation returns as an array when we're expecting a single object
  */
-export const ensureObject = <T>(obj: T | T[]): T => {
-  // If the object is an array with a single item (happens with Supabase sometimes)
-  // return the first item, otherwise return the object as is
-  if (Array.isArray(obj) && obj.length > 0) {
-    return obj[0];
+export function ensureObject<T>(obj: T | T[]): T {
+  if (Array.isArray(obj)) {
+    return obj[0] || {} as T;
   }
-  return obj as T;
-};
-
-/**
- * Helper function to safely format user names from profile data
- * @param user The user profile object
- * @returns Formatted name string
- */
-export const formatUserName = (user: { first_name?: string; last_name?: string | null } | null | undefined): string => {
-  if (!user) return "Пользователь";
-  
-  const firstName = user.first_name || "";
-  const lastName = user.last_name || "";
-  
-  return `${firstName} ${lastName}`.trim() || "Пользователь";
-};
+  return obj;
+}
