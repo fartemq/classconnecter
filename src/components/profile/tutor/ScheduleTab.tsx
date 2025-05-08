@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,28 +42,33 @@ export const ScheduleTab = () => {
         if (error) throw error;
         
         // Properly cast and transform the data
-        const transformedLessons: Lesson[] = (data || []).map(item => ({
-          id: item.id,
-          tutor_id: item.tutor_id,
-          student_id: item.student_id,
-          subject_id: item.subject_id,
-          date: item.date,
-          time: item.time,
-          duration: item.duration,
-          status: item.status,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          student: item.student ? ensureObject({
-            id: item.student.id,
-            first_name: item.student.first_name,
-            last_name: item.student.last_name,
-            avatar_url: item.student.avatar_url
-          }) : undefined,
-          subject: item.subject ? ensureObject({
-            id: item.subject.id,
-            name: item.subject.name
-          }) : undefined
-        }));
+        const transformedLessons: Lesson[] = (data || []).map(item => {
+          const student = item.student ? ensureObject(item.student) : undefined;
+          const subject = item.subject ? ensureObject(item.subject) : undefined;
+          
+          return {
+            id: item.id,
+            tutor_id: item.tutor_id,
+            student_id: item.student_id,
+            subject_id: item.subject_id,
+            date: item.date,
+            time: item.time,
+            duration: item.duration,
+            status: item.status,
+            created_at: item.created_at,
+            updated_at: item.updated_at,
+            student: student ? {
+              id: student.id,
+              first_name: student.first_name,
+              last_name: student.last_name,
+              avatar_url: student.avatar_url
+            } : undefined,
+            subject: subject ? {
+              id: subject.id,
+              name: subject.name
+            } : undefined
+          };
+        });
         
         setLessons(transformedLessons);
       } catch (error) {

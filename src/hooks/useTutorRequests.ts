@@ -1,8 +1,8 @@
-
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TutorRequest } from "@/types/student";
 import { useToast } from "@/hooks/use-toast";
+import { ensureObject } from "@/utils/supabaseUtils";
 
 interface Subject {
   id: string;
@@ -42,27 +42,32 @@ export const useTutorRequests = (studentId?: string) => {
       }
       
       // Transform the data to match our expected type
-      const transformedData: TutorRequest[] = (data || []).map(item => ({
-        id: item.id,
-        tutor_id: item.tutor_id,
-        student_id: item.student_id,
-        subject_id: item.subject_id,
-        message: item.message,
-        status: item.status,
-        created_at: item.created_at,
-        tutor: item.tutor ? {
-          id: item.tutor.id,
-          first_name: item.tutor.first_name,
-          last_name: item.tutor.last_name,
-          avatar_url: item.tutor.avatar_url,
-          role: item.tutor.role,
-          city: item.tutor.city
-        } : undefined,
-        subject: item.subject ? {
-          id: item.subject.id,
-          name: item.subject.name
-        } : undefined
-      }));
+      const transformedData: TutorRequest[] = (data || []).map(item => {
+        const tutorData = ensureObject(item.tutor);
+        const subjectData = item.subject ? ensureObject(item.subject) : undefined;
+        
+        return {
+          id: item.id,
+          tutor_id: item.tutor_id,
+          student_id: item.student_id,
+          subject_id: item.subject_id,
+          message: item.message,
+          status: item.status,
+          created_at: item.created_at,
+          tutor: {
+            id: tutorData.id,
+            first_name: tutorData.first_name,
+            last_name: tutorData.last_name,
+            avatar_url: tutorData.avatar_url,
+            role: tutorData.role,
+            city: tutorData.city
+          },
+          subject: subjectData ? {
+            id: subjectData.id,
+            name: subjectData.name
+          } : undefined
+        };
+      });
       
       setTutorRequests(transformedData);
       

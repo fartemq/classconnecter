@@ -8,6 +8,7 @@ import { MessageSquare, Search, Loader2, XCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { ensureObject } from "@/utils/supabaseUtils";
 
 interface Conversation {
   id: string;
@@ -95,9 +96,10 @@ export const ChatsTab = () => {
         // Determine the other user in the conversation
         const isUserSender = message.sender_id === user!.id;
         const otherUserId = isUserSender ? message.receiver_id : message.sender_id;
-        const otherUser = isUserSender ? message.receiver : message.sender;
+        const otherUserData = isUserSender ? message.receiver : message.sender;
         
-        if (!conversationMap.has(otherUserId) && otherUser) {
+        if (!conversationMap.has(otherUserId) && otherUserData) {
+          const otherUser = ensureObject(otherUserData);
           const otherUserName = `${otherUser.first_name || ''} ${otherUser.last_name || ''}`.trim();
           
           conversationMap.set(otherUserId, {

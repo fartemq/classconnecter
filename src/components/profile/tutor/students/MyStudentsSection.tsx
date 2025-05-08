@@ -9,6 +9,7 @@ import { Student } from "@/types/student";
 import { Loader } from "@/components/ui/loader";
 import { useState } from "react";
 
+// Define this interface explicitly to match what the StudentsList expects
 interface AdaptedStudent {
   id: string;
   name: string;
@@ -47,7 +48,7 @@ export const MyStudentsSection = () => {
     }));
   };
   
-  const adaptedStudents = adaptStudents(myStudents);
+  const adaptedStudents: AdaptedStudent[] = adaptStudents(myStudents);
   
   // Handlers
   const handleContactStudent = (student: Student) => {
@@ -90,8 +91,18 @@ export const MyStudentsSection = () => {
     <div className="space-y-6">
       <StudentsList
         students={adaptedStudents}
-        onContact={handleContactStudent}
-        onViewProfile={handleViewProfile}
+        onContact={(adaptedStudent) => {
+          const originalStudent = myStudents.find(s => s.id === adaptedStudent.id);
+          if (originalStudent) {
+            handleContactStudent(originalStudent);
+          }
+        }}
+        onViewProfile={(adaptedStudent) => {
+          const originalStudent = myStudents.find(s => s.id === adaptedStudent.id);
+          if (originalStudent) {
+            handleViewProfile(originalStudent);
+          }
+        }}
       />
       
       {/* Dialogs */}

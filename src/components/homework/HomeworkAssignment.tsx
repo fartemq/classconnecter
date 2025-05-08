@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { ensureObject } from "@/utils/supabaseUtils";
 
 // Define Subject type
 interface Subject {
@@ -65,11 +66,13 @@ const HomeworkAssignment = () => {
         if (studentsData) {
           const formattedStudents = studentsData.map(item => {
             if (!item.student) return null;
+            
+            const student = ensureObject(item.student);
             return {
-              id: item.student.id,
-              first_name: item.student.first_name,
-              last_name: item.student.last_name,
-              avatar_url: item.student.avatar_url
+              id: student.id,
+              first_name: student.first_name,
+              last_name: student.last_name,
+              avatar_url: student.avatar_url
             };
           }).filter(Boolean) as Student[];
           
@@ -81,7 +84,7 @@ const HomeworkAssignment = () => {
         
         // Process subjects data
         if (subjectsData) {
-          setSubjects(subjectsData);
+          setSubjects(subjectsData as Subject[]);
           if (subjectsData.length > 0) {
             setSelectedSubjectId(subjectsData[0].id);
           }

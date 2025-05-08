@@ -1,16 +1,15 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { SearchFilters } from "./SearchFilters";
 import { StudentsList } from "./StudentsList";
 import { useStudents } from "@/hooks/useStudents";
 import { Loader } from "@/components/ui/loader";
 import { StudentProfileDialog } from "./StudentProfileDialog";
-import { useState } from "react";
-import { Student } from "@/types/student";
 import { StudentContactDialog } from "./StudentContactDialog";
 import { EmptySearchResults } from "./EmptySearchResults";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, Upload } from "lucide-react";
+import { AlertTriangle, Search } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 
 // Define the interface for the expected student format by StudentsList
@@ -105,7 +104,7 @@ export const SearchStudentsSection = () => {
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
         <div className="flex flex-col items-center gap-4">
-          <AlertCircle className="h-12 w-12 text-amber-500" />
+          <AlertTriangle className="h-12 w-12 text-amber-500" />
           <h3 className="text-xl font-semibold">Ваш профиль не опубликован</h3>
           <p className="text-gray-700 max-w-lg mx-auto">
             Чтобы получить доступ к списку доступных учеников и возможность связываться с ними, 

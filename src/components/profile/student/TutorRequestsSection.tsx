@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs } from "@/components/ui/tabs";
@@ -14,16 +13,16 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { TutorRequest as TutorRequestType } from "@/types/student";
+import { TutorRequest } from "@/types/student";
 
 // Define the interface for the component's expected TutorRequest type
 interface ComponentTutorRequest {
   id: string;
   tutor_id: string;
   student_id: string;
-  subject_id?: string | null;
-  message?: string | null;
-  status: 'pending' | 'accepted' | 'rejected';
+  subject_id: string | null;
+  message: string | null;
+  status: 'pending' | 'accepted' | 'rejected' | 'completed';
   created_at: string;
   tutor: {
     id: string;
@@ -54,23 +53,18 @@ export const TutorRequestsSection = () => {
     subjects
   } = useTutorRequests(user?.id);
   
-  // Add compatibility layer by ensuring tutor property is not undefined
-  const tutorRequests: ComponentTutorRequest[] = apiTutorRequests.map(request => {
-    if (!request.tutor) {
-      return {
-        ...request,
-        tutor: {
-          id: request.tutor_id,
-          first_name: "Unknown",
-          last_name: null,
-          avatar_url: null,
-          role: "tutor",
-          city: null
-        }
-      };
-    }
-    return request as ComponentTutorRequest;
-  });
+  // Convert to the expected type for the component
+  const tutorRequests: ComponentTutorRequest[] = apiTutorRequests.map(request => ({
+    id: request.id,
+    tutor_id: request.tutor_id,
+    student_id: request.student_id,
+    subject_id: request.subject_id || null,
+    message: request.message || null,
+    status: request.status as 'pending' | 'accepted' | 'rejected' | 'completed',
+    created_at: request.created_at,
+    tutor: request.tutor,
+    subject: request.subject
+  }));
   
   // Filter requests by subject if needed
   const filteredRequests = filterSubject 

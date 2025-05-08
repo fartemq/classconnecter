@@ -1,7 +1,17 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Lesson, LessonData } from "@/types/lesson";
+import { Lesson } from "@/types/lesson";
 import { ensureObject } from "@/utils/supabaseUtils";
+
+export interface LessonData {
+  student_id: string;
+  tutor_id: string;
+  subject_id: string;
+  date: string;
+  time: string;
+  duration: number;
+  status: 'pending' | 'confirmed' | 'canceled' | 'completed' | 'upcoming';
+}
 
 export const createLesson = async (lessonData: LessonData) => {
   try {
@@ -46,34 +56,40 @@ export const fetchLessonsByDate = async (userId: string, date: string): Promise<
     if (error) throw error;
     
     // Map the database structure to our expected type, handling nested objects
-    const lessons: Lesson[] = (data || []).map(item => ({
-      id: item.id,
-      tutor_id: item.tutor_id,
-      student_id: item.student_id,
-      subject_id: item.subject_id,
-      date: item.date,
-      time: item.time,
-      duration: item.duration,
-      status: item.status,
-      created_at: item.created_at,
-      updated_at: item.updated_at,
-      tutor: item.tutor ? ensureObject({
-        id: item.tutor.id,
-        first_name: item.tutor.first_name,
-        last_name: item.tutor.last_name,
-        avatar_url: null
-      }) : undefined,
-      student: item.student ? ensureObject({
-        id: item.student.id,
-        first_name: item.student.first_name,
-        last_name: item.student.last_name,
-        avatar_url: item.student.avatar_url
-      }) : undefined,
-      subject: item.subject ? ensureObject({
-        id: item.subject.id,
-        name: item.subject.name
-      }) : undefined
-    }));
+    const lessons: Lesson[] = (data || []).map(item => {
+      const tutor = item.tutor ? ensureObject(item.tutor) : undefined;
+      const student = item.student ? ensureObject(item.student) : undefined;
+      const subject = item.subject ? ensureObject(item.subject) : undefined;
+      
+      return {
+        id: item.id,
+        tutor_id: item.tutor_id,
+        student_id: item.student_id,
+        subject_id: item.subject_id,
+        date: item.date,
+        time: item.time,
+        duration: item.duration,
+        status: item.status,
+        created_at: item.created_at,
+        updated_at: item.updated_at,
+        tutor: tutor ? {
+          id: tutor.id,
+          first_name: tutor.first_name,
+          last_name: tutor.last_name,
+          avatar_url: null
+        } : undefined,
+        student: student ? {
+          id: student.id,
+          first_name: student.first_name,
+          last_name: student.last_name,
+          avatar_url: student.avatar_url
+        } : undefined,
+        subject: subject ? {
+          id: subject.id,
+          name: subject.name
+        } : undefined
+      };
+    });
     
     return lessons;
   } catch (error) {

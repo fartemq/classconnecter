@@ -7,6 +7,7 @@ import { TutorCalendar } from "./TutorCalendar";
 import { TutorScheduleSlots } from "./TutorScheduleSlots";
 import { TutorScheduleFooter } from "./TutorScheduleFooter";
 import { TutorSubjectSelect } from "./TutorSubjectSelect";
+import { ensureObject } from "@/utils/supabaseUtils";
 
 interface TutorScheduleViewProps {
   tutorId: string;
@@ -57,10 +58,13 @@ export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) 
         if (subjectError) throw subjectError;
         
         if (subjectData && subjectData.length > 0) {
-          const formattedSubjects = subjectData.map(item => ({
-            id: item.subject_id,
-            name: item.subjects ? item.subjects.name : ""
-          })).filter(subject => subject.name); // Filter out empty names
+          const formattedSubjects = subjectData.map(item => {
+            const subject = ensureObject(item.subjects);
+            return {
+              id: item.subject_id,
+              name: subject ? subject.name : ""
+            };
+          }).filter(subject => subject.name); // Filter out empty names
           
           setSubjects(formattedSubjects);
           if (formattedSubjects.length > 0) {
