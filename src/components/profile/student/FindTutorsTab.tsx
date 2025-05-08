@@ -1,11 +1,11 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Search, Filter, Star, MapPin, Book, Clock, ChevronRight, Calendar
+  Search, Filter, Star, MapPin, Book, Clock, ChevronRight, Calendar, RefreshCw
 } from "lucide-react";
 import {
   Select,
@@ -21,7 +21,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
-import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { fetchPublicTutors, PublicTutorProfile } from "@/services/publicTutorService";
 import { Loader } from "@/components/ui/loader";
@@ -39,28 +38,42 @@ export const FindTutorsTab = () => {
   const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   
+  // Fetch tutors function
+  const loadTutors = useCallback(async () => {
+    try {
+      setLoading(true);
+      const tutorsData = await fetchPublicTutors();
+      console.log("Loaded tutors:", tutorsData);
+      setTutors(tutorsData);
+      
+      if (tutorsData.length === 0) {
+        toast({
+          title: "Репетиторы не найдены",
+          description: "В данный момент нет доступных репетиторов",
+          variant: "default",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching tutors:", error);
+      toast({
+        title: "Ошибка загрузки",
+        description: "Не удалось загрузить список репетиторов",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [toast]);
+  
   // Fetch tutors on component mount
   useEffect(() => {
-    const loadTutors = async () => {
-      try {
-        setLoading(true);
-        const tutorsData = await fetchPublicTutors();
-        console.log("Loaded tutors:", tutorsData);
-        setTutors(tutorsData);
-      } catch (error) {
-        console.error("Error fetching tutors:", error);
-        toast({
-          title: "Ошибка загрузки",
-          description: "Не удалось загрузить список репетиторов",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     loadTutors();
-  }, [toast]);
+  }, [loadTutors]);
+  
+  // Handle manual refresh
+  const handleRefresh = () => {
+    loadTutors();
+  };
   
   // Filter tutors based on search term and price range
   const filteredTutors = tutors.filter(tutor => {
@@ -86,13 +99,28 @@ export const FindTutorsTab = () => {
     setSelectedTutorId(tutorId);
     setScheduleOpen(true);
   };
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // The filtering happens automatically via filteredTutors
+  };
   
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Поиск репетиторов</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-2xl font-bold">Поиск репетиторов</h2>
+        <Button 
+          onClick={handleRefresh} 
+          variant="outline"
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+          Обновить
+        </Button>
+      </div>
       
       {/* Search bar */}
-      <div className="flex flex-col md:flex-row gap-4">
+      <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
         <div className="relative flex-grow">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
           <Input
@@ -102,11 +130,11 @@ export const FindTutorsTab = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button className="md:w-auto">
+        <Button type="submit" className="md:w-auto">
           <Search className="mr-2 h-4 w-4" />
           Найти
         </Button>
-      </div>
+      </form>
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Filters */}
@@ -293,8 +321,8 @@ export const FindTutorsTab = () => {
                         
                         <div className="flex items-center gap-2 flex-wrap">
                           <Book className="h-4 w-4 text-gray-500" />
-                          {tutor.subjects.map(subject => (
-                            <Badge key={subject.id} variant="outline" className="bg-gray-50">
+                          {tutor.subjects.map((subject, idx) => (
+                            <Badge key={`${subject.id}-${idx}`} variant="outline" className="bg-gray-50">
                               {subject.name}
                             </Badge>
                           ))}
@@ -309,28 +337,28 @@ export const FindTutorsTab = () => {
                         
                         <div className="flex items-center justify-end gap-2 mt-2">
                           <Button 
-                            variant="outline"
+                            variant="outline" 
+                            size="sm" 
                             onClick={() => navigate(`/profile/student/chats/${tutor.id}`)}
                             className="sm:text-sm"
-                            size="sm"
                           >
                             Связаться
                           </Button>
                           
                           <Button
                             variant="outline"
+                            size="sm"
                             onClick={() => handleOpenSchedule(tutor.id)}
                             className="sm:text-sm"
-                            size="sm"
                           >
                             <Calendar className="mr-1 h-4 w-4" />
                             Расписание
                           </Button>
                           
                           <Button 
+                            size="sm"
                             onClick={() => navigate(`/tutors/${tutor.id}`)}
                             className="sm:text-sm"
-                            size="sm"
                           >
                             Подробнее
                             <ChevronRight className="ml-1 h-4 w-4" />
@@ -347,17 +375,23 @@ export const FindTutorsTab = () => {
               <CardContent className="p-8 text-center">
                 <h3 className="text-xl font-medium mb-2">Репетиторы не найдены</h3>
                 <p className="text-gray-600 mb-4">
-                  По заданным критериям не найдено ни одного репетитора. Попробуйте изменить параметры поиска.
+                  По заданным критериям не найдено ни одного репетитора. Попробуйте изменить параметры поиска или обновить страницу.
                 </p>
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setPriceRange([1000, 5000]);
-                  }}
-                >
-                  Сбросить фильтры
-                </Button>
+                <div className="flex justify-center gap-4">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      setSearchTerm('');
+                      setPriceRange([1000, 5000]);
+                    }}
+                  >
+                    Сбросить фильтры
+                  </Button>
+                  <Button onClick={handleRefresh}>
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Обновить
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           )}

@@ -1,13 +1,23 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { FindTutorsTab } from "@/components/profile/student/FindTutorsTab";
 import { useProfile } from "@/hooks/useProfile";
 import { Loader } from "@/components/ui/loader";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { useToast } from "@/hooks/use-toast";
 
 const StudentFindTutorsPage = () => {
   const { isLoading } = useProfile("student");
+  const { toast } = useToast();
+  
+  // Show welcome message when component mounts
+  useEffect(() => {
+    toast({
+      title: "Добро пожаловать в поиск репетиторов!",
+      description: "Здесь вы можете найти подходящего репетитора и записаться на урок.",
+    });
+  }, [toast]);
   
   if (isLoading) {
     return (

@@ -115,26 +115,29 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
 
 export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorProfile[]> => {
   try {
-    // Получаем только опубликованные профили репетиторов
+    console.log("Fetching published tutor profiles...");
+    
+    // Get only published profiles from tutor_profiles
     const { data: tutorProfiles, error: tutorProfilesError } = await supabase
       .from("tutor_profiles")
       .select("id")
       .eq("is_published", true);
 
     if (tutorProfilesError) {
-      console.error("Error fetching tutor profiles:", tutorProfilesError);
+      console.error("Error fetching published tutor profiles:", tutorProfilesError);
       return [];
     }
     
+    console.log(`Found ${tutorProfiles?.length || 0} published tutor profiles`);
+    
     if (!tutorProfiles || tutorProfiles.length === 0) {
-      console.log("No published tutor profiles found");
       return [];
     }
 
-    // Получаем IDs опубликованных профилей
+    // Get IDs of published profiles
     const publishedTutorIds = tutorProfiles.map(profile => profile.id);
     
-    // Получаем основную информацию о репетиторах по полученным ID
+    // Get basic information for these tutors
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select(`
@@ -149,23 +152,25 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
       .in("id", publishedTutorIds);
 
     if (profilesError) {
-      console.error("Error fetching profiles:", profilesError);
+      console.error("Error fetching tutor basic profiles:", profilesError);
       return [];
     }
     
     if (!profiles || profiles.length === 0) {
-      console.log("No tutor profiles found that match published IDs");
+      console.log("No matching profiles found for published tutor IDs");
       return [];
     }
 
-    // Получаем дополнительную информацию для каждого репетитора
+    console.log(`Found ${profiles.length} matching basic profiles`);
+
+    // Fetch additional information for each tutor
     const tutorsPromises = profiles.map(async (profile) => {
-      // Fetch tutor specific information
+      // Fetch tutor-specific information
       const { data: tutorData, error: tutorError } = await supabase
         .from("tutor_profiles")
         .select("*")
         .eq("id", profile.id)
-        .single();
+        .maybeSingle();
         
       if (tutorError) {
         console.error(`Error fetching tutor data for ${profile.id}:`, tutorError);
@@ -228,13 +233,13 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
     });
     
     const tutorsResults = await Promise.all(tutorsPromises);
-    // Отфильтровываем null значения
+    // Filter out null values
     const tutors = tutorsResults.filter((tutor): tutor is PublicTutorProfile => tutor !== null);
     
-    console.log(`Found ${tutors.length} published tutor profiles`);
+    console.log(`Found ${tutors.length} complete tutor profiles to display`);
     return tutors;
   } catch (error) {
-    console.error("Error fetching public tutors:", error);
+    console.error("Error in fetchPublicTutors:", error);
     return [];
   }
 };
