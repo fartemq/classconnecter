@@ -25,9 +25,12 @@ export interface TutorRequest {
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   tutor?: {
+    id: string;
     first_name: string;
     last_name: string | null;
     avatar_url: string | null;
+    role: string;
+    city: string | null;
   };
   subject?: {
     id: string;

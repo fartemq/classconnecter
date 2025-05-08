@@ -17,6 +17,11 @@ import { useToast } from "@/hooks/use-toast";
 import { HomeworkData } from "@/types/homework";
 import { createHomework } from "@/services/homeworkService";
 
+interface Subject {
+  id: string;
+  name: string;
+}
+
 const HomeworkAssignment = () => {
   const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
@@ -29,7 +34,7 @@ const HomeworkAssignment = () => {
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 1 week from now
   );
   const [file, setFile] = useState<File | null>(null);
-  const [subjects, setSubjects] = useState<Array<{id: string, name: string}>>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [loading, setLoading] = useState(false);
   
   // Fetch subjects taught by the tutor
@@ -42,7 +47,7 @@ const HomeworkAssignment = () => {
         .from('tutor_subjects')
         .select(`
           subject_id,
-          subjects:subject_id(id, name)
+          subjects:subject_id (id, name)
         `)
         .eq('tutor_id', userData.user.id);
         

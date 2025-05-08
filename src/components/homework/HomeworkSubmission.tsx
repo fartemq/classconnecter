@@ -34,15 +34,17 @@ const HomeworkSubmission = () => {
         
         if (!homeworkId) return;
         
-        const homeworkData = await fetchHomeworkById(homeworkId);
+        const { data, error } = await fetchHomeworkById(homeworkId);
         
-        if (!homeworkData) {
+        if (error) {
           throw new Error("Failed to fetch homework data");
         }
         
-        setHomework(homeworkData);
-        if (homeworkData.answer) {
-          setAnswer(homeworkData.answer);
+        if (data) {
+          setHomework(data);
+          if (data.answer) {
+            setAnswer(data.answer);
+          }
         }
       } catch (error) {
         console.error('Error fetching homework:', error);
@@ -167,10 +169,10 @@ const HomeworkSubmission = () => {
       }
       
       // Update homework with answer
-      const { error } = await submitHomeworkAnswer(homeworkId, answer, answerFilePath);
+      const success = await submitHomeworkAnswer(homeworkId, answer, answerFilePath);
         
-      if (error) {
-        throw error;
+      if (!success) {
+        throw new Error("Failed to submit homework answer");
       }
       
       toast({

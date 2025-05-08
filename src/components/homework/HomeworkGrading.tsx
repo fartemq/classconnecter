@@ -34,18 +34,20 @@ const HomeworkGrading = () => {
         
         if (!homeworkId) return;
         
-        const homeworkData = await fetchHomeworkById(homeworkId);
+        const { data, error } = await fetchHomeworkById(homeworkId);
         
-        if (!homeworkData) {
+        if (error) {
           throw new Error("Failed to fetch homework data");
         }
         
-        setHomework(homeworkData);
-        if (homeworkData.grade !== null) {
-          setGrade([homeworkData.grade]);
-        }
-        if (homeworkData.feedback) {
-          setFeedback(homeworkData.feedback);
+        if (data) {
+          setHomework(data);
+          if (data.grade !== null) {
+            setGrade([data.grade]);
+          }
+          if (data.feedback) {
+            setFeedback(data.feedback);
+          }
         }
       } catch (error) {
         console.error('Error fetching homework:', error);
@@ -103,10 +105,10 @@ const HomeworkGrading = () => {
     try {
       setSaving(true);
       
-      const { error } = await gradeHomework(homeworkId, grade[0], feedback);
+      const success = await gradeHomework(homeworkId, grade[0], feedback);
         
-      if (error) {
-        throw error;
+      if (!success) {
+        throw new Error("Failed to grade homework");
       }
       
       toast({

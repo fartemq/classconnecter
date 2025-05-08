@@ -11,7 +11,7 @@ export const SupabaseStatus = () => {
   useEffect(() => {
     const checkConnection = async () => {
       try {
-        // Check if subjects table exists - if not, handle gracefully
+        // Check if profiles table exists - if not, handle gracefully
         const { error } = await supabase
           .from("profiles")
           .select("id")
