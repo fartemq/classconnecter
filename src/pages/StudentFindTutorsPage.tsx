@@ -33,12 +33,13 @@ const StudentFindTutorsPage = () => {
           toast({
             title: "К сожалению, репетиторы пока отсутствуют",
             description: "В данный момент нет опубликованных анкет репетиторов. Пожалуйста, проверьте позже.",
-            variant: "default",
+            variant: "default", // Changed from default to ensure consistency
           });
         } else {
           toast({
             title: "Добро пожаловать в поиск репетиторов!",
             description: "Здесь вы можете найти подходящего репетитора и записаться на урок.",
+            variant: "default", // Explicitly specifying default
           });
         }
       } catch (error) {

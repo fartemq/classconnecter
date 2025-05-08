@@ -50,7 +50,7 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
         toast({
           title: "Предупреждение",
           description: "У вас не добавлено ни одного предмета. Студенты могут не найти вас в поиске. Рекомендуется сначала добавить предметы.",
-          variant: "warning",
+          variant: "default", // Changed from "warning" to "default"
         });
         
         // We'll let them publish anyway, but with the warning
