@@ -118,11 +118,16 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
     // Получаем только опубликованные профили репетиторов
     const { data: tutorProfiles, error: tutorProfilesError } = await supabase
       .from("tutor_profiles")
-      .select("id, is_published")
+      .select("id")
       .eq("is_published", true);
 
-    if (tutorProfilesError || !tutorProfiles || tutorProfiles.length === 0) {
-      console.error("No published tutor profiles found:", tutorProfilesError);
+    if (tutorProfilesError) {
+      console.error("Error fetching tutor profiles:", tutorProfilesError);
+      return [];
+    }
+    
+    if (!tutorProfiles || tutorProfiles.length === 0) {
+      console.log("No published tutor profiles found");
       return [];
     }
 
@@ -143,21 +148,91 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
       .eq("role", "tutor")
       .in("id", publishedTutorIds);
 
-    if (profilesError || !profiles || profiles.length === 0) {
-      console.error("No tutor profiles found:", profilesError);
+    if (profilesError) {
+      console.error("Error fetching profiles:", profilesError);
+      return [];
+    }
+    
+    if (!profiles || profiles.length === 0) {
+      console.log("No tutor profiles found that match published IDs");
       return [];
     }
 
     // Получаем дополнительную информацию для каждого репетитора
     const tutorsPromises = profiles.map(async (profile) => {
-      const tutor = await fetchPublicTutorById(profile.id);
-      return tutor;
+      // Fetch tutor specific information
+      const { data: tutorData, error: tutorError } = await supabase
+        .from("tutor_profiles")
+        .select("*")
+        .eq("id", profile.id)
+        .single();
+        
+      if (tutorError) {
+        console.error(`Error fetching tutor data for ${profile.id}:`, tutorError);
+        return null;
+      }
+      
+      // Fetch tutor subjects
+      const { data: subjectsData, error: subjectsError } = await supabase
+        .from("tutor_subjects")
+        .select(`
+          *,
+          subjects:subject_id (
+            id, name
+          )
+        `)
+        .eq("tutor_id", profile.id);
+        
+      if (subjectsError) {
+        console.error(`Error fetching subjects for ${profile.id}:`, subjectsError);
+        return null;
+      }
+      
+      const formattedSubjects = subjectsData ? subjectsData.map(item => ({
+        id: item.subject_id,
+        name: item.subjects.name,
+        hourly_rate: item.hourly_rate,
+        experience_years: item.experience_years,
+        description: item.description
+      })) : [];
+      
+      // Fetch average rating
+      const { data: ratingsData, error: ratingsError } = await supabase
+        .from("tutor_reviews")
+        .select("rating")
+        .eq("tutor_id", profile.id);
+        
+      let averageRating = null;
+      if (!ratingsError && ratingsData && ratingsData.length > 0) {
+        const totalRating = ratingsData.reduce((sum, item) => sum + item.rating, 0);
+        averageRating = totalRating / ratingsData.length;
+      }
+      
+      return {
+        id: profile.id,
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        avatar_url: profile.avatar_url,
+        bio: profile.bio,
+        city: profile.city,
+        education_institution: tutorData?.education_institution || null,
+        degree: tutorData?.degree || null,
+        graduation_year: tutorData?.graduation_year || null,
+        methodology: tutorData?.methodology || null,
+        experience: tutorData?.experience || null,
+        achievements: tutorData?.achievements || null,
+        video_url: tutorData?.video_url || null,
+        rating: averageRating,
+        subjects: formattedSubjects
+      };
     });
     
-    const tutors = await Promise.all(tutorsPromises);
-
+    const tutorsResults = await Promise.all(tutorsPromises);
     // Отфильтровываем null значения
-    return tutors.filter((tutor): tutor is PublicTutorProfile => tutor !== null);
+    const tutors = tutorsResults.filter((tutor): tutor is PublicTutorProfile => tutor !== null);
+    
+    console.log(`Found ${tutors.length} published tutor profiles`);
+    return tutors;
   } catch (error) {
     console.error("Error fetching public tutors:", error);
     return [];

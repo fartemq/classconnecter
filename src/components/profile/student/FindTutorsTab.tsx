@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -25,9 +26,8 @@ import { Slider } from "@/components/ui/slider";
 import { fetchPublicTutors, PublicTutorProfile } from "@/services/publicTutorService";
 import { Loader } from "@/components/ui/loader";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TutorScheduleView } from "./schedule/TutorScheduleView";
-import { Button as ShadcnButton } from "@/components/ui/button";
 
 export const FindTutorsTab = () => {
   const navigate = useNavigate();
@@ -45,6 +45,7 @@ export const FindTutorsTab = () => {
       try {
         setLoading(true);
         const tutorsData = await fetchPublicTutors();
+        console.log("Loaded tutors:", tutorsData);
         setTutors(tutorsData);
       } catch (error) {
         console.error("Error fetching tutors:", error);
