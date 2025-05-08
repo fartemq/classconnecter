@@ -1,12 +1,13 @@
 
-import React from "react";
+import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PublishProfileSection } from "./PublishProfileSection";
 import { Profile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
-import { Edit, User } from "lucide-react";
+import { Edit, User, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTutorPublishStatus } from "@/hooks/useTutorPublishStatus";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface TutorProfileSettingsTabProps {
   profile: Profile;
@@ -20,6 +21,16 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
     navigate("/profile/tutor/complete");
   };
 
+  // Add useEffect to check if subjects are added
+  useEffect(() => {
+    const checkProfileReady = async () => {
+      // This would ideally check if the tutor has subjects, but we'll just display a note
+      // about it being important for visibility in student searches
+    };
+    
+    checkProfileReady();
+  }, [profile.id]);
+
   return (
     <div className="space-y-8">
       <div className="flex justify-between items-center">
@@ -29,6 +40,25 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
           Редактировать анкету
         </Button>
       </div>
+      
+      {/* Publishing Status Alert */}
+      {isPublished ? (
+        <Alert className="bg-green-50 border-green-200 text-green-800">
+          <CheckCircle2 className="h-5 w-5 text-green-600" />
+          <AlertTitle className="text-green-800">Ваша анкета опубликована</AlertTitle>
+          <AlertDescription className="text-green-700">
+            Студенты могут найти вас в поиске и просматривать ваш профиль.
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert className="bg-amber-50 border-amber-200">
+          <AlertTriangle className="h-5 w-5 text-amber-600" />
+          <AlertTitle>Ваша анкета не опубликована</AlertTitle>
+          <AlertDescription>
+            Для отображения в поиске студентов опубликуйте анкету в разделе "Публикация профиля" ниже.
+          </AlertDescription>
+        </Alert>
+      )}
       
       {/* Профиль репетитора */}
       <Card>

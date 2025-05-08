@@ -165,6 +165,26 @@ export const fetchTutorProfile = async (userId: string): Promise<TutorProfile> =
  */
 export const publishTutorProfile = async (userId: string, isPublished: boolean): Promise<boolean> => {
   try {
+    console.log(`Attempting to set tutor profile published status to: ${isPublished}`);
+    
+    // First check if the tutor profile exists
+    const { data: profile, error: profileCheckError } = await supabase
+      .from("tutor_profiles")
+      .select("is_published")
+      .eq("id", userId)
+      .maybeSingle();
+      
+    if (profileCheckError) {
+      console.error("Error checking tutor profile:", profileCheckError);
+      return false;
+    }
+    
+    if (!profile) {
+      console.error("Tutor profile not found for user:", userId);
+      return false;
+    }
+    
+    // Update the published status
     const { error } = await supabase
       .from("tutor_profiles")
       .update({
@@ -174,13 +194,14 @@ export const publishTutorProfile = async (userId: string, isPublished: boolean):
       .eq("id", userId);
     
     if (error) {
+      console.error("Error updating tutor profile published status:", error);
       throw error;
     }
     
+    console.log(`Successfully set tutor profile published status to: ${isPublished}`);
     return true;
   } catch (error) {
     console.error("Error publishing tutor profile:", error);
     return false;
   }
 };
-

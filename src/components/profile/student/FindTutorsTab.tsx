@@ -1,11 +1,10 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Search, Filter, Star, MapPin, Book, Clock, ChevronRight, Calendar, RefreshCw
+  Search, Filter, Star, MapPin, Book, Clock, ChevronRight, Calendar, RefreshCw, AlertTriangle
 } from "lucide-react";
 import {
   Select,
@@ -27,6 +26,7 @@ import { Loader } from "@/components/ui/loader";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TutorScheduleView } from "./schedule/TutorScheduleView";
+import { supabase } from "@/integrations/supabase/client";
 
 export const FindTutorsTab = () => {
   const navigate = useNavigate();
@@ -37,27 +37,54 @@ export const FindTutorsTab = () => {
   const [loading, setLoading] = useState(true);
   const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   
-  // Fetch tutors function
+  // Enhanced fetch tutors function with better error handling and diagnostics
   const loadTutors = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError(null);
+      
+      // Direct check against DB first for diagnostic purposes
+      const { count, error: countError } = await supabase
+        .from("tutor_profiles")
+        .select("id", { count: 'exact' })
+        .eq("is_published", true);
+        
+      if (countError) {
+        console.error("Error checking for tutors count:", countError);
+      } else {
+        console.log(`Before fetching: DB has ${count} published tutor profiles`);
+      }
+      
+      // Fetch tutors via our service
       const tutorsData = await fetchPublicTutors();
       console.log("Loaded tutors:", tutorsData);
       setTutors(tutorsData);
       
       if (tutorsData.length === 0) {
-        toast({
-          title: "Репетиторы не найдены",
-          description: "В данный момент нет доступных репетиторов",
-          variant: "default",
-        });
+        if (count && count > 0) {
+          // We have tutors in DB but service didn't return any - likely a code issue
+          setLoadError("Репетиторы есть в базе, но не смогли загрузиться. Возможная проблема с кодом.");
+          toast({
+            title: "Ошибка загрузки данных",
+            description: "Репетиторы есть, но не смогли загрузиться. Попробуйте обновить страницу.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Репетиторы не найдены",
+            description: "В данный момент нет доступных репетиторов",
+            variant: "default",
+          });
+        }
       }
     } catch (error) {
       console.error("Error fetching tutors:", error);
+      setLoadError("Не удалось загрузить список репетиторов");
       toast({
         title: "Ошибка загрузки",
-        description: "Не удалось загрузить список репетиторов",
+        description: "Не уда��ось загрузить список репетиторов",
         variant: "destructive",
       });
     } finally {
@@ -135,6 +162,28 @@ export const FindTutorsTab = () => {
           Найти
         </Button>
       </form>
+      
+      {/* Error message if we have a load error */}
+      {loadError && (
+        <Card className="bg-red-50 border-red-200">
+          <CardContent className="p-4 flex items-start space-x-4">
+            <AlertTriangle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h3 className="font-medium text-red-800">Проблема с загрузкой данных</h3>
+              <p className="text-red-700 mt-1">{loadError}</p>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="mt-2 border-red-300 text-red-700 hover:bg-red-100"
+                onClick={handleRefresh}
+              >
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+                Попробовать снова
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Filters */}
