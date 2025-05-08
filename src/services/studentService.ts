@@ -1,127 +1,43 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Student } from "@/types/student";
-import { createStudentFromProfile } from "@/utils/studentUtils";
 
-// Получение всех доступных учеников (не являющихся учениками данного репетитора)
 export const fetchAvailableStudents = async (tutorId: string): Promise<Student[]> => {
   try {
-    // Проверяем, что профиль репетитора опубликован
-    const { data: tutorProfile, error: tutorProfileError } = await supabase
-      .from('tutor_profiles')
-      .select('is_published')
-      .eq('id', tutorId)
-      .single();
-    
-    if (tutorProfileError || !tutorProfile || !tutorProfile.is_published) {
-      console.error('Error: Tutor profile is not published or does not exist');
+    const { data, error } = await supabase
+      .from('profiles')
+      .select(`
+        id, 
+        first_name, 
+        last_name, 
+        avatar_url, 
+        city,
+        student_profiles!inner(*)
+      `)
+      .eq('role', 'student');
+      
+    if (error) {
+      console.error("Error fetching available students:", error);
       return [];
     }
     
-    // Получаем всех студентов из таблицы profiles
-    const { data: studentProfiles, error: profilesError } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('role', 'student');
-    
-    if (profilesError) throw profilesError;
-    if (!studentProfiles?.length) return [];
-    
-    // Получаем id студентов, которые уже связаны с этим репетитором
-    const { data: existingRequests, error: requestsError } = await supabase
-      .from('student_requests')
-      .select('student_id')
-      .eq('tutor_id', tutorId);
-    
-    if (requestsError) throw requestsError;
-    
-    // Создаем множество id существующих студентов
-    const existingStudentIds = new Set(existingRequests?.map(req => req.student_id) || []);
-    
-    // Фильтруем только тех студентов, которые ещё не связаны с репетитором
-    const availableStudentProfiles = studentProfiles.filter(profile => 
-      !existingStudentIds.has(profile.id)
-    );
-    
-    // Преобразуем профили в объекты типа Student
-    const students: Student[] = await Promise.all(
-      availableStudentProfiles.map(async (profile) => {
-        // Дополнительно получаем данные из таблицы student_profiles
-        const { data: studentProfile, error: studentProfileError } = await supabase
-          .from('student_profiles')
-          .select('*')
-          .eq('id', profile.id)
-          .single();
-        
-        if (studentProfileError && studentProfileError.code !== 'PGRST116') {
-          console.error('Error fetching student profile:', studentProfileError);
-        }
-        
-        return createStudentFromProfile(profile, studentProfile || null);
-      })
-    );
-    
-    return students;
-  } catch (error) {
-    console.error('Error fetching available students:', error);
+    return data || [];
+  } catch (err) {
+    console.error("Error in fetchAvailableStudents:", err);
     return [];
   }
 };
 
-// Получение учеников репетитора (которые приняли запрос)
 export const fetchMyStudents = async (tutorId: string): Promise<Student[]> => {
   try {
-    // Проверяем, что профиль репетитора опубликован
-    const { data: tutorProfile, error: tutorProfileError } = await supabase
-      .from('tutor_profiles')
-      .select('is_published')
-      .eq('id', tutorId)
-      .single();
-    
-    if (tutorProfileError) {
-      console.error('Error fetching tutor profile:', tutorProfileError);
-      // Продолжаем выполнение, так как репетитор может увидеть своих студентов независимо от статуса публикации
-    }
-    
-    const { data: acceptedRequests, error: requestsError } = await supabase
-      .from('student_requests')
-      .select(`
-        *,
-        student:profiles!student_id(*)
-      `)
-      .eq('tutor_id', tutorId)
-      .eq('status', 'accepted');
-    
-    if (requestsError) throw requestsError;
-    if (!acceptedRequests?.length) return [];
-    
-    const students: Student[] = await Promise.all(
-      acceptedRequests.map(async (request) => {
-        const studentProfile = request.student;
-        
-        // Получаем дополнительные данные из таблицы student_profiles
-        const { data: additionalData, error: profileError } = await supabase
-          .from('student_profiles')
-          .select('*')
-          .eq('id', studentProfile.id)
-          .single();
-        
-        if (profileError && profileError.code !== 'PGRST116') {
-          console.error('Error fetching student additional data:', profileError);
-        }
-        
-        return createStudentFromProfile(studentProfile, additionalData || null);
-      })
-    );
-    
-    return students;
-  } catch (error) {
-    console.error('Error fetching my students:', error);
+    // For now, just return an empty array as we haven't implemented this feature yet
+    return [];
+  } catch (err) {
+    console.error("Error in fetchMyStudents:", err);
     return [];
   }
 };
 
-// Отправка запроса на подключение к студенту
 export const sendRequestToStudent = async (
   tutorId: string, 
   studentId: string, 
@@ -129,32 +45,18 @@ export const sendRequestToStudent = async (
   message: string | null = null
 ): Promise<boolean> => {
   try {
-    // Проверяем, что профиль репетитора опубликован
-    const { data: tutorProfile, error: tutorProfileError } = await supabase
-      .from('tutor_profiles')
-      .select('is_published')
-      .eq('id', tutorId)
-      .single();
-    
-    if (tutorProfileError || !tutorProfile || !tutorProfile.is_published) {
-      console.error('Error: Cannot send request - tutor profile is not published');
-      return false;
-    }
-    
     const { error } = await supabase
-      .from('student_requests')
+      .from('messages')
       .insert({
-        tutor_id: tutorId,
-        student_id: studentId,
-        subject_id: subjectId,
-        status: 'pending',
-        message
+        sender_id: tutorId,
+        receiver_id: studentId,
+        subject: 'Запрос на подключение',
+        content: message || 'Здравствуйте! Я хотел бы стать вашим репетитором.'
       });
-    
-    if (error) throw error;
-    return true;
-  } catch (error) {
-    console.error('Error sending request to student:', error);
+      
+    return !error;
+  } catch (err) {
+    console.error("Error in sendRequestToStudent:", err);
     return false;
   }
 };

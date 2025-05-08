@@ -1,134 +1,62 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Homework, HomeworkData } from "@/types/homework";
 
-export const fetchHomeworkById = async (homeworkId: string): Promise<Homework | null> => {
+export interface HomeworkData {
+  tutor_id: string;
+  student_id: string;
+  subject_id: string;
+  title: string;
+  description: string;
+  file_path: string | null;
+  due_date: string;
+  status?: string;
+}
+
+export const createHomework = async (homework: HomeworkData) => {
   try {
-    const { data, error } = await supabase
-      .from('homework')
-      .select(`
-        id,
-        tutor_id,
-        student_id,
-        subject_id,
-        title,
-        description,
-        file_path,
-        due_date,
-        created_at,
-        updated_at,
-        status,
-        answer,
-        answer_file_path,
-        grade,
-        feedback,
-        tutor:profiles!tutor_id (first_name, last_name),
-        student:profiles!student_id (first_name, last_name),
-        subject:subjects (id, name)
-      `)
-      .eq('id', homeworkId)
-      .single();
-
-    if (error) {
-      throw error;
-    }
-
-    return data as Homework | null;
-  } catch (error) {
-    console.error('Error fetching homework:', error);
-    return null;
+    const { data, error } = await supabase.rpc('create_homework', {
+      tutor_id: homework.tutor_id,
+      student_id: homework.student_id,
+      subject_id: homework.subject_id,
+      title: homework.title,
+      description: homework.description,
+      file_path: homework.file_path || null,
+      due_date: homework.due_date
+    });
+    
+    return { data, error };
+  } catch (err) {
+    console.error("Error in createHomework:", err);
+    return { data: null, error: err };
   }
 };
 
-export const createHomework = async (homeworkData: HomeworkData): Promise<{ data: Homework | null, error: any }> => {
+export const fetchHomeworkAssignments = async (tutorId: string) => {
   try {
     const { data, error } = await supabase
       .from('homework')
-      .insert(homeworkData)
-      .select(`
-        id,
-        tutor_id,
-        student_id,
-        subject_id,
-        title,
-        description,
-        file_path,
-        due_date,
-        created_at,
-        updated_at,
-        status,
-        answer,
-        answer_file_path,
-        grade,
-        feedback,
-        tutor:profiles!tutor_id (first_name, last_name),
-        student:profiles!student_id (first_name, last_name),
-        subject:subjects (id, name)
-      `)
-      .single();
-
-    return { data: data as Homework | null, error };
-  } catch (error) {
-    console.error('Error creating homework:', error);
-    return { data: null, error };
+      .select('*, subject:subject_id(name), student:student_id(first_name, last_name)')
+      .eq('tutor_id', tutorId)
+      .order('created_at', { ascending: false });
+      
+    return { data: data || [], error };
+  } catch (err) {
+    console.error("Error in fetchHomeworkAssignments:", err);
+    return { data: [], error: err };
   }
 };
 
-export const updateHomework = async (homeworkId: string, updateData: Partial<HomeworkData>): Promise<{ data: Homework | null, error: any }> => {
+export const fetchStudentHomework = async (studentId: string) => {
   try {
     const { data, error } = await supabase
       .from('homework')
-      .update(updateData)
-      .eq('id', homeworkId)
-      .select(`
-        id,
-        tutor_id,
-        student_id,
-        subject_id,
-        title,
-        description,
-        file_path,
-        due_date,
-        created_at,
-        updated_at,
-        status,
-        answer,
-        answer_file_path,
-        grade,
-        feedback,
-        tutor:profiles!tutor_id (first_name, last_name),
-        student:profiles!student_id (first_name, last_name),
-        subject:subjects (id, name)
-      `)
-      .single();
-
-    return { data: data as Homework | null, error };
-  } catch (error) {
-    console.error('Error updating homework:', error);
-    return { data: null, error };
+      .select('*, subject:subject_id(name), tutor:tutor_id(first_name, last_name)')
+      .eq('student_id', studentId)
+      .order('created_at', { ascending: false });
+      
+    return { data: data || [], error };
+  } catch (err) {
+    console.error("Error in fetchStudentHomework:", err);
+    return { data: [], error: err };
   }
-};
-
-export const submitHomeworkAnswer = async (
-  homeworkId: string, 
-  answer: string | null, 
-  answerFilePath: string | null
-): Promise<{ data: Homework | null, error: any }> => {
-  return updateHomework(homeworkId, {
-    answer,
-    answer_file_path: answerFilePath,
-    status: 'submitted'
-  });
-};
-
-export const gradeHomework = async (
-  homeworkId: string,
-  grade: number,
-  feedback: string | null
-): Promise<{ data: Homework | null, error: any }> => {
-  return updateHomework(homeworkId, {
-    grade,
-    feedback,
-    status: 'graded'
-  });
 };

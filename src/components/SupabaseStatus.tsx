@@ -13,7 +13,7 @@ export const SupabaseStatus = () => {
       try {
         // Simple query to test connection
         const { error } = await supabase
-          .from("subjects")
+          .from("profiles")
           .select("*")
           .limit(1);
           
