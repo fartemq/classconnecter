@@ -30,9 +30,9 @@ export const TutorSidebar = () => {
       path: "?tab=dashboard",
     },
     {
-      label: "Обо мне",
+      label: "Моя анкета",
       icon: <User className="h-4 w-4" />,
-      path: "?tab=about",
+      path: "?tab=profile",
     },
     {
       label: "Расписание",
