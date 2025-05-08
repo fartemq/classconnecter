@@ -20,6 +20,25 @@ interface Conversation {
   unread: boolean;
 }
 
+interface MessageData {
+  id: string;
+  sender_id: string;
+  receiver_id: string;
+  content: string;
+  is_read: boolean;
+  created_at: string;
+  sender: {
+    first_name: string;
+    last_name: string | null;
+    avatar_url: string | null;
+  };
+  receiver: {
+    first_name: string;
+    last_name: string | null;
+    avatar_url: string | null;
+  };
+}
+
 export const ChatsTab = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -73,7 +92,7 @@ export const ChatsTab = () => {
       // Group messages by conversation partner
       const conversationMap = new Map<string, Conversation>();
       
-      messagesData.forEach(message => {
+      (messagesData as MessageData[]).forEach(message => {
         // Determine the other user in the conversation
         const isUserSender = message.sender_id === user!.id;
         const otherUserId = isUserSender ? message.receiver_id : message.sender_id;
@@ -86,7 +105,7 @@ export const ChatsTab = () => {
             id: message.id, // Using the latest message id as the conversation id
             otherUserId,
             otherUserName,
-            otherUserAvatar: otherUser.avatar_url,
+            otherUserAvatar: otherUser.avatar_url || undefined,
             lastMessage: message.content,
             timestamp: formatTimestamp(message.created_at),
             unread: !isUserSender && !message.is_read

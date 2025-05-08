@@ -80,7 +80,10 @@ export const ScheduleTab = () => {
           setDate={setDate}
           selectedTutorId={selectedTutorId}
           setSelectedTutorId={setSelectedTutorId}
-          tutors={tutors}
+          tutors={tutors.map(tutor => ({
+            id: tutor.id,
+            name: `${tutor.first_name} ${tutor.last_name || ''}`
+          }))}
         />
         
         <ScheduleContent

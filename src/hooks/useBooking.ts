@@ -84,14 +84,9 @@ export const useBooking = (setLessons?: React.Dispatch<React.SetStateAction<Less
             status: "upcoming",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-            tutor: {
-              id: slot.tutorId,
-              first_name: slot.tutorName?.split(' ')[0] || '',
-              last_name: slot.tutorName?.split(' ')[1] || null
-            },
             subject: {
               id: subjectId,
-              name: lessonResult.subject.name
+              name: lessonResult.subject?.name || ""
             }
           };
           

@@ -5,6 +5,8 @@ export interface Student {
   last_name: string | null;
   avatar_url: string | null;
   city: string | null;
+  name?: string; // Added for compatibility with some components
+  subjects?: string[]; // Added for compatibility with some components
   student_profiles?: {
     educational_level: string | null;
     subjects: string[] | null;

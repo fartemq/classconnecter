@@ -4,44 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { addDays } from "date-fns";
-
-interface Tutor {
-  id: string;
-  first_name: string;
-  last_name: string | null;
-  avatar_url: string | null;
-}
-
-interface Slot {
-  id: string;
-  start_time: string;
-  end_time: string;
-  is_available: boolean;
-}
-
-interface Lesson {
-  id: string;
-  tutor_id: string;
-  student_id: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  subject_id: string | null;
-  subject?: {
-    name: string;
-  };
-  tutor?: {
-    first_name: string;
-    last_name: string | null;
-    avatar_url: string | null;
-  };
-}
+import { Lesson, TimeSlot, Tutor } from "@/types/lesson";
 
 export const useSchedule = () => {
   const [date, setDate] = useState<Date>(new Date());
   const [selectedTutorId, setSelectedTutorId] = useState<string>("");
   const [tutors, setTutors] = useState<Tutor[]>([]);
-  const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(false);
   const [bookingSlot, setBookingSlot] = useState<string | null>(null);
@@ -83,16 +52,18 @@ export const useSchedule = () => {
       setLoading(true);
       try {
         // For now, let's create some dummy slots since we haven't implemented this feature yet
-        const dummySlots: Slot[] = [];
+        const dummySlots: TimeSlot[] = [];
         const startHour = 9;
         const endHour = 18;
         
         for (let hour = startHour; hour < endHour; hour++) {
           dummySlots.push({
             id: `slot-${hour}`,
-            start_time: new Date(date).setHours(hour, 0, 0, 0).toString(),
-            end_time: new Date(date).setHours(hour + 1, 0, 0, 0).toString(),
-            is_available: Math.random() > 0.3 // 70% chance to be available
+            tutorId: selectedTutorId,
+            dayOfWeek: date.getDay() || 7, // 1-7, where 1 is Monday
+            startTime: `${hour}:00:00`,
+            endTime: `${hour + 1}:00:00`,
+            isAvailable: Math.random() > 0.3 // 70% chance to be available
           });
         }
         
@@ -111,7 +82,7 @@ export const useSchedule = () => {
     fetchSlotsAndLessons();
   }, [date, selectedTutorId]);
   
-  const handleBookSlot = async (slotId: string) => {
+  const handleBookSlot = async (slot: TimeSlot) => {
     if (!user?.id || !selectedTutorId) {
       toast({
         title: "Ошибка",
@@ -121,12 +92,12 @@ export const useSchedule = () => {
       return;
     }
     
-    setBookingSlot(slotId);
+    setBookingSlot(slot.id);
     
     try {
       // Find the slot
-      const slot = availableSlots.find(s => s.id === slotId);
-      if (!slot) return;
+      const slotItem = availableSlots.find(s => s.id === slot.id);
+      if (!slotItem) return;
       
       // For now, just show a success message since we haven't implemented booking yet
       setTimeout(() => {
@@ -138,7 +109,7 @@ export const useSchedule = () => {
         // Remove the booked slot from available slots
         setAvailableSlots(prevSlots => 
           prevSlots.map(s => 
-            s.id === slotId ? { ...s, is_available: false } : s
+            s.id === slot.id ? { ...s, isAvailable: false } : s
           )
         );
         

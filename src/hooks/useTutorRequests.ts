@@ -1,76 +1,87 @@
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { TutorRequest } from "@/types/student";
+import { useToast } from "@/hooks/use-toast";
 
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { TutorRequest } from '@/types/student';
-import { toast } from '@/hooks/use-toast';
+interface Subject {
+  id: string;
+  name: string;
+}
 
-export const useTutorRequests = (userId: string | undefined) => {
+export const useTutorRequests = (studentId?: string) => {
   const [tutorRequests, setTutorRequests] = useState<TutorRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('all');
-  const [subjects, setSubjects] = useState<Array<{id: string, name: string}>>([]);
+  const [activeTab, setActiveTab] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const { toast } = useToast();
   
-  useEffect(() => {
-    if (!userId) return;
+  const fetchTutorRequests = useCallback(async () => {
+    if (!studentId) return;
     
-    const fetchRequests = async () => {
-      try {
-        setIsLoading(true);
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('tutor_requests')
+        .select(`
+          id,
+          tutor_id,
+          student_id,
+          subject_id,
+          message,
+          status,
+          created_at,
+          tutor:profiles!tutor_id (id, first_name, last_name, avatar_url, role, city),
+          subject:subjects (id, name)
+        `)
+        .eq('student_id', studentId);
         
-        // For now, we'll fetch data from the messages table as a proxy for requests
-        // In a real implementation, you'd have a dedicated tutor_requests table
-        const { data, error } = await supabase
-          .from('messages')
-          .select(`
-            id,
-            sender_id,
-            receiver_id,
-            created_at,
-            sender:sender_id(first_name, last_name, avatar_url)
-          `)
-          .eq('receiver_id', userId)
-          .eq('subject', 'Запрос на подключение')
-          .order('created_at', { ascending: false });
-          
-        if (error) {
-          console.error("Error fetching requests:", error);
-          toast({
-            title: "Ошибка загрузки",
-            description: "Не удалось загрузить запросы от репетиторов",
-            variant: "destructive"
-          });
-          return;
-        }
-        
-        // Convert messages to TutorRequest format
-        const requests = data?.map(message => ({
-          id: message.id,
-          tutor_id: message.sender_id,
-          student_id: message.receiver_id,
-          status: 'pending', // All messages are pending by default
-          created_at: message.created_at,
-          tutor: message.sender
-        })) || [];
-        
-        setTutorRequests(requests);
-        
-        // Fetch available subjects
-        const { data: subjectsData } = await supabase
-          .from('subjects')
-          .select('id, name')
-          .order('name');
-          
-        setSubjects(subjectsData || []);
-        
-      } catch (err) {
-        console.error("Error in fetchRequests:", err);
-      } finally {
-        setIsLoading(false);
+      if (error) {
+        console.error("Error fetching tutor requests:", error);
+        return;
       }
-    };
-    
-    fetchRequests();
-  }, [userId]);
+      
+      // Transform the data to match our expected type
+      const transformedData: TutorRequest[] = (data || []).map(item => ({
+        id: item.id,
+        tutor_id: item.tutor_id,
+        student_id: item.student_id,
+        subject_id: item.subject_id,
+        message: item.message,
+        status: item.status,
+        created_at: item.created_at,
+        tutor: item.tutor ? {
+          id: item.tutor.id,
+          first_name: item.tutor.first_name,
+          last_name: item.tutor.last_name,
+          avatar_url: item.tutor.avatar_url,
+          role: item.tutor.role,
+          city: item.tutor.city
+        } : undefined,
+        subject: item.subject ? {
+          id: item.subject.id,
+          name: item.subject.name
+        } : undefined
+      }));
+      
+      setTutorRequests(transformedData);
+      
+      // Extract unique subjects for filtering
+      const uniqueSubjects = Array.from(
+        new Map(
+          transformedData
+            .filter(req => req.subject)
+            .map(req => [req.subject?.id, { id: req.subject?.id || "", name: req.subject?.name || "" }])
+        ).values()
+      );
+      
+      setSubjects(uniqueSubjects);
+      
+    } catch (error) {
+      console.error("Error in fetchTutorRequests:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [studentId]);
   
   const updateRequestStatus = async (requestId: string, status: 'accepted' | 'rejected') => {
     try {
@@ -111,11 +122,12 @@ export const useTutorRequests = (userId: string | undefined) => {
   
   return {
     tutorRequests,
-    isLoading,
     activeTab,
     setActiveTab,
+    isLoading,
     updateRequestStatus,
     getStatusCount,
-    subjects
+    subjects,
+    refresh: fetchTutorRequests
   };
 };

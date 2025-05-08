@@ -58,8 +58,8 @@ const HomeworkAssignment = () => {
       
       if (data && data.length > 0) {
         const formattedSubjects = data.map(item => ({
-          id: item.subjects.id,
-          name: item.subjects.name
+          id: item.subjects?.id || "",
+          name: item.subjects?.name || ""
         }));
         
         setSubjects(formattedSubjects);

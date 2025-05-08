@@ -20,6 +20,12 @@ export interface Lesson {
     id: string;
     name: string;
   };
+  tutor?: {
+    id: string;
+    first_name: string;
+    last_name: string | null;
+    avatar_url: string | null;
+  };
 }
 
 export interface TimeSlot {
@@ -37,4 +43,14 @@ export interface Tutor {
   first_name: string;
   last_name: string | null;
   avatar_url: string | null;
+}
+
+export interface LessonData {
+  student_id: string;
+  tutor_id: string;
+  subject_id: string;
+  date: string;
+  time: string;
+  duration: number;
+  status: 'pending' | 'confirmed' | 'canceled' | 'completed' | 'upcoming';
 }
