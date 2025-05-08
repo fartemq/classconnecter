@@ -1,16 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Lesson } from "@/types/lesson";
-
-export interface LessonData {
-  student_id: string;
-  tutor_id: string;
-  subject_id: string;
-  date: string;
-  time: string;
-  duration: number;
-  status: 'pending' | 'confirmed' | 'canceled' | 'completed' | 'upcoming';
-}
+import { Lesson, LessonData } from "@/types/lesson";
+import { ensureObject } from "@/utils/supabaseUtils";
 
 export const createLesson = async (lessonData: LessonData) => {
   try {
@@ -54,7 +45,7 @@ export const fetchLessonsByDate = async (userId: string, date: string): Promise<
       
     if (error) throw error;
     
-    // Map the database structure to our expected type
+    // Map the database structure to our expected type, handling nested objects
     const lessons: Lesson[] = (data || []).map(item => ({
       id: item.id,
       tutor_id: item.tutor_id,
@@ -66,22 +57,22 @@ export const fetchLessonsByDate = async (userId: string, date: string): Promise<
       status: item.status,
       created_at: item.created_at,
       updated_at: item.updated_at,
-      tutor: item.tutor ? {
+      tutor: item.tutor ? ensureObject({
         id: item.tutor.id,
         first_name: item.tutor.first_name,
         last_name: item.tutor.last_name,
         avatar_url: null
-      } : undefined,
-      student: item.student ? {
+      }) : undefined,
+      student: item.student ? ensureObject({
         id: item.student.id,
         first_name: item.student.first_name,
         last_name: item.student.last_name,
         avatar_url: item.student.avatar_url
-      } : undefined,
-      subject: item.subject ? {
+      }) : undefined,
+      subject: item.subject ? ensureObject({
         id: item.subject.id,
         name: item.subject.name
-      } : undefined
+      }) : undefined
     }));
     
     return lessons;

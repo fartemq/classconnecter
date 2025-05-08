@@ -9,6 +9,20 @@ import { Student } from "@/types/student";
 import { Loader } from "@/components/ui/loader";
 import { useState } from "react";
 
+interface AdaptedStudent {
+  id: string;
+  name: string;
+  avatar: string;
+  lastActive: string;
+  level: string;
+  grade: string;
+  subjects: string[];
+  city: string;
+  about: string;
+  interests: string[];
+  status: string;
+}
+
 export const MyStudentsSection = () => {
   const { isLoading, myStudents, contactStudent, refreshStudents } = useStudents();
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -17,16 +31,19 @@ export const MyStudentsSection = () => {
   const [showRequests, setShowRequests] = useState(false);
   
   // We'll use this adapter to make the Student type compatible with the component props
-  const adaptStudents = (students: Student[]) => {
+  const adaptStudents = (students: Student[]): AdaptedStudent[] => {
     return students.map(student => ({
-      ...student,
+      id: student.id,
       name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
-      avatar: student.avatar_url,
+      avatar: student.avatar_url || "",
       status: "active", // Default status if not provided
       lastActive: "Недавно", // Default lastActive if not provided
       level: student.student_profiles?.educational_level || "Не указан",
       grade: student.student_profiles?.grade || "",
-      subjects: student.student_profiles?.subjects || []
+      subjects: student.student_profiles?.subjects || [],
+      city: student.city || "",
+      about: "",  // Default value
+      interests: [] // Default value
     }));
   };
   

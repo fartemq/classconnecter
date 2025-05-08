@@ -13,6 +13,21 @@ import { Button } from "@/components/ui/button";
 import { AlertCircle, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
+// Define the interface for the expected student format by StudentsList
+interface AdaptedStudent {
+  id: string;
+  name: string;
+  avatar: string;
+  lastActive: string;
+  level: string;
+  grade: string;
+  subjects: string[];
+  city: string;
+  about: string;
+  interests: string[];
+  status: string;
+}
+
 export const SearchStudentsSection = () => {
   const { isLoading, availableStudents, contactStudent, isProfilePublished, refreshStudents } = useStudents();
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
@@ -28,20 +43,23 @@ export const SearchStudentsSection = () => {
     new Set(availableStudents.flatMap(student => 
       student.subjects || 
       student.student_profiles?.subjects || []
-    ))
+    ).filter(Boolean))
   );
   
   // We'll use this adapter to make the Student type compatible with the component props
-  const adaptStudents = (students: Student[]) => {
+  const adaptStudents = (students: Student[]): AdaptedStudent[] => {
     return students.map(student => ({
-      ...student,
+      id: student.id,
       name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
-      avatar: student.avatar_url,
+      avatar: student.avatar_url || "",
       status: "active", // Default status if not provided
       lastActive: "Недавно", // Default lastActive if not provided
       level: student.student_profiles?.educational_level || "Не указан",
       grade: student.student_profiles?.grade || "",
-      subjects: student.student_profiles?.subjects || []
+      subjects: student.student_profiles?.subjects || [],
+      city: student.city || "",
+      about: "",  // Default value
+      interests: [] // Default value
     }));
   };
   

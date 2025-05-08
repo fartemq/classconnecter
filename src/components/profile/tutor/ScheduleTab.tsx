@@ -6,6 +6,7 @@ import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Lesson } from "@/types/lesson";
+import { ensureObject } from "@/utils/supabaseUtils";
 
 export const ScheduleTab = () => {
   const [loading, setLoading] = useState(true);
@@ -53,16 +54,16 @@ export const ScheduleTab = () => {
           status: item.status,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          student: item.student ? {
+          student: item.student ? ensureObject({
             id: item.student.id,
             first_name: item.student.first_name,
             last_name: item.student.last_name,
             avatar_url: item.student.avatar_url
-          } : undefined,
-          subject: item.subject ? {
+          }) : undefined,
+          subject: item.subject ? ensureObject({
             id: item.subject.id,
             name: item.subject.name
-          } : undefined
+          }) : undefined
         }));
         
         setLessons(transformedLessons);

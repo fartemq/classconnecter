@@ -13,12 +13,17 @@ interface TutorScheduleViewProps {
   onClose: () => void;
 }
 
+interface Subject {
+  id: string;
+  name: string;
+}
+
 export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) => {
   const [date, setDate] = useState<Date>(new Date());
   const [availableSlots, setAvailableSlots] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [bookingSlot, setBookingSlot] = useState<string | null>(null);
-  const [subjects, setSubjects] = useState<{id: string, name: string}[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [tutorName, setTutorName] = useState<string>("");
   const { toast } = useToast();
@@ -55,7 +60,7 @@ export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) 
           const formattedSubjects = subjectData.map(item => ({
             id: item.subject_id,
             name: item.subjects ? item.subjects.name : ""
-          }));
+          })).filter(subject => subject.name); // Filter out empty names
           
           setSubjects(formattedSubjects);
           if (formattedSubjects.length > 0) {

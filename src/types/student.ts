@@ -29,11 +29,11 @@ export interface TutorRequest {
   id: string;
   tutor_id: string;
   student_id: string;
-  subject_id: string | null;
-  message: string | null;
+  subject_id?: string | null;
+  message?: string | null;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
-  tutor?: {
+  tutor: {
     id: string;
     first_name: string;
     last_name: string | null;

@@ -1,7 +1,7 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, BookOpen, Calendar, CheckCircle, FileText, MessageSquare, Star, Users } from "lucide-react";
+import { AlertCircle, BookOpen, Calendar, CheckCircle, Users, Star } from "lucide-react";
 import { Profile } from "@/hooks/useProfile";
 import { useTutorPublishStatus } from "@/hooks/useTutorPublishStatus";
 import { useNavigate } from "react-router-dom";
@@ -11,6 +11,7 @@ import { ru } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { Lesson } from "@/types/lesson";
+import { ensureObject } from "@/utils/supabaseUtils";
 
 interface TutorDashboardProps {
   profile: Profile;
@@ -76,16 +77,16 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
           status: item.status,
           created_at: item.created_at,
           updated_at: item.updated_at,
-          student: item.student ? {
+          student: item.student ? ensureObject({
             id: item.student.id,
             first_name: item.student.first_name,
             last_name: item.student.last_name,
             avatar_url: item.student.avatar_url
-          } : undefined,
-          subject: item.subject ? {
+          }) : undefined,
+          subject: item.subject ? ensureObject({
             id: item.subject.id,
             name: item.subject.name
-          } : undefined
+          }) : undefined
         }));
         
         setLessons(transformedLessons);
@@ -309,32 +310,26 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
               {lessons.map((lesson) => (
                 <div key={lesson.id} className="p-4 border rounded-lg flex justify-between items-center">
                   <div>
-                    <h3 className="font-medium">{lesson.subject?.name}</h3>
+                    <h3 className="font-medium">{lesson.subject?.name || 'Без темы'}</h3>
                     <p className="text-sm text-gray-500">
-                      {format(new Date(`2023-01-01T${lesson.time}`), 'HH:mm')}
+                      {lesson.time.substring(0, 5)} ({lesson.duration} мин)
                     </p>
                     {lesson.student && (
                       <p className="text-sm text-gray-600">
-                        Ученик: {lesson.student.first_name} {lesson.student.last_name || ''}
+                        Студент: {lesson.student.first_name} {lesson.student.last_name || ''}
                       </p>
                     )}
                   </div>
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-blue-600">
-                      {lesson.duration} минут
-                    </p>
-                    <span className="inline-block px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                      {lesson.status === 'upcoming' ? 'Предстоит' : 
-                       lesson.status === 'completed' ? 'Завершено' : 
-                       lesson.status === 'canceled' ? 'Отменено' : lesson.status}
-                    </span>
-                  </div>
+                  
+                  <Button variant="outline" size="sm">
+                    Начать занятие
+                  </Button>
                 </div>
               ))}
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              У вас нет запланированных занятий на сегодня
+              На сегодня у вас нет запланированных занятий
             </div>
           )}
         </CardContent>

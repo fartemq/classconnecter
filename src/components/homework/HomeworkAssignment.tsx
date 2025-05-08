@@ -1,278 +1,243 @@
 
-import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
-import { CalendarIcon, Upload } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { HomeworkData } from "@/types/homework";
-import { createHomework } from "@/services/homeworkService";
+import { supabase } from "@/integrations/supabase/client";
 
+// Define Subject type
 interface Subject {
   id: string;
   name: string;
 }
 
+// Define Student type
+interface Student {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+  avatar_url?: string | null;
+}
+
 const HomeworkAssignment = () => {
-  const { studentId } = useParams<{ studentId: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [subject, setSubject] = useState("");
-  const [dueDate, setDueDate] = useState<Date | undefined>(
-    new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 1 week from now
-  );
-  const [file, setFile] = useState<File | null>(null);
+  const [dueDate, setDueDate] = useState("");
+  const [selectedSubjectId, setSelectedSubjectId] = useState("");
+  const [selectedStudentId, setSelectedStudentId] = useState("");
+  const [students, setStudents] = useState<Student[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [loading, setLoading] = useState(false);
-  
-  // Fetch subjects taught by the tutor
-  React.useEffect(() => {
-    const fetchSubjects = async () => {
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) return;
-      
-      const { data, error } = await supabase
-        .from('tutor_subjects')
-        .select(`
-          subject_id,
-          subjects:subject_id (id, name)
-        `)
-        .eq('tutor_id', userData.user.id);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const fetchStudentsAndSubjects = async () => {
+      try {
+        // Get current user
+        const { data: userData } = await supabase.auth.getUser();
+        if (!userData?.user) return;
         
-      if (error) {
-        console.error('Error fetching subjects:', error);
-        return;
-      }
-      
-      if (data && data.length > 0) {
-        const formattedSubjects = data.map(item => ({
-          id: item.subjects ? item.subjects.id : "",
-          name: item.subjects ? item.subjects.name : ""
-        }));
+        // Fetch students
+        const { data: studentsData, error: studentsError } = await supabase
+          .from('student_requests')
+          .select(`
+            student_id,
+            student:profiles!student_id (id, first_name, last_name, avatar_url)
+          `)
+          .eq('tutor_id', userData.user.id)
+          .eq('status', 'accepted');
+          
+        if (studentsError) throw studentsError;
         
-        setSubjects(formattedSubjects);
-        if (formattedSubjects.length > 0) {
-          setSubject(formattedSubjects[0].id);
+        // Fetch subjects
+        const { data: subjectsData, error: subjectsError } = await supabase
+          .from('subjects')
+          .select('id, name');
+          
+        if (subjectsError) throw subjectsError;
+        
+        // Process students data
+        if (studentsData) {
+          const formattedStudents = studentsData.map(item => {
+            if (!item.student) return null;
+            return {
+              id: item.student.id,
+              first_name: item.student.first_name,
+              last_name: item.student.last_name,
+              avatar_url: item.student.avatar_url
+            };
+          }).filter(Boolean) as Student[];
+          
+          setStudents(formattedStudents);
+          if (formattedStudents.length > 0) {
+            setSelectedStudentId(formattedStudents[0].id);
+          }
         }
+        
+        // Process subjects data
+        if (subjectsData) {
+          setSubjects(subjectsData);
+          if (subjectsData.length > 0) {
+            setSelectedSubjectId(subjectsData[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast({
+          title: "Ошибка загрузки данных",
+          description: "Не удалось загрузить необходимые данные",
+          variant: "destructive"
+        });
       }
     };
     
-    fetchSubjects();
-  }, []);
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0]);
-    }
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
+    fetchStudentsAndSubjects();
+  }, [toast]);
+
+  const handleAssignHomework = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !description || !subject || !dueDate || !studentId) {
+    
+    if (!title || !description || !dueDate || !selectedSubjectId || !selectedStudentId) {
       toast({
-        title: "Ошибка",
-        description: "Пожалуйста, заполните все обязательные поля.",
+        title: "Заполните все поля",
+        description: "Все поля должны быть заполнены",
         variant: "destructive"
       });
       return;
     }
     
     try {
-      setLoading(true);
+      setIsLoading(true);
+      
+      // Get current user
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) {
         toast({
-          title: "Ошибка",
-          description: "Необходимо войти в систему.",
+          title: "Ошибка авторизации",
+          description: "Войдите в систему для назначения домашнего задания",
           variant: "destructive"
         });
         return;
       }
       
-      let filePath = null;
+      // Format due date to ISO
+      const formattedDueDate = new Date(dueDate).toISOString();
       
-      // If there's a file, upload it first
-      if (file) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const uploadPath = `homework_files/${userData.user.id}/${fileName}`;
+      // Create homework
+      const { data, error } = await supabase
+        .from('homework')
+        .insert({
+          title,
+          description,
+          due_date: formattedDueDate,
+          subject_id: selectedSubjectId,
+          student_id: selectedStudentId,
+          tutor_id: userData.user.id,
+          status: 'assigned'
+        })
+        .select();
         
-        const { error: uploadError } = await supabase
-          .storage
-          .from('homework_files')
-          .upload(uploadPath, file);
-          
-        if (uploadError) {
-          throw uploadError;
-        }
-        
-        filePath = uploadPath;
-      }
-      
-      // Create the homework record using our helper function
-      const homeworkData: HomeworkData = {
-        tutor_id: userData.user.id,
-        student_id: studentId,
-        subject_id: subject,
-        title,
-        description,
-        file_path: filePath,
-        due_date: dueDate.toISOString(),
-        status: 'assigned'
-      };
-      
-      // Call RPC function instead of direct table access
-      const { data, error } = await createHomework(homeworkData);
-        
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
       
       toast({
-        title: "Успех",
-        description: "Домашнее задание успешно назначено.",
+        title: "Задание назначено",
+        description: "Ученик получит уведомление о новом задании",
       });
       
-      navigate(-1); // Go back to previous page
+      navigate("/profile/tutor");
     } catch (error) {
-      console.error('Error creating homework:', error);
+      console.error('Error assigning homework:', error);
       toast({
-        title: "Ошибка",
-        description: "Не удалось создать домашнее задание. Пожалуйста, попробуйте позже.",
+        title: "Ошибка назначения",
+        description: "Не удалось назначить домашнее задание",
         variant: "destructive"
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-  
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Назначить домашнее задание</CardTitle>
+        <CardTitle>Назначение домашнего задания</CardTitle>
       </CardHeader>
       <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="title">Название</Label>
-            <Input 
+        <form onSubmit={handleAssignHomework} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="student">Ученик</Label>
+            <select
+              id="student"
+              className="w-full p-2 border rounded"
+              value={selectedStudentId}
+              onChange={(e) => setSelectedStudentId(e.target.value)}
+            >
+              {students.map((student) => (
+                <option key={student.id} value={student.id}>
+                  {student.first_name} {student.last_name || ''}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="subject">Предмет</Label>
+            <select
+              id="subject"
+              className="w-full p-2 border rounded"
+              value={selectedSubjectId}
+              onChange={(e) => setSelectedSubjectId(e.target.value)}
+            >
+              {subjects.map((subject) => (
+                <option key={subject.id} value={subject.id}>
+                  {subject.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="title">Название задания</Label>
+            <Input
               id="title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Введите название задания"
-              required
             />
           </div>
           
-          <div>
-            <Label htmlFor="subject">Предмет</Label>
-            <Select 
-              value={subject} 
-              onValueChange={setSubject}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите предмет" />
-              </SelectTrigger>
-              <SelectContent>
-                {subjects.map((subj) => (
-                  <SelectItem key={subj.id} value={subj.id}>
-                    {subj.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
+          <div className="space-y-2">
             <Label htmlFor="description">Описание задания</Label>
-            <Textarea 
+            <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Опишите задание подробно"
+              placeholder="Подробно опишите задание"
               rows={5}
-              required
             />
           </div>
           
-          <div>
-            <Label>Срок выполнения</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-full justify-start text-left font-normal"
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {dueDate ? (
-                    format(dueDate, "PPP", { locale: ru })
-                  ) : (
-                    <span>Выберите дату</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <Calendar
-                  mode="single"
-                  selected={dueDate}
-                  onSelect={setDueDate}
-                  initialFocus
-                  locale={ru}
-                />
-              </PopoverContent>
-            </Popover>
+          <div className="space-y-2">
+            <Label htmlFor="dueDate">Срок выполнения</Label>
+            <Input
+              id="dueDate"
+              type="datetime-local"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+            />
           </div>
           
-          <div>
-            <Label htmlFor="file">Прикрепить файл (необязательно)</Label>
-            <div className="flex items-center gap-2">
-              <Input 
-                id="file"
-                type="file"
-                onChange={handleFileChange}
-                className="flex-1"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={() => document.getElementById('file')?.click()}
-              >
-                <Upload className="h-4 w-4" />
-              </Button>
-            </div>
-            {file && (
-              <p className="text-sm text-gray-500 mt-1">
-                Выбран файл: {file.name}
-              </p>
-            )}
-          </div>
-          
-          <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate(-1)}
-            >
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" type="button" onClick={() => navigate(-1)}>
               Отмена
             </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-            >
-              {loading ? "Сохранение..." : "Назначить задание"}
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Назначение..." : "Назначить задание"}
             </Button>
           </div>
         </form>

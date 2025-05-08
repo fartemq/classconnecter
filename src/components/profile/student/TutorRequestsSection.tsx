@@ -14,6 +14,30 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { TutorRequest as TutorRequestType } from "@/types/student";
+
+// Define the interface for the component's expected TutorRequest type
+interface ComponentTutorRequest {
+  id: string;
+  tutor_id: string;
+  student_id: string;
+  subject_id?: string | null;
+  message?: string | null;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  tutor: {
+    id: string;
+    first_name: string;
+    last_name: string | null;
+    avatar_url: string | null;
+    role: string;
+    city: string | null;
+  };
+  subject?: {
+    id: string;
+    name: string;
+  };
+}
 
 export const TutorRequestsSection = () => {
   const { user } = useAuth();
@@ -22,7 +46,7 @@ export const TutorRequestsSection = () => {
   
   const { 
     isLoading,
-    tutorRequests,
+    tutorRequests: apiTutorRequests,
     activeTab,
     setActiveTab,
     updateRequestStatus,
@@ -30,7 +54,25 @@ export const TutorRequestsSection = () => {
     subjects
   } = useTutorRequests(user?.id);
   
-  // Add compatibility layer for component
+  // Add compatibility layer by ensuring tutor property is not undefined
+  const tutorRequests: ComponentTutorRequest[] = apiTutorRequests.map(request => {
+    if (!request.tutor) {
+      return {
+        ...request,
+        tutor: {
+          id: request.tutor_id,
+          first_name: "Unknown",
+          last_name: null,
+          avatar_url: null,
+          role: "tutor",
+          city: null
+        }
+      };
+    }
+    return request as ComponentTutorRequest;
+  });
+  
+  // Filter requests by subject if needed
   const filteredRequests = filterSubject 
     ? tutorRequests.filter(req => req.subject?.id === filterSubject)
     : tutorRequests;
