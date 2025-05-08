@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,18 +74,18 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
     const fetchStatistics = async () => {
       try {
         // Count active students (students with active requests)
-        const { data: studentsData, error: studentsError } = await supabase
+        const { count: activeStudentsCount, error: studentsError } = await supabase
           .from('student_requests')
-          .select('student_id', { count: 'exact' })
+          .select('student_id', { count: 'exact', head: true })
           .eq('tutor_id', profile.id)
           .eq('status', 'accepted');
           
         if (studentsError) throw studentsError;
         
         // Count completed lessons
-        const { data: lessonsData, error: lessonsError } = await supabase
+        const { count: completedLessonsCount, error: lessonsError } = await supabase
           .from('lessons')
-          .select('id', { count: 'exact' })
+          .select('id', { count: 'exact', head: true })
           .eq('tutor_id', profile.id)
           .eq('status', 'completed');
           
@@ -109,8 +108,8 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
         }
         
         setStats({
-          activeStudents: studentsData?.count || 0,
-          completedLessons: lessonsData?.count || 0,
+          activeStudents: activeStudentsCount || 0,
+          completedLessons: completedLessonsCount || 0,
           averageRating: averageRating,
           reviewCount: reviewCount
         });
