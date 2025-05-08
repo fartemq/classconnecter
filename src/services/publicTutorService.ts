@@ -161,7 +161,7 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
     // Step 2: Process the results to match our expected format
     const tutorPromises = tutors.map(async (tutor) => {
       // Extract the tutor profile data
-      const tutorProfileData = tutor.tutor_profiles;
+      const tutorProfileData = ensureObject(tutor.tutor_profiles);
       
       // Fetch tutor subjects
       const { data: subjectsData, error: subjectsError } = await supabase
@@ -179,13 +179,16 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
         return null;
       }
       
-      const formattedSubjects = subjectsData ? subjectsData.map(item => ({
-        id: item.subject_id,
-        name: item.subjects.name,
-        hourly_rate: item.hourly_rate,
-        experience_years: item.experience_years,
-        description: item.description
-      })) : [];
+      const formattedSubjects = subjectsData ? subjectsData.map(item => {
+        const subjectObj = ensureObject(item.subjects);
+        return {
+          id: item.subject_id,
+          name: subjectObj.name,
+          hourly_rate: item.hourly_rate,
+          experience_years: item.experience_years,
+          description: item.description
+        };
+      }) : [];
       
       // Fetch average rating
       const { data: ratingsData, error: ratingsError } = await supabase

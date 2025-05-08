@@ -1,22 +1,25 @@
 
 import { StudentRequest, Student } from "@/types/student";
+import { ensureObject } from "@/utils/supabaseUtils";
 
 export const createStudentFromRequest = (request: StudentRequest): Student => {
+  const student = request.student ? ensureObject(request.student) : null;
+  
   return {
     id: request.student_id,
-    first_name: request.student?.first_name || '',
-    last_name: request.student?.last_name || null,
-    avatar_url: request.student?.avatar_url || null,
-    city: request.student?.city || null,
+    first_name: student?.first_name || '',
+    last_name: student?.last_name || null,
+    avatar_url: student?.avatar_url || null,
+    city: student?.city || null,
     // Compatibility fields
-    name: `${request.student?.first_name || ''} ${request.student?.last_name || ''}`.trim(),
+    name: student ? `${student.first_name || ''} ${student.last_name || ''}`.trim() : '',
     status: request.status,
     level: 'N/A', // We don't have this info in the current DB schema
     grade: null,
     school: null,
     subjects: request.subject ? [request.subject.name] : [],
     lastActive: request.updated_at ? new Date(request.updated_at).toLocaleDateString('ru-RU') : 'N/A',
-    avatar: request.student?.avatar_url,
+    avatar: student?.avatar_url,
     about: '',
     interests: []
   };
@@ -29,6 +32,8 @@ export const createStudentFromProfile = (profile: any, studentProfile: any | nul
     level = studentProfile.educational_level;
   }
   
+  const safeStudentProfile = studentProfile || {}; 
+  
   return {
     id: profile.id,
     first_name: profile.first_name || '',
@@ -39,13 +44,13 @@ export const createStudentFromProfile = (profile: any, studentProfile: any | nul
     name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
     status: 'new', // По умолчанию статус "new" для студентов без запроса
     level: level,
-    grade: studentProfile?.grade || null,
-    school: studentProfile?.school || null,
-    subjects: studentProfile?.subjects || [],
+    grade: safeStudentProfile.grade || null,
+    school: safeStudentProfile.school || null,
+    subjects: safeStudentProfile.subjects || [],
     lastActive: profile.updated_at ? new Date(profile.updated_at).toLocaleDateString('ru-RU') : 'N/A',
     avatar: profile.avatar_url,
-    about: studentProfile?.learning_goals || profile.bio || '',
-    interests: studentProfile?.preferred_format || [],
+    about: safeStudentProfile.learning_goals || profile.bio || '',
+    interests: safeStudentProfile.preferred_format || [],
     student_profiles: studentProfile
   };
 };

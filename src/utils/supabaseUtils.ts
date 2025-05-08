@@ -8,5 +8,5 @@ export function ensureObject<T>(obj: T | T[]): T {
   if (Array.isArray(obj)) {
     return obj[0] || {} as T;
   }
-  return obj;
+  return obj || {} as T;
 }

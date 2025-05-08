@@ -2,6 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
+import { ensureObject } from "@/utils/supabaseUtils";
 
 /**
  * Save a tutor's profile information
@@ -160,13 +161,16 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
     }
     
     // Transform subjects data to match TutorSubject type
-    const subjects = subjectsData.map(item => ({
-      id: item.id,
-      name: item.subjects?.name || "",
-      hourlyRate: item.hourly_rate,
-      experienceYears: item.experience_years || undefined,
-      description: item.description || undefined
-    }));
+    const subjects = subjectsData.map(item => {
+      const subject = ensureObject(item.subjects);
+      return {
+        id: item.id,
+        name: subject.name || "",
+        hourlyRate: item.hourly_rate,
+        experienceYears: item.experience_years || undefined,
+        description: item.description || undefined
+      };
+    });
     
     // Combine data and map to TutorProfile type
     return {

@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { TutorRequest } from '@/types/student';
 
 // Define the interface for the component's expected TutorRequest type
 interface ComponentTutorRequest {
@@ -53,18 +54,9 @@ export const TutorRequestsSection = () => {
     subjects
   } = useTutorRequests(user?.id);
   
-  // Convert to the expected type for the component
-  const tutorRequests: ComponentTutorRequest[] = apiTutorRequests.map(request => ({
-    id: request.id,
-    tutor_id: request.tutor_id,
-    student_id: request.student_id,
-    subject_id: request.subject_id || null,
-    message: request.message || null,
-    status: request.status as 'pending' | 'accepted' | 'rejected' | 'completed',
-    created_at: request.created_at,
-    tutor: request.tutor,
-    subject: request.subject
-  }));
+  // The tutorRequests from the API already match our expected type now
+  // No need to convert them to ComponentTutorRequest anymore
+  const tutorRequests = apiTutorRequests;
   
   // Filter requests by subject if needed
   const filteredRequests = filterSubject 

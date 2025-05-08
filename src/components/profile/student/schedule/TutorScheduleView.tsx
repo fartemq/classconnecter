@@ -22,6 +22,29 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
   const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
   const [subjectOptions, setSubjectOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [tutorName, setTutorName] = useState<string>('');
+
+  useEffect(() => {
+    const fetchTutorInfo = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', tutorId)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          setTutorName(`${data.first_name || ''} ${data.last_name || ''}`.trim());
+        }
+      } catch (error) {
+        console.error('Error fetching tutor info:', error);
+      }
+    };
+
+    fetchTutorInfo();
+  }, [tutorId]);
 
   useEffect(() => {
     const fetchTutorSubjects = async () => {
@@ -82,22 +105,31 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div className="md:col-span-1">
-        <CalendarSidebar selectedDate={selectedDate} onDateChange={handleDateChange} />
+        <CalendarSidebar 
+          selectedDate={selectedDate} 
+          onDateChange={handleDateChange}
+          selectedTutorId={tutorId}
+          setSelectedTutorId={() => {}}
+          tutors={[{id: tutorId, name: tutorName}]}
+        />
       </div>
       <div className="md:col-span-2 space-y-4">
         <TutorSubjectSelect 
-          subjectOptions={subjectOptions}
-          selectedSubjectId={selectedSubjectId}
-          onChange={handleSubjectChange}
+          subjects={subjectOptions}
+          selectedSubject={selectedSubjectId}
+          onSubjectChange={handleSubjectChange}
         />
         
         <AvailableSlots 
-          tutorId={tutorId} 
-          selectedDate={selectedDate}
-          selectedSubjectId={selectedSubjectId}
+          slots={[]} 
+          bookingSlot={null} 
+          onBookSlot={() => {}}
         />
         
-        <TutorScheduleFooter onClose={onClose} />
+        <TutorScheduleFooter 
+          onClose={onClose || (() => {})}
+          tutorName={tutorName}
+        />
       </div>
     </div>
   );

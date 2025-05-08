@@ -31,7 +31,7 @@ export const MyStudentsSection = () => {
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showRequests, setShowRequests] = useState(false);
   
-  // We'll use this adapter to make the Student type compatible with the component props
+  // We'll use this adapter to make the Student type compatible with StudentsListStudent
   const adaptStudents = (students: Student[]): StudentsListStudent[] => {
     return students.map(student => ({
       id: student.id,
