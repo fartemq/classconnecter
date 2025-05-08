@@ -38,7 +38,7 @@ export const saveTutorProfile = async (
       .from("tutor_profiles")
       .select()
       .eq("id", userId)
-      .single();
+      .maybeSingle();
     
     if (existingTutorProfile) {
       // Update existing record
@@ -67,7 +67,7 @@ export const saveTutorProfile = async (
         experience: values.experience || 0,
         achievements: values.achievements || '',
         video_url: values.videoUrl || '',
-        is_published: false // По умолчанию профиль не опубликован
+        is_published: false,
       });
       
       if (tutorProfileError) {
@@ -77,131 +77,72 @@ export const saveTutorProfile = async (
     
     return { success: true, avatarUrl: finalAvatarUrl };
   } catch (error) {
-    console.error("Error saving profile:", error);
-    throw error;
-  }
-};
-
-/**
- * Fetch a tutor's profile data
- */
-export const fetchTutorProfile = async (userId: string): Promise<TutorProfile> => {
-  try {
-    // Fetch basic profile information
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .single();
-    
-    if (profileError) {
-      throw profileError;
-    }
-    
-    // Fetch tutor specific information
-    const { data: tutorProfileData, error: tutorProfileError } = await supabase
-      .from("tutor_profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
-    
-    if (tutorProfileError) {
-      throw tutorProfileError;
-    }
-    
-    // Fetch tutor subjects
-    const { data: subjectsData, error: subjectsError } = await supabase
-      .from("tutor_subjects")
-      .select(`
-        *,
-        subjects:subject_id (
-          id, name
-        )
-      `)
-      .eq("tutor_id", userId);
-    
-    if (subjectsError) {
-      throw subjectsError;
-    }
-    
-    const formattedSubjects = subjectsData.map(item => ({
-      id: item.subject_id,
-      name: item.subjects.name,
-      hourlyRate: item.hourly_rate,
-      experienceYears: item.experience_years,
-      description: item.description
-    }));
-    
-    return {
-      id: profileData.id,
-      firstName: profileData.first_name,
-      lastName: profileData.last_name || "",
-      bio: profileData.bio || "",
-      city: profileData.city || "",
-      avatarUrl: profileData.avatar_url,
-      educationInstitution: tutorProfileData?.education_institution || "",
-      degree: tutorProfileData?.degree || "",
-      graduationYear: tutorProfileData?.graduation_year || null,
-      educationVerified: tutorProfileData?.education_verified || false,
-      methodology: tutorProfileData?.methodology || "",
-      experience: tutorProfileData?.experience || 0,
-      achievements: tutorProfileData?.achievements || "",
-      videoUrl: tutorProfileData?.video_url || "",
-      isPublished: tutorProfileData?.is_published || false,
-      subjects: formattedSubjects,
-      rating: 0, // В будущем эти данные могут поступать из базы
-      reviewsCount: 0,
-      completedLessons: 0,
-      activeStudents: 0
-    };
-  } catch (error) {
-    console.error("Error fetching tutor profile:", error);
-    throw error;
+    console.error("Error saving tutor profile:", error);
+    return { success: false, avatarUrl: null };
   }
 };
 
 /**
  * Publish or unpublish a tutor's profile
  */
-export const publishTutorProfile = async (userId: string, isPublished: boolean): Promise<boolean> => {
+export const publishTutorProfile = async (tutorId: string, isPublished: boolean): Promise<boolean> => {
   try {
-    console.log(`Attempting to set tutor profile published status to: ${isPublished}`);
+    console.log(`Setting tutor ${tutorId} published status to: ${isPublished}`);
     
-    // First check if the tutor profile exists
-    const { data: profile, error: profileCheckError } = await supabase
-      .from("tutor_profiles")
-      .select("is_published")
-      .eq("id", userId)
-      .maybeSingle();
-      
-    if (profileCheckError) {
-      console.error("Error checking tutor profile:", profileCheckError);
-      return false;
-    }
-    
-    if (!profile) {
-      console.error("Tutor profile not found for user:", userId);
-      return false;
-    }
-    
-    // Update the published status
     const { error } = await supabase
       .from("tutor_profiles")
-      .update({
+      .update({ 
         is_published: isPublished,
-        updated_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       })
-      .eq("id", userId);
-    
+      .eq("id", tutorId);
+      
     if (error) {
-      console.error("Error updating tutor profile published status:", error);
-      throw error;
+      console.error("Error publishing tutor profile:", error);
+      return false;
     }
     
-    console.log(`Successfully set tutor profile published status to: ${isPublished}`);
+    console.log(`Successfully updated tutor ${tutorId} publish status to ${isPublished}`);
     return true;
   } catch (error) {
-    console.error("Error publishing tutor profile:", error);
+    console.error("Error in publishTutorProfile:", error);
     return false;
+  }
+};
+
+/**
+ * Fetch a tutor's profile information
+ */
+export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile | null> => {
+  try {
+    // Fetch base profile data
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", tutorId)
+      .eq("role", "tutor")
+      .single();
+      
+    if (profileError) {
+      console.error("Error fetching tutor base profile:", profileError);
+      return null;
+    }
+    
+    // Fetch tutor-specific data
+    const { data: tutorData, error: tutorError } = await supabase
+      .from("tutor_profiles")
+      .select("*")
+      .eq("id", tutorId)
+      .single();
+      
+    if (tutorError) {
+      console.error("Error fetching tutor-specific data:", tutorError);
+      return null;
+    }
+    
+    return { ...profileData, ...tutorData } as TutorProfile;
+  } catch (error) {
+    console.error("Error in fetchTutorProfile:", error);
+    return null;
   }
 };

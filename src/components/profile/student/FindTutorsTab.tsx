@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -21,11 +22,11 @@ import {
 } from "@/components/ui/accordion";
 import { useNavigate } from "react-router-dom";
 import { Slider } from "@/components/ui/slider";
-import { fetchPublicTutors, PublicTutorProfile } from "@/services/publicTutorService";
 import { Loader } from "@/components/ui/loader";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TutorScheduleView } from "./schedule/TutorScheduleView";
+import { TutorSearchResult, searchTutors } from "@/services/tutorSearchService";
 import { supabase } from "@/integrations/supabase/client";
 
 export const FindTutorsTab = () => {
@@ -33,11 +34,33 @@ export const FindTutorsTab = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState("");
   const [priceRange, setPriceRange] = useState([1000, 5000]);
-  const [tutors, setTutors] = useState<PublicTutorProfile[]>([]);
+  const [tutors, setTutors] = useState<TutorSearchResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [subjects, setSubjects] = useState<{id: string, name: string}[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<string | undefined>(undefined);
+  const [selectedCity, setSelectedCity] = useState<string | undefined>(undefined);
+  
+  // Load subjects for filtering
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      const { data, error } = await supabase
+        .from('subjects')
+        .select('id, name')
+        .eq('is_active', true);
+      
+      if (error) {
+        console.error("Error fetching subjects:", error);
+        return;
+      }
+      
+      setSubjects(data || []);
+    };
+    
+    fetchSubjects();
+  }, []);
   
   // Enhanced fetch tutors function with better error handling and diagnostics
   const loadTutors = useCallback(async () => {
@@ -54,23 +77,39 @@ export const FindTutorsTab = () => {
       if (countError) {
         console.error("Error checking for tutors count:", countError);
       } else {
-        console.log(`Before fetching: DB has ${count} published tutor profiles`);
+        console.log(`Direct DB check: Found ${count} published tutor profiles`);
       }
       
-      // Fetch tutors via our service
-      const tutorsData = await fetchPublicTutors();
+      // Fetch tutors via our new service
+      const filters = {
+        searchTerm: searchTerm || undefined,
+        minPrice: priceRange[0],
+        maxPrice: priceRange[1],
+        subjectId: selectedSubject,
+        city: selectedCity
+      };
+      
+      const tutorsData = await searchTutors(filters);
       console.log("Loaded tutors:", tutorsData);
       setTutors(tutorsData);
       
       if (tutorsData.length === 0) {
         if (count && count > 0) {
-          // We have tutors in DB but service didn't return any - likely a code issue
-          setLoadError("Репетиторы есть в базе, но не смогли загрузиться. Возможная проблема с кодом.");
-          toast({
-            title: "Ошибка загрузки данных",
-            description: "Репетиторы есть, но не смогли загрузиться. Попробуйте обновить страницу.",
-            variant: "destructive",
-          });
+          // We have tutors in DB but service didn't return any - could be filters or code issue
+          if (searchTerm || selectedSubject || selectedCity || priceRange[0] > 1000 || priceRange[1] < 5000) {
+            toast({
+              title: "Репетиторы не найдены",
+              description: "По заданным критериям не найдено репетиторов. Попробуйте изменить параметры поиска.",
+              variant: "default",
+            });
+          } else {
+            setLoadError("Репетиторы есть в базе, но не смогли загрузиться. Возможная проблема с кодом.");
+            toast({
+              title: "Ошибка загрузки данных",
+              description: "Репетиторы есть, но не смогли загрузиться. Попробуйте обновить страницу.",
+              variant: "destructive",
+            });
+          }
         } else {
           toast({
             title: "Репетиторы не найдены",
@@ -84,15 +123,15 @@ export const FindTutorsTab = () => {
       setLoadError("Не удалось загрузить список репетиторов");
       toast({
         title: "Ошибка загрузки",
-        description: "Не уда��ось загрузить список репетиторов",
+        description: "Не удалось загрузить список репетиторов",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [toast]);
+  }, [toast, searchTerm, priceRange, selectedSubject, selectedCity]);
   
-  // Fetch tutors on component mount
+  // Fetch tutors on component mount and when filters change
   useEffect(() => {
     loadTutors();
   }, [loadTutors]);
@@ -102,26 +141,6 @@ export const FindTutorsTab = () => {
     loadTutors();
   };
   
-  // Filter tutors based on search term and price range
-  const filteredTutors = tutors.filter(tutor => {
-    const fullName = `${tutor.first_name} ${tutor.last_name || ''}`.toLowerCase();
-    const subjectNames = tutor.subjects.map(s => s.name.toLowerCase()).join(' ');
-    const cityMatch = tutor.city ? tutor.city.toLowerCase().includes(searchTerm.toLowerCase()) : false;
-    
-    // Search match
-    const searchMatch = searchTerm === '' || 
-      fullName.includes(searchTerm.toLowerCase()) || 
-      subjectNames.includes(searchTerm.toLowerCase()) ||
-      cityMatch;
-      
-    // Price match - check if any subject's hourly rate is within the range
-    const priceMatch = tutor.subjects.some(
-      subject => subject.hourly_rate >= priceRange[0] && subject.hourly_rate <= priceRange[1]
-    );
-    
-    return searchMatch && priceMatch;
-  });
-
   const handleOpenSchedule = (tutorId: string) => {
     setSelectedTutorId(tutorId);
     setScheduleOpen(true);
@@ -129,7 +148,14 @@ export const FindTutorsTab = () => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // The filtering happens automatically via filteredTutors
+    loadTutors();
+  };
+  
+  const handleClearFilters = () => {
+    setSearchTerm('');
+    setPriceRange([1000, 5000]);
+    setSelectedSubject(undefined);
+    setSelectedCity(undefined);
   };
   
   return (
@@ -195,31 +221,33 @@ export const FindTutorsTab = () => {
                 variant="ghost" 
                 size="sm" 
                 className="text-xs h-auto py-1"
-                onClick={() => {
-                  setSearchTerm('');
-                  setPriceRange([1000, 5000]);
-                }}
+                onClick={handleClearFilters}
               >
                 Сбросить
               </Button>
             </div>
             
-            <Accordion type="single" collapsible className="space-y-2">
+            <Accordion type="single" collapsible className="space-y-2" defaultValue="subject">
               <AccordionItem value="subject" className="border-b">
                 <AccordionTrigger className="py-2 text-sm font-medium">
                   Предмет
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-2 pt-2">
-                    <Select>
+                    <Select
+                      value={selectedSubject}
+                      onValueChange={setSelectedSubject}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Выберите предмет" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="math">Математика</SelectItem>
-                        <SelectItem value="physics">Физика</SelectItem>
-                        <SelectItem value="english">Английский язык</SelectItem>
-                        <SelectItem value="russian">Русский язык</SelectItem>
+                        <SelectItem value={undefined}>Все предметы</SelectItem>
+                        {subjects.map(subject => (
+                          <SelectItem key={subject.id} value={subject.id}>
+                            {subject.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -254,7 +282,11 @@ export const FindTutorsTab = () => {
                 </AccordionTrigger>
                 <AccordionContent>
                   <div className="space-y-2 pt-2">
-                    <Input placeholder="Город, район..." />
+                    <Input 
+                      placeholder="Город, район..." 
+                      value={selectedCity || ''}
+                      onChange={(e) => setSelectedCity(e.target.value || undefined)}
+                    />
                   </div>
                 </AccordionContent>
               </AccordionItem>
@@ -304,7 +336,7 @@ export const FindTutorsTab = () => {
               </AccordionItem>
             </Accordion>
             
-            <Button className="w-full mt-4">Применить фильтры</Button>
+            <Button className="w-full mt-4" onClick={handleSearch}>Применить фильтры</Button>
           </CardContent>
         </Card>
         
@@ -315,8 +347,8 @@ export const FindTutorsTab = () => {
               <Loader size="lg" />
               <span className="ml-4 text-gray-600">Загрузка репетиторов...</span>
             </div>
-          ) : filteredTutors.length > 0 ? (
-            filteredTutors.map(tutor => {
+          ) : tutors.length > 0 ? (
+            tutors.map(tutor => {
               const fullName = `${tutor.first_name} ${tutor.last_name || ''}`.trim();
               const lowestPrice = tutor.subjects.length > 0 
                 ? Math.min(...tutor.subjects.map(s => s.hourly_rate)) 
@@ -429,10 +461,7 @@ export const FindTutorsTab = () => {
                 <div className="flex justify-center gap-4">
                   <Button 
                     variant="outline"
-                    onClick={() => {
-                      setSearchTerm('');
-                      setPriceRange([1000, 5000]);
-                    }}
+                    onClick={handleClearFilters}
                   >
                     Сбросить фильтры
                   </Button>

@@ -2,11 +2,11 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, CheckCircle2, Upload, Info } from "lucide-react";
-import { publishTutorProfile } from "@/services/tutorProfileService";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
+import { hasTutorAddedSubjects } from "@/services/tutorSearchService";
 
 interface PublishProfileSectionProps {
   tutorId: string;
@@ -17,25 +17,13 @@ interface PublishProfileSectionProps {
 export function PublishProfileSection({ tutorId, isPublished, onPublishStatusChange }: PublishProfileSectionProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSubjects, setHasSubjects] = useState(true);  // Default to true to avoid showing warning immediately
+  const { toast } = useToast();
 
   // Check if tutor has added subjects
   useEffect(() => {
     const checkSubjects = async () => {
-      try {
-        const { data, error, count } = await supabase
-          .from("tutor_subjects")
-          .select("id", { count: 'exact' })
-          .eq("tutor_id", tutorId);
-          
-        if (error) {
-          console.error("Error checking tutor subjects:", error);
-          return;
-        }
-        
-        setHasSubjects(count !== null && count > 0);
-      } catch (error) {
-        console.error("Error in checkSubjects:", error);
-      }
+      const hasAddedSubjects = await hasTutorAddedSubjects(tutorId);
+      setHasSubjects(hasAddedSubjects);
     };
     
     checkSubjects();
@@ -57,24 +45,32 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
       }
       
       const newStatus = !isPublished;
-      const success = await publishTutorProfile(tutorId, newStatus);
       
-      if (success) {
-        toast({
-          title: newStatus ? "Профиль опубликован" : "Профиль снят с публикации",
-          description: newStatus
-            ? "Теперь ваш профиль доступен для студентов"
-            : "Ваш профиль больше не виден студентам",
-          variant: newStatus ? "default" : "destructive",
-        });
-        
-        onPublishStatusChange(newStatus);
-        
-        // Log to console for debugging
-        console.log(`Profile publication status changed to: ${newStatus ? 'published' : 'unpublished'}`);
-      } else {
-        throw new Error("Не удалось изменить статус публикации");
+      // Update tutor_profiles table
+      const { error } = await supabase
+        .from("tutor_profiles")
+        .update({ 
+          is_published: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", tutorId);
+      
+      if (error) {
+        throw error;
       }
+      
+      toast({
+        title: newStatus ? "Профиль опубликован" : "Профиль снят с публикации",
+        description: newStatus
+          ? "Теперь ваш профиль доступен для студентов"
+          : "Ваш профиль больше не виден студентам",
+        variant: newStatus ? "default" : "destructive",
+      });
+      
+      onPublishStatusChange(newStatus);
+      
+      // Log to console for debugging
+      console.log(`Profile publication status changed to: ${newStatus ? 'published' : 'unpublished'}`);
     } catch (error) {
       console.error("Error toggling publish status:", error);
       toast({

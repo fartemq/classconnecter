@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,6 @@ import {
   School, 
   MapPin, 
   Phone, 
-  FileText,
   BookOpen,
   Target,
   Video,
@@ -34,10 +34,12 @@ import {
 import { StudentProfileDB, StudentProfileUpdate } from "./StudentProfileTypes";
 
 export function ProfileTab() {
-  const { profile, isLoading } = useProfile("student");
+  const { profile, isLoading: profileLoading } = useProfile("student");
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [availableSubjects, setAvailableSubjects] = useState<{id: string, name: string}[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const form = useForm<StudentProfileFormValues>({
     resolver: zodResolver(studentProfileSchema),
@@ -59,17 +61,21 @@ export function ProfileTab() {
   // Загрузка списка доступных предметов
   useEffect(() => {
     const fetchSubjects = async () => {
-      const { data, error } = await supabase
-        .from('subjects')
-        .select('id, name')
-        .eq('is_active', true);
-      
-      if (error) {
+      try {
+        const { data, error } = await supabase
+          .from('subjects')
+          .select('id, name')
+          .eq('is_active', true);
+        
+        if (error) {
+          console.error("Error fetching subjects:", error);
+          return;
+        }
+        
+        setAvailableSubjects(data || []);
+      } catch (error) {
         console.error("Error fetching subjects:", error);
-        return;
       }
-      
-      setAvailableSubjects(data || []);
     };
     
     fetchSubjects();
@@ -77,53 +83,74 @@ export function ProfileTab() {
 
   // Загрузка данных профиля
   useEffect(() => {
-    if (profile) {
-      // Получаем дополнительные данные профиля студента
-      const fetchStudentProfile = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('student_profiles')
-            .select('*')
-            .eq('id', profile.id)
-            .single();
-          
-          if (error && error.code !== 'PGRST116') {
-            console.error("Error fetching student profile:", error);
-            return;
-          }
-          
-          const studentProfile = data as StudentProfileDB | null;
-          
-          form.reset({
-            firstName: profile.first_name || "",
-            lastName: profile.last_name || "",
-            bio: profile.bio || "",
-            city: profile.city || "",
-            phone: profile.phone || "",
-            educationalLevel: (studentProfile?.educational_level as "school" | "university" | "adult") || "school",
-            school: profile.school || "",
-            grade: profile.grade || "",
-            subjects: studentProfile?.subjects || [],
-            learningGoals: studentProfile?.learning_goals || "",
-            preferredFormat: studentProfile?.preferred_format || [],
-          });
-        } catch (err) {
-          console.error("Error in profile fetch:", err);
-        }
-      };
+    const fetchStudentProfile = async () => {
+      if (!profile?.id) return;
       
-      fetchStudentProfile();
-    }
-  }, [profile, form]);
+      try {
+        setIsLoading(true);
+        
+        // Get profile data from student_profiles table
+        const { data: studentProfileData, error: studentProfileError } = await supabase
+          .from('student_profiles')
+          .select('*')
+          .eq('id', profile.id)
+          .maybeSingle();
+        
+        if (studentProfileError && studentProfileError.code !== 'PGRST116') {
+          console.error("Error fetching student profile:", studentProfileError);
+        }
+        
+        // Reset the form with combined data
+        form.reset({
+          firstName: profile.first_name || "",
+          lastName: profile.last_name || "",
+          bio: profile.bio || "",
+          city: profile.city || "",
+          phone: profile.phone || "",
+          educationalLevel: (studentProfileData?.educational_level as "school" | "university" | "adult") || "school",
+          school: studentProfileData?.school || "",
+          grade: studentProfileData?.grade || "",
+          subjects: studentProfileData?.subjects || [],
+          learningGoals: studentProfileData?.learning_goals || "",
+          preferredFormat: studentProfileData?.preferred_format || [],
+        });
+        
+        console.log("Student profile loaded:", {
+          profile,
+          studentProfileData,
+          formValues: form.getValues()
+        });
+      } catch (error) {
+        console.error("Error loading student profile:", error);
+        toast({
+          title: "Ошибка загрузки",
+          description: "Не удалось загрузить данные профиля",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchStudentProfile();
+  }, [profile, form, toast]);
   
-  // Обработчик отправки формы
   const handleSubmit = async (values: StudentProfileFormValues) => {
-    if (!profile) return;
+    if (!profile?.id) {
+      toast({
+        title: "Ошибка",
+        description: "Профиль пользователя не найден",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsSubmitting(true);
     
     try {
-      // Обновляем основные данные в таблице profiles
+      console.log("Submitting student profile:", values);
+      
+      // Update general profile data
       const { error: profileError } = await supabase
         .from("profiles")
         .update({
@@ -132,37 +159,47 @@ export function ProfileTab() {
           bio: values.bio,
           city: values.city,
           phone: values.phone,
-          school: values.school,
-          grade: values.grade,
           updated_at: new Date().toISOString(),
         })
         .eq("id", profile.id);
       
-      if (profileError) throw profileError;
+      if (profileError) {
+        throw new Error(`Failed to update general profile: ${profileError.message}`);
+      }
       
-      // Проверяем существование записи в student_profiles
+      // Check if student profile exists
       const { data: existingProfile, error: checkError } = await supabase
         .from('student_profiles')
         .select('id')
         .eq('id', profile.id)
-        .single();
+        .maybeSingle();
       
-      if (checkError && checkError.code !== 'PGRST116') throw checkError;
+      if (checkError && checkError.code !== 'PGRST116') {
+        throw new Error(`Failed to check student profile: ${checkError.message}`);
+      }
       
-      // Если записи нет, создаем новую, иначе обновляем существующую
+      // If no student profile, create one, otherwise update
       if (!existingProfile) {
+        console.log("Creating new student profile");
+        
         const { error: insertError } = await supabase
           .from('student_profiles')
           .insert({
-            id: profile.id,  // Обязательно указываем id
+            id: profile.id,
             educational_level: values.educationalLevel,
             subjects: values.subjects,
             learning_goals: values.learningGoals,
-            preferred_format: values.preferredFormat
+            preferred_format: values.preferredFormat,
+            school: values.school,
+            grade: values.grade,
           });
         
-        if (insertError) throw insertError;
+        if (insertError) {
+          throw new Error(`Failed to create student profile: ${insertError.message}`);
+        }
       } else {
+        console.log("Updating existing student profile");
+        
         const { error: updateError } = await supabase
           .from('student_profiles')
           .update({
@@ -170,15 +207,21 @@ export function ProfileTab() {
             subjects: values.subjects,
             learning_goals: values.learningGoals,
             preferred_format: values.preferredFormat,
+            school: values.school,
+            grade: values.grade,
+            updated_at: new Date().toISOString(),
           })
           .eq('id', profile.id);
         
-        if (updateError) throw updateError;
+        if (updateError) {
+          throw new Error(`Failed to update student profile: ${updateError.message}`);
+        }
       }
       
       toast({
         title: "Профиль обновлен",
         description: "Данные вашего профиля были успешно обновлены",
+        variant: "default",
       });
       
       navigate("/profile/student");
@@ -186,7 +229,7 @@ export function ProfileTab() {
       console.error("Error updating profile:", error);
       toast({
         title: "Ошибка",
-        description: "Не удалось обновить профиль",
+        description: `Не удалось обновить профиль: ${error instanceof Error ? error.message : "Неизвестная ошибка"}`,
         variant: "destructive",
       });
     } finally {
@@ -194,7 +237,7 @@ export function ProfileTab() {
     }
   };
 
-  if (isLoading) {
+  if (profileLoading || isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
         <Loader size="lg" />
@@ -353,9 +396,13 @@ export function ProfileTab() {
                     <FormControl>
                       <Select
                         disabled={availableSubjects.length === 0}
+                        value={field.value?.[0] || ""}
+                        onValueChange={(value) => {
+                          field.onChange([value]);
+                        }}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Выберите предметы" />
+                          <SelectValue placeholder="Выберите предмет" />
                         </SelectTrigger>
                         <SelectContent>
                           {availableSubjects.map(subject => (
