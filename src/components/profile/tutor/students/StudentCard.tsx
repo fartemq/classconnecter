@@ -33,6 +33,17 @@ export const StudentCard = ({ student, onClick }: StudentCardProps) => {
     return nameParts[0][0].toUpperCase();
   };
 
+  // Ensure status is one of the allowed values
+  const safeStatus = (): "pending" | "accepted" | "rejected" | "completed" => {
+    if (student.status === "pending" || 
+        student.status === "accepted" ||
+        student.status === "rejected" ||
+        student.status === "completed") {
+      return student.status;
+    }
+    return "pending"; // Default value if status is not one of the expected values
+  };
+
   return (
     <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={onClick}>
       <CardContent className="p-4">
@@ -48,7 +59,7 @@ export const StudentCard = ({ student, onClick }: StudentCardProps) => {
           <div className="flex-1">
             <div className="flex items-center justify-between">
               <h3 className="font-medium">{student.name}</h3>
-              <StudentStatusBadge status={student.status} />
+              <StudentStatusBadge status={safeStatus()} />
             </div>
             <p className="text-sm text-gray-500">
               Последняя активность: {student.lastActive}

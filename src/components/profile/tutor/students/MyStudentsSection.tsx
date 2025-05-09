@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { StudentsList } from './StudentsList';
@@ -8,10 +9,6 @@ import { StudentCardData, adaptStudentToCardData } from './types';
 import { Student } from '@/types/student';
 import { createStudentFromRequest } from '@/utils/studentUtils';
 import { useToast } from '@/hooks/use-toast';
-
-interface MyStudentsSectionProps {
-  // Add any props if needed
-}
 
 export const MyStudentsSection = () => {
   const { user } = useAuth();
@@ -41,6 +38,7 @@ export const MyStudentsSection = () => {
           status,
           created_at,
           updated_at,
+          message,
           student:student_id (
             id,
             first_name,
@@ -62,7 +60,8 @@ export const MyStudentsSection = () => {
       const studentsList: Student[] = requestsData?.map(request => 
         createStudentFromRequest({
           ...request,
-          tutor_id: user?.id || ''
+          tutor_id: user?.id || '',
+          message: request.message || null // Ensure message is not undefined
         })
       ) || [];
 
@@ -126,13 +125,10 @@ export const MyStudentsSection = () => {
       
       <StudentTabsFilter
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onResetFilters={() => {
-          setActiveTab('all');
-          setSearchQuery('');
-        }}
+        onSearchChange={handleSearchChange}
+        onResetFilters={handleResetFilters}
       />
       
       <StudentsList 

@@ -10,6 +10,7 @@ import { BookOpen, GraduationCap, School, MapPin, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { StudentCardData } from './types';
+import { ensureObject } from '@/utils/supabaseUtils';
 
 interface StudentContactDialogProps {
   student: StudentCardData;
@@ -71,10 +72,13 @@ export const StudentContactDialog = ({ student, open, onClose, onSubmit }: Stude
       if (error) throw error;
       
       if (data && data.length > 0) {
-        const formattedSubjects = data.map(item => ({
-          id: item.subject_id,
-          name: item.subjects?.name || 'Неизвестный предмет'
-        }));
+        const formattedSubjects = data.map(item => {
+          const subject = ensureObject(item.subjects);
+          return {
+            id: subject.id || item.subject_id,
+            name: subject.name || 'Неизвестный предмет'
+          };
+        });
         
         setSubjects(formattedSubjects);
         

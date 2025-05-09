@@ -30,7 +30,7 @@ export interface TutorRequest {
   id: string;
   tutor_id: string;
   student_id: string;
-  subject_id?: string | null; // Made optional to match ComponentTutorRequest
+  subject_id?: string | null; // Made optional to match usage patterns
   message?: string | null;
   status: 'pending' | 'accepted' | 'rejected' | 'completed';
   created_at: string;
@@ -54,7 +54,7 @@ export interface StudentRequest {
   student_id: string;
   tutor_id: string;
   subject_id: string | null;
-  message: string | null;
+  message: string | null; // Required based on error
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   updated_at?: string;

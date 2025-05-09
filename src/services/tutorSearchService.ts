@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ensureObject } from "@/utils/supabaseUtils";
 
@@ -29,16 +28,16 @@ export interface TutorSearchFilters {
 }
 
 /**
- * Checks if a tutor has added any subjects to their profile
- * @param tutorId The ID of the tutor to check
- * @returns A boolean indicating whether the tutor has added any subjects
+ * Check if tutor has added any subjects
+ * @param tutorId - Tutor's ID
+ * @returns Promise<boolean> - Whether the tutor has added subjects
  */
 export const hasTutorAddedSubjects = async (tutorId: string): Promise<boolean> => {
   try {
-    const { data, error, count } = await supabase
-      .from("tutor_subjects")
-      .select("id", { count: "exact" })
-      .eq("tutor_id", tutorId)
+    const { data, error } = await supabase
+      .from('tutor_subjects')
+      .select('id')
+      .eq('tutor_id', tutorId)
       .limit(1);
     
     if (error) {
@@ -46,9 +45,9 @@ export const hasTutorAddedSubjects = async (tutorId: string): Promise<boolean> =
       return false;
     }
     
-    return count ? count > 0 : false;
-  } catch (error) {
-    console.error("Error in hasTutorAddedSubjects:", error);
+    return data && data.length > 0;
+  } catch (err) {
+    console.error("Exception checking tutor subjects:", err);
     return false;
   }
 };

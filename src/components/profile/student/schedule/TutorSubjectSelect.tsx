@@ -8,7 +8,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface TutorSubjectSelectProps {
+export interface TutorSubjectSelectProps {
   subjects: Array<{id: string, name: string}>;
   selectedSubject: string;
   onSubjectChange: (subject: string) => void;

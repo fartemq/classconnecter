@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs } from "@/components/ui/tabs";
-import { Filter, Calendar } from "lucide-react";
+import { Filter } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTutorRequests } from "@/hooks/useTutorRequests";
 import { RequestTabs } from './tutor-requests/RequestTabs';
@@ -14,7 +14,6 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { TutorRequest } from '@/types/student';
 
 export const TutorRequestsSection = () => {
   const { user } = useAuth();
@@ -23,16 +22,13 @@ export const TutorRequestsSection = () => {
   
   const { 
     isLoading,
-    tutorRequests: apiTutorRequests,
+    tutorRequests,
     activeTab,
     setActiveTab,
     updateRequestStatus,
     getStatusCount,
     subjects
   } = useTutorRequests(user?.id);
-  
-  // The tutorRequests from the API match our TutorRequest type
-  const tutorRequests = apiTutorRequests;
   
   // Filter requests by subject if needed
   const filteredRequests = filterSubject 

@@ -1,27 +1,30 @@
 
-import React from "react";
-import { Button } from "@/components/ui/button";
-import { RefreshCw, Search } from "lucide-react";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 
 export interface EmptySearchResultsProps {
-  onFindNewStudents: () => void;
+  searchQuery: string;
+  onReset: () => void;
 }
 
-export const EmptySearchResults = ({ onFindNewStudents }: EmptySearchResultsProps) => {
+export const EmptySearchResults = ({ searchQuery, onReset }: EmptySearchResultsProps) => {
   return (
-    <div className="text-center py-12 px-4 bg-gray-50 rounded-lg border border-gray-200">
-      <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gray-100 mb-4">
-        <Search className="h-6 w-6 text-gray-500" />
+    <div className="text-center py-10">
+      <div className="bg-slate-50 rounded-lg p-6">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+          <Search className="h-6 w-6 text-slate-600" />
+        </div>
+        <h3 className="mt-3 text-lg font-medium">Нет результатов</h3>
+        <p className="mt-2 text-sm text-gray-500">
+          По запросу "{searchQuery}" ничего не найдено. Попробуйте изменить критерии поиска.
+        </p>
+        <div className="mt-4">
+          <Button onClick={onReset} variant="outline">
+            Сбросить поиск
+          </Button>
+        </div>
       </div>
-      <h3 className="text-lg font-medium mb-2">Ученики не найдены</h3>
-      <p className="text-gray-500 mb-6 max-w-md mx-auto">
-        По вашему запросу не найдено ни одного ученика.
-        Попробуйте изменить параметры поиска или проверьте позже.
-      </p>
-      <Button variant="outline" onClick={onFindNewStudents}>
-        <RefreshCw className="h-4 w-4 mr-2" />
-        Обновить поиск
-      </Button>
     </div>
   );
 };

@@ -7,11 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { addDays } from "date-fns";
 import { ru } from "date-fns/locale";
 
-interface CalendarSidebarProps {
+export interface CalendarSidebarProps {
   date: Date | undefined;
   setDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
   selectedTutorId: string;
-  setSelectedTutorId: React.Dispatch<React.SetStateAction<string>>;
+  setSelectedTutorId: (id: string) => void;
   tutors: Array<{id: string; name: string}>;
 }
 

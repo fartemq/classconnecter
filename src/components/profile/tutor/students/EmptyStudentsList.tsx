@@ -1,27 +1,31 @@
 
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Users, Clock } from "lucide-react";
+import React from 'react';
+import { Button } from '@/components/ui/button';
+import { Search } from 'lucide-react';
 
-interface EmptyStudentsListProps {
-  onCheckRequests: () => void;
+export interface EmptyStudentsListProps {
+  onCheckRequests?: () => void; // Make it optional
 }
 
 export const EmptyStudentsList = ({ onCheckRequests }: EmptyStudentsListProps) => {
   return (
-    <Card className="border border-dashed">
-      <CardContent className="text-center py-10">
-        <Users className="h-12 w-12 mx-auto text-gray-400 mb-4" />
-        <h3 className="text-xl font-medium text-gray-700 mb-2">Нет учеников</h3>
-        <p className="text-gray-500 mb-4">
-          У вас пока нет учеников. Добавьте новых учеников через раздел "Поиск учеников".
+    <div className="text-center py-10">
+      <div className="bg-slate-50 rounded-lg p-6">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+          <Search className="h-6 w-6 text-slate-600" />
+        </div>
+        <h3 className="mt-3 text-lg font-medium">У вас пока нет учеников</h3>
+        <p className="mt-2 text-sm text-gray-500">
+          Начните поиск учеников или дождитесь, пока они сами пришлют вам запрос.
         </p>
-        <Button onClick={onCheckRequests}>
-          <Clock className="mr-2 h-4 w-4" />
-          Проверить запросы
-        </Button>
-      </CardContent>
-    </Card>
+        {onCheckRequests && (
+          <div className="mt-4">
+            <Button onClick={onCheckRequests} variant="outline">
+              Проверить запросы
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 };

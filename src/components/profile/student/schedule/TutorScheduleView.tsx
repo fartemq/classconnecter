@@ -113,8 +113,8 @@ export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) 
           {/* Left sidebar */}
           <div className="md:w-1/3 p-4 border-r overflow-y-auto">
             <CalendarSidebar 
-              selectedDate={selectedDate} 
-              onDateChange={handleDateChange}
+              date={selectedDate} 
+              setDate={setSelectedDate}
               selectedTutorId={tutorId}
               setSelectedTutorId={handleSetSelectedTutor}
               tutors={tutors}
@@ -122,9 +122,9 @@ export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) 
             
             <div className="mt-6">
               <TutorSubjectSelect
-                subjectOptions={subjects}
-                selectedSubjectId={selectedSubjectId}
-                onChange={handleSubjectChange}
+                subjects={subjects}
+                selectedSubject={selectedSubjectId}
+                onSubjectChange={handleSubjectChange}
               />
             </div>
           </div>
@@ -133,8 +133,11 @@ export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) 
           <div className="flex-1 overflow-y-auto">
             <AvailableSlots 
               tutorId={tutorId}
-              selectedDate={selectedDate}
+              date={selectedDate}
               selectedSubjectId={selectedSubjectId}
+              slots={[]} // Pass empty array as we'll fetch slots inside the component
+              bookingSlot={null}
+              onBookSlot={() => {}} // Empty function as we'll handle this inside
             />
           </div>
         </div>
