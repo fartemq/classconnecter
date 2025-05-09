@@ -1,5 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
+import { ensureSingleObject } from "@/utils/supabaseUtils";
 
 /**
  * Save subjects for a tutor
