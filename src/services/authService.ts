@@ -49,6 +49,19 @@ export const registerUser = async (userData: RegisterUserData) => {
     
     console.log("User created successfully:", authData.user.id);
 
+    // Sign in immediately after registration to get a valid session for RLS policies
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email: userData.email,
+      password: userData.password,
+    });
+
+    if (signInError) {
+      console.error("Error signing in after registration:", signInError);
+      // Continue anyway since the user was created
+    } else {
+      console.log("User signed in after registration");
+    }
+
     // Create profile in profiles table with extended information
     const { error: profileError } = await supabase.from("profiles").insert({
       id: authData.user.id,
@@ -88,7 +101,24 @@ export const registerUser = async (userData: RegisterUserData) => {
       }
     }
 
-    return { user: authData.user, session: authData.session };
+    // For student, create a record in student_profiles table
+    if (userData.role === "student") {
+      const { error: studentProfileError } = await supabase.from("student_profiles").insert({
+        id: authData.user.id,
+        educational_level: null,
+        subjects: [],
+        budget: null
+      });
+
+      if (studentProfileError) {
+        console.error("Error creating student profile:", studentProfileError);
+        // Don't throw an error since the main profile was already created
+      } else {
+        console.log("Student profile created successfully");
+      }
+    }
+
+    return { user: authData.user, session: signInData?.session || authData.session };
   } catch (error) {
     console.error("Registration error:", error);
     throw error;

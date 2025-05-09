@@ -81,6 +81,9 @@ const RegisterPage = () => {
         email: values.email,
         password: values.password,
         role: values.role,
+        city: values.city,
+        phone: values.phone,
+        bio: values.bio,
       });
 
       console.log("Registration successful:", result);
