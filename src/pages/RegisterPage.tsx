@@ -1,7 +1,8 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import { LoadingScreen } from "@/components/auth/LoadingScreen";
 import { toast } from "@/hooks/use-toast";
 import {
   Card,
@@ -11,17 +12,17 @@ import {
   CardTitle,
   CardFooter,
 } from "@/components/ui/card";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { RegisterFormValues } from "@/components/auth/register-form-schema";
 import { registerUser } from "@/services/auth";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader } from "@/components/ui/loader";
 import { EmailConfirmationStatus } from "@/components/auth/EmailConfirmationStatus";
+import { useAuth } from "@/hooks/auth";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const [defaultRole, setDefaultRole] = useState<"student" | "tutor" | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
@@ -33,15 +34,13 @@ const RegisterPage = () => {
     const checkSession = async () => {
       try {
         setCheckingSession(true);
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
+        if (user) {
           // Already logged in, redirect to profile
           try {
             const { data } = await supabase
               .from("profiles")
               .select("role")
-              .eq("id", session.user.id)
+              .eq("id", user.id)
               .maybeSingle();
               
             if (data?.role === "tutor") {
@@ -63,7 +62,7 @@ const RegisterPage = () => {
     };
     
     checkSession();
-  }, [navigate]);
+  }, [navigate, user]);
 
   // Get role from URL parameters if specified
   useEffect(() => {
@@ -159,62 +158,47 @@ const RegisterPage = () => {
   
   if (checkingSession) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow flex items-center justify-center bg-gray-50 py-12">
-          <div className="text-center">
-            <Loader size="lg" />
-            <p className="mt-4 text-gray-600">Проверка сессии...</p>
-          </div>
-        </main>
-        <Footer />
-      </div>
+      <AuthLayout>
+        <LoadingScreen />
+      </AuthLayout>
     );
   }
 
   if (showConfirmEmail) {
     return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow flex items-center justify-center bg-gray-50 py-12">
-          <EmailConfirmationStatus
-            email={registeredEmail}
-            status="pending"
-            onResend={handleResendConfirmation}
-          />
-        </main>
-        <Footer />
-      </div>
+      <AuthLayout>
+        <EmailConfirmationStatus
+          email={registeredEmail}
+          status="pending"
+          onResend={handleResendConfirmation}
+        />
+      </AuthLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-grow flex items-center justify-center bg-gray-50 py-12">
-        <Card className="w-full max-w-md mx-auto">
-          <CardHeader>
-            <CardTitle className="text-2xl font-bold">Регистрация</CardTitle>
-            <CardDescription>
-              Создайте аккаунт для использования платформы Stud.rep
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <RegisterForm 
-              onSuccess={handleRegisterSuccess} 
-              defaultRole={defaultRole} 
-              isLoading={isLoading} 
-            />
-          </CardContent>
-          <CardFooter className="flex-col text-center">
-            <p className="text-sm text-muted-foreground">
-              После регистрации вам необходимо подтвердить email перед входом в систему
-            </p>
-          </CardFooter>
-        </Card>
-      </main>
-      <Footer />
-    </div>
+    <AuthLayout>
+      <Card className="w-full max-w-md mx-auto">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold">Регистрация</CardTitle>
+          <CardDescription>
+            Создайте аккаунт для использования платформы Stud.rep
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RegisterForm 
+            onSuccess={handleRegisterSuccess} 
+            defaultRole={defaultRole} 
+            isLoading={isLoading} 
+          />
+        </CardContent>
+        <CardFooter className="flex-col text-center">
+          <p className="text-sm text-muted-foreground">
+            После регистрации вам необходимо подтвердить email перед входом в систему
+          </p>
+        </CardFooter>
+      </Card>
+    </AuthLayout>
   );
 };
 
