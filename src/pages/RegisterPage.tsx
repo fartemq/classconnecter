@@ -28,6 +28,7 @@ const RegisterPage = () => {
   const [checkingSession, setCheckingSession] = useState(true);
   const [showConfirmEmail, setShowConfirmEmail] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
+  const [registeredRole, setRegisteredRole] = useState<"student" | "tutor" | undefined>(undefined);
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -44,8 +45,10 @@ const RegisterPage = () => {
               .maybeSingle();
               
             if (data?.role === "tutor") {
+              console.log("RegisterPage: Redirecting to tutor profile");
               navigate("/profile/tutor");
             } else {
+              console.log("RegisterPage: Redirecting to student profile");
               navigate("/profile/student");
             }
           } catch (error) {
@@ -70,8 +73,8 @@ const RegisterPage = () => {
     const role = params.get("role");
     
     if (role === "student" || role === "tutor") {
+      console.log("RegisterPage: Setting default role from URL:", role);
       setDefaultRole(role);
-      console.log("Setting default role from URL:", role);
     }
   }, [location]);
 
@@ -115,6 +118,9 @@ const RegisterPage = () => {
       const role = values.role || defaultRole || "student";
       console.log("Using role for registration:", role);
       
+      // Save role for redirect after email confirmation
+      setRegisteredRole(role);
+      
       // Register user with all provided data
       const result = await registerUser({
         firstName: values.firstName,
@@ -139,8 +145,10 @@ const RegisterPage = () => {
       } else {
         // Automatically redirect based on role
         if (role === "tutor") {
+          console.log("RegisterPage: Redirecting to tutor profile after successful registration");
           navigate("/profile/tutor/complete");
         } else {
+          console.log("RegisterPage: Redirecting to student profile after successful registration");
           navigate("/profile/student");
         }
       }
@@ -171,6 +179,7 @@ const RegisterPage = () => {
           email={registeredEmail}
           status="pending"
           onResend={handleResendConfirmation}
+          role={registeredRole}
         />
       </AuthLayout>
     );

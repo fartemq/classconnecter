@@ -1,69 +1,90 @@
 
-import React from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Mail, AlertCircle, CheckCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import React from "react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { MailCheck, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
-type EmailConfirmationStatusProps = {
-  email?: string;
-  status: 'pending' | 'confirmed' | 'error';
-  message?: string;
+interface EmailConfirmationStatusProps {
+  email: string;
+  status: "pending" | "confirmed";
   onResend?: () => void;
-};
+  isResending?: boolean;
+  role?: "student" | "tutor";
+}
 
-export const EmailConfirmationStatus = ({ 
-  email, 
-  status, 
-  message,
-  onResend 
-}: EmailConfirmationStatusProps) => {
+export const EmailConfirmationStatus: React.FC<EmailConfirmationStatusProps> = ({
+  email,
+  status,
+  onResend,
+  isResending = false,
+  role
+}) => {
+  const getProfileUrl = () => {
+    if (role === "tutor") {
+      return "/profile/tutor/complete";
+    }
+    return "/profile/student";
+  };
+  
   return (
     <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="text-center">
-        <CardTitle className="text-xl font-bold">
-          {status === 'pending' && 'Подтверждение Email'}
-          {status === 'confirmed' && 'Email подтвержден'}
-          {status === 'error' && 'Ошибка подтверждения'}
+      <CardHeader>
+        <CardTitle className="text-2xl font-bold flex items-center gap-2">
+          <MailCheck className="text-primary h-6 w-6" />
+          Подтверждение Email
         </CardTitle>
-        <CardDescription>
-          {status === 'pending' && `Мы отправили письмо для подтверждения на ${email || 'ваш email'}`}
-          {status === 'confirmed' && 'Ваш email успешно подтвержден'}
-          {status === 'error' && (message || 'Произошла ошибка при подтверждении email')}
-        </CardDescription>
       </CardHeader>
-      <CardContent className="flex flex-col items-center space-y-4">
-        <div className="rounded-full bg-primary/10 w-20 h-20 flex items-center justify-center mb-4">
-          {status === 'pending' && <Mail className="h-10 w-10 text-primary" />}
-          {status === 'confirmed' && <CheckCircle className="h-10 w-10 text-green-500" />}
-          {status === 'error' && <AlertCircle className="h-10 w-10 text-red-500" />}
-        </div>
-        
-        {status === 'pending' && (
-          <>
-            <div className="text-center text-sm text-gray-600 mb-4">
-              <p>Проверьте вашу почту и нажмите на ссылку в письме для подтверждения.</p>
-              <p className="mt-2">Не получили письмо?</p>
-            </div>
-            {onResend && (
-              <Button variant="outline" onClick={onResend} className="mt-2">
-                Отправить письмо повторно
-              </Button>
+      <CardContent className="space-y-4">
+        <Alert>
+          <AlertTitle className="font-semibold">
+            {status === "pending" ? "Требуется подтверждение" : "Email подтвержден"}
+          </AlertTitle>
+          <AlertDescription>
+            {status === "pending" ? (
+              <>
+                Мы отправили письмо с подтверждением на <strong>{email}</strong>. 
+                Пожалуйста, проверьте вашу почту и следуйте инструкциям для завершения регистрации.
+              </>
+            ) : (
+              <>
+                Ваш email успешно подтвержден! Теперь вы можете войти в систему.
+              </>
             )}
-          </>
-        )}
-        
-        {status === 'confirmed' && (
-          <Link to="/login">
-            <Button>Войти в аккаунт</Button>
-          </Link>
-        )}
-        
-        {status === 'error' && (
-          <Link to="/register">
-            <Button variant="outline">Вернуться к регистрации</Button>
-          </Link>
-        )}
+          </AlertDescription>
+        </Alert>
+
+        <div className="flex flex-col gap-3">
+          {status === "pending" && onResend && (
+            <Button 
+              variant="outline" 
+              onClick={onResend}
+              disabled={isResending}
+            >
+              {isResending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Отправка...
+                </>
+              ) : (
+                "Отправить письмо еще раз"
+              )}
+            </Button>
+          )}
+
+          {status === "confirmed" && (
+            <Button asChild>
+              <Link to={getProfileUrl()}>
+                Перейти в профиль
+              </Link>
+            </Button>
+          )}
+
+          <div className="text-center text-sm text-gray-500 mt-2">
+            После подтверждения email, вы будете перенаправлены в личный кабинет {role === "tutor" ? "репетитора" : "ученика"}.
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

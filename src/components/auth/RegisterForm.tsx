@@ -20,6 +20,10 @@ export interface RegisterFormProps {
 
 export function RegisterForm({ onSuccess, defaultRole, isLoading = false }: RegisterFormProps) {
   const [activeTab, setActiveTab] = useState<string>("basic");
+  
+  // Установим роль по умолчанию с учетом props
+  const initialRole = defaultRole || "student";
+  console.log("RegisterForm: Initial role:", initialRole);
 
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerFormSchema),
@@ -29,25 +33,20 @@ export function RegisterForm({ onSuccess, defaultRole, isLoading = false }: Regi
       email: "",
       password: "",
       confirmPassword: "",
-      role: defaultRole || "student",
+      role: initialRole,
       city: "",
       phone: "",
       bio: "",
     },
   });
   
-  // Update role value if defaultRole changes
+  // При изменении defaultRole, обновляем значение в форме
   useEffect(() => {
     if (defaultRole) {
       form.setValue("role", defaultRole);
+      console.log("RegisterForm: Updated role from props:", defaultRole);
     }
   }, [defaultRole, form]);
-
-  // Log the current role for debugging
-  const currentRole = form.watch("role");
-  useEffect(() => {
-    console.log("Current role in form:", currentRole);
-  }, [currentRole]);
 
   async function onSubmit(values: RegisterFormValues) {
     console.log("Form submitted with values:", values);
@@ -69,19 +68,19 @@ export function RegisterForm({ onSuccess, defaultRole, isLoading = false }: Regi
           </TabsList>
           
           <TabsContent value="basic" className="space-y-4">
-            <RoleToggle form={form} />
+            <RoleToggle form={form} defaultRole={defaultRole} />
             <PersonalDetailsFields form={form} />
             <CredentialsFields form={form} />
           </TabsContent>
           
           <TabsContent value="additional" className="space-y-4">
             <LocationFields form={form} />
-            {currentRole === "student" && (
+            {form.watch("role") === "student" && (
               <div className="text-sm text-gray-500 italic">
                 Дополнительные поля профиля ученика будут доступны после регистрации
               </div>
             )}
-            {currentRole === "tutor" && (
+            {form.watch("role") === "tutor" && (
               <div className="text-sm text-gray-500 italic">
                 Информация о предметах и образовании будет заполнена после регистрации
               </div>

@@ -29,9 +29,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // If user exists, get their role in a separate process to avoid deadlocks
             if (currentSession?.user) {
               setTimeout(async () => {
-                const role = await fetchUserRole(currentSession.user);
-                setUserRole(role);
-                console.log("Set user role to:", role);
+                try {
+                  const role = await fetchUserRole(currentSession.user);
+                  setUserRole(role);
+                  console.log("Set user role to:", role);
+                } catch (error) {
+                  console.error("Error fetching user role:", error);
+                }
               }, 0);
             } else {
               setUserRole(null);
@@ -46,9 +50,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // If there's an existing session, get the user role
         if (existingSession?.user) {
-          const role = await fetchUserRole(existingSession.user);
-          setUserRole(role);
-          console.log("Initial user role set to:", role);
+          try {
+            const role = await fetchUserRole(existingSession.user);
+            setUserRole(role);
+            console.log("Initial user role set to:", role);
+          } catch (error) {
+            console.error("Error fetching initial user role:", error);
+          }
         }
 
         setIsLoading(false);

@@ -23,9 +23,31 @@ export const fetchUserRole = async (user: User | null): Promise<string | null> =
     }
     
     // If profile exists, return role
-    if (data) {
+    if (data && data.role) {
       console.log("User role found:", data.role);
       return data.role;
+    }
+    
+    // If profile exists but role is null, check metadata
+    if (data && !data.role) {
+      // Try to get role from metadata
+      const metadataRole = user.user_metadata?.role;
+      
+      if (metadataRole) {
+        console.log("Using role from metadata:", metadataRole);
+        
+        // Update profile with role from metadata
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ role: metadataRole })
+          .eq("id", user.id);
+          
+        if (updateError) {
+          console.error("Error updating profile with role from metadata:", updateError);
+        }
+        
+        return metadataRole;
+      }
     }
     
     // If no profile exists yet, create one with default role based on user metadata
