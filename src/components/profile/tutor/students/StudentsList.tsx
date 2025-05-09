@@ -9,9 +9,10 @@ interface StudentsListProps {
   students: StudentCardData[];
   isLoading: boolean;
   onStudentClick: (studentId: string) => void;
+  onCheckRequests?: () => void; // Made optional to support both use cases
 }
 
-export const StudentsList = ({ students, isLoading, onStudentClick }: StudentsListProps) => {
+export const StudentsList = ({ students, isLoading, onStudentClick, onCheckRequests }: StudentsListProps) => {
   if (isLoading) {
     return (
       <div className="py-12 flex justify-center">
@@ -21,7 +22,7 @@ export const StudentsList = ({ students, isLoading, onStudentClick }: StudentsLi
   }
 
   if (students.length === 0) {
-    return <EmptyStudentsList />;
+    return <EmptyStudentsList onCheckRequests={onCheckRequests} />;
   }
 
   return (

@@ -1,10 +1,10 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Search } from 'lucide-react';
+import { Users } from 'lucide-react';
 
 export interface EmptyStudentsListProps {
-  onCheckRequests?: () => void; // Make it optional
+  onCheckRequests?: () => void;
 }
 
 export const EmptyStudentsList = ({ onCheckRequests }: EmptyStudentsListProps) => {
@@ -12,11 +12,11 @@ export const EmptyStudentsList = ({ onCheckRequests }: EmptyStudentsListProps) =
     <div className="text-center py-10">
       <div className="bg-slate-50 rounded-lg p-6">
         <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-          <Search className="h-6 w-6 text-slate-600" />
+          <Users className="h-6 w-6 text-slate-600" />
         </div>
         <h3 className="mt-3 text-lg font-medium">У вас пока нет учеников</h3>
         <p className="mt-2 text-sm text-gray-500">
-          Начните поиск учеников или дождитесь, пока они сами пришлют вам запрос.
+          Ваш список учеников пуст. Вы можете найти новых учеников в разделе поиска или проверить запросы от учеников.
         </p>
         {onCheckRequests && (
           <div className="mt-4">

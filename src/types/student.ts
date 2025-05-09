@@ -54,20 +54,20 @@ export interface StudentRequest {
   student_id: string;
   tutor_id: string;
   subject_id: string | null;
-  message: string | null; // Required based on error
+  message: string | null;
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   updated_at?: string;
-  student?: {
+  student: {
     id: string;
     first_name: string;
     last_name: string | null;
     avatar_url: string | null;
     role: string;
     city: string | null;
-  } | { id: any; first_name: any; last_name: any; avatar_url: any; city: any; }; // Добавляем альтернативный тип для совместимости
+  } | { id: any; first_name: any; last_name: any; avatar_url: any; city: any; }; // Added alternative type for compatibility
   subject?: {
     id: string;
     name: string;
-  } | { id: any; name: any; }; // Добавляем альтернативный тип для совместимости
+  } | { id: any; name: any; }; // Added alternative type for compatibility
 }
