@@ -1,4 +1,3 @@
-
 import { Heart, MessageSquare, Star, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
@@ -25,7 +24,7 @@ export function TutorCard({ tutor }: TutorCardProps) {
 
   // Get lowest hourly rate from all subjects
   const lowestRate = tutor.subjects.length > 0
-    ? Math.min(...tutor.subjects.map(s => s.hourly_rate))
+    ? Math.min(...tutor.subjects.map(s => s.hourlyRate))
     : 0;
 
   // Format full name

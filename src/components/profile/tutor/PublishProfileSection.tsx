@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -145,7 +144,7 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
         )}
 
         {validationResult.isValid && validationResult.warnings.length > 0 && (
-          <Alert variant="warning" className="bg-amber-50 border-amber-200">
+          <Alert variant="default" className="bg-amber-50 border-amber-200">
             <AlertCircle className="h-4 w-4 text-amber-500" />
             <AlertTitle className="text-amber-800">Рекомендации по улучшению профиля</AlertTitle>
             <AlertDescription className="text-amber-700">

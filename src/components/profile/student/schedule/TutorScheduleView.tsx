@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -21,7 +20,7 @@ interface TutorScheduleViewProps {
 export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, onClose }) => {
   const [date, setDate] = useState<Date>(addDays(new Date(), 1));
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
-  const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
+  const [subjects, setSubjects] = useState<Array<{ id: string; name: string }>>([]);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [isBooking, setIsBooking] = useState(false);
   const { availableSlots, loading, refreshSlots } = useTutorSlots(tutorId, date);
@@ -43,6 +42,7 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
         if (error) throw error;
         
         if (data) {
+          // Properly map the data to match the expected type
           const formattedSubjects = data.map(item => {
             const subject = item.subjects as { id: string; name: string };
             return {
@@ -65,6 +65,7 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
     
     fetchSubjects();
   }, [tutorId, selectedSubject]);
+  
   
   const handleDateChange = (newDate: Date | undefined) => {
     if (!newDate) return;
