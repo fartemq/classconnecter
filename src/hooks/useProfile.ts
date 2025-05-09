@@ -27,7 +27,7 @@ export interface Profile {
 export const useProfile = (requiredRole?: string) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -57,7 +57,49 @@ export const useProfile = (requiredRole?: string) => {
           .from("profiles")
           .select("*")
           .eq("id", user.id)
-          .single();
+          .maybeSingle(); // Use maybeSingle instead of single to handle missing profiles
+        
+        // If profile doesn't exist yet, create a basic one
+        if (!profileData && !profileError) {
+          console.log("Profile not found, creating basic profile");
+          
+          const defaultRole = requiredRole || "student";
+          const { data: newProfileData, error: insertError } = await supabase
+            .from("profiles")
+            .insert([
+              { 
+                id: user.id, 
+                role: defaultRole,
+                first_name: user.user_metadata?.first_name || 'User',
+                last_name: user.user_metadata?.last_name || '',
+                created_at: new Date().toISOString()
+              }
+            ])
+            .select("*")
+            .single();
+            
+          if (insertError) {
+            console.error("Error creating profile:", insertError);
+            if (isMounted) {
+              toast({
+                title: "Ошибка профиля",
+                description: "Не удалось создать базовый профиль",
+                variant: "destructive",
+              });
+              navigate("/login");
+            }
+            return;
+          }
+          
+          if (newProfileData) {
+            console.log("Created new profile:", newProfileData);
+            if (isMounted) {
+              setProfile(newProfileData as Profile);
+              setIsLoading(false);
+            }
+            return;
+          }
+        }
         
         if (profileError) {
           console.error("Profile error:", profileError);
@@ -86,7 +128,32 @@ export const useProfile = (requiredRole?: string) => {
             .eq("id", user.id)
             .maybeSingle();
           
-          if (!tutorProfileError && tutorProfileData) {
+          if (!tutorProfileData && !tutorProfileError) {
+            console.log("Tutor profile not found, creating basic one");
+            
+            // Create a basic tutor profile if none exists
+            const { error: tutorInsertError } = await supabase
+              .from("tutor_profiles")
+              .insert([{ 
+                id: user.id,
+                is_published: false,
+                experience: 0,
+                graduation_year: new Date().getFullYear()
+              }]);
+              
+            if (tutorInsertError) {
+              console.error("Error creating tutor profile:", tutorInsertError);
+            } else {
+              // Refetch the newly created tutor profile
+              const { data: newTutorData } = await supabase
+                .from("tutor_profiles")
+                .select("*")
+                .eq("id", user.id)
+                .maybeSingle();
+                
+              tutorData = newTutorData;
+            }
+          } else if (!tutorProfileError) {
             tutorData = tutorProfileData;
           }
         }
@@ -140,7 +207,7 @@ export const useProfile = (requiredRole?: string) => {
     return () => {
       isMounted = false;
     };
-  }, [navigate, requiredRole, user]);
+  }, [navigate, requiredRole, user, userRole]);
 
   return { profile, isLoading };
 };

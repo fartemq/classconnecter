@@ -51,28 +51,13 @@ const LoginPage = () => {
       
       if (error) throw error;
       
-      if (data?.session) {
-        // Получаем роль пользователя
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", data.session.user.id)
-          .single();
-          
-        const role = profileData?.role || "student";
-        
-        toast({
-          title: "Успешный вход",
-          description: "Добро пожаловать в Stud.rep!",
-        });
-        
-        // Перенаправляем на основе роли
-        if (role === "tutor") {
-          navigate("/profile/tutor");
-        } else {
-          navigate("/profile/student");
-        }
-      }
+      toast({
+        title: "Успешный вход",
+        description: "Добро пожаловать в Stud.rep!",
+      });
+      
+      // No need to redirect here - the useEffect with user and userRole dependencies will handle that
+      
     } catch (error) {
       console.error("Login error:", error);
       toast({
@@ -128,6 +113,7 @@ const LoginPage = () => {
               isLoading={isLoading}
               setIsLoading={setIsLoading}
               setLoginAttempted={setLoginAttempted}
+              needConfirmation={needConfirmation}
             />
           </CardContent>
           
