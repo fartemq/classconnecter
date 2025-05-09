@@ -34,7 +34,7 @@ interface RequestCardProps {
   tutor: Tutor;
   subject?: Subject;
   status: 'pending' | 'accepted' | 'rejected' | 'completed';
-  message: string | null;
+  message?: string | null; // Changed from required to optional
   created_at: string;
   tutor_id: string;
   onUpdateStatus: (requestId: string, status: 'accepted' | 'rejected' | 'completed') => void;
