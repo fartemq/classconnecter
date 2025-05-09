@@ -17,12 +17,42 @@ import { Loader } from "@/components/ui/loader";
 import { useLocation, useNavigate } from "react-router-dom";
 import { TutorAboutTab } from "@/components/profile/tutor/TutorAboutTab";
 import { TutorProfileSettingsTab } from "@/components/profile/tutor/TutorProfileSettingsTab";
+import { TutorProfile } from "@/types/tutor";
+import { Profile } from "@/hooks/profiles/types";
+
+// Helper function to convert Profile to TutorProfile
+const convertProfileToTutorProfile = (profile: Profile): TutorProfile => {
+  return {
+    id: profile.id,
+    firstName: profile.first_name || "",
+    lastName: profile.last_name || "",
+    bio: profile.bio || "",
+    city: profile.city || "",
+    avatarUrl: profile.avatar_url || undefined,
+    subjects: [], // This would need to be populated from a separate fetch
+    educationInstitution: profile.education_institution || undefined,
+    degree: profile.degree || undefined,
+    graduationYear: profile.graduation_year || undefined,
+    experience: profile.experience || undefined,
+    methodology: profile.methodology || undefined,
+    educationVerified: false,
+    isPublished: false
+  };
+};
 
 const TutorProfilePage = () => {
   const { profile, isLoading } = useProfile("tutor");
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
+
+  // Convert profile to tutorProfile
+  useEffect(() => {
+    if (profile) {
+      setTutorProfile(convertProfileToTutorProfile(profile));
+    }
+  }, [profile]);
 
   // Get tab from URL query parameter
   useEffect(() => {
@@ -37,7 +67,7 @@ const TutorProfilePage = () => {
     }
   }, [location.search, navigate]);
 
-  if (isLoading) {
+  if (isLoading || !tutorProfile) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -51,27 +81,25 @@ const TutorProfilePage = () => {
 
   // Function to render the active tab content
   const renderTabContent = () => {
-    if (!profile) return null;
-    
     switch (activeTab) {
       case "dashboard":
-        return <TutorDashboard profile={profile} />;
+        return <TutorDashboard profile={tutorProfile} />;
       case "profile":
-        return <TutorProfileSettingsTab profile={profile} />;
+        return <TutorProfileSettingsTab profile={tutorProfile} />;
       case "schedule":
-        return <AdvancedScheduleTab tutorId={profile.id} />;
+        return <AdvancedScheduleTab tutorId={tutorProfile.id} />;
       case "students":
         return <StudentsTab />;
       case "chats":
         return <ChatsTab />;
       case "stats":
-        return <AdvancedStatsTab tutorId={profile.id} />;
+        return <AdvancedStatsTab tutorId={tutorProfile.id} />;
       case "settings":
-        return <TutorSettingsTab profile={profile} />;
+        return <TutorSettingsTab profile={tutorProfile} />;
       case "materials":
-        return <MaterialsTab tutorId={profile.id} />;
+        return <MaterialsTab tutorId={tutorProfile.id} />;
       default:
-        return <TutorDashboard profile={profile} />;
+        return <TutorDashboard profile={tutorProfile} />;
     }
   };
 

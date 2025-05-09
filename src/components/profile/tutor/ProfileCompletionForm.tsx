@@ -122,6 +122,27 @@ export const ProfileCompletionForm = ({
     }
   };
 
+  // Function to render video preview
+  const renderVideoPreview = (url: string | undefined) => {
+    if (!url) return null;
+    
+    return (
+      <div className="mt-2">
+        <p className="text-sm text-gray-500 mb-2">Предпросмотр видео:</p>
+        <div className="aspect-video">
+          <iframe 
+            width="100%" 
+            height="100%" 
+            src={url.replace("watch?v=", "embed/")} 
+            frameBorder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowFullScreen
+          ></iframe>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
@@ -395,25 +416,10 @@ export const ProfileCompletionForm = ({
                         />
                       </FormControl>
                       <FormMessage />
+                      {field.value && renderVideoPreview(field.value)}
                     </FormItem>
                   )}
                 />
-
-                {field => field.value && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-500 mb-2">Предпросмотр видео:</p>
-                    <div className="aspect-video">
-                      <iframe 
-                        width="100%" 
-                        height="100%" 
-                        src={field.value.replace("watch?v=", "embed/")} 
-                        frameBorder="0" 
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                        allowFullScreen
-                      ></iframe>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </TabsContent>
