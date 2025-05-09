@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ensureObject } from "@/utils/supabaseUtils";
 
@@ -10,119 +11,32 @@ export interface PublicTutorProfile {
   city: string | null;
   education_institution: string | null;
   degree: string | null;
-  graduation_year: number | null;
-  methodology: string | null;
   experience: number | null;
-  achievements: string | null;
+  methodology: string | null;
   video_url: string | null;
-  rating: number | null;
   subjects: {
     id: string;
     name: string;
-    hourly_rate: number;
-    experience_years: number | null;
-    description: string | null;
+    hourlyRate: number;
   }[];
+  rating: number | null;
+  isVerified: boolean;
 }
 
-export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutorProfile | null> => {
-  try {
-    // Fetch basic profile information
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", tutorId)
-      .eq("role", "tutor")
-      .single();
-    
-    if (profileError) {
-      console.error("Profile fetch error:", profileError);
-      return null;
-    }
-    
-    // Fetch tutor specific information and check if published
-    const { data: tutorProfileData, error: tutorProfileError } = await supabase
-      .from("tutor_profiles")
-      .select("*")
-      .eq("id", tutorId)
-      .eq("is_published", true) // Проверка на опубликованный профиль
-      .maybeSingle();
-    
-    if (tutorProfileError || !tutorProfileData) {
-      console.error("Tutor profile fetch error or profile not published:", tutorProfileError);
-      return null;
-    }
-    
-    // Fetch tutor subjects
-    const { data: subjectsData, error: subjectsError } = await supabase
-      .from("tutor_subjects")
-      .select(`
-        *,
-        subjects:subject_id (
-          id, name
-        )
-      `)
-      .eq("tutor_id", tutorId);
-    
-    if (subjectsError) {
-      console.error("Subjects fetch error:", subjectsError);
-      return null;
-    }
-    
-    const formattedSubjects = subjectsData ? subjectsData.map(item => {
-      const subject = ensureObject(item.subjects);
-      return {
-        id: item.subject_id,
-        name: subject.name,
-        hourly_rate: item.hourly_rate,
-        experience_years: item.experience_years,
-        description: item.description
-      };
-    }) : [];
-    
-    // Fetch average rating
-    const { data: ratingsData, error: ratingsError } = await supabase
-      .from("tutor_reviews")
-      .select("rating")
-      .eq("tutor_id", tutorId);
-      
-    let averageRating = null;
-    if (!ratingsError && ratingsData && ratingsData.length > 0) {
-      const totalRating = ratingsData.reduce((sum, item) => sum + item.rating, 0);
-      averageRating = totalRating / ratingsData.length;
-    }
-    
-    const tutorProfile = ensureObject(tutorProfileData);
+export interface TutorSearchFilters {
+  subject?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  city?: string;
+  minRating?: number;
+  experienceYears?: number;
+  searchQuery?: string;
+}
 
-    return {
-      id: profileData.id,
-      first_name: profileData.first_name,
-      last_name: profileData.last_name,
-      avatar_url: profileData.avatar_url,
-      bio: profileData.bio,
-      city: profileData.city,
-      education_institution: tutorProfile.education_institution || null,
-      degree: tutorProfile.degree || null,
-      graduation_year: tutorProfile.graduation_year || null,
-      methodology: tutorProfile.methodology || null,
-      experience: tutorProfile.experience || null,
-      achievements: tutorProfile.achievements || null,
-      video_url: tutorProfile.video_url || null,
-      rating: averageRating,
-      subjects: formattedSubjects
-    };
-  } catch (error) {
-    console.error("Error fetching public tutor profile:", error);
-    return null;
-  }
-};
-
-export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorProfile[]> => {
+export const fetchPublicTutors = async (filters?: TutorSearchFilters): Promise<PublicTutorProfile[]> => {
   try {
-    console.log("Fetching published tutor profiles with improved logic...");
-    
-    // Step 1: Join profiles and tutor_profiles to get published tutors in one query
-    const { data: tutors, error: tutorsError } = await supabase
+    // Get published tutors
+    let query = supabase
       .from("profiles")
       .select(`
         id,
@@ -131,74 +45,118 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
         avatar_url,
         bio,
         city,
-        tutor_profiles!inner(
+        tutor_profiles!inner (
           is_published,
           education_institution,
           degree,
-          graduation_year,
-          methodology,
           experience,
-          achievements,
-          video_url
+          methodology,
+          video_url,
+          education_verified
         )
       `)
       .eq("role", "tutor")
       .eq("tutor_profiles.is_published", true);
     
-    if (tutorsError) {
-      console.error("Error fetching published tutors:", tutorsError);
+    // Apply city filter if provided
+    if (filters?.city) {
+      query = query.ilike("city", `%${filters.city}%`);
+    }
+    
+    // Apply experience filter if provided
+    if (filters?.experienceYears) {
+      query = query.gte("tutor_profiles.experience", filters.experienceYears);
+    }
+    
+    // Apply text search filter if provided
+    if (filters?.searchQuery) {
+      const searchTerm = `%${filters.searchQuery}%`;
+      query = query.or(`first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},bio.ilike.${searchTerm}`);
+    }
+    
+    const { data, error } = await query;
+    
+    if (error) throw error;
+    
+    if (!data || data.length === 0) {
       return [];
     }
     
-    console.log(`Found ${tutors?.length || 0} published tutor profiles`);
-    
-    if (!tutors || tutors.length === 0) {
-      return [];
-    }
-
-    // Step 2: Process the results to match our expected format
-    const tutorPromises = tutors.map(async (tutor) => {
-      // Extract the tutor profile data
-      const tutorProfileData = ensureObject(tutor.tutor_profiles);
-      
-      // Fetch tutor subjects
+    // Get subjects, ratings, etc. for each tutor
+    const tutorsWithDetails = await Promise.all(data.map(async (tutor) => {
+      // Get subjects
       const { data: subjectsData, error: subjectsError } = await supabase
         .from("tutor_subjects")
         .select(`
-          *,
-          subjects:subject_id (
-            id, name
+          id,
+          hourly_rate,
+          subject:subject_id (
+            id,
+            name
           )
         `)
         .eq("tutor_id", tutor.id);
         
       if (subjectsError) {
-        console.error(`Error fetching subjects for ${tutor.id}:`, subjectsError);
+        console.error("Error fetching subjects for tutor", tutor.id, subjectsError);
         return null;
       }
       
-      const formattedSubjects = subjectsData ? subjectsData.map(item => {
-        const subjectObj = ensureObject(item.subjects);
+      // Map subjects
+      const subjects = (subjectsData || []).map(item => {
+        const subject = ensureObject(item.subject);
         return {
-          id: item.subject_id,
-          name: subjectObj.name,
-          hourly_rate: item.hourly_rate,
-          experience_years: item.experience_years,
-          description: item.description
+          id: subject?.id || "",
+          name: subject?.name || "",
+          hourlyRate: item.hourly_rate || 0
         };
-      }) : [];
+      });
       
-      // Fetch average rating
+      // Apply subject filter if provided
+      if (filters?.subject && !subjects.some(s => s.name.toLowerCase().includes(filters.subject!.toLowerCase()))) {
+        return null;
+      }
+      
+      // Apply price filters if provided
+      if (
+        (filters?.minPrice !== undefined || filters?.maxPrice !== undefined) &&
+        subjects.length > 0
+      ) {
+        const hasSubjectInRange = subjects.some(s => {
+          const price = s.hourlyRate;
+          return (
+            (filters.minPrice === undefined || price >= filters.minPrice) &&
+            (filters.maxPrice === undefined || price <= filters.maxPrice)
+          );
+        });
+        
+        if (!hasSubjectInRange) {
+          return null;
+        }
+      }
+      
+      // Get ratings
       const { data: ratingsData, error: ratingsError } = await supabase
         .from("tutor_reviews")
         .select("rating")
         .eq("tutor_id", tutor.id);
         
-      let averageRating = null;
-      if (!ratingsError && ratingsData && ratingsData.length > 0) {
-        const totalRating = ratingsData.reduce((sum, item) => sum + item.rating, 0);
-        averageRating = totalRating / ratingsData.length;
+      if (ratingsError) {
+        console.error("Error fetching ratings for tutor", tutor.id, ratingsError);
       }
+      
+      let rating = null;
+      if (ratingsData && ratingsData.length > 0) {
+        const sum = ratingsData.reduce((acc, item) => acc + item.rating, 0);
+        rating = sum / ratingsData.length;
+      }
+      
+      // Apply rating filter if provided
+      if (filters?.minRating !== undefined && (rating === null || rating < filters.minRating)) {
+        return null;
+      }
+      
+      const tutorProfile = ensureObject(tutor.tutor_profiles);
       
       return {
         id: tutor.id,
@@ -207,144 +165,122 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
         avatar_url: tutor.avatar_url,
         bio: tutor.bio,
         city: tutor.city,
-        education_institution: tutorProfileData?.education_institution || null,
-        degree: tutorProfileData?.degree || null,
-        graduation_year: tutorProfileData?.graduation_year || null,
-        methodology: tutorProfileData?.methodology || null,
-        experience: tutorProfileData?.experience || null,
-        achievements: tutorProfileData?.achievements || null,
-        video_url: tutorProfileData?.video_url || null,
-        rating: averageRating,
-        subjects: formattedSubjects
+        education_institution: tutorProfile?.education_institution || null,
+        degree: tutorProfile?.degree || null,
+        experience: tutorProfile?.experience || null,
+        methodology: tutorProfile?.methodology || null,
+        video_url: tutorProfile?.video_url || null,
+        subjects,
+        rating,
+        isVerified: tutorProfile?.education_verified || false
       };
-    });
+    }));
     
-    const tutorsResults = await Promise.all(tutorPromises);
-    // Filter out null values
-    const result = tutorsResults.filter((tutor): tutor is PublicTutorProfile => tutor !== null);
-    
-    console.log(`Final processed tutor profiles count: ${result.length}`);
-    return result;
+    // Filter out null results from our filtering above
+    return tutorsWithDetails.filter(Boolean) as PublicTutorProfile[];
   } catch (error) {
-    console.error("Error in fetchPublicTutors:", error);
+    console.error("Error fetching public tutors:", error);
     return [];
   }
 };
 
-export const fetchTutorProfile = async (tutorId: string) => {
+export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutorProfile | null> => {
   try {
-    // Fetch tutor basic profile
-    const { data: profile, error: profileError } = await supabase
+    // Get tutor base profile
+    const { data: tutor, error } = await supabase
       .from("profiles")
       .select(`
         id,
         first_name,
         last_name,
-        bio,
         avatar_url,
+        bio,
         city,
-        email,
-        phone,
-        role,
-        tutor_profiles (
+        tutor_profiles!inner (
           is_published,
           education_institution,
           degree,
-          graduation_year,
-          methodology,
           experience,
-          achievements,
-          video_url
+          methodology,
+          video_url,
+          education_verified
         )
       `)
       .eq("id", tutorId)
       .eq("role", "tutor")
+      .eq("tutor_profiles.is_published", true)
       .single();
-      
-    if (profileError) {
-      console.error("Error fetching tutor profile:", profileError);
+    
+    if (error) {
+      if (error.code === "PGRST116") {
+        // No rows returned - tutor not found or not published
+        return null;
+      }
+      throw error;
+    }
+    
+    if (!tutor) {
       return null;
     }
     
-    if (!profile) {
-      return null;
-    }
-    
-    // Get tutor subjects with prices
+    // Get subjects
     const { data: subjectsData, error: subjectsError } = await supabase
       .from("tutor_subjects")
       .select(`
         id,
         hourly_rate,
-        subjects:subject_id (
+        subject:subject_id (
           id,
-          name,
-          category_id
+          name
         )
       `)
       .eq("tutor_id", tutorId);
-      
-    if (subjectsError) {
-      console.error("Error fetching tutor subjects:", subjectsError);
-      return null;
-    }
+    
+    if (subjectsError) throw subjectsError;
+    
+    const subjects = (subjectsData || []).map(item => {
+      const subject = ensureObject(item.subject);
+      return {
+        id: subject?.id || "",
+        name: subject?.name || "",
+        hourlyRate: item.hourly_rate || 0
+      };
+    });
     
     // Get ratings
     const { data: ratingsData, error: ratingsError } = await supabase
       .from("tutor_reviews")
-      .select("id, rating, comment, created_at")
+      .select("rating")
       .eq("tutor_id", tutorId);
-      
-    if (ratingsError) {
-      console.error("Error fetching tutor ratings:", ratingsError);
-      return null;
-    }
     
-    // Process tutor profile data
-    const tutorProfile = ensureObject(profile.tutor_profiles);
+    if (ratingsError) throw ratingsError;
     
-    // Calculate average rating
-    let averageRating = null;
+    let rating = null;
     if (ratingsData && ratingsData.length > 0) {
-      const sum = ratingsData.reduce((acc, curr) => acc + curr.rating, 0);
-      averageRating = sum / ratingsData.length;
+      const sum = ratingsData.reduce((acc, item) => acc + item.rating, 0);
+      rating = sum / ratingsData.length;
     }
     
-    // Format subjects
-    const subjects = subjectsData?.map(item => {
-      const subject = ensureObject(item.subjects);
-      return {
-        id: item.id,
-        subjectId: subject.id,
-        name: subject.name,
-        categoryId: subject.category_id,
-        hourlyRate: item.hourly_rate
-      };
-    }) || [];
+    const tutorProfile = ensureObject(tutor.tutor_profiles);
     
     return {
-      id: profile.id,
-      firstName: profile.first_name,
-      lastName: profile.last_name,
-      bio: profile.bio,
-      avatarUrl: profile.avatar_url,
-      city: profile.city,
-      email: profile.email,
-      phone: profile.phone,
-      isPublished: tutorProfile.is_published,
-      educationInstitution: tutorProfile.education_institution,
-      degree: tutorProfile.degree,
-      graduationYear: tutorProfile.graduation_year,
-      methodology: tutorProfile.methodology,
-      experience: tutorProfile.experience,
-      achievements: tutorProfile.achievements,
-      videoUrl: tutorProfile.video_url,
+      id: tutor.id,
+      first_name: tutor.first_name,
+      last_name: tutor.last_name,
+      avatar_url: tutor.avatar_url,
+      bio: tutor.bio,
+      city: tutor.city,
+      education_institution: tutorProfile?.education_institution || null,
+      degree: tutorProfile?.degree || null,
+      experience: tutorProfile?.experience || null,
+      methodology: tutorProfile?.methodology || null,
+      video_url: tutorProfile?.video_url || null,
       subjects,
-      rating: averageRating,
-      reviews: ratingsData || []
+      rating,
+      isVerified: tutorProfile?.education_verified || false
     };
   } catch (error) {
-    console.error("Error in fetchTutorProfile:", error);
+    console.error("Error fetching public tutor by ID:", error);
     return null;
   }
 };

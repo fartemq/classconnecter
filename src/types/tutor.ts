@@ -1,4 +1,3 @@
-
 export interface TutorFormValues {
   firstName: string;
   lastName: string;
@@ -58,6 +57,15 @@ export interface TutorMaterial {
 }
 
 export interface TutorSchedule {
+  id: string;
+  tutorId: string;
+  dayOfWeek: number;
+  startTime: string;
+  endTime: string;
+  isAvailable: boolean;
+}
+
+export interface TimeSlot {
   id: string;
   tutorId: string;
   dayOfWeek: number;

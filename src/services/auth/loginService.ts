@@ -27,8 +27,43 @@ export const loginUser = async (email: string, password: string): Promise<any> =
     }
     
     console.log("Login successful!");
+    
+    // Get user profile data including role
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single();
+    
+    if (profileError) {
+      console.error("Error fetching user profile:", profileError);
+    }
+    
+    console.log("User role from database:", profileData?.role);
     console.log("User role from metadata:", data.user?.user_metadata?.role);
-    return data;
+    
+    // If role is not in profile but is in metadata, update the profile
+    if (profileData && !profileData.role && data.user?.user_metadata?.role) {
+      console.log("Updating profile with role from metadata:", data.user.user_metadata.role);
+      
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ role: data.user.user_metadata.role })
+        .eq("id", data.user.id);
+      
+      if (updateError) {
+        console.error("Error updating user role:", updateError);
+      }
+    }
+    
+    // Set role in user metadata for convenience
+    const finalRole = profileData?.role || data.user?.user_metadata?.role || 'student';
+    
+    // Return data with determined role
+    return {
+      ...data,
+      role: finalRole
+    };
   } catch (error) {
     console.error("Error in loginUser:", error);
     throw error;
