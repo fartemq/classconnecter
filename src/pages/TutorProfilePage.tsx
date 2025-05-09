@@ -40,6 +40,25 @@ const convertProfileToTutorProfile = (profile: Profile): TutorProfile => {
   };
 };
 
+// Helper function to convert TutorProfile to Profile for components that expect Profile
+const convertTutorProfileToProfile = (tutorProfile: TutorProfile): Profile => {
+  return {
+    id: tutorProfile.id,
+    first_name: tutorProfile.firstName,
+    last_name: tutorProfile.lastName,
+    bio: tutorProfile.bio,
+    city: tutorProfile.city,
+    avatar_url: tutorProfile.avatarUrl || null,
+    phone: null, // We don't have this in TutorProfile
+    role: "tutor", // Default role
+    education_institution: tutorProfile.educationInstitution,
+    degree: tutorProfile.degree,
+    graduation_year: tutorProfile.graduationYear,
+    experience: tutorProfile.experience,
+    methodology: tutorProfile.methodology
+  };
+};
+
 const TutorProfilePage = () => {
   const { profile, isLoading } = useProfile("tutor");
   const location = useLocation();
@@ -79,13 +98,17 @@ const TutorProfilePage = () => {
     );
   }
 
+  // Create a Profile version of the tutorProfile for components that expect Profile type
+  const profileForComponents = convertTutorProfileToProfile(tutorProfile);
+
   // Function to render the active tab content
   const renderTabContent = () => {
     switch (activeTab) {
       case "dashboard":
         return <TutorDashboard profile={tutorProfile} />;
       case "profile":
-        return <TutorProfileSettingsTab profile={tutorProfile} />;
+        // Pass the converted profile to components expecting Profile type
+        return <TutorProfileSettingsTab profile={profileForComponents} />;
       case "schedule":
         return <AdvancedScheduleTab tutorId={tutorProfile.id} />;
       case "students":
@@ -95,7 +118,8 @@ const TutorProfilePage = () => {
       case "stats":
         return <AdvancedStatsTab tutorId={tutorProfile.id} />;
       case "settings":
-        return <TutorSettingsTab profile={tutorProfile} />;
+        // Pass the converted profile to components expecting Profile type
+        return <TutorSettingsTab profile={profileForComponents} />;
       case "materials":
         return <MaterialsTab tutorId={tutorProfile.id} />;
       default:
