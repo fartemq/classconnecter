@@ -5,14 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { AlertCircle, CheckCircle2, Upload, Info, AlertTriangle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { supabase } from "@/integrations/supabase/client";
-import { validateTutorProfile, hasTutorAddedSubjects, hasTutorAddedSchedule } from "@/services/tutorProfileValidation";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { validateTutorProfile, hasTutorAddedSubjects, hasTutorAddedSchedule } from "@/services/tutorProfileValidation";
 
 interface PublishProfileSectionProps {
   tutorId: string;
   isPublished: boolean;
-  onPublishStatusChange: (isPublished: boolean) => void;
+  onPublishStatusChange: (newStatus: boolean) => Promise<boolean>;
 }
 
 export function PublishProfileSection({ tutorId, isPublished, onPublishStatusChange }: PublishProfileSectionProps) {
@@ -29,14 +28,18 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
   // Check profile completeness
   useEffect(() => {
     const checkProfileCompleteness = async () => {
-      const hasAddedSubjects = await hasTutorAddedSubjects(tutorId);
-      setHasSubjects(hasAddedSubjects);
-      
-      const hasAddedSchedule = await hasTutorAddedSchedule(tutorId);
-      setHasSchedule(hasAddedSchedule);
-      
-      const result = await validateTutorProfile(tutorId);
-      setValidationResult(result);
+      try {
+        const hasAddedSubjects = await hasTutorAddedSubjects(tutorId);
+        setHasSubjects(hasAddedSubjects);
+        
+        const hasAddedSchedule = await hasTutorAddedSchedule(tutorId);
+        setHasSchedule(hasAddedSchedule);
+        
+        const result = await validateTutorProfile(tutorId);
+        setValidationResult(result);
+      } catch (error) {
+        console.error("Error checking profile completeness:", error);
+      }
     };
     
     checkProfileCompleteness();
@@ -57,6 +60,7 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
             variant: "destructive",
           });
           setValidationResult(result);
+          setIsLoading(false);
           return;
         }
         
@@ -71,33 +75,14 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
         }
       }
       
-      const newStatus = !isPublished;
+      const success = await onPublishStatusChange(!isPublished);
       
-      // Update tutor_profiles table
-      const { error } = await supabase
-        .from("tutor_profiles")
-        .update({ 
-          is_published: newStatus,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", tutorId);
-      
-      if (error) {
-        throw error;
+      if (!success) {
+        throw new Error("Не удалось изменить статус публикации");
       }
       
-      toast({
-        title: newStatus ? "Профиль опубликован" : "Профиль снят с публикации",
-        description: newStatus
-          ? "Теперь ваш профиль доступен для студентов"
-          : "Ваш профиль больше не виден студентам",
-        variant: newStatus ? "default" : "destructive",
-      });
-      
-      onPublishStatusChange(newStatus);
-      
       // Log to console for debugging
-      console.log(`Profile publication status changed to: ${newStatus ? 'published' : 'unpublished'}`);
+      console.log(`Profile publication status changed to: ${!isPublished ? 'published' : 'unpublished'}`);
     } catch (error) {
       console.error("Error toggling publish status:", error);
       toast({

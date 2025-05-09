@@ -41,7 +41,7 @@ export const useTutorPublishStatus = () => {
   }, [user?.id]);
   
   const togglePublishStatus = async () => {
-    if (!user?.id) return;
+    if (!user?.id) return false;
     
     try {
       setIsLoading(true);

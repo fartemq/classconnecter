@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "@/hooks/use-toast";
 import { AvatarUpload } from "./AvatarUpload";
 import { Profile } from "@/hooks/useProfile";
-import { fetchTutorProfile, saveTutorProfile } from "@/services/tutorService";
+import { fetchTutorProfile, saveTutorProfile } from "@/services/tutorProfileService";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { Loader } from "@/components/ui/loader";
 
@@ -34,8 +34,16 @@ const educationSchema = z.object({
     .max(new Date().getFullYear(), { message: `Год не может быть позже ${new Date().getFullYear()}` }),
 });
 
+// Дополнительные поля (необязательные)
+const optionalSchema = z.object({
+  methodology: z.string().optional(),
+  experience: z.coerce.number().optional(),
+  achievements: z.string().optional(),
+  videoUrl: z.string().url({ message: "Введите корректный URL видео" }).optional().or(z.literal('')),
+});
+
 // Общая схема с объединением всех полей
-const formSchema = personalSchema.merge(educationSchema);
+const formSchema = personalSchema.merge(educationSchema).merge(optionalSchema);
 
 interface TutorAboutTabProps {
   profile: Profile;
@@ -59,6 +67,10 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
       educationInstitution: "",
       degree: "",
       graduationYear: new Date().getFullYear(),
+      methodology: "",
+      experience: 0,
+      achievements: "",
+      videoUrl: "",
     },
   });
 
@@ -68,20 +80,27 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
       try {
         setLoadingProfile(true);
         const data = await fetchTutorProfile(profile.id);
-        setTutorProfile(data);
         
-        // Заполняем форму данными
-        form.reset({
-          firstName: data.firstName,
-          lastName: data.lastName,
-          bio: data.bio,
-          city: data.city,
-          educationInstitution: data.educationInstitution,
-          degree: data.degree,
-          graduationYear: data.graduationYear || new Date().getFullYear(),
-        });
-        
-        setAvatarUrl(data.avatarUrl || null);
+        if (data) {
+          setTutorProfile(data);
+          
+          // Заполняем форму данными
+          form.reset({
+            firstName: data.firstName || profile.first_name || "",
+            lastName: data.lastName || profile.last_name || "",
+            bio: data.bio || profile.bio || "",
+            city: data.city || profile.city || "",
+            educationInstitution: data.educationInstitution || "",
+            degree: data.degree || "",
+            graduationYear: data.graduationYear || new Date().getFullYear(),
+            methodology: data.methodology || "",
+            experience: data.experience || 0,
+            achievements: data.achievements || "",
+            videoUrl: data.videoUrl || "",
+          });
+          
+          setAvatarUrl(data.avatarUrl || profile.avatar_url || null);
+        }
       } catch (error) {
         console.error("Error loading tutor profile:", error);
         toast({
@@ -108,24 +127,33 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
     try {
       setIsLoading(true);
       
-      await saveTutorProfile(values, profile.id, avatarFile, avatarUrl);
+      const result = await saveTutorProfile(values, profile.id, avatarFile, avatarUrl);
       
-      toast({
-        title: "Профиль обновлен",
-        description: "Данные профиля успешно сохранены",
-      });
-      
-      // Обновляем локальные данные
-      setTutorProfile(prev => ({
-        ...prev!,
-        firstName: values.firstName,
-        lastName: values.lastName,
-        bio: values.bio,
-        city: values.city,
-        educationInstitution: values.educationInstitution || "",
-        degree: values.degree || "",
-        graduationYear: values.graduationYear || new Date().getFullYear(),
-      }));
+      if (result.success) {
+        toast({
+          title: "Профиль обновлен",
+          description: "Данные профиля успешно сохранены",
+        });
+        
+        // Обновляем локальные данные
+        setTutorProfile(prev => ({
+          ...prev!,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          bio: values.bio,
+          city: values.city,
+          educationInstitution: values.educationInstitution || "",
+          degree: values.degree || "",
+          graduationYear: values.graduationYear || new Date().getFullYear(),
+          methodology: values.methodology || "",
+          experience: values.experience || 0,
+          achievements: values.achievements || "",
+          videoUrl: values.videoUrl || "",
+          avatarUrl: result.avatarUrl || prev?.avatarUrl,
+        }));
+      } else {
+        throw new Error("Не удалось сохранить профиль");
+      }
     } catch (error) {
       console.error("Error saving profile:", error);
       toast({
@@ -156,6 +184,7 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
             <TabsList className="mb-6">
               <TabsTrigger value="personal">Основная информация</TabsTrigger>
               <TabsTrigger value="education">Образование</TabsTrigger>
+              <TabsTrigger value="teaching">Преподавание</TabsTrigger>
             </TabsList>
             
             <TabsContent value="personal">
@@ -314,6 +343,93 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
                         : 'Для верификации образования может потребоваться предоставление документов.'}
                     </p>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+            
+            <TabsContent value="teaching">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Методология преподавания</CardTitle>
+                  <CardDescription>
+                    Дополнительная информация о вашей методике и достижениях
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Experience */}
+                  <FormField
+                    control={form.control}
+                    name="experience"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Опыт преподавания (в годах)</FormLabel>
+                        <FormControl>
+                          <Input type="number" min="0" max="50" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Methodology */}
+                  <FormField
+                    control={form.control}
+                    name="methodology"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Методика преподавания</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Опишите свою методику преподавания..."
+                            className="min-h-[100px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Achievements */}
+                  <FormField
+                    control={form.control}
+                    name="achievements"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Профессиональные достижения</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Ваши достижения, награды, публикации..."
+                            className="min-h-[100px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* Video URL */}
+                  <FormField
+                    control={form.control}
+                    name="videoUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ссылка на видео-презентацию</FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="https://youtube.com/watch?v=..." 
+                            {...field} 
+                            value={field.value || ''}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Вы можете добавить ссылку на видео, в котором рассказываете о своей методике преподавания
+                        </p>
+                      </FormItem>
+                    )}
+                  />
                 </CardContent>
               </Card>
             </TabsContent>

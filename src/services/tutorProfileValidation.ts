@@ -2,7 +2,46 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Validates tutor profile for completeness before publishing
+ * Check if a tutor has added any subjects
+ */
+export const hasTutorAddedSubjects = async (tutorId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from("tutor_subjects")
+      .select("id")
+      .eq("tutor_id", tutorId)
+      .eq("is_active", true);
+      
+    if (error) throw error;
+    
+    return data && data.length > 0;
+  } catch (error) {
+    console.error("Error checking if tutor has added subjects:", error);
+    return false;
+  }
+};
+
+/**
+ * Check if a tutor has added any schedule slots
+ */
+export const hasTutorAddedSchedule = async (tutorId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from("tutor_schedule")
+      .select("id")
+      .eq("tutor_id", tutorId);
+      
+    if (error) throw error;
+    
+    return data && data.length > 0;
+  } catch (error) {
+    console.error("Error checking if tutor has added schedule:", error);
+    return false;
+  }
+};
+
+/**
+ * Validate tutor profile for completeness
  */
 export const validateTutorProfile = async (tutorId: string): Promise<{
   isValid: boolean;
@@ -24,7 +63,7 @@ export const validateTutorProfile = async (tutorId: string): Promise<{
       .from("tutor_profiles")
       .select("education_institution, degree, experience")
       .eq("id", tutorId)
-      .single();
+      .maybeSingle();
       
     if (tutorError) throw tutorError;
     
@@ -32,17 +71,10 @@ export const validateTutorProfile = async (tutorId: string): Promise<{
     const { data: subjectsData, error: subjectsError } = await supabase
       .from("tutor_subjects")
       .select("id")
-      .eq("tutor_id", tutorId);
+      .eq("tutor_id", tutorId)
+      .eq("is_active", true);
       
     if (subjectsError) throw subjectsError;
-    
-    // Check schedule
-    const { data: scheduleData, error: scheduleError } = await supabase
-      .from("tutor_schedule")
-      .select("id")
-      .eq("tutor_id", tutorId);
-      
-    if (scheduleError) throw scheduleError;
     
     const missingFields: string[] = [];
     const warnings: string[] = [];
@@ -50,21 +82,26 @@ export const validateTutorProfile = async (tutorId: string): Promise<{
     // Check required fields
     if (!profileData.first_name) missingFields.push("Имя");
     if (!profileData.last_name) missingFields.push("Фамилия");
-    if (!profileData.bio) missingFields.push("О себе");
+    if (!profileData.bio || profileData.bio.length < 20) missingFields.push("О себе");
     if (!profileData.city) missingFields.push("Город");
     if (!profileData.avatar_url) missingFields.push("Фотография профиля");
     
-    if (!tutorData.education_institution) missingFields.push("Учебное заведение");
-    if (!tutorData.degree) missingFields.push("Специальность");
-    if (!tutorData.experience) missingFields.push("Опыт работы");
+    if (!tutorData || !tutorData.education_institution) missingFields.push("Учебное заведение");
+    if (!tutorData || !tutorData.degree) missingFields.push("Специальность");
+    if (!tutorData || !tutorData.experience) missingFields.push("Опыт работы");
     
     if (!subjectsData || subjectsData.length === 0) {
       missingFields.push("Предметы обучения");
     }
     
-    // Add warnings for recommended but not required fields
-    if (!scheduleData || scheduleData.length === 0) {
-      warnings.push("У вас не настроено расписание. Настройте расписание, чтобы ученики могли записываться к вам на занятия");
+    // Check for warnings (recommended but not required)
+    const { data: scheduleData, error: scheduleError } = await supabase
+      .from("tutor_schedule")
+      .select("id")
+      .eq("tutor_id", tutorId);
+      
+    if (!scheduleError && (!scheduleData || scheduleData.length === 0)) {
+      warnings.push("Рекомендуется добавить расписание для повышения видимости в поиске");
     }
     
     return {
@@ -73,49 +110,11 @@ export const validateTutorProfile = async (tutorId: string): Promise<{
       warnings,
     };
   } catch (error) {
-    console.error("Error checking profile completeness:", error);
+    console.error("Error validating tutor profile:", error);
     return {
       isValid: false,
       missingFields: ["Ошибка проверки профиля"],
       warnings: [],
     };
-  }
-};
-
-/**
- * Checks if a tutor has added any subjects
- */
-export const hasTutorAddedSubjects = async (tutorId: string): Promise<boolean> => {
-  try {
-    const { count, error } = await supabase
-      .from("tutor_subjects")
-      .select("id", { count: "exact", head: true })
-      .eq("tutor_id", tutorId);
-      
-    if (error) throw error;
-    
-    return count !== null && count > 0;
-  } catch (error) {
-    console.error("Error checking tutor subjects:", error);
-    return false;
-  }
-};
-
-/**
- * Checks if a tutor has added any schedule slots
- */
-export const hasTutorAddedSchedule = async (tutorId: string): Promise<boolean> => {
-  try {
-    const { count, error } = await supabase
-      .from("tutor_schedule")
-      .select("id", { count: "exact", head: true })
-      .eq("tutor_id", tutorId);
-      
-    if (error) throw error;
-    
-    return count !== null && count > 0;
-  } catch (error) {
-    console.error("Error checking tutor schedule:", error);
-    return false;
   }
 };
