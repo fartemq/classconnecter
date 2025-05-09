@@ -3,10 +3,12 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { AlertCircle, CheckCircle2, Upload, Info, AlertTriangle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Upload } from "lucide-react";
 import { validateTutorProfile, hasTutorAddedSubjects, hasTutorAddedSchedule } from "@/services/tutorProfileValidation";
+import { ValidationAlert } from "./publish/ValidationAlert";
+import { RecommendationAlert } from "./publish/RecommendationAlert";
+import { ProfileStatusIndicator } from "./publish/ProfileStatusIndicator";
+import { ProfileStatusBadge } from "./publish/ProfileStatusBadge";
 
 interface PublishProfileSectionProps {
   tutorId: string;
@@ -105,97 +107,32 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
               Управляйте доступностью вашего профиля для учеников
             </CardDescription>
           </div>
-          {isPublished ? (
-            <Badge className="bg-green-500">Опубликован</Badge>
-          ) : (
-            <Badge variant="outline" className="text-gray-500">Не опубликован</Badge>
-          )}
+          <ProfileStatusBadge isPublished={isPublished} />
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Profile Completeness Status */}
-        {!validationResult.isValid && (
-          <Alert variant="destructive">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Профиль не полностью заполнен</AlertTitle>
-            <AlertDescription>
-              <p>Следующие поля требуют заполнения:</p>
-              <ul className="list-disc pl-5 mt-2">
-                {validationResult.missingFields.map((field, index) => (
-                  <li key={index}>{field}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {validationResult.isValid && validationResult.warnings.length > 0 && (
-          <Alert variant="default" className="bg-amber-50 border-amber-200">
-            <AlertCircle className="h-4 w-4 text-amber-500" />
-            <AlertTitle className="text-amber-800">Рекомендации по улучшению профиля</AlertTitle>
-            <AlertDescription className="text-amber-700">
-              <ul className="list-disc pl-5 mt-2">
-                {validationResult.warnings.map((warning, index) => (
-                  <li key={index}>{warning}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
+        <ValidationAlert 
+          isValid={validationResult.isValid} 
+          missingFields={validationResult.missingFields} 
+          warnings={validationResult.warnings} 
+        />
         
         {!hasSubjects && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-            <div className="flex items-start gap-3">
-              <Info className="h-5 w-5 text-amber-500 mt-0.5" />
-              <div>
-                <h4 className="font-medium mb-1">Рекомендация по улучшению профиля</h4>
-                <p className="text-sm text-gray-600">
-                  У вас не добавлено ни одного предмета. Добавьте предметы, чтобы ученики могли легче находить вас в поиске.
-                </p>
-              </div>
-            </div>
-          </div>
+          <RecommendationAlert
+            title="Рекомендация по улучшению профиля"
+            message="У вас не добавлено ни одного предмета. Добавьте предметы, чтобы ученики могли легче находить вас в поиске."
+          />
         )}
         
         {!hasSchedule && (
-          <div className="bg-amber-50 border border-amber-200 rounded-md p-4">
-            <div className="flex items-start gap-3">
-              <Info className="h-5 w-5 text-amber-500 mt-0.5" />
-              <div>
-                <h4 className="font-medium mb-1">Рекомендация по улучшению профиля</h4>
-                <p className="text-sm text-gray-600">
-                  У вас не добавлено расписание. Добавьте доступные слоты времени, чтобы ученики могли записаться к вам на занятия.
-                </p>
-              </div>
-            </div>
-          </div>
+          <RecommendationAlert
+            title="Рекомендация по улучшению профиля"
+            message="У вас не добавлено расписание. Добавьте доступные слоты времени, чтобы ученики могли записаться к вам на занятия."
+          />
         )}
 
-        <div className="bg-slate-50 p-4 rounded-md">
-          {isPublished ? (
-            <div className="flex items-start gap-3">
-              <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
-              <div>
-                <h4 className="font-medium mb-1">Ваш профиль опубликован</h4>
-                <p className="text-sm text-gray-600">
-                  Ученики могут найти вас в поиске, просматривать ваш профиль,
-                  отправлять сообщения и бронировать занятия согласно вашему расписанию.
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
-              <div>
-                <h4 className="font-medium mb-1">Ваш профиль не опубликован</h4>
-                <p className="text-sm text-gray-600">
-                  Ученики не могут видеть ваш профиль. Опубликуйте его, чтобы начать
-                  принимать запросы от учеников и бронирования занятий.
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
+        <ProfileStatusIndicator isPublished={isPublished} />
 
         <Button 
           onClick={handleTogglePublish} 
