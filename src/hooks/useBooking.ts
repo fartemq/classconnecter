@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Lesson } from "@/types/lesson";
 import { TimeSlot } from "./useTutorSlots";
+import { ensureSingleObject } from "@/utils/supabaseUtils";
 
 export const useBooking = (setLessons?: React.Dispatch<React.SetStateAction<Lesson[]>>, lessons?: Lesson[]) => {
   const [bookingSlot, setBookingSlot] = useState<string | null>(null);
@@ -53,6 +54,7 @@ export const useBooking = (setLessons?: React.Dispatch<React.SetStateAction<Less
       
       // Format date for the database
       const lessonDate = format(date, 'yyyy-MM-dd');
+      const timeStr = slot.startTime; // Format: HH:MM:SS
       
       // Create a new lesson directly with Supabase
       const { data: lessonResult, error: lessonError } = await supabase
@@ -77,19 +79,23 @@ export const useBooking = (setLessons?: React.Dispatch<React.SetStateAction<Less
       if (lessonResult) {
         // Add the new lesson to the list if we have access to the lessons state
         if (setLessons && lessons) {
+          // Convert start_time to date and time fields for compatibility with Lesson type
+          const startDate = new Date(`${lessonDate}T${slot.startTime}`);
+          
           const newLesson: Lesson = {
             id: lessonResult.id,
             tutor_id: slot.tutorId,
             student_id: userData.user.id,
             subject_id: subjectId,
-            start_time: new Date(`${lessonDate}T${slot.startTime}`).toISOString(),
-            end_time: new Date(`${lessonDate}T${slot.endTime}`).toISOString(),
+            date: lessonDate,
+            time: slot.startTime,
+            duration: calculateDuration(slot.startTime, slot.endTime),
             status: "upcoming",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             subject: {
               id: subjectId,
-              name: lessonResult.subjects?.name || ""
+              name: ensureSingleObject(lessonResult.subjects).name || ""
             }
           };
           
@@ -115,6 +121,13 @@ export const useBooking = (setLessons?: React.Dispatch<React.SetStateAction<Less
     } finally {
       setBookingSlot(null);
     }
+  };
+  
+  // Helper function to calculate duration in minutes between two time strings (HH:MM:SS)
+  const calculateDuration = (startTime: string, endTime: string): number => {
+    const start = new Date(`1970-01-01T${startTime}`);
+    const end = new Date(`1970-01-01T${endTime}`);
+    return Math.round((end.getTime() - start.getTime()) / 60000); // Convert ms to minutes
   };
 
   return {
