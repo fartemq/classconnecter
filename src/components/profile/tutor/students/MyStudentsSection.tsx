@@ -1,131 +1,145 @@
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { StudentsList } from './StudentsList';
+import { StudentTabsFilter } from './StudentTabsFilter';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { StudentCardData, adaptStudentToCardData } from './types';
+import { Student } from '@/types/student';
+import { createStudentFromRequest } from '@/utils/studentUtils';
+import { useToast } from '@/hooks/use-toast';
 
-import React from "react";
-import { useStudents } from "@/hooks/useStudents";
-import { StudentsList } from "./StudentsList";
-import { EmptyStudentsList } from "./EmptyStudentsList";
-import { StudentProfileDialog } from "./StudentProfileDialog";
-import { StudentContactDialog } from "./StudentContactDialog";
-import { Student } from "@/types/student";
-import { Loader } from "@/components/ui/loader";
-import { useState } from "react";
-
-// Define this interface explicitly to match what the StudentsList expects
-interface StudentsListStudent {
-  id: string;
-  name: string;
-  avatar: string;
-  lastActive: string;
-  level: string;
-  grade: string;
-  subjects: string[];
-  city: string;
-  about: string;
-  interests: string[];
-  status: string;
+interface MyStudentsSectionProps {
+  // Add any props if needed
 }
 
 export const MyStudentsSection = () => {
-  const { isLoading, myStudents, contactStudent, refreshStudents } = useStudents();
-  const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [showContactDialog, setShowContactDialog] = useState(false);
-  const [showProfileDialog, setShowProfileDialog] = useState(false);
-  const [showRequests, setShowRequests] = useState(false);
-  
-  // We'll use this adapter to make the Student type compatible with StudentsListStudent
-  const adaptStudents = (students: Student[]): StudentsListStudent[] => {
-    return students.map(student => ({
-      id: student.id,
-      name: `${student.first_name || ''} ${student.last_name || ''}`.trim(),
-      avatar: student.avatar_url || "",
-      status: "active", // Default status if not provided
-      lastActive: "Недавно", // Default lastActive if not provided
-      level: student.student_profiles?.educational_level || "Не указан",
-      grade: student.student_profiles?.grade || "",
-      subjects: student.student_profiles?.subjects || [],
-      city: student.city || "",
-      about: student.student_profiles?.learning_goals || "",
-      interests: student.student_profiles?.preferred_format || []
-    }));
-  };
-  
-  const adaptedStudents: StudentsListStudent[] = adaptStudents(myStudents);
-  
-  // Handlers
-  const handleContactStudent = (student: Student) => {
-    setSelectedStudent(student);
-    setShowContactDialog(true);
-  };
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const [students, setStudents] = useState<StudentCardData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const handleViewProfile = (student: Student) => {
-    setSelectedStudent(student);
-    setShowProfileDialog(true);
-  };
-  
-  const handleSendContactRequest = async (subjectId: string | null, message: string | null) => {
-    if (!selectedStudent) return;
-    
-    const success = await contactStudent(selectedStudent.id, subjectId, message);
-    if (success) {
-      setShowContactDialog(false);
+  useEffect(() => {
+    if (user?.id) {
+      fetchStudents();
+    }
+  }, [user?.id]);
+
+  const fetchStudents = async () => {
+    setIsLoading(true);
+    try {
+      // Fetch accepted requests for this tutor
+      const { data: requestsData, error: requestsError } = await supabase
+        .from('tutor_student_requests')
+        .select(`
+          id,
+          student_id,
+          subject_id,
+          status,
+          created_at,
+          updated_at,
+          student:student_id (
+            id,
+            first_name,
+            last_name,
+            avatar_url,
+            city
+          ),
+          subject:subject_id (
+            id,
+            name
+          )
+        `)
+        .eq('tutor_id', user?.id)
+        .eq('status', 'accepted');
+
+      if (requestsError) throw requestsError;
+
+      // Convert to Student type array
+      const studentsList: Student[] = requestsData?.map(request => 
+        createStudentFromRequest({
+          ...request,
+          tutor_id: user?.id || ''
+        })
+      ) || [];
+
+      // Convert to StudentCardData array for UI components
+      const adaptedStudents = studentsList.map(student => adaptStudentToCardData(student));
+      
+      setStudents(adaptedStudents);
+    } catch (error) {
+      console.error('Error fetching students:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось загрузить список студентов',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleCheckRequests = () => {
-    setShowRequests(true);
-    refreshStudents();
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-12">
-        <Loader size="lg" />
-      </div>
-    );
-  }
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+  };
 
-  if (myStudents.length === 0) {
-    return <EmptyStudentsList onCheckRequests={handleCheckRequests} />;
-  }
+  const handleResetFilters = () => {
+    setActiveTab('all');
+    setSearchQuery('');
+  };
+
+  const filteredStudents = students.filter(student => {
+    const searchTerm = searchQuery.toLowerCase();
+    const nameMatch = student.name.toLowerCase().includes(searchTerm);
+    const subjectMatch = student.subjects.some(subject =>
+      subject.toLowerCase().includes(searchTerm)
+    );
+
+    const matchesSearch = nameMatch || subjectMatch;
+
+    if (activeTab === 'all') {
+      return matchesSearch;
+    }
+
+    let levelMatch = false;
+    if (activeTab === 'school' && student.level === 'Школьник') {
+      levelMatch = true;
+    } else if (activeTab === 'university' && student.level === 'Студент') {
+      levelMatch = true;
+    } else if (activeTab === 'adult' && student.level === 'Взрослый') {
+      levelMatch = true;
+    }
+
+    return matchesSearch && levelMatch;
+  });
 
   return (
-    <div className="space-y-6">
-      <StudentsList
-        students={adaptedStudents}
-        onContact={(adaptedStudent) => {
-          const originalStudent = myStudents.find(s => s.id === adaptedStudent.id);
-          if (originalStudent) {
-            handleContactStudent(originalStudent);
-          }
-        }}
-        onViewProfile={(adaptedStudent) => {
-          const originalStudent = myStudents.find(s => s.id === adaptedStudent.id);
-          if (originalStudent) {
-            handleViewProfile(originalStudent);
-          }
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold">Мои ученики</h2>
+      
+      <StudentTabsFilter
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        onResetFilters={() => {
+          setActiveTab('all');
+          setSearchQuery('');
         }}
       />
       
-      {/* Dialogs */}
-      {selectedStudent && showContactDialog && (
-        <StudentContactDialog 
-          student={selectedStudent} 
-          open={showContactDialog} 
-          onClose={() => setShowContactDialog(false)}
-          onSubmit={handleSendContactRequest}
-        />
-      )}
-      
-      {selectedStudent && showProfileDialog && (
-        <StudentProfileDialog 
-          student={selectedStudent} 
-          open={showProfileDialog}
-          onClose={() => setShowProfileDialog(false)}
-          onContact={() => {
-            setShowProfileDialog(false);
-            setShowContactDialog(true);
-          }}
-        />
-      )}
+      <StudentsList 
+        students={filteredStudents} 
+        isLoading={isLoading}
+        onStudentClick={(studentId) => navigate(`/profile/tutor/students/${studentId}`)}
+      />
     </div>
   );
 };

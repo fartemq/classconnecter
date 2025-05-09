@@ -1,67 +1,63 @@
 
-// Import necessary libraries and components
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { CalendarSidebar } from './CalendarSidebar';
-import { AvailableSlots } from './AvailableSlots';
 import { TutorSubjectSelect } from './TutorSubjectSelect';
+import { AvailableSlots } from './AvailableSlots';
 import { TutorScheduleFooter } from './TutorScheduleFooter';
 import { Button } from '@/components/ui/button';
-import { Loader } from '@/components/ui/loader';
-import { addDays } from 'date-fns';
+import { X } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { ensureObject } from '@/utils/supabaseUtils';
 
 interface TutorScheduleViewProps {
   tutorId: string;
-  onClose?: () => void;
+  onClose: () => void;
 }
 
-export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, onClose }) => {
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedSubjectId, setSelectedSubjectId] = useState<string>('');
-  const [subjectOptions, setSubjectOptions] = useState<Array<{ id: string; name: string }>>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [tutorName, setTutorName] = useState<string>('');
-
+export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) => {
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [subjects, setSubjects] = useState<{id: string, name: string}[]>([]);
+  const [selectedSubjectId, setSelectedSubjectId] = useState('');
+  const [tutorName, setTutorName] = useState('');
+  const [tutors, setTutors] = useState<{id: string, name: string}[]>([]);
+  const { toast } = useToast();
+  
   useEffect(() => {
-    const fetchTutorInfo = async () => {
+    const fetchTutorDetails = async () => {
       try {
-        const { data, error } = await supabase
+        // Fetch tutor profile
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('first_name, last_name')
           .eq('id', tutorId)
           .single();
-
-        if (error) throw error;
-
-        if (data) {
-          setTutorName(`${data.first_name || ''} ${data.last_name || ''}`.trim());
-        }
-      } catch (error) {
-        console.error('Error fetching tutor info:', error);
-      }
-    };
-
-    fetchTutorInfo();
-  }, [tutorId]);
-
-  useEffect(() => {
-    const fetchTutorSubjects = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
+          
+        if (profileError) throw profileError;
+        
+        setTutorName(`${profile.first_name} ${profile.last_name || ''}`);
+        
+        // Create a list with just this tutor for the sidebar
+        setTutors([{
+          id: tutorId,
+          name: `${profile.first_name} ${profile.last_name || ''}`
+        }]);
+        
+        // Fetch subjects taught by this tutor
+        const { data: subjectsData, error: subjectsError } = await supabase
           .from('tutor_subjects')
           .select(`
             subject_id,
-            subjects:subject_id (id, name)
+            subjects:subject_id (
+              id, name
+            )
           `)
           .eq('tutor_id', tutorId);
-
-        if (error) throw error;
-
-        if (data && data.length > 0) {
-          const options = data.map(item => {
+          
+        if (subjectsError) throw subjectsError;
+        
+        if (subjectsData && subjectsData.length > 0) {
+          const formattedSubjects = subjectsData.map(item => {
             const subject = ensureObject(item.subjects);
             return {
               id: subject.id,
@@ -69,65 +65,82 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
             };
           });
           
-          setSubjectOptions(options);
+          setSubjects(formattedSubjects);
           
           // Set the first subject as selected by default
-          if (options.length > 0 && !selectedSubjectId) {
-            setSelectedSubjectId(options[0].id);
+          if (formattedSubjects.length > 0) {
+            setSelectedSubjectId(formattedSubjects[0].id);
           }
         }
       } catch (error) {
-        console.error('Error fetching tutor subjects:', error);
-      } finally {
-        setLoading(false);
+        console.error("Error fetching tutor details:", error);
+        toast({
+          title: "Ошибка",
+          description: "Не удалось загрузить информацию о репетиторе",
+          variant: "destructive"
+        });
       }
     };
-
-    fetchTutorSubjects();
-  }, [tutorId]);
-
+    
+    fetchTutorDetails();
+  }, [tutorId, toast]);
+  
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
   };
-
+  
   const handleSubjectChange = (subjectId: string) => {
     setSelectedSubjectId(subjectId);
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <Loader size="lg" />
-      </div>
-    );
-  }
-
+  const handleSetSelectedTutor = () => {
+    // This function is just a placeholder since we're only showing one tutor
+    // but the CalendarSidebar might expect this function
+    console.log("Selected tutor is already set");
+  };
+  
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="md:col-span-1">
-        <CalendarSidebar 
-          selectedDate={selectedDate} 
-          onDateChange={handleDateChange}
-          selectedTutorId={tutorId}
-          setSelectedTutorId={() => {}}
-          tutors={[{id: tutorId, name: tutorName}]}
-        />
-      </div>
-      <div className="md:col-span-2 space-y-4">
-        <TutorSubjectSelect 
-          subjects={subjectOptions}
-          selectedSubject={selectedSubjectId}
-          onSubjectChange={handleSubjectChange}
-        />
+    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="p-4 border-b flex justify-between items-center">
+          <h2 className="text-xl font-semibold">Расписание занятий</h2>
+          <Button variant="ghost" size="icon" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
         
-        <AvailableSlots 
-          slots={[]} 
-          bookingSlot={null} 
-          onBookSlot={() => {}}
-        />
+        <div className="flex flex-col md:flex-row overflow-hidden h-full">
+          {/* Left sidebar */}
+          <div className="md:w-1/3 p-4 border-r overflow-y-auto">
+            <CalendarSidebar 
+              selectedDate={selectedDate} 
+              onDateChange={handleDateChange}
+              selectedTutorId={tutorId}
+              setSelectedTutorId={handleSetSelectedTutor}
+              tutors={tutors}
+            />
+            
+            <div className="mt-6">
+              <TutorSubjectSelect
+                subjectOptions={subjects}
+                selectedSubjectId={selectedSubjectId}
+                onChange={handleSubjectChange}
+              />
+            </div>
+          </div>
+          
+          {/* Main content */}
+          <div className="flex-1 overflow-y-auto">
+            <AvailableSlots 
+              tutorId={tutorId}
+              selectedDate={selectedDate}
+              selectedSubjectId={selectedSubjectId}
+            />
+          </div>
+        </div>
         
         <TutorScheduleFooter 
-          onClose={onClose || (() => {})}
+          onClose={onClose} 
           tutorName={tutorName}
         />
       </div>

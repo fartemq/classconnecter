@@ -16,29 +16,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { TutorRequest } from '@/types/student';
 
-// Define the interface for the component's expected TutorRequest type
-interface ComponentTutorRequest {
-  id: string;
-  tutor_id: string;
-  student_id: string;
-  subject_id?: string | null;
-  message?: string | null;
-  status: 'pending' | 'accepted' | 'rejected' | 'completed';
-  created_at: string;
-  tutor: {
-    id: string;
-    first_name: string;
-    last_name: string | null;
-    avatar_url: string | null;
-    role: string;
-    city: string | null;
-  };
-  subject?: {
-    id: string;
-    name: string;
-  };
-}
-
 export const TutorRequestsSection = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -54,8 +31,7 @@ export const TutorRequestsSection = () => {
     subjects
   } = useTutorRequests(user?.id);
   
-  // The tutorRequests from the API already match our expected type now
-  // No need to convert them to ComponentTutorRequest anymore
+  // The tutorRequests from the API match our TutorRequest type
   const tutorRequests = apiTutorRequests;
   
   // Filter requests by subject if needed

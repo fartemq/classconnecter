@@ -1,6 +1,4 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { TutorProfile } from "@/types/tutor";
 import { ensureObject } from "@/utils/supabaseUtils";
 
 export interface PublicTutorProfile {
@@ -230,5 +228,123 @@ export const fetchPublicTutors = async (filters: any = {}): Promise<PublicTutorP
   } catch (error) {
     console.error("Error in fetchPublicTutors:", error);
     return [];
+  }
+};
+
+export const fetchTutorProfile = async (tutorId: string) => {
+  try {
+    // Fetch tutor basic profile
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select(`
+        id,
+        first_name,
+        last_name,
+        bio,
+        avatar_url,
+        city,
+        email,
+        phone,
+        role,
+        tutor_profiles (
+          is_published,
+          education_institution,
+          degree,
+          graduation_year,
+          methodology,
+          experience,
+          achievements,
+          video_url
+        )
+      `)
+      .eq("id", tutorId)
+      .eq("role", "tutor")
+      .single();
+      
+    if (profileError) {
+      console.error("Error fetching tutor profile:", profileError);
+      return null;
+    }
+    
+    if (!profile) {
+      return null;
+    }
+    
+    // Get tutor subjects with prices
+    const { data: subjectsData, error: subjectsError } = await supabase
+      .from("tutor_subjects")
+      .select(`
+        id,
+        hourly_rate,
+        subjects:subject_id (
+          id,
+          name,
+          category_id
+        )
+      `)
+      .eq("tutor_id", tutorId);
+      
+    if (subjectsError) {
+      console.error("Error fetching tutor subjects:", subjectsError);
+      return null;
+    }
+    
+    // Get ratings
+    const { data: ratingsData, error: ratingsError } = await supabase
+      .from("tutor_reviews")
+      .select("id, rating, comment, created_at")
+      .eq("tutor_id", tutorId);
+      
+    if (ratingsError) {
+      console.error("Error fetching tutor ratings:", ratingsError);
+      return null;
+    }
+    
+    // Process tutor profile data
+    const tutorProfile = ensureObject(profile.tutor_profiles);
+    
+    // Calculate average rating
+    let averageRating = null;
+    if (ratingsData && ratingsData.length > 0) {
+      const sum = ratingsData.reduce((acc, curr) => acc + curr.rating, 0);
+      averageRating = sum / ratingsData.length;
+    }
+    
+    // Format subjects
+    const subjects = subjectsData?.map(item => {
+      const subject = ensureObject(item.subjects);
+      return {
+        id: item.id,
+        subjectId: subject.id,
+        name: subject.name,
+        categoryId: subject.category_id,
+        hourlyRate: item.hourly_rate
+      };
+    }) || [];
+    
+    return {
+      id: profile.id,
+      firstName: profile.first_name,
+      lastName: profile.last_name,
+      bio: profile.bio,
+      avatarUrl: profile.avatar_url,
+      city: profile.city,
+      email: profile.email,
+      phone: profile.phone,
+      isPublished: tutorProfile.is_published,
+      educationInstitution: tutorProfile.education_institution,
+      degree: tutorProfile.degree,
+      graduationYear: tutorProfile.graduation_year,
+      methodology: tutorProfile.methodology,
+      experience: tutorProfile.experience,
+      achievements: tutorProfile.achievements,
+      videoUrl: tutorProfile.video_url,
+      subjects,
+      rating: averageRating,
+      reviews: ratingsData || []
+    };
+  } catch (error) {
+    console.error("Error in fetchTutorProfile:", error);
+    return null;
   }
 };

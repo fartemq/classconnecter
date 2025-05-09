@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
@@ -88,25 +87,21 @@ export const saveTutorProfile = async (
  */
 export const publishTutorProfile = async (tutorId: string, isPublished: boolean): Promise<boolean> => {
   try {
-    console.log(`Setting tutor ${tutorId} published status to: ${isPublished}`);
-    
     const { error } = await supabase
       .from("tutor_profiles")
-      .update({ 
+      .update({
         is_published: isPublished,
         updated_at: new Date().toISOString()
       })
       .eq("id", tutorId);
       
     if (error) {
-      console.error("Error publishing tutor profile:", error);
-      return false;
+      throw error;
     }
     
-    console.log(`Successfully updated tutor ${tutorId} publish status to ${isPublished}`);
     return true;
   } catch (error) {
-    console.error("Error in publishTutorProfile:", error);
+    console.error("Error publishing tutor profile:", error);
     return false;
   }
 };
@@ -194,5 +189,26 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
   } catch (error) {
     console.error("Error in fetchTutorProfile:", error);
     return null;
+  }
+};
+
+/**
+ * Get the name of a subject
+ */
+export const getSubjectName = async (subjectId: string): Promise<string> => {
+  try {
+    const { data, error } = await supabase
+      .from("subjects")
+      .select("name")
+      .eq("id", subjectId)
+      .single();
+      
+    if (error) throw error;
+    
+    // Use ensureObject to safely access the name
+    return data ? data.name : "";
+  } catch (error) {
+    console.error("Error getting subject name:", error);
+    return "";
   }
 };

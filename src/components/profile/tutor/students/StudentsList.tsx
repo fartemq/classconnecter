@@ -1,48 +1,36 @@
 
-import React from "react";
-import { StudentCard } from "./StudentCard";
-import { EmptySearchResults } from "./EmptySearchResults";
-
-// Define the interface for the expected student format
-interface StudentsListStudent {
-  id: string;
-  name: string;
-  avatar: string;
-  lastActive: string;
-  level: string;
-  grade: string;
-  subjects: string[];
-  city: string;
-  about: string;
-  interests: string[];
-  status: string;
-}
+import React from 'react';
+import { StudentCard } from './StudentCard';
+import { Loader } from '@/components/ui/loader';
+import { EmptyStudentsList } from './EmptyStudentsList';
+import { StudentCardData } from './types';
 
 interface StudentsListProps {
-  students: StudentsListStudent[];
-  onContact: (student: StudentsListStudent) => void;
-  onViewProfile: (student: StudentsListStudent) => void;
-  onFindNewStudents?: () => void;
+  students: StudentCardData[];
+  isLoading: boolean;
+  onStudentClick: (studentId: string) => void;
 }
 
-export const StudentsList = ({ 
-  students, 
-  onContact, 
-  onViewProfile, 
-  onFindNewStudents = () => {} 
-}: StudentsListProps) => {
+export const StudentsList = ({ students, isLoading, onStudentClick }: StudentsListProps) => {
+  if (isLoading) {
+    return (
+      <div className="py-12 flex justify-center">
+        <Loader size="lg" />
+      </div>
+    );
+  }
+
   if (students.length === 0) {
-    return <EmptySearchResults onFindNewStudents={onFindNewStudents} />;
+    return <EmptyStudentsList />;
   }
 
   return (
-    <div className="grid grid-cols-1 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       {students.map(student => (
-        <StudentCard 
-          key={student.id} 
-          student={student} 
-          onContact={onContact} 
-          onViewProfile={onViewProfile} 
+        <StudentCard
+          key={student.id}
+          student={student}
+          onClick={() => onStudentClick(student.id)}
         />
       ))}
     </div>

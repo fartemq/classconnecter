@@ -28,6 +28,31 @@ export interface TutorSearchFilters {
   experienceMin?: number;
 }
 
+/**
+ * Checks if a tutor has added any subjects to their profile
+ * @param tutorId The ID of the tutor to check
+ * @returns A boolean indicating whether the tutor has added any subjects
+ */
+export const hasTutorAddedSubjects = async (tutorId: string): Promise<boolean> => {
+  try {
+    const { data, error, count } = await supabase
+      .from("tutor_subjects")
+      .select("id", { count: "exact" })
+      .eq("tutor_id", tutorId)
+      .limit(1);
+    
+    if (error) {
+      console.error("Error checking tutor subjects:", error);
+      return false;
+    }
+    
+    return count ? count > 0 : false;
+  } catch (error) {
+    console.error("Error in hasTutorAddedSubjects:", error);
+    return false;
+  }
+};
+
 export const searchTutors = async (
   filters: TutorSearchFilters,
   page: number = 1,
