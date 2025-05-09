@@ -1,5 +1,4 @@
-
-import React from "react";
+import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,83 +17,57 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
+import { Alert, AlertCircle, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 // Define the schema for our login form
-const formSchema = z.object({
+const loginFormSchema = z.object({
   email: z.string().email({ message: "Введите корректный email" }),
   password: z.string().min(1, { message: "Введите пароль" }),
-  rememberMe: z.boolean().default(false),
 });
 
-export type LoginFormValues = z.infer<typeof formSchema>;
+export type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 interface LoginFormProps {
-  onSuccess: (role: string) => void;
-  isLoading: boolean;
-  setIsLoading: (loading: boolean) => void;
-  setLoginAttempted: (attempted: boolean) => void;
+  onSuccess: (values: LoginFormValues) => void;
+  needConfirmation?: boolean;
+  isLoading?: boolean;
+  setIsLoading?: (loading: boolean) => void;
+  setLoginAttempted?: (attempted: boolean) => void;
 }
 
-export function LoginForm({ onSuccess, isLoading, setIsLoading, setLoginAttempted }: LoginFormProps) {
+export function LoginForm({ onSuccess, needConfirmation = false, isLoading = false }: LoginFormProps) {
+  const [showPassword, setShowPassword] = useState(false);
+  
   const form = useForm<LoginFormValues>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(loginFormSchema),
     defaultValues: {
       email: "",
       password: "",
-      rememberMe: false,
     },
   });
 
   async function onSubmit(values: LoginFormValues) {
-    setIsLoading(true);
-    setLoginAttempted(true);
-
     try {
-      console.log("Submitting login form with:", values.email);
-      const data = await loginUser(values.email, values.password);
-
-      if (!data || !data.user) {
-        throw new Error("Ошибка входа: пользователь не найден");
-      }
-
-      console.log("Login successful, fetching user role for:", data.user.id);
-      
-      // Get user role from profiles table
-      const role = await getUserRole(data.user.id);
-      console.log("User role:", role);
-      
-      if (!role) {
-        console.error("Role not found for user");
-        toast({
-          title: "Ошибка входа",
-          description: "Не удалось определить роль пользователя",
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      toast({
-        title: "Вход выполнен успешно!",
-        description: "Добро пожаловать на платформу Stud.rep",
-      });
-
-      // Call the onSuccess callback with the user role
-      onSuccess(role);
+      await onSuccess(values);
     } catch (error) {
-      console.error("Login error in form:", error);
-      toast({
-        title: "Ошибка входа",
-        description: error instanceof Error ? error.message : "Произошла ошибка при входе в систему",
-        variant: "destructive",
-      });
-      setIsLoading(false); // Make sure to reset loading state on error
+      console.error("Login form error:", error);
+      // Ошибка уже обрабатывается в onSuccess, здесь ничего делать не нужно
     }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {needConfirmation && (
+          <Alert variant="warning" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Требуется подтверждение email</AlertTitle>
+            <AlertDescription>
+              Мы отправили вам письмо для подтверждения. Пожалуйста, проверьте вашу почту и активируйте аккаунт.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <FormField
           control={form.control}
           name="email"

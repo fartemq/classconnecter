@@ -49,7 +49,8 @@ export const registerUser = async (userData: RegisterUserData) => {
     
     console.log("User created successfully:", authData.user.id);
 
-    // Sign in immediately after registration to get a valid session for RLS policies
+    // ВАЖНО: поскольку сразу после регистрации пользователь не имеет активной сессии,
+    // принудительно входим в систему для получения действующей сессии перед добавлением профиля
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email: userData.email,
       password: userData.password,
@@ -57,20 +58,26 @@ export const registerUser = async (userData: RegisterUserData) => {
 
     if (signInError) {
       console.error("Error signing in after registration:", signInError);
-      // Continue anyway since the user was created
-    } else {
-      console.log("User signed in after registration");
+      throw new Error("Ошибка при входе в систему после регистрации: " + signInError.message);
     }
 
-    // Create profile in profiles table with extended information
+    // Убедимся, что у нас есть активная сессия
+    if (!signInData || !signInData.session) {
+      console.error("No session after sign in");
+      throw new Error("Не удалось получить сессию после входа в систему");
+    }
+    
+    console.log("Successfully signed in with session:", signInData.session.access_token);
+
+    // Теперь создаем запись в таблице profiles
     const { error: profileError } = await supabase.from("profiles").insert({
       id: authData.user.id,
       first_name: userData.firstName,
       last_name: userData.lastName,
       role: userData.role,
-      city: userData.city,
-      phone: userData.phone,
-      bio: userData.bio,
+      city: userData.city || null,
+      phone: userData.phone || null,
+      bio: userData.bio || null,
     });
 
     if (profileError) {
@@ -79,12 +86,12 @@ export const registerUser = async (userData: RegisterUserData) => {
       if (profileError.message.includes("duplicate key")) {
         throw new Error("Пользователь с таким email уже существует");
       }
-      throw new Error(profileError.message || "Ошибка при создании профиля");
+      throw new Error("Ошибка при создании профиля: " + profileError.message);
     }
     
     console.log("Profile created successfully for user:", authData.user.id);
 
-    // If user is a tutor, create a record in the tutor_profiles table
+    // Если пользователь - репетитор, создаем запись в таблице tutor_profiles
     if (userData.role === "tutor") {
       const { error: tutorProfileError } = await supabase.from("tutor_profiles").insert({
         id: authData.user.id,
@@ -95,13 +102,13 @@ export const registerUser = async (userData: RegisterUserData) => {
 
       if (tutorProfileError) {
         console.error("Error creating tutor profile:", tutorProfileError);
-        // Don't throw an error since the main profile was already created
+        // Не выбрасываем ошибку, так как основной профиль уже создан
       } else {
         console.log("Tutor profile created successfully");
       }
     }
 
-    // For student, create a record in student_profiles table
+    // Для студента создаем запись в таблице student_profiles
     if (userData.role === "student") {
       const { error: studentProfileError } = await supabase.from("student_profiles").insert({
         id: authData.user.id,
@@ -112,13 +119,13 @@ export const registerUser = async (userData: RegisterUserData) => {
 
       if (studentProfileError) {
         console.error("Error creating student profile:", studentProfileError);
-        // Don't throw an error since the main profile was already created
+        // Не выбрасываем ошибку, так как основной профиль уже создан
       } else {
         console.log("Student profile created successfully");
       }
     }
 
-    return { user: authData.user, session: signInData?.session || authData.session };
+    return { user: authData.user, session: signInData.session };
   } catch (error) {
     console.error("Registration error:", error);
     throw error;

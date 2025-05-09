@@ -75,15 +75,16 @@ const RegisterPage = () => {
     setIsLoading(true);
     
     try {
+      // Убедимся, что все поля определены, даже если они пустые
       const result = await registerUser({
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
         password: values.password,
         role: values.role,
-        city: values.city,
-        phone: values.phone,
-        bio: values.bio,
+        city: values.city || "",
+        phone: values.phone || "",
+        bio: values.bio || "",
       });
 
       console.log("Registration successful:", result);
