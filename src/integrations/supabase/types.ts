@@ -290,29 +290,35 @@ export type Database = {
         Row: {
           degree: string | null
           education_institution: string | null
+          education_verified: boolean | null
           experience: number | null
           graduation_year: number | null
           id: string
           is_published: boolean | null
           methodology: string | null
+          updated_at: string | null
         }
         Insert: {
           degree?: string | null
           education_institution?: string | null
+          education_verified?: boolean | null
           experience?: number | null
           graduation_year?: number | null
           id: string
           is_published?: boolean | null
           methodology?: string | null
+          updated_at?: string | null
         }
         Update: {
           degree?: string | null
           education_institution?: string | null
+          education_verified?: boolean | null
           experience?: number | null
           graduation_year?: number | null
           id?: string
           is_published?: boolean | null
           methodology?: string | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -324,22 +330,82 @@ export type Database = {
           },
         ]
       }
+      tutor_schedule: {
+        Row: {
+          created_at: string | null
+          day_of_week: number
+          end_time: string
+          id: string
+          is_available: boolean | null
+          start_time: string
+          tutor_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          day_of_week: number
+          end_time: string
+          id?: string
+          is_available?: boolean | null
+          start_time: string
+          tutor_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_available?: boolean | null
+          start_time?: string
+          tutor_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tutor_schedule_exceptions: {
+        Row: {
+          created_at: string | null
+          date: string
+          id: string
+          is_full_day: boolean | null
+          reason: string | null
+          tutor_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          date: string
+          id?: string
+          is_full_day?: boolean | null
+          reason?: string | null
+          tutor_id: string
+        }
+        Update: {
+          created_at?: string | null
+          date?: string
+          id?: string
+          is_full_day?: boolean | null
+          reason?: string | null
+          tutor_id?: string
+        }
+        Relationships: []
+      }
       tutor_subjects: {
         Row: {
+          hourly_rate: number | null
           id: string
-          price_per_hour: number | null
           subject_id: string | null
           tutor_id: string | null
         }
         Insert: {
+          hourly_rate?: number | null
           id?: string
-          price_per_hour?: number | null
           subject_id?: string | null
           tutor_id?: string | null
         }
         Update: {
+          hourly_rate?: number | null
           id?: string
-          price_per_hour?: number | null
           subject_id?: string | null
           tutor_id?: string | null
         }

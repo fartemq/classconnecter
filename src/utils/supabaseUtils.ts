@@ -1,12 +1,9 @@
 
 /**
- * Ensures that an object is treated as an object, not an array
- * This is particularly useful when working with Supabase nested join results
- * where sometimes a relation returns as an array when we're expecting a single object
+ * Ensures that a value is treated as an object.
+ * This is useful when dealing with potentially null/undefined values from the database,
+ * especially in join queries or JSON columns.
  */
-export function ensureObject<T>(obj: T | T[]): T {
-  if (Array.isArray(obj)) {
-    return obj[0] || {} as T;
-  }
-  return obj || {} as T;
+export function ensureObject<T>(value: T | null | undefined): T {
+  return value as T;
 }
