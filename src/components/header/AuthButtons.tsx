@@ -3,7 +3,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogIn, User, LogOut } from "lucide-react";
-import { logoutUser } from "@/services/authService";
+import { logoutUser } from "@/services/auth";
 import { toast } from "@/hooks/use-toast";
 
 interface AuthButtonsProps {

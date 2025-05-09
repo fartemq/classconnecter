@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -15,7 +14,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { RegisterFormValues } from "@/components/auth/register-form-schema";
-import { registerUser } from "@/services/authService";
+import { registerUser } from "@/services/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader } from "@/components/ui/loader";
 import { EmailConfirmationStatus } from "@/components/auth/EmailConfirmationStatus";
