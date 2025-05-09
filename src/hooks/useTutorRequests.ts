@@ -51,8 +51,8 @@ export const useTutorRequests = (studentId?: string) => {
           id: item.id,
           tutor_id: item.tutor_id,
           student_id: item.student_id,
-          subject_id: item.subject_id,
-          message: item.message,
+          subject_id: item.subject_id || null,
+          message: item.message || null,
           status: item.status,
           created_at: item.created_at,
           tutor: {
@@ -96,14 +96,21 @@ export const useTutorRequests = (studentId?: string) => {
   
   const updateRequestStatus = async (requestId: string, status: 'accepted' | 'rejected' | 'completed') => {
     try {
-      // In a real implementation, you'd update a tutor_requests table
-      // For now, we'll just show a toast to simulate the action
-      toast({
-        title: status === 'accepted' ? "Запрос принят" : "Запрос отклонен",
-        description: status === 'accepted' 
-          ? "Вы можете связаться с репетитором" 
-          : "Репетитор получит уведомление о вашем решении"
-      });
+      // For implementation in a real database
+      const { error } = await supabase
+        .from('tutor_requests')
+        .update({ status })
+        .eq('id', requestId);
+      
+      if (error) {
+        console.error("Error updating request status:", error);
+        toast({
+          title: "Ошибка",
+          description: "Не удалось обновить статус запроса",
+          variant: "destructive"
+        });
+        return false;
+      }
       
       // Update the local state to reflect the change
       setTutorRequests(prev => 
@@ -113,6 +120,15 @@ export const useTutorRequests = (studentId?: string) => {
             : request
         )
       );
+      
+      toast({
+        title: status === 'accepted' ? "Запрос принят" : status === 'rejected' ? "Запрос отклонен" : "Запрос завершен",
+        description: status === 'accepted' 
+          ? "Вы можете связаться с репетитором" 
+          : status === 'rejected'
+          ? "Репетитор получит уведомление о вашем решении"
+          : "Занятие успешно завершено"
+      });
       
       return true;
     } catch (err) {

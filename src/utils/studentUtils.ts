@@ -1,64 +1,71 @@
 
-import { StudentRequest, Student } from "@/types/student";
-import { ensureObject } from "@/utils/supabaseUtils";
+import { Student, StudentRequest } from "@/types/student";
 
-export const createStudentFromRequest = (request: StudentRequest): Student => {
-  // Обработаем случаи, когда student может быть массивом или объектом
-  const student = request.student 
-    ? (Array.isArray(request.student) ? request.student[0] : request.student)
-    : null;
-  
-  // Обработаем случаи, когда subject может быть массивом или объектом
-  const subject = request.subject 
-    ? (Array.isArray(request.subject) ? request.subject[0] : request.subject)
-    : null;
-  
-  return {
-    id: request.student_id,
-    first_name: student?.first_name || '',
-    last_name: student?.last_name || null,
-    avatar_url: student?.avatar_url || null,
-    city: student?.city || null,
-    // Compatibility fields
-    name: student ? `${student.first_name || ''} ${student.last_name || ''}`.trim() : '',
-    status: request.status,
-    level: 'N/A', // We don't have this info in the current DB schema
-    grade: null,
-    school: null,
-    subjects: subject ? [subject.name] : [],
-    lastActive: request.updated_at ? new Date(request.updated_at).toLocaleDateString('ru-RU') : 'N/A',
-    avatar: student?.avatar_url,
-    about: '',
-    interests: []
-  };
-};
-
-export const createStudentFromProfile = (profile: any, studentProfile: any | null): Student => {
-  // Определяем уровень на основе данных из student_profiles или устанавливаем значение по умолчанию
-  let level = 'N/A';
-  if (studentProfile?.educational_level) {
-    level = studentProfile.educational_level;
-  }
-  
-  const safeStudentProfile = studentProfile || {}; 
-  
+// Create a Student object from a profile record and optional student_profiles record
+export function createStudentFromProfile(
+  profile: any, 
+  studentProfile: any = null
+): Student {
   return {
     id: profile.id,
     first_name: profile.first_name || '',
-    last_name: profile.last_name || null,
+    last_name: profile.last_name,
     avatar_url: profile.avatar_url,
     city: profile.city,
-    // Compatibility fields
+    
+    // Added fields for compatibility with UI components
     name: `${profile.first_name || ''} ${profile.last_name || ''}`.trim(),
-    status: 'new', // По умолчанию статус "new" для студентов без запроса
-    level: level,
-    grade: safeStudentProfile.grade || null,
-    school: safeStudentProfile.school || null,
-    subjects: safeStudentProfile.subjects || [],
-    lastActive: profile.updated_at ? new Date(profile.updated_at).toLocaleDateString('ru-RU') : 'N/A',
     avatar: profile.avatar_url,
-    about: safeStudentProfile.learning_goals || profile.bio || '',
-    interests: safeStudentProfile.preferred_format || [],
-    student_profiles: studentProfile
+    lastActive: profile.updated_at || new Date().toISOString(),
+    level: studentProfile?.educational_level === 'school' ? 'Школьник' :
+           studentProfile?.educational_level === 'university' ? 'Студент' :
+           studentProfile?.educational_level === 'adult' ? 'Взрослый' : 'Не указан',
+    grade: studentProfile?.grade || null,
+    school: studentProfile?.school || null,
+    about: profile.bio || '',
+    subjects: studentProfile?.subjects || [],
+    interests: [],
+    status: 'active',
+    
+    // Full student profile data
+    student_profiles: studentProfile ? {
+      educational_level: studentProfile.educational_level,
+      subjects: studentProfile.subjects,
+      learning_goals: studentProfile.learning_goals,
+      preferred_format: studentProfile.preferred_format,
+      school: studentProfile.school,
+      grade: studentProfile.grade,
+      budget: studentProfile.budget
+    } : null
   };
-};
+}
+
+// Create a Student object from a request with nested student data
+export function createStudentFromRequest(request: any): Student {
+  if (!request.student) {
+    throw new Error('Student data is missing in the request');
+  }
+  
+  // Get the student data, handle both array and object formats
+  const studentData = Array.isArray(request.student) ? request.student[0] : request.student;
+  
+  return {
+    id: studentData.id,
+    first_name: studentData.first_name || '',
+    last_name: studentData.last_name,
+    avatar_url: studentData.avatar_url,
+    city: studentData.city,
+    
+    // Added fields for compatibility with UI components
+    name: `${studentData.first_name || ''} ${studentData.last_name || ''}`.trim(),
+    avatar: studentData.avatar_url,
+    lastActive: request.updated_at || new Date().toISOString(),
+    level: 'Не указан', // We don't have this info from the request
+    grade: null,
+    school: null,
+    about: '',
+    subjects: request.subject ? [request.subject.name] : [],
+    interests: [],
+    status: request.status || 'new',
+  };
+}

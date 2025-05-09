@@ -1,29 +1,34 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Users } from 'lucide-react';
+import { UserPlus, Search } from 'lucide-react';
 
-export interface EmptyStudentsListProps {
-  onCheckRequests?: () => void;
+interface EmptyStudentsListProps {
+  onCheckRequests?: () => void; // Make it optional to match the usage
 }
 
 export const EmptyStudentsList = ({ onCheckRequests }: EmptyStudentsListProps) => {
   return (
-    <div className="text-center py-10">
-      <div className="bg-slate-50 rounded-lg p-6">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
-          <Users className="h-6 w-6 text-slate-600" />
-        </div>
-        <h3 className="mt-3 text-lg font-medium">У вас пока нет учеников</h3>
-        <p className="mt-2 text-sm text-gray-500">
-          Ваш список учеников пуст. Вы можете найти новых учеников в разделе поиска или проверить запросы от учеников.
-        </p>
+    <div className="flex flex-col items-center justify-center p-8 bg-gray-50 rounded-lg">
+      <div className="h-16 w-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+        <UserPlus className="h-8 w-8 text-gray-400" />
+      </div>
+      <h3 className="text-lg font-medium mb-2">Список учеников пуст</h3>
+      <p className="text-center text-gray-500 mb-6 max-w-md">
+        Пока у вас нет учеников. Вы можете найти новых учеников или проверить запросы, 
+        которые отправили ученики.
+      </p>
+      
+      <div className="flex flex-col sm:flex-row gap-4">
+        <Button variant="outline" className="flex items-center gap-2">
+          <Search className="h-4 w-4" />
+          Найти учеников
+        </Button>
+        
         {onCheckRequests && (
-          <div className="mt-4">
-            <Button onClick={onCheckRequests} variant="outline">
-              Проверить запросы
-            </Button>
-          </div>
+          <Button onClick={onCheckRequests} className="flex items-center gap-2">
+            Проверить запросы
+          </Button>
         )}
       </div>
     </div>

@@ -30,8 +30,8 @@ export interface TutorRequest {
   id: string;
   tutor_id: string;
   student_id: string;
-  subject_id?: string | null; // Explicitly make this optional to match usage patterns
-  message?: string | null; // Ensuring it's optional here too for consistency
+  subject_id?: string | null; // Making it optional to fix type errors
+  message?: string | null; // Ensuring it's optional for consistency
   status: 'pending' | 'accepted' | 'rejected' | 'completed';
   created_at: string;
   updated_at?: string;
