@@ -10,12 +10,15 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { RegisterForm } from "@/components/auth/RegisterForm";
 import { RegisterFormValues } from "@/components/auth/register-form-schema";
 import { registerUser } from "@/services/authService";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader } from "@/components/ui/loader";
+import { EmailConfirmationStatus } from "@/components/auth/EmailConfirmationStatus";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -23,8 +26,10 @@ const RegisterPage = () => {
   const [defaultRole, setDefaultRole] = useState<"student" | "tutor" | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
+  const [showConfirmEmail, setShowConfirmEmail] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
-  // Проверяем, авторизован ли пользователь
+  // Check if user is already authenticated
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -38,7 +43,7 @@ const RegisterPage = () => {
               .from("profiles")
               .select("role")
               .eq("id", session.user.id)
-              .single();
+              .maybeSingle();
               
             if (data?.role === "tutor") {
               navigate("/profile/tutor");
@@ -61,27 +66,64 @@ const RegisterPage = () => {
     checkSession();
   }, [navigate]);
 
-  // Получаем роль из параметров URL, если она указана
+  // Get role from URL parameters if specified
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const role = params.get("role");
     
     if (role === "student" || role === "tutor") {
       setDefaultRole(role);
+      console.log("Setting default role from URL:", role);
     }
   }, [location]);
 
+  // Handle resending confirmation email
+  const handleResendConfirmation = async () => {
+    if (!registeredEmail) return;
+    
+    try {
+      setIsLoading(true);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: registeredEmail,
+      });
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "Письмо отправлено",
+        description: "Проверьте свою почту для подтверждения аккаунта",
+      });
+    } catch (error) {
+      console.error("Error resending confirmation:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось отправить письмо подтверждения",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   async function handleRegisterSuccess(values: RegisterFormValues) {
+    console.log("Registration values:", values);
     setIsLoading(true);
     
     try {
-      // Убедимся, что все поля определены, даже если они пустые
+      // Make sure role is set properly
+      const role = values.role || defaultRole || "student";
+      console.log("Using role for registration:", role);
+      
+      // Register user with all provided data
       const result = await registerUser({
         firstName: values.firstName,
         lastName: values.lastName,
         email: values.email,
         password: values.password,
-        role: values.role,
+        role: role,
         city: values.city || "",
         phone: values.phone || "",
         bio: values.bio || "",
@@ -89,23 +131,20 @@ const RegisterPage = () => {
 
       console.log("Registration successful:", result);
 
-      // Show success message
-      toast({
-        title: "Регистрация успешна!",
-        description: "На вашу почту отправлено письмо для подтверждения аккаунта.",
-      });
-
-      // Автоматически войти, если нет необходимости подтверждать email
-      if (result.session) {
-        // Redirect based on role
-        if (values.role === "tutor") {
+      // Store email for potential resend
+      setRegisteredEmail(values.email);
+      
+      // Check if email confirmation is required
+      if (!result.session) {
+        // Show confirmation page instead of redirect
+        setShowConfirmEmail(true);
+      } else {
+        // Automatically redirect based on role
+        if (role === "tutor") {
           navigate("/profile/tutor/complete");
         } else {
           navigate("/profile/student");
         }
-      } else {
-        // Перенаправить на страницу подтверждения
-        navigate("/login", { state: { needConfirmation: true } });
       }
     } catch (error) {
       console.error("Registration error in page:", error);
@@ -134,6 +173,22 @@ const RegisterPage = () => {
     );
   }
 
+  if (showConfirmEmail) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center bg-gray-50 py-12">
+          <EmailConfirmationStatus
+            email={registeredEmail}
+            status="pending"
+            onResend={handleResendConfirmation}
+          />
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />
@@ -152,6 +207,11 @@ const RegisterPage = () => {
               isLoading={isLoading} 
             />
           </CardContent>
+          <CardFooter className="flex-col text-center">
+            <p className="text-sm text-muted-foreground">
+              После регистрации вам необходимо подтвердить email перед входом в систему
+            </p>
+          </CardFooter>
         </Card>
       </main>
       <Footer />

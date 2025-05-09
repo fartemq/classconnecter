@@ -36,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .from("profiles")
         .select("role")
         .eq("id", userId)
-        .maybeSingle(); // Use maybeSingle instead of single to avoid errors if no result
+        .maybeSingle(); 
       
       if (error) {
         console.error("Error fetching user role:", error);
@@ -49,9 +49,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return data.role;
       }
       
-      // If no profile exists yet, create one with default role (student)
+      // If no profile exists yet, create one with default role based on user metadata
       console.log("No profile found, creating one...");
-      const defaultRole = 'student';
+      const defaultRole = user?.user_metadata?.role || 'student';
+      console.log("Using default role from metadata:", defaultRole);
       
       const { error: insertError } = await supabase
         .from("profiles")
@@ -68,6 +69,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (insertError) {
         console.error("Error creating profile:", insertError);
         return null;
+      }
+      
+      // Also create role-specific profile
+      try {
+        if (defaultRole === 'tutor') {
+          const { error: tutorProfileError } = await supabase.from("tutor_profiles").insert({
+            id: userId,
+            education_institution: "",
+            degree: "",
+            graduation_year: new Date().getFullYear(),
+            experience: 0,
+            is_published: false
+          });
+          
+          if (tutorProfileError) {
+            console.error("Error creating tutor profile:", tutorProfileError);
+          }
+        } else {
+          const { error: studentProfileError } = await supabase.from("student_profiles").insert({
+            id: userId,
+            educational_level: null,
+            subjects: [],
+            budget: null
+          });
+          
+          if (studentProfileError) {
+            console.error("Error creating student profile:", studentProfileError);
+          }
+        }
+      } catch (profileError) {
+        console.error("Error creating role-specific profile:", profileError);
       }
       
       // Return the default role
@@ -95,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               setTimeout(async () => {
                 const role = await fetchUserRole(currentSession.user.id);
                 setUserRole(role);
+                console.log("Set user role to:", role);
               }, 0);
             } else {
               setUserRole(null);
@@ -111,6 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (existingSession?.user) {
           const role = await fetchUserRole(existingSession.user.id);
           setUserRole(role);
+          console.log("Initial user role set to:", role);
         }
 
         setIsLoading(false);

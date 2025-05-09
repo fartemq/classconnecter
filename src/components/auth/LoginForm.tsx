@@ -1,11 +1,9 @@
 
 import React, { useState } from "react";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { loginUser, getUserRole } from "@/services/authService";
-import { toast } from "@/hooks/use-toast";
-import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
@@ -15,58 +13,75 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, AlertCircle } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Loader2 } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 // Define the schema for our login form
 const loginFormSchema = z.object({
   email: z.string().email({ message: "Введите корректный email" }),
   password: z.string().min(1, { message: "Введите пароль" }),
-  rememberMe: z.boolean().optional().default(false)
+  rememberMe: z.boolean().optional().default(false),
 });
 
 export type LoginFormValues = z.infer<typeof loginFormSchema>;
 
-interface LoginFormProps {
+export interface LoginFormProps {
   onSuccess: (values: LoginFormValues) => void;
-  needConfirmation?: boolean;
-  isLoading?: boolean;
-  setIsLoading?: (loading: boolean) => void;
-  setLoginAttempted?: (attempted: boolean) => void;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+  setLoginAttempted: (attempted: boolean) => void;
+  needConfirmation: boolean;
 }
 
-export function LoginForm({ onSuccess, needConfirmation = false, isLoading = false }: LoginFormProps) {
-  const [showPassword, setShowPassword] = useState(false);
+export function LoginForm({ 
+  onSuccess, 
+  isLoading, 
+  setIsLoading, 
+  setLoginAttempted,
+  needConfirmation
+}: LoginFormProps) {
+  const [error, setError] = useState<string | null>(null);
   
+  // Initialize react-hook-form
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginFormSchema),
     defaultValues: {
       email: "",
       password: "",
-      rememberMe: false
+      rememberMe: false,
     },
   });
 
   async function onSubmit(values: LoginFormValues) {
+    setLoginAttempted(true);
+    setError(null);
+    
     try {
       await onSuccess(values);
     } catch (error) {
       console.error("Login form error:", error);
-      // Ошибка уже обрабатывается в onSuccess, здесь ничего делать не нужно
+      setError(error instanceof Error ? error.message : "Произошла ошибка при входе");
     }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {needConfirmation && (
-          <Alert variant="destructive" className="mb-4">
+        {error && (
+          <Alert className="bg-red-50">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Требуется подтверждение email</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+        
+        {needConfirmation && (
+          <Alert className="bg-blue-50">
+            <AlertCircle className="h-4 w-4" />
             <AlertDescription>
-              Мы отправили вам письмо для подтверждения. Пожалуйста, проверьте вашу почту и активируйте аккаунт.
+              Пожалуйста, подтвердите ваш email перед входом. Проверьте свою почту.
             </AlertDescription>
           </Alert>
         )}
@@ -78,18 +93,12 @@ export function LoginForm({ onSuccess, needConfirmation = false, isLoading = fal
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input
-                  type="email"
-                  placeholder="ivan@example.com"
-                  autoComplete="email"
-                  {...field}
-                />
+                <Input placeholder="email@example.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="password"
@@ -97,58 +106,51 @@ export function LoginForm({ onSuccess, needConfirmation = false, isLoading = fal
             <FormItem>
               <FormLabel>Пароль</FormLabel>
               <FormControl>
-                <Input 
-                  type="password" 
-                  placeholder="******" 
-                  autoComplete="current-password"
-                  {...field} 
-                />
+                <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
+        
+        <FormField
+          control={form.control}
+          name="rememberMe"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center space-x-2 space-y-0">
+              <FormControl>
+                <Checkbox 
+                  checked={field.value} 
+                  onCheckedChange={field.onChange} 
+                />
+              </FormControl>
+              <FormLabel className="text-sm font-normal">Запомнить меня</FormLabel>
+            </FormItem>
+          )}
+        />
+        
         <div className="flex items-center justify-between">
-          <FormField
-            control={form.control}
-            name="rememberMe"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center space-x-2 space-y-0">
-                <FormControl>
-                  <Checkbox
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
-                </FormControl>
-                <FormLabel className="text-sm font-normal">
-                  Запомнить меня
-                </FormLabel>
-              </FormItem>
-            )}
-          />
           <Link
             to="/forgot-password"
             className="text-sm text-primary hover:underline"
           >
             Забыли пароль?
           </Link>
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Вход...
+              </>
+            ) : (
+              "Войти"
+            )}
+          </Button>
         </div>
-
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Вход...
-            </>
-          ) : (
-            "Войти"
-          )}
-        </Button>
-
+        
         <div className="text-center mt-4">
           <span className="text-sm text-gray-500">
-            Еще нет аккаунта?{" "}
+            Нет аккаунта?{" "}
             <Link to="/register" className="text-primary hover:underline">
               Зарегистрироваться
             </Link>

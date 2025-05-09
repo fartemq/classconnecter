@@ -16,6 +16,7 @@ export type RegisterUserData = {
 export const registerUser = async (userData: RegisterUserData) => {
   try {
     console.log("Starting registration process for:", userData.email);
+    console.log("Registration data:", userData);
     
     // Register the user
     const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -49,83 +50,126 @@ export const registerUser = async (userData: RegisterUserData) => {
     
     console.log("User created successfully:", authData.user.id);
 
-    // ВАЖНО: поскольку сразу после регистрации пользователь не имеет активной сессии,
-    // принудительно входим в систему для получения действующей сессии перед добавлением профиля
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email: userData.email,
-      password: userData.password,
-    });
+    // Important: since after registration the user might not have an active session,
+    // we'll try to create the profile regardless
+    try {
+      // Create a profile in the profiles table
+      const { error: profileError } = await supabase.from("profiles").insert({
+        id: authData.user.id,
+        first_name: userData.firstName,
+        last_name: userData.lastName,
+        role: userData.role,
+        city: userData.city || null,
+        phone: userData.phone || null,
+        bio: userData.bio || null,
+      });
 
-    if (signInError) {
-      console.error("Error signing in after registration:", signInError);
-      throw new Error("Ошибка при входе в систему после регистрации: " + signInError.message);
-    }
-
-    // Убедимся, что у нас есть активная сессия
-    if (!signInData || !signInData.session) {
-      console.error("No session after sign in");
-      throw new Error("Не удалось получить сессию после входа в систему");
-    }
-    
-    console.log("Successfully signed in with session:", signInData.session.access_token);
-
-    // Теперь создаем запись в таблице profiles
-    const { error: profileError } = await supabase.from("profiles").insert({
-      id: authData.user.id,
-      first_name: userData.firstName,
-      last_name: userData.lastName,
-      role: userData.role,
-      city: userData.city || null,
-      phone: userData.phone || null,
-      bio: userData.bio || null,
-    });
-
-    if (profileError) {
-      console.error("Error creating profile:", profileError);
+      if (profileError) {
+        console.error("Error creating profile:", profileError);
+        
+        if (profileError.message.includes("duplicate key")) {
+          console.log("Profile already exists, updating instead");
+          
+          // Try to update the profile instead
+          const { error: updateError } = await supabase
+            .from("profiles")
+            .update({
+              first_name: userData.firstName,
+              last_name: userData.lastName,
+              role: userData.role,
+              city: userData.city || null,
+              phone: userData.phone || null,
+              bio: userData.bio || null,
+            })
+            .eq("id", authData.user.id);
+            
+          if (updateError) {
+            console.error("Error updating profile:", updateError);
+          }
+        } else {
+          console.error("Unknown profile creation error:", profileError);
+        }
+      } else {
+        console.log("Profile created successfully");
+      }
       
-      if (profileError.message.includes("duplicate key")) {
-        throw new Error("Пользователь с таким email уже существует");
+      // If user is a tutor, create a tutor_profiles entry
+      if (userData.role === "tutor") {
+        // Check if a tutor profile already exists
+        const { data: existingTutor } = await supabase
+          .from("tutor_profiles")
+          .select("id")
+          .eq("id", authData.user.id)
+          .maybeSingle();
+        
+        if (!existingTutor) {
+          const { error: tutorProfileError } = await supabase.from("tutor_profiles").insert({
+            id: authData.user.id,
+            education_institution: "",
+            degree: "",
+            graduation_year: new Date().getFullYear(),
+            experience: 0,
+            is_published: false
+          });
+
+          if (tutorProfileError) {
+            console.error("Error creating tutor profile:", tutorProfileError);
+          } else {
+            console.log("Tutor profile created successfully");
+          }
+        } else {
+          console.log("Tutor profile already exists");
+        }
       }
-      throw new Error("Ошибка при создании профиля: " + profileError.message);
-    }
-    
-    console.log("Profile created successfully for user:", authData.user.id);
 
-    // Если пользователь - репетитор, создаем запись в таблице tutor_profiles
-    if (userData.role === "tutor") {
-      const { error: tutorProfileError } = await supabase.from("tutor_profiles").insert({
-        id: authData.user.id,
-        education_institution: "",
-        degree: "",
-        graduation_year: new Date().getFullYear(),
-      });
+      // If user is a student, create a student_profiles entry
+      if (userData.role === "student") {
+        // Check if a student profile already exists
+        const { data: existingStudent } = await supabase
+          .from("student_profiles")
+          .select("id")
+          .eq("id", authData.user.id)
+          .maybeSingle();
+        
+        if (!existingStudent) {
+          const { error: studentProfileError } = await supabase.from("student_profiles").insert({
+            id: authData.user.id,
+            educational_level: null,
+            subjects: [],
+            budget: null
+          });
 
-      if (tutorProfileError) {
-        console.error("Error creating tutor profile:", tutorProfileError);
-        // Не выбрасываем ошибку, так как основной профиль уже создан
-      } else {
-        console.log("Tutor profile created successfully");
+          if (studentProfileError) {
+            console.error("Error creating student profile:", studentProfileError);
+          } else {
+            console.log("Student profile created successfully");
+          }
+        } else {
+          console.log("Student profile already exists");
+        }
       }
+    } catch (profileError) {
+      console.error("Error in profile creation:", profileError);
+      // We don't throw here because the user is already created
     }
 
-    // Для студента создаем запись в таблице student_profiles
-    if (userData.role === "student") {
-      const { error: studentProfileError } = await supabase.from("student_profiles").insert({
-        id: authData.user.id,
-        educational_level: null,
-        subjects: [],
-        budget: null
-      });
-
-      if (studentProfileError) {
-        console.error("Error creating student profile:", studentProfileError);
-        // Не выбрасываем ошибку, так как основной профиль уже создан
-      } else {
-        console.log("Student profile created successfully");
+    // Now try to sign in with password (if needed for development)
+    try {
+      // Check if we already have a session
+      if (!authData.session) {
+        console.log("No session found, email confirmation is required");
+        // Return the user but no session
+        return { user: authData.user, session: null };
       }
+      
+      console.log("Session exists, no need to sign in again");
+      // We already have a session from signUp
+      return { user: authData.user, session: authData.session };
+    } catch (signInError) {
+      console.error("Error signing in after registration:", signInError);
+      // Return just the user without session, indicating email confirmation is needed
+      return { user: authData.user, session: null };
     }
-
-    return { user: authData.user, session: signInData.session };
   } catch (error) {
     console.error("Registration error:", error);
     throw error;
@@ -196,7 +240,7 @@ export const getUserRole = async (userId: string): Promise<string | null> => {
       .from("profiles")
       .select("role")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error("Error fetching user role:", error);

@@ -36,23 +36,28 @@ export function RegisterForm({ onSuccess, defaultRole, isLoading = false }: Regi
     },
   });
   
-  // Обновляем значение роли, если defaultRole изменился
+  // Update role value if defaultRole changes
   useEffect(() => {
     if (defaultRole) {
       form.setValue("role", defaultRole);
     }
   }, [defaultRole, form]);
 
+  // Log the current role for debugging
+  const currentRole = form.watch("role");
+  useEffect(() => {
+    console.log("Current role in form:", currentRole);
+  }, [currentRole]);
+
   async function onSubmit(values: RegisterFormValues) {
+    console.log("Form submitted with values:", values);
     try {
       await onSuccess(values);
     } catch (error) {
       console.error("Registration form error:", error);
-      // Ошибка уже обрабатывается в onSuccess, здесь ничего делать не нужно
+      // Error is handled in onSuccess
     }
   }
-
-  const currentRole = form.watch("role");
 
   return (
     <Form {...form}>

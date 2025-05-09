@@ -10,6 +10,8 @@ import { Loader } from "@/components/ui/loader";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -18,6 +20,7 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [needConfirmation, setNeedConfirmation] = useState(false);
   const [loginAttempted, setLoginAttempted] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     // Check if coming from registration page
@@ -42,6 +45,7 @@ const LoginPage = () => {
   const handleLoginSuccess = async (values: LoginFormValues) => {
     setIsLoading(true);
     setLoginAttempted(true);
+    setErrorMessage(null);
     
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -49,7 +53,17 @@ const LoginPage = () => {
         password: values.password,
       });
       
-      if (error) throw error;
+      if (error) {
+        // Format friendly error message
+        let message = error.message;
+        if (error.message.includes("Email not confirmed")) {
+          message = "Необходимо подтвердить email. Проверьте вашу почту.";
+        } else if (error.message.includes("Invalid login credentials")) {
+          message = "Неверный email или пароль";
+        }
+        setErrorMessage(message);
+        throw new Error(message);
+      }
       
       toast({
         title: "Успешный вход",
@@ -60,11 +74,7 @@ const LoginPage = () => {
       
     } catch (error) {
       console.error("Login error:", error);
-      toast({
-        title: "Ошибка входа",
-        description: error instanceof Error ? error.message : "Произошла ошибка при входе",
-        variant: "destructive",
-      });
+      // Error message is already set above
     } finally {
       setIsLoading(false);
     }
@@ -102,11 +112,21 @@ const LoginPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <LoginAlerts 
-              needConfirmation={needConfirmation}
-              loginAttempted={loginAttempted}
-              isLoading={isLoading}
-            />
+            {needConfirmation && (
+              <Alert className="mb-4 bg-blue-50">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  Вам необходимо подтвердить email перед входом. Проверьте свою почту.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            {errorMessage && (
+              <Alert className="mb-4 bg-red-50">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
             
             <LoginForm 
               onSuccess={handleLoginSuccess}
