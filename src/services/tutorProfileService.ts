@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
-import { ensureObject } from "@/utils/supabaseUtils";
+import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
 /**
  * Save a tutor's profile information
@@ -205,7 +205,7 @@ export const getSubjectName = async (subjectId: string): Promise<string> => {
       
     if (error) throw error;
     
-    // Use ensureObject to safely access the name
+    // Return the name if data exists
     return data ? data.name : "";
   } catch (error) {
     console.error("Error getting subject name:", error);

@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import { ensureObject } from "@/utils/supabaseUtils";
+import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
 export interface TutorSearchResult {
   id: string;
@@ -178,7 +178,7 @@ export const searchTutors = async (
 
       // Format the subject data
       const formattedSubjects = filteredSubjects.map((item) => {
-        const subject = ensureObject(item.subjects);
+        const subject = ensureSingleObject(item.subjects);
         return {
           id: subject.id,
           name: subject.name,
@@ -186,7 +186,7 @@ export const searchTutors = async (
         };
       });
 
-      const tutorProfile = ensureObject(tutor.tutor_profiles);
+      const tutorProfile = ensureSingleObject(tutor.tutor_profiles);
 
       return {
         id: tutor.id,

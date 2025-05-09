@@ -1,7 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Student } from "@/types/student";
-import { ensureObject } from "@/utils/supabaseUtils";
+import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
 export const fetchAvailableStudents = async (tutorId: string): Promise<Student[]> => {
   try {
@@ -24,7 +24,8 @@ export const fetchAvailableStudents = async (tutorId: string): Promise<Student[]
     
     // Transform the data to match our Student type
     const students: Student[] = (data || []).map(item => {
-      const studentProfiles = item.student_profiles ? ensureObject(item.student_profiles) : null;
+      // Ensure student_profiles is properly handled as a single object
+      const studentProfile = ensureSingleObject(item.student_profiles);
       
       return {
         id: item.id,
@@ -32,12 +33,20 @@ export const fetchAvailableStudents = async (tutorId: string): Promise<Student[]
         last_name: item.last_name,
         avatar_url: item.avatar_url,
         city: item.city,
-        student_profiles: studentProfiles,
+        student_profiles: studentProfile ? {
+          educational_level: studentProfile.educational_level || null,
+          subjects: studentProfile.subjects || [],
+          learning_goals: studentProfile.learning_goals || null,
+          preferred_format: studentProfile.preferred_format || [],
+          school: studentProfile.school || null,
+          grade: studentProfile.grade || null,
+          budget: studentProfile.budget || null
+        } : null,
         // Add compatibility fields
-        subjects: studentProfiles?.subjects || [],
-        level: studentProfiles?.educational_level || 'Не указан',
-        grade: studentProfiles?.grade || null,
-        school: studentProfiles?.school || null
+        subjects: studentProfile?.subjects || [],
+        level: studentProfile?.educational_level || 'Не указан',
+        grade: studentProfile?.grade || null,
+        school: studentProfile?.school || null
       };
     });
     

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -72,7 +73,7 @@ export const StudentContactDialog = ({ student, open, onClose, onSubmit }: Stude
       
       if (data && data.length > 0) {
         const formattedSubjects = data.map(item => {
-          const subject = ensureSingleObject(item.subject);
+          const subject = ensureSingleObject(item.subjects);
           return {
             id: subject.id,
             name: subject.name

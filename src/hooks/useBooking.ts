@@ -3,7 +3,6 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { createLesson } from "@/services/lessonService";
 import { Lesson } from "@/types/lesson";
 import { TimeSlot } from "./useTutorSlots";
 
@@ -55,18 +54,23 @@ export const useBooking = (setLessons?: React.Dispatch<React.SetStateAction<Less
       // Format date for the database
       const lessonDate = format(date, 'yyyy-MM-dd');
       
-      // Create a new lesson using our service
-      const lessonData = {
-        student_id: userData.user.id,
-        tutor_id: slot.tutorId,
-        subject_id: subjectId,
-        date: lessonDate,
-        time: slot.startTime,
-        duration: 60, // Default duration
-        status: "upcoming" as const
-      };
-      
-      const { data: lessonResult, error: lessonError } = await createLesson(lessonData);
+      // Create a new lesson directly with Supabase
+      const { data: lessonResult, error: lessonError } = await supabase
+        .from('lessons')
+        .insert({
+          student_id: userData.user.id,
+          tutor_id: slot.tutorId,
+          subject_id: subjectId,
+          start_time: new Date(`${lessonDate}T${slot.startTime}`).toISOString(),
+          end_time: new Date(`${lessonDate}T${slot.endTime}`).toISOString(),
+          status: "upcoming"
+        })
+        .select(`
+          id, 
+          subject_id,
+          subjects:subject_id (id, name)
+        `)
+        .single();
       
       if (lessonError) throw lessonError;
       
@@ -78,15 +82,14 @@ export const useBooking = (setLessons?: React.Dispatch<React.SetStateAction<Less
             tutor_id: slot.tutorId,
             student_id: userData.user.id,
             subject_id: subjectId,
-            date: lessonDate,
-            time: slot.startTime,
-            duration: 60,
+            start_time: new Date(`${lessonDate}T${slot.startTime}`).toISOString(),
+            end_time: new Date(`${lessonDate}T${slot.endTime}`).toISOString(),
             status: "upcoming",
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
             subject: {
               id: subjectId,
-              name: lessonResult.subject?.name || ""
+              name: lessonResult.subjects?.name || ""
             }
           };
           
