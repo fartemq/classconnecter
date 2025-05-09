@@ -19,6 +19,7 @@ import { TutorAboutTab } from "@/components/profile/tutor/TutorAboutTab";
 import { TutorProfileSettingsTab } from "@/components/profile/tutor/TutorProfileSettingsTab";
 import { TutorProfile } from "@/types/tutor";
 import { Profile } from "@/hooks/profiles/types";
+import { useTutorStatistics } from "@/hooks/useTutorStatistics";
 
 // Helper function to convert Profile to TutorProfile
 const convertProfileToTutorProfile = (profile: Profile): TutorProfile => {

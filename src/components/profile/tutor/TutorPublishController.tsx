@@ -34,7 +34,7 @@ export function TutorPublishController({
   }>({ isValid: true, missingFields: [], warnings: [] });
   const { toast } = useToast();
 
-  // Check profile completeness
+  // Проверка полноты профиля
   useEffect(() => {
     const checkProfileCompleteness = async () => {
       try {
@@ -58,7 +58,7 @@ export function TutorPublishController({
     try {
       setIsLoading(true);
       
-      // If trying to publish, validate profile first
+      // Если пытаемся опубликовать, сначала проверяем полноту профиля
       if (!isPublished) {
         const result = await validateTutorProfile(tutorId);
         
@@ -73,7 +73,7 @@ export function TutorPublishController({
           return;
         }
         
-        // Show warnings but allow publishing
+        // Показываем предупреждения, но разрешаем публикацию
         if (result.warnings.length > 0) {
           const warningText = result.warnings.join("\n");
           toast({

@@ -13,10 +13,10 @@ export const useTutorStatistics = (tutorId: string) => {
       try {
         setIsLoading(true);
         
-        // Here we would normally fetch real statistics from the database
-        // For now, let's return mock data
+        // Здесь обычно мы бы загружали реальную статистику из базы данных
+        // Пока что возвращаем фиктивные данные
         
-        // Example: Get lessons count
+        // Пример: получение количества уроков
         const { data: lessonsData, error: lessonsError } = await supabase
           .from("lessons")
           .select("id")
@@ -24,25 +24,25 @@ export const useTutorStatistics = (tutorId: string) => {
           
         if (lessonsError) throw lessonsError;
         
-        // Example: Get students count (unique students from lessons)
+        // Пример: получение количества студентов (уникальные студенты из уроков)
         const { data: studentsData, error: studentsError } = await supabase
           .from("lessons")
           .select("student_id")
           .eq("tutor_id", tutorId)
-          .is("student_id", "not.null");
+          .not('student_id', 'is', null);
           
         if (studentsError) throw studentsError;
         
-        // Get unique student count
+        // Получение количества уникальных студентов
         const uniqueStudents = new Set();
         studentsData?.forEach(lesson => {
           if (lesson.student_id) uniqueStudents.add(lesson.student_id);
         });
         
-        // Mock statistics
+        // Фиктивная статистика
         const mockStats: TutorStatistics = {
           totalLessons: lessonsData?.length || 0,
-          totalHours: lessonsData?.length * 1.5 || 0, // assuming each lesson is 1.5 hours
+          totalHours: lessonsData?.length * 1.5 || 0, // предполагая, что каждый урок длится 1,5 часа
           totalStudents: uniqueStudents.size,
           averageRating: 4.7,
           totalEarnings: 0,
