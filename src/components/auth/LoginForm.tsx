@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -16,13 +17,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2 } from "lucide-react";
-import { Alert, AlertCircle, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 // Define the schema for our login form
 const loginFormSchema = z.object({
   email: z.string().email({ message: "Введите корректный email" }),
   password: z.string().min(1, { message: "Введите пароль" }),
+  rememberMe: z.boolean().optional().default(false)
 });
 
 export type LoginFormValues = z.infer<typeof loginFormSchema>;
@@ -43,6 +45,7 @@ export function LoginForm({ onSuccess, needConfirmation = false, isLoading = fal
     defaultValues: {
       email: "",
       password: "",
+      rememberMe: false
     },
   });
 
@@ -59,7 +62,7 @@ export function LoginForm({ onSuccess, needConfirmation = false, isLoading = fal
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         {needConfirmation && (
-          <Alert variant="warning" className="mb-4">
+          <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Требуется подтверждение email</AlertTitle>
             <AlertDescription>

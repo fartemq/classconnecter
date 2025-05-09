@@ -4,10 +4,12 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { LoginForm } from "@/components/auth/LoginForm";
+import { LoginForm, LoginFormValues } from "@/components/auth/LoginForm";
 import { LoginAlerts } from "@/components/auth/LoginAlerts";
 import { Loader } from "@/components/ui/loader";
 import { useAuth } from "@/hooks/useAuth";
+import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -36,13 +38,50 @@ const LoginPage = () => {
     }
   }, [user, userRole, navigate]);
 
-  // Handle successful login
-  const handleLoginSuccess = async (role: string) => {
-    console.log("Login successful, redirecting based on role:", role);
-    if (role === "tutor") {
-      navigate("/profile/tutor");
-    } else {
-      navigate("/profile/student");
+  // Handle login form submission
+  const handleLoginSuccess = async (values: LoginFormValues) => {
+    setIsLoading(true);
+    setLoginAttempted(true);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: values.email,
+        password: values.password,
+      });
+      
+      if (error) throw error;
+      
+      if (data?.session) {
+        // Получаем роль пользователя
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", data.session.user.id)
+          .single();
+          
+        const role = profileData?.role || "student";
+        
+        toast({
+          title: "Успешный вход",
+          description: "Добро пожаловать в Stud.rep!",
+        });
+        
+        // Перенаправляем на основе роли
+        if (role === "tutor") {
+          navigate("/profile/tutor");
+        } else {
+          navigate("/profile/student");
+        }
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Ошибка входа",
+        description: error instanceof Error ? error.message : "Произошла ошибка при входе",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
