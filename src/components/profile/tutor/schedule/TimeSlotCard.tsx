@@ -34,7 +34,6 @@ export const TimeSlotCard: React.FC<TimeSlotCardProps> = ({
           <Switch 
             checked={slot.isAvailable}
             onCheckedChange={handleToggle}
-            size="sm"
             className="data-[state=checked]:bg-primary"
           />
           <Button 

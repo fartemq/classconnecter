@@ -1,6 +1,5 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { ensureObject } from "@/utils/supabaseUtils";
+import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
 export interface PublicTutorProfile {
   id: string;
@@ -104,10 +103,14 @@ export const fetchPublicTutors = async (filters?: TutorSearchFilters): Promise<P
       
       // Map subjects
       const subjects = (subjectsData || []).map(item => {
-        const subject = ensureObject(item.subject);
+        const subject = ensureSingleObject(item.subject);
+        const subjectData = {
+          id: subject.id,
+          name: subject.name
+        };
         return {
-          id: subject?.id || "",
-          name: subject?.name || "",
+          id: subjectData.id,
+          name: subjectData.name,
           hourlyRate: item.hourly_rate || 0
         };
       });
@@ -156,7 +159,15 @@ export const fetchPublicTutors = async (filters?: TutorSearchFilters): Promise<P
         return null;
       }
       
-      const tutorProfile = ensureObject(tutor.tutor_profiles);
+      const tutorProfile = ensureSingleObject(tutor.tutor_profiles);
+      const tutorProfileData = {
+        education_institution: tutorProfile.education_institution || null,
+        degree: tutorProfile.degree || null,
+        experience: tutorProfile.experience || null,
+        methodology: tutorProfile.methodology || null,
+        video_url: tutorProfile.video_url || null,
+        education_verified: tutorProfile.education_verified || false
+      };
       
       return {
         id: tutor.id,
@@ -165,14 +176,14 @@ export const fetchPublicTutors = async (filters?: TutorSearchFilters): Promise<P
         avatar_url: tutor.avatar_url,
         bio: tutor.bio,
         city: tutor.city,
-        education_institution: tutorProfile?.education_institution || null,
-        degree: tutorProfile?.degree || null,
-        experience: tutorProfile?.experience || null,
-        methodology: tutorProfile?.methodology || null,
-        video_url: tutorProfile?.video_url || null,
+        education_institution: tutorProfileData.education_institution || null,
+        degree: tutorProfileData.degree || null,
+        experience: tutorProfileData.experience || null,
+        methodology: tutorProfileData.methodology || null,
+        video_url: tutorProfileData.video_url || null,
         subjects,
         rating,
-        isVerified: tutorProfile?.education_verified || false
+        isVerified: tutorProfileData.education_verified || false
       };
     }));
     
@@ -239,10 +250,14 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
     if (subjectsError) throw subjectsError;
     
     const subjects = (subjectsData || []).map(item => {
-      const subject = ensureObject(item.subject);
+      const subject = ensureSingleObject(item.subject);
+      const subjectData = {
+        id: subject.id,
+        name: subject.name
+      };
       return {
-        id: subject?.id || "",
-        name: subject?.name || "",
+        id: subjectData.id,
+        name: subjectData.name,
         hourlyRate: item.hourly_rate || 0
       };
     });
@@ -261,7 +276,15 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       rating = sum / ratingsData.length;
     }
     
-    const tutorProfile = ensureObject(tutor.tutor_profiles);
+    const tutorProfile = ensureSingleObject(tutor.tutor_profiles);
+    const tutorProfileData = {
+      education_institution: tutorProfile.education_institution || null,
+      degree: tutorProfile.degree || null,
+      experience: tutorProfile.experience || null,
+      methodology: tutorProfile.methodology || null,
+      video_url: tutorProfile.video_url || null,
+      education_verified: tutorProfile.education_verified || false
+    };
     
     return {
       id: tutor.id,
@@ -270,14 +293,14 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       avatar_url: tutor.avatar_url,
       bio: tutor.bio,
       city: tutor.city,
-      education_institution: tutorProfile?.education_institution || null,
-      degree: tutorProfile?.degree || null,
-      experience: tutorProfile?.experience || null,
-      methodology: tutorProfile?.methodology || null,
-      video_url: tutorProfile?.video_url || null,
+      education_institution: tutorProfileData.education_institution || null,
+      degree: tutorProfileData.degree || null,
+      experience: tutorProfileData.experience || null,
+      methodology: tutorProfileData.methodology || null,
+      video_url: tutorProfileData.video_url || null,
       subjects,
       rating,
-      isVerified: tutorProfile?.education_verified || false
+      isVerified: tutorProfileData.education_verified || false
     };
   } catch (error) {
     console.error("Error fetching public tutor by ID:", error);

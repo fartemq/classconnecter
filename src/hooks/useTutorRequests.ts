@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { TutorRequest } from "@/types/student";
 import { useToast } from "@/hooks/use-toast";
-import { ensureObject } from "@/utils/supabaseUtils";
+import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
 interface Subject {
   id: string;
@@ -44,8 +44,8 @@ export const useTutorRequests = (studentId?: string) => {
       
       // Transform the data to match our expected type
       const transformedData: TutorRequest[] = (data || []).map(item => {
-        const tutorData = ensureObject(item.tutor);
-        const subjectData = item.subject ? ensureObject(item.subject) : undefined;
+        const tutorData = ensureSingleObject(item.tutor);
+        const subjectData = item.subject ? ensureSingleObject(item.subject) : undefined;
         
         return {
           id: item.id,

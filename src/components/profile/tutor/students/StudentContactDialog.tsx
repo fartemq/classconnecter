@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -10,7 +9,7 @@ import { BookOpen, GraduationCap, School, MapPin, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { StudentCardData } from './types';
-import { ensureObject } from '@/utils/supabaseUtils';
+import { ensureObject, ensureSingleObject } from '@/utils/supabaseUtils';
 
 interface StudentContactDialogProps {
   student: StudentCardData;
@@ -73,10 +72,10 @@ export const StudentContactDialog = ({ student, open, onClose, onSubmit }: Stude
       
       if (data && data.length > 0) {
         const formattedSubjects = data.map(item => {
-          const subject = ensureObject(item.subjects);
+          const subject = ensureSingleObject(item.subject);
           return {
-            id: subject.id || item.subject_id,
-            name: subject.name || 'Неизвестный предмет'
+            id: subject.id,
+            name: subject.name
           };
         });
         

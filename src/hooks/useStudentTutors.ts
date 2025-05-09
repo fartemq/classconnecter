@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { ensureObject } from "@/utils/supabaseUtils";
+import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
 export interface Tutor {
   id: string;
@@ -36,7 +36,7 @@ export const useStudentTutors = () => {
           const formattedTutors = data.map(item => {
             if (!item.tutor) return { id: item.tutor_id, name: "Неизвестный репетитор" };
             
-            const tutor = ensureObject(item.tutor);
+            const tutor = ensureSingleObject(item.tutor);
             return {
               id: item.tutor_id,
               name: `${tutor.first_name || ''} ${tutor.last_name || ''}`.trim() || "Неизвестный репетитор"

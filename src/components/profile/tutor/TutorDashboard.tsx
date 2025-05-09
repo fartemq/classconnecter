@@ -20,7 +20,7 @@ import { ru } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useEffect } from "react";
 import { Lesson } from "@/types/lesson";
-import { ensureObject } from "@/utils/supabaseUtils";
+import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
 interface TutorDashboardProps {
   profile: Profile;
@@ -76,8 +76,8 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
         
         // Properly cast and transform the data
         const transformedLessons: Lesson[] = (data || []).map(item => {
-          const student = item.student ? ensureObject(item.student) : undefined;
-          const subject = item.subject ? ensureObject(item.subject) : undefined;
+          const student = item.student ? ensureSingleObject(item.student) : undefined;
+          const subject = item.subject ? ensureSingleObject(item.subject) : undefined;
           
           return {
             id: item.id,

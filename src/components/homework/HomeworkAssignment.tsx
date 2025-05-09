@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { ensureObject } from "@/utils/supabaseUtils";
+import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
 // Define Subject type
 interface Subject {
@@ -67,7 +67,7 @@ const HomeworkAssignment = () => {
           const formattedStudents = studentsData.map(item => {
             if (!item.student) return null;
             
-            const student = ensureObject(item.student);
+            const student = ensureSingleObject(item.student);
             return {
               id: student.id,
               first_name: student.first_name,
