@@ -31,11 +31,8 @@ export const TutorRequestsSection = () => {
     subjects
   } = useTutorRequests(user?.id);
 
-  // Тип TutorRequest[] из компонента соответствует типу из RequestsList
-  const tutorRequests: TutorRequest[] = apiTutorRequests.map(req => ({
-    ...req,
-    subject_id: req.subject_id || null
-  }));
+  // No need to transform the type as the interface has been updated
+  const tutorRequests = apiTutorRequests;
   
   // Filter requests by subject if needed
   const filteredRequests = filterSubject 

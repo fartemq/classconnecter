@@ -4,28 +4,7 @@ import { TabsContent } from "@/components/ui/tabs";
 import { RequestCard } from "./RequestCard";
 import { EmptyRequests } from "./EmptyRequests";
 import { Loader } from "@/components/ui/loader";
-
-interface TutorRequest {
-  id: string;
-  tutor_id: string;
-  student_id: string;
-  subject_id: string | null;
-  status: 'pending' | 'accepted' | 'rejected' | 'completed';
-  message: string | null;
-  created_at: string;
-  tutor: {
-    id: string;
-    first_name: string;
-    last_name: string | null;
-    avatar_url: string | null;
-    role: string;
-    city: string | null;
-  };
-  subject?: {
-    id: string;
-    name: string;
-  };
-}
+import { TutorRequest } from "@/types/student";
 
 interface RequestsListProps {
   isLoading: boolean;
