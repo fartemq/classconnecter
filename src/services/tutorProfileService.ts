@@ -157,7 +157,7 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
     
     // Transform subjects data to match TutorSubject type
     const subjects = subjectsData.map(item => {
-      const subject = ensureObject(item.subjects);
+      const subject = ensureSingleObject(item.subjects);
       return {
         id: item.id,
         name: subject.name || "",
