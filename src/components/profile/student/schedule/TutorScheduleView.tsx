@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
@@ -44,7 +45,8 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
         if (data) {
           // Properly map the data to match the expected type
           const formattedSubjects = data.map(item => {
-            const subject = item.subjects as { id: string; name: string };
+            // Type assertion to make TypeScript happy
+            const subject = item.subjects as unknown as { id: string; name: string };
             return {
               id: subject.id,
               name: subject.name
