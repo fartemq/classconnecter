@@ -61,7 +61,7 @@ export const validateTutorProfile = async (tutorId: string): Promise<{
     // Check tutor-specific profile
     const { data: tutorData, error: tutorError } = await supabase
       .from("tutor_profiles")
-      .select("education_institution, degree, experience")
+      .select("education_institution, degree, experience, graduation_year")
       .eq("id", tutorId)
       .maybeSingle();
       
@@ -82,26 +82,48 @@ export const validateTutorProfile = async (tutorId: string): Promise<{
     // Check required fields
     if (!profileData.first_name) missingFields.push("Имя");
     if (!profileData.last_name) missingFields.push("Фамилия");
-    if (!profileData.bio || profileData.bio.length < 20) missingFields.push("О себе");
+    if (!profileData.bio || profileData.bio.length < 20) {
+      if (!profileData.bio) {
+        missingFields.push("Информация о себе");
+      } else {
+        missingFields.push("Информация о себе (минимум 20 символов)");
+      }
+    }
     if (!profileData.city) missingFields.push("Город");
     if (!profileData.avatar_url) missingFields.push("Фотография профиля");
     
+    // Check education fields
     if (!tutorData || !tutorData.education_institution) missingFields.push("Учебное заведение");
-    if (!tutorData || !tutorData.degree) missingFields.push("Специальность");
-    if (!tutorData || !tutorData.experience) missingFields.push("Опыт работы");
+    if (!tutorData || !tutorData.degree) missingFields.push("Специальность/степень");
     
+    // Check subjects
     if (!subjectsData || subjectsData.length === 0) {
       missingFields.push("Предметы обучения");
     }
     
-    // Check for warnings (recommended but not required)
+    // Check for recommended fields (warnings)
+    if (!tutorData || !tutorData.experience) {
+      warnings.push("Рекомендуется указать опыт работы для повышения доверия к профилю");
+    }
+    
+    const { data: methodologyData } = await supabase
+      .from("tutor_profiles")
+      .select("methodology")
+      .eq("id", tutorId)
+      .maybeSingle();
+      
+    if (!methodologyData || !methodologyData.methodology || methodologyData.methodology.length < 30) {
+      warnings.push("Рекомендуется подробнее описать методику преподавания");
+    }
+    
+    // Check schedule
     const { data: scheduleData, error: scheduleError } = await supabase
       .from("tutor_schedule")
       .select("id")
       .eq("tutor_id", tutorId);
       
     if (!scheduleError && (!scheduleData || scheduleData.length === 0)) {
-      warnings.push("Рекомендуется добавить расписание для повышения видимости в поиске");
+      warnings.push("Рекомендуется добавить расписание для повышения видимости в поиске и возможности бронирования занятий");
     }
     
     return {

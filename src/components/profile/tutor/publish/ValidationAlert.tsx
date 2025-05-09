@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, AlertTriangle } from "lucide-react";
+import { AlertTriangle, AlertCircle } from "lucide-react";
 
 interface ValidationAlertProps {
   isValid: boolean;

@@ -3,11 +3,15 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
-import { publishTutorProfile } from "@/services/tutorProfileService";
+import { publishTutorProfile, checkProfileCompleteness } from "@/services/tutorProfileService";
 
 export const useTutorPublishStatus = () => {
   const [isPublished, setIsPublished] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [profileStatus, setProfileStatus] = useState<{
+    isComplete: boolean;
+    missingFields: string[];
+  }>({ isComplete: true, missingFields: [] });
   const { user } = useAuth();
   
   useEffect(() => {
@@ -20,6 +24,7 @@ export const useTutorPublishStatus = () => {
       try {
         setIsLoading(true);
         
+        // Check publish status
         const { data, error } = await supabase
           .from("tutor_profiles")
           .select("is_published")
@@ -30,6 +35,10 @@ export const useTutorPublishStatus = () => {
         
         // If data exists, set the published status
         setIsPublished(data?.is_published || false);
+        
+        // Check profile completeness
+        const completenessResult = await checkProfileCompleteness(user.id);
+        setProfileStatus(completenessResult);
       } catch (error) {
         console.error("Error checking publish status:", error);
       } finally {
@@ -47,6 +56,23 @@ export const useTutorPublishStatus = () => {
       setIsLoading(true);
       
       const newStatus = !isPublished;
+      
+      // If trying to publish, check completeness first
+      if (newStatus) {
+        const completenessResult = await checkProfileCompleteness(user.id);
+        setProfileStatus(completenessResult);
+        
+        if (!completenessResult.isComplete) {
+          const missingFieldsText = completenessResult.missingFields.join(", ");
+          toast({
+            title: "Профиль не готов к публикации",
+            description: `Пожалуйста, заполните следующие поля: ${missingFieldsText}`,
+            variant: "destructive",
+          });
+          return false;
+        }
+      }
+      
       const success = await publishTutorProfile(user.id, newStatus);
       
       if (success) {
@@ -54,7 +80,7 @@ export const useTutorPublishStatus = () => {
         toast({
           title: newStatus ? "Профиль опубликован" : "Профиль снят с публикации",
           description: newStatus 
-            ? "Теперь студенты могут видеть ваш профиль" 
+            ? "Теперь студенты могут видеть ваш профиль и связываться с вами" 
             : "Ваш профиль больше не виден студентам",
           variant: newStatus ? "default" : "destructive",
         });
@@ -78,6 +104,7 @@ export const useTutorPublishStatus = () => {
   return {
     isPublished,
     isLoading,
-    togglePublishStatus
+    togglePublishStatus,
+    profileStatus
   };
 };

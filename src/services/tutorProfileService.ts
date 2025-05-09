@@ -235,15 +235,16 @@ export const checkProfileCompleteness = async (tutorId: string): Promise<{
       .from("tutor_profiles")
       .select("education_institution, degree, experience")
       .eq("id", tutorId)
-      .single();
+      .maybeSingle();
       
-    if (tutorError) throw tutorError;
+    if (tutorError && tutorError.code !== 'PGRST116') throw tutorError;
     
     // Check subjects
     const { data: subjectsData, error: subjectsError } = await supabase
       .from("tutor_subjects")
       .select("id")
-      .eq("tutor_id", tutorId);
+      .eq("tutor_id", tutorId)
+      .eq("is_active", true);
       
     if (subjectsError) throw subjectsError;
     
@@ -256,9 +257,8 @@ export const checkProfileCompleteness = async (tutorId: string): Promise<{
     if (!profileData.city) missingFields.push("Город");
     if (!profileData.avatar_url) missingFields.push("Фотография профиля");
     
-    if (!tutorData.education_institution) missingFields.push("Учебное заведение");
-    if (!tutorData.degree) missingFields.push("Специальность");
-    if (!tutorData.experience) missingFields.push("Опыт работы");
+    if (!tutorData || !tutorData.education_institution) missingFields.push("Учебное заведение");
+    if (!tutorData || !tutorData.degree) missingFields.push("Специальность");
     
     if (!subjectsData || subjectsData.length === 0) {
       missingFields.push("Предметы обучения");
