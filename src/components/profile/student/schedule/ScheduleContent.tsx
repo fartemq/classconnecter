@@ -57,7 +57,10 @@ export const ScheduleContent = ({
                 <AvailableSlots 
                   slots={availableSlots} 
                   bookingSlot={bookingSlot} 
-                  onBookSlot={onBookSlot} 
+                  onBookSlot={onBookSlot}
+                  tutorId={selectedTutorId}
+                  date={date}
+                  selectedSubjectId=""  // Добавляем пустой идентификатор предмета
                 />
               </div>
             )}

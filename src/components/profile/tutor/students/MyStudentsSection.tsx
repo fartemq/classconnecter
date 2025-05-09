@@ -57,13 +57,25 @@ export const MyStudentsSection = () => {
       if (requestsError) throw requestsError;
 
       // Convert to Student type array
-      const studentsList: Student[] = requestsData?.map(request => 
-        createStudentFromRequest({
+      const studentsList: Student[] = requestsData?.map(request => {
+        // Преобразуем student из массива в объект, если это массив
+        const studentData = Array.isArray(request.student) 
+          ? request.student[0] 
+          : request.student;
+
+        // Преобразуем subject из массива в объект, если это массив
+        const subjectData = Array.isArray(request.subject) 
+          ? request.subject[0] 
+          : request.subject;
+          
+        return createStudentFromRequest({
           ...request,
           tutor_id: user?.id || '',
-          message: request.message || null // Ensure message is not undefined
-        })
-      ) || [];
+          message: request.message || null, // Ensure message is not undefined
+          student: studentData,
+          subject: subjectData
+        });
+      }) || [];
 
       // Convert to StudentCardData array for UI components
       const adaptedStudents = studentsList.map(student => adaptStudentToCardData(student));
@@ -135,6 +147,7 @@ export const MyStudentsSection = () => {
         students={filteredStudents} 
         isLoading={isLoading}
         onStudentClick={(studentId) => navigate(`/profile/tutor/students/${studentId}`)}
+        onCheckRequests={() => navigate('/profile/tutor/student-requests')}
       />
     </div>
   );

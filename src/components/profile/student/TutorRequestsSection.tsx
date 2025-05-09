@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
+import { TutorRequest } from '@/types/student';
 
 export const TutorRequestsSection = () => {
   const { user } = useAuth();
@@ -22,13 +23,19 @@ export const TutorRequestsSection = () => {
   
   const { 
     isLoading,
-    tutorRequests,
+    tutorRequests: apiTutorRequests,
     activeTab,
     setActiveTab,
     updateRequestStatus,
     getStatusCount,
     subjects
   } = useTutorRequests(user?.id);
+
+  // Тип TutorRequest[] из компонента соответствует типу из RequestsList
+  const tutorRequests: TutorRequest[] = apiTutorRequests.map(req => ({
+    ...req,
+    subject_id: req.subject_id || null
+  }));
   
   // Filter requests by subject if needed
   const filteredRequests = filterSubject 

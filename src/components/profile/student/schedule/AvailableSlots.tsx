@@ -17,34 +17,37 @@ export interface TimeSlot {
 }
 
 export interface AvailableSlotsProps {
-  tutorId: string;
-  date: Date;
-  selectedSubjectId: string;
   slots?: TimeSlot[];
   bookingSlot?: string | null;
   onBookSlot?: (slot: TimeSlot) => void;
+  // Добавляем обязательные свойства из ошибки
+  tutorId?: string;
+  date?: Date;
+  selectedSubjectId?: string;
 }
 
 export const AvailableSlots = ({ 
-  tutorId, 
-  date, 
-  selectedSubjectId,
-  slots: initialSlots = [], 
+  slots = [], 
   bookingSlot = null, 
-  onBookSlot = () => {} 
+  onBookSlot = () => {},
+  tutorId,
+  date,
+  selectedSubjectId
 }: AvailableSlotsProps) => {
-  const [slots, setSlots] = useState<TimeSlot[]>(initialSlots);
-  const [loading, setLoading] = useState(true);
+  const [internalSlots, setInternalSlots] = useState<TimeSlot[]>(slots);
+  const [loading, setLoading] = useState(slots.length === 0 && !!tutorId && !!date);
   const [processingSlot, setProcessingSlot] = useState<string | null>(bookingSlot);
   const { toast } = useToast();
   
   useEffect(() => {
-    if (tutorId && date) {
+    if (tutorId && date && internalSlots.length === 0) {
       fetchAvailableSlots();
     }
   }, [tutorId, date, selectedSubjectId]);
   
   const fetchAvailableSlots = async () => {
+    if (!tutorId || !date) return;
+    
     setLoading(true);
     try {
       // Get day of week (1-7, where 1 is Monday)
@@ -75,7 +78,7 @@ export const AvailableSlots = ({
           endTime: slot.end_time,
           isAvailable: slot.is_available
         }));
-        setSlots(timeSlots);
+        setInternalSlots(timeSlots);
       } else {
         // If no real slots are available, create some dummy slots for demo purposes
         const dummySlots: TimeSlot[] = [];
@@ -93,7 +96,7 @@ export const AvailableSlots = ({
           });
         }
         
-        setSlots(dummySlots);
+        setInternalSlots(dummySlots);
       }
     } catch (error) {
       console.error("Error fetching available slots:", error);
@@ -121,7 +124,7 @@ export const AvailableSlots = ({
       });
       
       // Remove the booked slot from available slots
-      setSlots(prevSlots => 
+      setInternalSlots(prevSlots => 
         prevSlots.map(s => 
           s.id === slot.id ? { ...s, isAvailable: false } : s
         )
@@ -137,7 +140,7 @@ export const AvailableSlots = ({
     );
   }
   
-  if (slots.length === 0) {
+  if (internalSlots.length === 0) {
     return (
       <div className="p-4">
         <p className="text-gray-500">
@@ -151,7 +154,7 @@ export const AvailableSlots = ({
     <div className="p-4">
       <h3 className="font-medium mb-4">Доступное время:</h3>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {slots.map(slot => (
+        {internalSlots.map(slot => (
           <Button
             key={slot.id}
             variant="outline"

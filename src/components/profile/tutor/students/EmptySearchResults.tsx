@@ -4,11 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
 
 export interface EmptySearchResultsProps {
-  searchQuery: string;
+  searchQuery?: string;
   onReset: () => void;
 }
 
-export const EmptySearchResults = ({ searchQuery, onReset }: EmptySearchResultsProps) => {
+export const EmptySearchResults = ({ searchQuery = "", onReset }: EmptySearchResultsProps) => {
   return (
     <div className="text-center py-10">
       <div className="bg-slate-50 rounded-lg p-6">

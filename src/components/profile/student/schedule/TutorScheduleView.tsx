@@ -113,8 +113,8 @@ export const TutorScheduleView = ({ tutorId, onClose }: TutorScheduleViewProps) 
           {/* Left sidebar */}
           <div className="md:w-1/3 p-4 border-r overflow-y-auto">
             <CalendarSidebar 
-              date={selectedDate} 
-              setDate={setSelectedDate}
+              date={selectedDate}
+              setDate={handleDateChange}
               selectedTutorId={tutorId}
               setSelectedTutorId={handleSetSelectedTutor}
               tutors={tutors}

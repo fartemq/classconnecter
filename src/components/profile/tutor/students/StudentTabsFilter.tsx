@@ -1,69 +1,87 @@
 
-import React from "react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Search, X } from "lucide-react";
+import React, { Dispatch, SetStateAction, KeyboardEvent } from 'react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Search, X } from 'lucide-react';
 
-interface StudentTabsFilterProps {
+export interface StudentTabsFilterProps {
   activeTab: string;
-  onTabChange: (value: string) => void;
   searchQuery: string;
-  onSearchChange: (value: string) => void;
+  onSearch?: () => Promise<void>;
   onResetFilters: () => void;
-  onSearch?: () => void;
-  onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   showSearchButton?: boolean;
+  onKeyPress?: (e: KeyboardEvent<HTMLInputElement>) => void;
+  // Добавляем обязательные свойства
+  onTabChange?: Dispatch<SetStateAction<string>> | ((tab: string) => void);
+  onSearchChange?: Dispatch<SetStateAction<string>> | ((query: string) => void);
 }
 
-export const StudentTabsFilter = ({
-  activeTab,
-  onTabChange,
-  searchQuery,
-  onSearchChange,
+export const StudentTabsFilter = ({ 
+  activeTab, 
+  searchQuery, 
   onResetFilters,
   onSearch,
+  showSearchButton = false,
   onKeyPress,
-  showSearchButton = false
+  onTabChange,
+  onSearchChange
 }: StudentTabsFilterProps) => {
+  
+  const handleTabChange = (value: string) => {
+    if (onTabChange) {
+      if (typeof onTabChange === 'function') {
+        onTabChange(value);
+      }
+    }
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onSearchChange) {
+      if (typeof onSearchChange === 'function') {
+        onSearchChange(e.target.value);
+      }
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row gap-3">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
+        <TabsList className="w-full">
+          <TabsTrigger value="all" className="flex-1">Все</TabsTrigger>
+          <TabsTrigger value="school" className="flex-1">Школьники</TabsTrigger>
+          <TabsTrigger value="university" className="flex-1">Студенты</TabsTrigger>
+          <TabsTrigger value="adult" className="flex-1">Взрослые</TabsTrigger>
+        </TabsList>
+      </Tabs>
+      
+      <div className="flex items-center gap-2">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
           <Input
-            className="pl-9 pr-10"
-            placeholder="Поиск по имени, предмету..."
+            type="search"
+            placeholder="Поиск по имени или предмету..."
+            className="pl-10"
             value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            onKeyPress={onKeyPress}
+            onChange={handleSearchChange}
+            onKeyDown={onKeyPress}
           />
           {searchQuery && (
             <button
-              className="absolute right-3 top-1/2 -translate-y-1/2"
               onClick={onResetFilters}
+              className="absolute right-2 top-2.5 text-gray-400 hover:text-gray-600"
+              aria-label="Clear search"
             >
-              <X className="h-4 w-4 text-gray-500 hover:text-gray-700" />
+              <X className="h-4 w-4" />
             </button>
           )}
         </div>
-        
-        {showSearchButton && (
-          <Button onClick={onSearch}>
-            <Search className="h-4 w-4 mr-2" />
-            Найти
+        {showSearchButton && onSearch && (
+          <Button onClick={onSearch} size="sm" className="shrink-0">
+            Поиск
           </Button>
         )}
       </div>
-      
-      <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-        <TabsList>
-          <TabsTrigger value="all">Все</TabsTrigger>
-          <TabsTrigger value="school">Школьники</TabsTrigger>
-          <TabsTrigger value="university">Студенты</TabsTrigger>
-          <TabsTrigger value="adult">Взрослые</TabsTrigger>
-        </TabsList>
-      </Tabs>
     </div>
   );
 };

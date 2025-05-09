@@ -3,7 +3,15 @@ import { StudentRequest, Student } from "@/types/student";
 import { ensureObject } from "@/utils/supabaseUtils";
 
 export const createStudentFromRequest = (request: StudentRequest): Student => {
-  const student = request.student ? ensureObject(request.student) : null;
+  // Обработаем случаи, когда student может быть массивом или объектом
+  const student = request.student 
+    ? (Array.isArray(request.student) ? request.student[0] : request.student)
+    : null;
+  
+  // Обработаем случаи, когда subject может быть массивом или объектом
+  const subject = request.subject 
+    ? (Array.isArray(request.subject) ? request.subject[0] : request.subject)
+    : null;
   
   return {
     id: request.student_id,
@@ -17,7 +25,7 @@ export const createStudentFromRequest = (request: StudentRequest): Student => {
     level: 'N/A', // We don't have this info in the current DB schema
     grade: null,
     school: null,
-    subjects: request.subject ? [request.subject.name] : [],
+    subjects: subject ? [subject.name] : [],
     lastActive: request.updated_at ? new Date(request.updated_at).toLocaleDateString('ru-RU') : 'N/A',
     avatar: student?.avatar_url,
     about: '',

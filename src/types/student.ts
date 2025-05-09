@@ -65,9 +65,9 @@ export interface StudentRequest {
     avatar_url: string | null;
     role: string;
     city: string | null;
-  };
+  } | { id: any; first_name: any; last_name: any; avatar_url: any; city: any; }; // Добавляем альтернативный тип для совместимости
   subject?: {
     id: string;
     name: string;
-  };
+  } | { id: any; name: any; }; // Добавляем альтернативный тип для совместимости
 }
