@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
@@ -198,7 +199,7 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
     const subjects = subjectsData?.map(item => {
       return {
         id: item.id,
-        name: item.subjects?.name || "",
+        name: item.subjects ? item.subjects.name : "",
         hourlyRate: item.hourly_rate || 0,
         experienceYears: item.experience_years || undefined,
         description: item.description || undefined
@@ -227,27 +228,6 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
   } catch (error) {
     console.error("Error in fetchTutorProfile:", error);
     return null;
-  }
-};
-
-/**
- * Get the name of a subject
- */
-export const getSubjectName = async (subjectId: string): Promise<string> => {
-  try {
-    const { data, error } = await supabase
-      .from("subjects")
-      .select("name")
-      .eq("id", subjectId)
-      .single();
-      
-    if (error) throw error;
-    
-    // Return the name if data exists
-    return data ? data.name : "";
-  } catch (error) {
-    console.error("Error getting subject name:", error);
-    return "";
   }
 };
 

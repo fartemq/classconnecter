@@ -110,3 +110,49 @@ export const validateTutorProfile = async (tutorId: string) => {
     };
   }
 };
+
+/**
+ * Check if a tutor has added any subjects
+ */
+export const hasTutorAddedSubjects = async (tutorId: string): Promise<boolean> => {
+  try {
+    const { count, error } = await supabase
+      .from("tutor_subjects")
+      .select("*", { count: 'exact', head: true })
+      .eq("tutor_id", tutorId)
+      .eq("is_active", true);
+      
+    if (error) {
+      console.error("Error checking for tutor subjects:", error);
+      return false;
+    }
+    
+    return count !== null && count > 0;
+  } catch (error) {
+    console.error("Error checking for tutor subjects:", error);
+    return false;
+  }
+};
+
+/**
+ * Check if a tutor has added any schedule slots
+ */
+export const hasTutorAddedSchedule = async (tutorId: string): Promise<boolean> => {
+  try {
+    const { count, error } = await supabase
+      .from("tutor_schedule")
+      .select("*", { count: 'exact', head: true })
+      .eq("tutor_id", tutorId)
+      .eq("is_available", true);
+      
+    if (error) {
+      console.error("Error checking for tutor schedule:", error);
+      return false;
+    }
+    
+    return count !== null && count > 0;
+  } catch (error) {
+    console.error("Error checking for tutor schedule:", error);
+    return false;
+  }
+};
