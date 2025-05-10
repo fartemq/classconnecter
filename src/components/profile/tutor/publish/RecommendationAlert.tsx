@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { Lightbulb } from "lucide-react";
 
 interface RecommendationAlertProps {
   title: string;
@@ -13,10 +13,10 @@ export const RecommendationAlert: React.FC<RecommendationAlertProps> = ({
   message 
 }) => {
   return (
-    <Alert variant="default" className="bg-amber-50 border-amber-200">
-      <AlertCircle className="h-4 w-4 text-amber-500" />
-      <AlertTitle className="text-amber-800">{title}</AlertTitle>
-      <AlertDescription className="text-amber-700">
+    <Alert className="bg-blue-50 border-blue-200">
+      <Lightbulb className="h-4 w-4 text-blue-600" />
+      <AlertTitle className="text-blue-800">{title}</AlertTitle>
+      <AlertDescription className="text-blue-700">
         {message}
       </AlertDescription>
     </Alert>

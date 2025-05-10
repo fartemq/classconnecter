@@ -13,7 +13,6 @@ export const useTutorStatistics = (tutorId: string) => {
       try {
         setIsLoading(true);
         
-        // Здесь обычно мы бы загружали реальную статистику из базы данных
         // Получение количества уроков
         const { data: lessonsData, error: lessonsError } = await supabase
           .from("lessons")
@@ -32,12 +31,19 @@ export const useTutorStatistics = (tutorId: string) => {
         if (studentsError) throw studentsError;
         
         // Получение оценок репетитора
-        const { data: reviewsData, error: reviewsError } = await supabase
-          .from("tutor_reviews")
-          .select("rating")
-          .eq("tutor_id", tutorId);
-          
-        if (reviewsError && reviewsError.code !== 'PGRST116') throw reviewsError;
+        let reviewsData = [];
+        try {
+          const { data, error } = await supabase
+            .from("tutor_reviews")
+            .select("rating")
+            .eq("tutor_id", tutorId);
+            
+          if (!error) {
+            reviewsData = data || [];
+          }
+        } catch (err) {
+          console.log("Table tutor_reviews might not exist yet:", err);
+        }
         
         // Получение количества уникальных студентов
         const uniqueStudents = new Set();
@@ -51,6 +57,29 @@ export const useTutorStatistics = (tutorId: string) => {
           averageRating = reviewsData.reduce((sum, review) => sum + review.rating, 0) / reviewsData.length;
         } else {
           averageRating = 4.7; // Временно, для демо
+        }
+        
+        // Получение предметов
+        const { data: subjectsData, error: subjectsError } = await supabase
+          .from("tutor_subjects")
+          .select("id")
+          .eq("tutor_id", tutorId);
+          
+        if (subjectsError) throw subjectsError;
+          
+        // Получение слотов расписания
+        let scheduleData = [];
+        try {
+          const { data, error } = await supabase
+            .from("tutor_schedule")
+            .select("id")
+            .eq("tutor_id", tutorId);
+            
+          if (!error) {
+            scheduleData = data || [];
+          }
+        } catch (err) {
+          console.log("Error fetching tutor schedule:", err);
         }
         
         // Создание объекта статистики
@@ -76,7 +105,7 @@ export const useTutorStatistics = (tutorId: string) => {
           ],
           totalReviews: reviewsData?.length || 0,
           totalMaterials: 0,
-          scheduledSlots: 0,
+          scheduledSlots: scheduleData?.length || 0,
           averageRate: 0
         };
         

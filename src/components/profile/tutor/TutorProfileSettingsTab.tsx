@@ -8,6 +8,7 @@ import { Edit, User, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTutorPublishStatus } from "@/hooks/useTutorPublishStatus";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { TutorPublishController } from "./TutorPublishController";
 
 interface TutorProfileSettingsTabProps {
   profile: Profile;
@@ -15,21 +16,11 @@ interface TutorProfileSettingsTabProps {
 
 export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProps) => {
   const navigate = useNavigate();
-  const { isPublished, isLoading, togglePublishStatus } = useTutorPublishStatus();
+  const { isPublished, isLoading, togglePublishStatus, profileStatus } = useTutorPublishStatus();
   
   const handleEditProfile = () => {
     navigate("/profile/tutor/complete");
   };
-
-  // Add useEffect to check if subjects are added
-  useEffect(() => {
-    const checkProfileReady = async () => {
-      // This would ideally check if the tutor has subjects, but we'll just display a note
-      // about it being important for visibility in student searches
-    };
-    
-    checkProfileReady();
-  }, [profile.id]);
 
   return (
     <div className="space-y-8">
@@ -132,7 +123,7 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
       </Card>
 
       {/* Секция публикации профиля */}
-      <PublishProfileSection 
+      <TutorPublishController 
         tutorId={profile.id} 
         isPublished={isPublished}
         onPublishStatusChange={togglePublishStatus}

@@ -136,7 +136,7 @@ const TutorProfilePage = () => {
             {/* Sidebar */}
             <div className="w-full lg:w-64 mb-4 lg:mb-0">
               <Card className="p-4 h-full">
-                <TutorSidebar />
+                <TutorSidebar activeTab={activeTab} />
               </Card>
             </div>
             

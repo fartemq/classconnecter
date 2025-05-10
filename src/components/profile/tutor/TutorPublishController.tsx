@@ -11,6 +11,8 @@ import { RecommendationAlert } from "./publish/RecommendationAlert";
 import { ProfileStatusIndicator } from "./publish/ProfileStatusIndicator";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Link } from "react-router-dom";
 
 interface TutorPublishControllerProps {
   tutorId: string;
@@ -170,6 +172,11 @@ export function TutorPublishController({
                   <li key={index}>{field}</li>
                 ))}
               </ul>
+              <div className="mt-3">
+                <Link to="/profile/tutor/complete" className="text-blue-600 text-sm hover:underline">
+                  Перейти к заполнению профиля
+                </Link>
+              </div>
             </CollapsibleContent>
           </Collapsible>
         )}

@@ -32,7 +32,7 @@ export async function hasTutorAddedSchedule(tutorId: string): Promise<boolean> {
       .select("id")
       .eq("tutor_id", tutorId);
       
-    if (error) throw error;
+    if (error && error.code !== 'PGRST116') throw error;
     
     return data && data.length > 0;
   } catch (error) {

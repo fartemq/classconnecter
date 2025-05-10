@@ -1,126 +1,61 @@
 
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
 import { 
-  BookOpen, 
-  Calendar, 
-  Clock, 
-  FileText, 
-  Home, 
-  MessageSquare, 
-  Settings, 
+  Home,
+  Calendar,
   Users,
-  User,
-  LogOut
+  MessageSquare,
+  BarChart3,
+  Settings,
+  FileText,
+  User
 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-interface SidebarItem {
-  label: string;
-  icon: React.ReactNode;
-  path: string;
+const menuItems = [
+  { id: "dashboard", label: "Главная", icon: Home },
+  { id: "profile", label: "Моя анкета", icon: User },
+  { id: "schedule", label: "Расписание", icon: Calendar },
+  { id: "students", label: "Ученики", icon: Users },
+  { id: "chats", label: "Сообщения", icon: MessageSquare },
+  { id: "stats", label: "Статистика", icon: BarChart3 },
+  { id: "materials", label: "Материалы", icon: FileText },
+  { id: "settings", label: "Настройки", icon: Settings },
+];
+
+interface TutorSidebarProps {
+  activeTab: string;
 }
 
-export const TutorSidebar = () => {
-  const location = useLocation();
+export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab }) => {
   const navigate = useNavigate();
-  const currentPath = location.search || "?tab=dashboard";
   
-  const handleLogout = async () => {
-    try {
-      await supabase.auth.signOut();
-      toast({
-        title: "Выход выполнен успешно",
-        description: "Вы вышли из своего аккаунта",
-      });
-      navigate("/login");
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось выйти из аккаунта",
-        variant: "destructive",
-      });
-    }
+  const handleTabChange = (tabId: string) => {
+    navigate(`/profile/tutor?tab=${tabId}`);
   };
   
-  const menuItems: SidebarItem[] = [
-    {
-      label: "Дашборд",
-      icon: <Home className="h-4 w-4" />,
-      path: "?tab=dashboard",
-    },
-    {
-      label: "Моя анкета",
-      icon: <User className="h-4 w-4" />,
-      path: "?tab=profile",
-    },
-    {
-      label: "Расписание",
-      icon: <Calendar className="h-4 w-4" />,
-      path: "?tab=schedule",
-    },
-    {
-      label: "Ученики",
-      icon: <Users className="h-4 w-4" />,
-      path: "?tab=students",
-    },
-    {
-      label: "Сообщения",
-      icon: <MessageSquare className="h-4 w-4" />,
-      path: "?tab=chats",
-    },
-    {
-      label: "Материалы",
-      icon: <FileText className="h-4 w-4" />,
-      path: "?tab=materials",
-    },
-    {
-      label: "Статистика",
-      icon: <Clock className="h-4 w-4" />,
-      path: "?tab=stats",
-    },
-    {
-      label: "Настройки",
-      icon: <Settings className="h-4 w-4" />,
-      path: "?tab=settings",
-    },
-  ];
-
   return (
-    <div className="flex flex-col h-full">
-      <nav className="mt-6 grid grid-cols-1 gap-1 flex-grow">
-        {menuItems.map((item) => (
-          <Link
-            key={item.path}
-            to={{
-              pathname: "/profile/tutor",
-              search: item.path,
-            }}
-            className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-all hover:bg-muted ${
-              currentPath.includes(item.path) 
-                ? "bg-muted font-medium" 
-                : "text-muted-foreground"
-            }`}
+    <div className="py-2 space-y-1">
+      {menuItems.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Button
+            key={item.id}
+            variant={activeTab === item.id ? "secondary" : "ghost"}
+            size="sm"
+            className={cn(
+              "w-full justify-start",
+              activeTab === item.id ? "bg-gray-100" : ""
+            )}
+            onClick={() => handleTabChange(item.id)}
           >
-            {item.icon}
-            <span>{item.label}</span>
-          </Link>
-        ))}
-      </nav>
-      
-      {/* Logout button at the bottom */}
-      <div className="mt-auto pt-4 border-t">
-        <button
-          onClick={handleLogout}
-          className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-red-500 hover:bg-red-50 transition-all"
-        >
-          <LogOut className="h-4 w-4" />
-          <span>Выйти</span>
-        </button>
-      </div>
+            <Icon className="mr-2 h-4 w-4" />
+            {item.label}
+          </Button>
+        );
+      })}
     </div>
   );
 };
