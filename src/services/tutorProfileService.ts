@@ -55,19 +55,25 @@ export const saveTutorProfile = async (
     
     console.log("Tutor profile exists check:", existingTutorProfile, checkError);
     
+    // Prepare tutor profile data
+    const tutorProfileData = {
+      education_institution: values.educationInstitution || '',
+      degree: values.degree || '',
+      graduation_year: values.graduationYear || new Date().getFullYear(),
+      methodology: values.methodology || '',
+      experience: values.experience || 0,
+      achievements: values.achievements || '',
+      video_url: values.videoUrl || '',
+      updated_at: new Date().toISOString(),
+    };
+    
     if (existingTutorProfile) {
       // Update existing record
       console.log("Updating existing tutor profile");
-      const { error: tutorProfileError } = await supabase.from("tutor_profiles").update({
-        education_institution: values.educationInstitution || '',
-        degree: values.degree || '',
-        graduation_year: values.graduationYear || new Date().getFullYear(),
-        methodology: values.methodology || '',
-        experience: values.experience || 0,
-        achievements: values.achievements || '',
-        video_url: values.videoUrl || '',
-        updated_at: new Date().toISOString(),
-      }).eq("id", userId);
+      const { error: tutorProfileError } = await supabase
+        .from("tutor_profiles")
+        .update(tutorProfileData)
+        .eq("id", userId);
       
       if (tutorProfileError) {
         console.error("Error updating tutor profile:", tutorProfileError);
@@ -78,13 +84,7 @@ export const saveTutorProfile = async (
       console.log("Creating new tutor profile");
       const { error: tutorProfileError } = await supabase.from("tutor_profiles").insert({
         id: userId,
-        education_institution: values.educationInstitution || '',
-        degree: values.degree || '',
-        graduation_year: values.graduationYear || new Date().getFullYear(),
-        methodology: values.methodology || '',
-        experience: values.experience || 0,
-        achievements: values.achievements || '',
-        video_url: values.videoUrl || '',
+        ...tutorProfileData,
         is_published: false,
       });
       
@@ -300,3 +300,4 @@ export const checkProfileCompleteness = async (tutorId: string): Promise<{
     };
   }
 };
+
