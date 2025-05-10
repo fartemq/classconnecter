@@ -20,10 +20,14 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
     const loadTutorProfile = async () => {
       try {
         setLoadingProfile(true);
+        console.log("Loading tutor profile for:", profile.id);
         const data = await fetchTutorProfile(profile.id);
         
         if (data) {
+          console.log("Tutor profile loaded:", data);
           setTutorProfile(data);
+        } else {
+          console.log("No tutor profile data returned");
         }
       } catch (error) {
         console.error("Error loading tutor profile:", error);
@@ -64,35 +68,44 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
 
   const handleFormSubmit = async (values: TutorFormValues, avatarFile: File | null, avatarUrl: string | null) => {
     try {
+      console.log("Submitting form with values:", values);
+      console.log("Avatar file:", avatarFile ? "Present" : "Not present");
+      console.log("Avatar URL:", avatarUrl);
+      
       const result = await saveTutorProfile(values, profile.id, avatarFile, avatarUrl);
       
       if (result.success) {
+        console.log("Profile updated successfully:", result);
         toast({
           title: "Профиль обновлен",
           description: "Данные профиля успешно сохранены",
         });
         
         // Обновляем локальные данные
-        setTutorProfile(prev => ({
-          ...prev!,
-          firstName: values.firstName,
-          lastName: values.lastName,
-          bio: values.bio,
-          city: values.city,
-          educationInstitution: values.educationInstitution || "",
-          degree: values.degree || "",
-          graduationYear: values.graduationYear || new Date().getFullYear(),
-          methodology: values.methodology || "",
-          experience: values.experience || 0,
-          achievements: values.achievements || "",
-          videoUrl: values.videoUrl || "",
-          avatarUrl: result.avatarUrl || prev?.avatarUrl,
-        }));
+        setTutorProfile(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            firstName: values.firstName,
+            lastName: values.lastName,
+            bio: values.bio,
+            city: values.city,
+            educationInstitution: values.educationInstitution || "",
+            degree: values.degree || "",
+            graduationYear: values.graduationYear || new Date().getFullYear(),
+            methodology: values.methodology || "",
+            experience: values.experience || 0,
+            achievements: values.achievements || "",
+            videoUrl: values.videoUrl || "",
+            avatarUrl: result.avatarUrl || prev?.avatarUrl,
+          };
+        });
       } else {
+        console.error("Failed to save profile:", result);
         throw new Error("Не удалось сохранить профиль");
       }
     } catch (error) {
-      console.error("Error saving profile:", error);
+      console.error("Error in form submission:", error);
       throw error;
     }
   };

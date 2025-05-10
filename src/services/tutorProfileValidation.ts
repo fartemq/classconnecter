@@ -50,6 +50,8 @@ export async function validateTutorProfile(tutorId: string): Promise<{
   warnings: string[];
 }> {
   try {
+    console.log("Validating tutor profile for ID:", tutorId);
+    
     // Проверка основного профиля
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
@@ -57,7 +59,12 @@ export async function validateTutorProfile(tutorId: string): Promise<{
       .eq("id", tutorId)
       .single();
       
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error("Error fetching profile data:", profileError);
+      throw profileError;
+    }
+    
+    console.log("Profile data fetched:", profileData);
     
     // Проверка профиля репетитора
     const { data: tutorData, error: tutorError } = await supabase
@@ -66,7 +73,12 @@ export async function validateTutorProfile(tutorId: string): Promise<{
       .eq("id", tutorId)
       .maybeSingle();
       
-    if (tutorError && tutorError.code !== 'PGRST116') throw tutorError;
+    if (tutorError && tutorError.code !== 'PGRST116') {
+      console.error("Error fetching tutor profile data:", tutorError);
+      throw tutorError;
+    }
+    
+    console.log("Tutor data fetched:", tutorData);
     
     // Проверка предметов
     const { data: subjectsData, error: subjectsError } = await supabase
@@ -74,7 +86,12 @@ export async function validateTutorProfile(tutorId: string): Promise<{
       .select("id")
       .eq("tutor_id", tutorId);
       
-    if (subjectsError) throw subjectsError;
+    if (subjectsError) {
+      console.error("Error fetching tutor subjects:", subjectsError);
+      throw subjectsError;
+    }
+    
+    console.log("Subjects data fetched:", subjectsData);
     
     const missingFields: string[] = [];
     const warnings: string[] = [];
@@ -98,11 +115,15 @@ export async function validateTutorProfile(tutorId: string): Promise<{
       warnings.push("Рекомендуется указать опыт работы");
     }
     
-    return {
+    const result = {
       isValid: missingFields.length === 0,
       missingFields,
       warnings,
     };
+    
+    console.log("Validation result:", result);
+    
+    return result;
   } catch (error) {
     console.error("Error validating tutor profile:", error);
     return {

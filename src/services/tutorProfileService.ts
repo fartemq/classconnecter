@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
@@ -13,13 +14,18 @@ export const saveTutorProfile = async (
   avatarUrl: string | null
 ): Promise<{ success: boolean; avatarUrl: string | null }> => {
   try {
+    console.log("Saving tutor profile for user:", userId);
+    
     // Upload avatar if selected
     let finalAvatarUrl = avatarUrl;
     if (avatarFile) {
+      console.log("Uploading avatar file");
       finalAvatarUrl = await uploadAvatar(avatarFile, userId);
+      console.log("Avatar uploaded, URL:", finalAvatarUrl);
     }
     
     // Update profile in the database
+    console.log("Updating basic profile");
     const { error: profileError } = await supabase.from("profiles").update({
       first_name: values.firstName,
       last_name: values.lastName,
@@ -30,34 +36,41 @@ export const saveTutorProfile = async (
     }).eq("id", userId);
     
     if (profileError) {
+      console.error("Error updating profile:", profileError);
       throw profileError;
     }
     
-    // Update or create tutor_profiles record
-    const { data: existingTutorProfile } = await supabase
+    // Check if tutor_profiles exists
+    console.log("Checking existing tutor profile");
+    const { data: existingTutorProfile, error: checkError } = await supabase
       .from("tutor_profiles")
       .select()
       .eq("id", userId)
       .maybeSingle();
     
+    console.log("Tutor profile exists check:", existingTutorProfile, checkError);
+    
     if (existingTutorProfile) {
       // Update existing record
+      console.log("Updating existing tutor profile");
       const { error: tutorProfileError } = await supabase.from("tutor_profiles").update({
-        education_institution: values.educationInstitution,
-        degree: values.degree,
-        graduation_year: values.graduationYear,
-        methodology: values.methodology,
-        experience: values.experience,
-        achievements: values.achievements,
-        video_url: values.videoUrl,
+        education_institution: values.educationInstitution || '',
+        degree: values.degree || '',
+        graduation_year: values.graduationYear || new Date().getFullYear(),
+        methodology: values.methodology || '',
+        experience: values.experience || 0,
+        achievements: values.achievements || '',
+        video_url: values.videoUrl || '',
         updated_at: new Date().toISOString(),
       }).eq("id", userId);
       
       if (tutorProfileError) {
+        console.error("Error updating tutor profile:", tutorProfileError);
         throw tutorProfileError;
       }
     } else {
       // Create new record
+      console.log("Creating new tutor profile");
       const { error: tutorProfileError } = await supabase.from("tutor_profiles").insert({
         id: userId,
         education_institution: values.educationInstitution || '',
@@ -71,10 +84,12 @@ export const saveTutorProfile = async (
       });
       
       if (tutorProfileError) {
+        console.error("Error creating tutor profile:", tutorProfileError);
         throw tutorProfileError;
       }
     }
     
+    console.log("Profile saved successfully");
     return { success: true, avatarUrl: finalAvatarUrl };
   } catch (error) {
     console.error("Error saving tutor profile:", error);
@@ -87,6 +102,8 @@ export const saveTutorProfile = async (
  */
 export const publishTutorProfile = async (tutorId: string, isPublished: boolean): Promise<boolean> => {
   try {
+    console.log("Publishing tutor profile for:", tutorId, "Status:", isPublished);
+    
     const { error } = await supabase
       .from("tutor_profiles")
       .update({
@@ -96,9 +113,11 @@ export const publishTutorProfile = async (tutorId: string, isPublished: boolean)
       .eq("id", tutorId);
       
     if (error) {
+      console.error("Error publishing tutor profile:", error);
       throw error;
     }
     
+    console.log("Profile publish status updated successfully");
     return true;
   } catch (error) {
     console.error("Error publishing tutor profile:", error);
@@ -111,6 +130,8 @@ export const publishTutorProfile = async (tutorId: string, isPublished: boolean)
  */
 export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile | null> => {
   try {
+    console.log("Fetching tutor profile for:", tutorId);
+    
     // Fetch base profile data
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
@@ -124,17 +145,29 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
       return null;
     }
     
+    console.log("Base profile fetched:", profileData);
+    
     // Fetch tutor-specific data
     const { data: tutorData, error: tutorError } = await supabase
       .from("tutor_profiles")
       .select("*")
       .eq("id", tutorId)
-      .single();
+      .maybeSingle();
       
-    if (tutorError) {
+    if (tutorError && tutorError.code !== 'PGRST116') {
       console.error("Error fetching tutor-specific data:", tutorError);
-      return null;
     }
+    
+    console.log("Tutor-specific data fetched:", tutorData);
+    
+    // If no tutor profile exists yet, create minimal data
+    const tutorProfile = tutorData || {
+      education_institution: "",
+      degree: "",
+      graduation_year: new Date().getFullYear(),
+      is_published: false,
+      education_verified: false
+    };
     
     // Fetch tutor subjects
     const { data: subjectsData, error: subjectsError } = await supabase
@@ -155,36 +188,38 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
       return null;
     }
     
+    console.log("Tutor subjects fetched:", subjectsData);
+    
     // Transform subjects data to match TutorSubject type
-    const subjects = subjectsData.map(item => {
-      const subject = ensureSingleObject(item.subjects);
+    const subjects = subjectsData?.map(item => {
+      const subject = item.subjects ? ensureSingleObject(item.subjects) : { name: "" };
       return {
         id: item.id,
-        name: subject.name || "",
-        hourlyRate: item.hourly_rate,
+        name: subject?.name || "",
+        hourlyRate: item.hourly_rate || 0,
         experienceYears: item.experience_years || undefined,
         description: item.description || undefined
       };
-    });
+    }) || [];
     
     // Combine data and map to TutorProfile type
     return {
       id: profileData.id,
-      firstName: profileData.first_name,
+      firstName: profileData.first_name || "",
       lastName: profileData.last_name || "",
       bio: profileData.bio || "",
       city: profileData.city || "",
       avatarUrl: profileData.avatar_url || undefined,
-      educationInstitution: tutorData.education_institution,
-      degree: tutorData.degree,
-      graduationYear: tutorData.graduation_year,
-      educationVerified: tutorData.education_verified,
-      methodology: tutorData.methodology || undefined,
-      experience: tutorData.experience || undefined,
-      achievements: tutorData.achievements || undefined,
-      videoUrl: tutorData.video_url || undefined,
+      educationInstitution: tutorProfile.education_institution || "",
+      degree: tutorProfile.degree || "",
+      graduationYear: tutorProfile.graduation_year || new Date().getFullYear(),
+      educationVerified: tutorProfile.education_verified || false,
+      methodology: tutorProfile.methodology || undefined,
+      experience: tutorProfile.experience || undefined,
+      achievements: tutorProfile.achievements || undefined,
+      videoUrl: tutorProfile.video_url || undefined,
       subjects: subjects,
-      isPublished: tutorData.is_published || false
+      isPublished: tutorProfile.is_published || false
     };
   } catch (error) {
     console.error("Error in fetchTutorProfile:", error);

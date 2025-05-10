@@ -11,7 +11,8 @@ export const useTutorPublishStatus = () => {
   const [profileStatus, setProfileStatus] = useState<{
     isValid: boolean;
     missingFields: string[];
-  }>({ isValid: true, missingFields: [] });
+    warnings: string[];
+  }>({ isValid: true, missingFields: [], warnings: [] });
   const { user } = useAuth();
   
   useEffect(() => {
@@ -23,6 +24,7 @@ export const useTutorPublishStatus = () => {
       
       try {
         setIsLoading(true);
+        console.log("Checking publish status for user:", user.id);
         
         // Проверка статуса публикации
         const { data, error } = await supabase
@@ -31,16 +33,22 @@ export const useTutorPublishStatus = () => {
           .eq("id", user.id)
           .maybeSingle();
           
-        if (error && error.code !== 'PGRST116') throw error;
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error fetching publish status:", error);
+          throw error;
+        }
         
         // Если данные существуют, устанавливаем статус публикации
+        console.log("Publish status data:", data);
         setIsPublished(data?.is_published || false);
         
         // Проверка полноты профиля
         const validationResult = await validateTutorProfile(user.id);
+        console.log("Validation result:", validationResult);
         setProfileStatus({
           isValid: validationResult.isValid,
-          missingFields: validationResult.missingFields
+          missingFields: validationResult.missingFields,
+          warnings: validationResult.warnings
         });
         
       } catch (error) {
@@ -57,6 +65,7 @@ export const useTutorPublishStatus = () => {
     if (!user?.id) return false;
     
     try {
+      console.log("Toggling publish status for user:", user.id);
       setIsLoading(true);
       
       const newStatus = !isPublished;
@@ -64,6 +73,7 @@ export const useTutorPublishStatus = () => {
       // При попытке публикации, сначала проверяем полноту профиля
       if (newStatus) {
         const validationResult = await validateTutorProfile(user.id);
+        console.log("Validation before publishing:", validationResult);
         
         if (!validationResult.isValid) {
           const missingFieldsText = validationResult.missingFields.join(", ");
@@ -72,19 +82,23 @@ export const useTutorPublishStatus = () => {
             description: `Пожалуйста, заполните следующие поля: ${missingFieldsText}`,
             variant: "destructive",
           });
+          setIsLoading(false);
           return false;
         }
       }
       
       // Проверить существование записи tutor_profiles
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: checkError } = await supabase
         .from("tutor_profiles")
         .select("id")
         .eq("id", user.id)
         .maybeSingle();
+      
+      console.log("Existing profile check:", existingProfile, checkError);
         
       if (!existingProfile) {
         // Создать запись, если она отсутствует
+        console.log("Creating new tutor profile record");
         const { error: createError } = await supabase
           .from("tutor_profiles")
           .insert({
@@ -93,9 +107,13 @@ export const useTutorPublishStatus = () => {
             updated_at: new Date().toISOString()
           });
           
-        if (createError) throw createError;
+        if (createError) {
+          console.error("Error creating tutor profile:", createError);
+          throw createError;
+        }
       } else {
         // Обновление статуса публикации
+        console.log("Updating existing tutor profile");
         const { error } = await supabase
           .from("tutor_profiles")
           .update({
@@ -104,7 +122,10 @@ export const useTutorPublishStatus = () => {
           })
           .eq("id", user.id);
         
-        if (error) throw error;
+        if (error) {
+          console.error("Error updating publish status:", error);
+          throw error;
+        }
       }
       
       setIsPublished(newStatus);
