@@ -2,201 +2,111 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Проверяет, добавил ли репетитор хотя бы один предмет
+ * Validates a tutor profile to check if it's complete
  */
-export async function hasTutorAddedSubjects(tutorId: string): Promise<boolean> {
-  if (!tutorId) {
-    console.error("hasTutorAddedSubjects: No tutor ID provided");
-    return false;
-  }
-
+export const validateTutorProfile = async (tutorId: string) => {
   try {
-    console.log("Checking if tutor has added subjects:", tutorId);
-    // Проверка наличия предметов у репетитора
-    const { data, error } = await supabase
-      .from("tutor_subjects")
-      .select("id")
-      .eq("tutor_id", tutorId)
-      .limit(1);
-      
-    if (error) {
-      console.error("Error checking tutor subjects:", error);
-      return false;
-    }
+    console.log("Validating tutor profile for:", tutorId);
+    const missingFields = [];
+    const warnings = [];
     
-    console.log("Tutor subjects check result:", data);
-    return Array.isArray(data) && data.length > 0;
-  } catch (error) {
-    console.error("Error checking if tutor has added subjects:", error);
-    return false;
-  }
-}
-
-/**
- * Проверяет, добавил ли репетитор расписание
- */
-export async function hasTutorAddedSchedule(tutorId: string): Promise<boolean> {
-  if (!tutorId) {
-    console.error("hasTutorAddedSchedule: No tutor ID provided");
-    return false;
-  }
-
-  try {
-    console.log("Checking if tutor has added schedule:", tutorId);
-    // Проверка наличия расписания у репетитора
-    const { data, error } = await supabase
-      .from("tutor_schedule")
-      .select("id")
-      .eq("tutor_id", tutorId)
-      .limit(1);
-      
-    if (error) {
-      console.error("Error checking tutor schedule:", error);
-      // Don't throw for PGRST116 (no results) error
-      if (error.code !== 'PGRST116') return false;
-    }
-    
-    console.log("Tutor schedule check result:", data);
-    return Array.isArray(data) && data.length > 0;
-  } catch (error) {
-    console.error("Error checking if tutor has added schedule:", error);
-    return false;
-  }
-}
-
-/**
- * Проверяет полноту профиля репетитора для публикации
- */
-export async function validateTutorProfile(tutorId: string): Promise<{
-  isValid: boolean;
-  missingFields: string[];
-  warnings: string[];
-}> {
-  if (!tutorId) {
-    console.error("validateTutorProfile: No tutor ID provided");
-    return {
-      isValid: false,
-      missingFields: ["Отсутствует идентификатор пользователя"],
-      warnings: []
-    };
-  }
-
-  try {
-    console.log("Validating tutor profile for ID:", tutorId);
-    
-    // Проверка основного профиля
+    // Check basic profile
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select("first_name, last_name, bio, city, avatar_url")
       .eq("id", tutorId)
-      .maybeSingle();
+      .single();
       
     if (profileError) {
       console.error("Error fetching profile data:", profileError);
-      return {
-        isValid: false,
-        missingFields: ["Ошибка получения данных профиля"],
-        warnings: []
-      };
+      return { isValid: false, missingFields: ["Ошибка проверки профиля"], warnings: [] };
     }
     
-    if (!profileData) {
-      console.error("No profile data found for ID:", tutorId);
-      return {
-        isValid: false,
-        missingFields: ["Профиль не найден"],
-        warnings: []
-      };
-    }
-    
-    console.log("Profile data fetched:", profileData);
-    
-    // Проверка профиля репетитора
+    // Check tutor-specific profile
     const { data: tutorData, error: tutorError } = await supabase
       .from("tutor_profiles")
-      .select("education_institution, degree, experience")
+      .select("education_institution, degree, graduation_year, experience")
       .eq("id", tutorId)
       .maybeSingle();
-    
+      
     if (tutorError && tutorError.code !== 'PGRST116') {
-      console.error("Error fetching tutor profile data:", tutorError);
-      return {
-        isValid: false,
-        missingFields: ["Ошибка получения данных репетитора"],
-        warnings: []
-      };
+      console.error("Error fetching tutor data:", tutorError);
+      return { isValid: false, missingFields: ["Ошибка проверки профиля репетитора"], warnings: [] };
     }
     
-    console.log("Tutor data fetched:", tutorData);
-    
-    // Проверка предметов
+    // Check subjects
     const { data: subjectsData, error: subjectsError } = await supabase
       .from("tutor_subjects")
-      .select("id")
-      .eq("tutor_id", tutorId);
+      .select("subject_id, is_active")
+      .eq("tutor_id", tutorId)
+      .eq("is_active", true);
       
     if (subjectsError) {
       console.error("Error fetching tutor subjects:", subjectsError);
-      return {
-        isValid: false,
-        missingFields: ["Ошибка получения данных о предметах"],
-        warnings: []
-      };
+      return { isValid: false, missingFields: ["Ошибка проверки предметов"], warnings: [] };
     }
     
-    console.log("Subjects data fetched:", subjectsData);
-    
-    const missingFields: string[] = [];
-    const warnings: string[] = [];
-    
-    // Проверка обязательных полей в основном профиле
-    if (!profileData.first_name || profileData.first_name.trim() === "") 
+    // Validate required fields
+    if (!profileData?.first_name || profileData.first_name.trim() === "") {
       missingFields.push("Имя");
-      
-    if (!profileData.last_name || profileData.last_name.trim() === "") 
+    }
+    
+    if (!profileData?.last_name || profileData.last_name.trim() === "") {
       missingFields.push("Фамилия");
-      
-    if (!profileData.bio || profileData.bio === null || profileData.bio.trim() === "" || profileData.bio.length < 20) 
-      missingFields.push("О себе");
-      
-    if (!profileData.city || profileData.city === null || profileData.city.trim() === "") 
+    }
+    
+    if (!profileData?.bio || profileData.bio.trim() === "") {
+      missingFields.push("Описание (опыт преподавания)");
+    }
+    
+    if (!profileData?.city || profileData.city.trim() === "") {
       missingFields.push("Город");
-      
-    if (!profileData.avatar_url) 
-      missingFields.push("Фотография профиля");
+    }
     
-    // Проверка полей профиля репетитора
-    if (!tutorData || !tutorData.education_institution || tutorData.education_institution.trim() === "") 
-      missingFields.push("Учебное заведение");
+    // Check education fields if tutor data exists
+    if (tutorData) {
+      if (!tutorData.education_institution || tutorData.education_institution.trim() === "") {
+        missingFields.push("Учебное заведение");
+      }
       
-    if (!tutorData || !tutorData.degree || tutorData.degree.trim() === "") 
-      missingFields.push("Специальность");
+      if (!tutorData.degree || tutorData.degree.trim() === "") {
+        missingFields.push("Специальность/степень");
+      }
+    } else {
+      missingFields.push("Образование");
+    }
     
-    // Проверка наличия предметов
-    if (!subjectsData || !Array.isArray(subjectsData) || subjectsData.length === 0) {
+    // Check subjects
+    if (!subjectsData || subjectsData.length === 0) {
       missingFields.push("Предметы обучения");
     }
     
-    // Предупреждения
-    if (!tutorData || !tutorData.experience) {
-      warnings.push("Рекомендуется указать опыт работы");
+    // Add warnings
+    if (!profileData?.avatar_url) {
+      warnings.push("Добавьте фотографию профиля для повышения доверия студентов");
     }
     
-    const result = {
-      isValid: missingFields.length === 0,
-      missingFields,
-      warnings,
+    if (tutorData && !tutorData.experience) {
+      warnings.push("Укажите свой опыт преподавания в годах");
+    }
+    
+    console.log("Validation result:", { 
+      isValid: missingFields.length === 0, 
+      missingFields, 
+      warnings 
+    });
+    
+    return { 
+      isValid: missingFields.length === 0, 
+      missingFields, 
+      warnings 
     };
-    
-    console.log("Validation result:", result);
-    
-    return result;
   } catch (error) {
     console.error("Error validating tutor profile:", error);
-    return {
-      isValid: false,
-      missingFields: ["Ошибка проверки профиля"],
-      warnings: [],
+    return { 
+      isValid: false, 
+      missingFields: ["Произошла ошибка при проверке профиля"], 
+      warnings: [] 
     };
   }
-}
+};

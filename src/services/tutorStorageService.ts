@@ -6,22 +6,29 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export const uploadAvatar = async (avatarFile: File, userId: string): Promise<string> => {
   try {
+    console.log("Uploading avatar for user:", userId);
+    
     // Create a unique file name
     const fileExt = avatarFile.name.split('.').pop();
-    const fileName = `${userId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `avatars/${fileName}`;
+    const fileName = `${userId}.${fileExt}`;
+    const filePath = `${fileName}`;
     
     // Upload the file
     const { error: uploadError } = await supabase.storage
       .from('avatars')
-      .upload(filePath, avatarFile);
+      .upload(filePath, avatarFile, {
+        cacheControl: '3600',
+        upsert: true
+      });
     
     if (uploadError) {
+      console.error("Error uploading avatar:", uploadError);
       throw uploadError;
     }
     
     // Get the public URL
     const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    console.log("Avatar uploaded successfully, URL:", data.publicUrl);
     
     return data.publicUrl;
   } catch (error) {
@@ -38,12 +45,15 @@ export const uploadMaterial = async (file: File, tutorId: string, materialType: 
     // Create a unique file name
     const fileExt = file.name.split('.').pop();
     const fileName = `${tutorId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-    const filePath = `materials/${materialType}/${fileName}`;
+    const filePath = `${materialType}/${fileName}`;
     
     // Upload the file
     const { error: uploadError } = await supabase.storage
       .from('materials')
-      .upload(filePath, file);
+      .upload(filePath, file, {
+        cacheControl: '3600',
+        upsert: false
+      });
     
     if (uploadError) {
       throw uploadError;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -13,7 +12,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { TutorFormValues } from "@/types/tutor";
-import { fetchSubjectsAndCategories, saveTutorProfile, saveTutorSubjects } from "@/services/tutorService";
+import { fetchSubjectsAndCategories } from "@/services/tutorSubjectsService";
+import { saveTutorProfile } from "@/services/tutorProfileService";
+import { saveTutorSubjects } from "@/services/tutorSubjectsService";
 import { Loader } from "@/components/ui/loader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
@@ -70,13 +71,11 @@ const TutorCompletePage = () => {
       
       try {
         // Load subjects and categories
-        const { subjects: fetchedSubjects, categories: fetchedCategories } = await fetchSubjectsAndCategories();
+        const { subjects: fetchedSubjects } = await fetchSubjectsAndCategories();
         setSubjects(fetchedSubjects || []);
-        setCategories(fetchedCategories || []);
       } catch (error) {
-        console.error("Error loading subjects/categories:", error);
+        console.error("Error loading subjects:", error);
         setSubjects([]);
-        setCategories([]);
         // Continue execution - subjects can be loaded later
       }
       
@@ -143,6 +142,7 @@ const TutorCompletePage = () => {
             lastName: profileData.last_name || "",
             bio: profileData.bio || "",
             city: profileData.city || "",
+            avatarUrl: profileData.avatar_url || "",
             subjects: [],
             teachingLevels: ["школьник", "студент", "взрослый"],
             hourlyRate: 0
@@ -174,15 +174,17 @@ const TutorCompletePage = () => {
     setIsLoading(true);
     
     try {
+      console.log("Submitting form values:", values);
+      
       // Save profile data
-      const result = await saveTutorProfile(values, user.id, avatarFile, initialValues.avatarUrl || null);
+      const result = await saveTutorProfile(values, user.id, avatarFile, initialValues.avatarUrl);
       
       if (!result.success) {
         throw new Error(result.error || "Ошибка сохранения профиля");
       }
       
       // Save subjects
-      await saveTutorSubjects(user.id, values.subjects, values.hourlyRate, categories);
+      await saveTutorSubjects(user.id, values.subjects, values.hourlyRate);
       
       toast({
         title: "Профиль успешно создан!",

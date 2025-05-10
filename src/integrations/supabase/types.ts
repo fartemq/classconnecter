@@ -9,6 +9,38 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          subject_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          subject_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          subject_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       homework: {
         Row: {
           created_at: string | null
@@ -392,24 +424,43 @@ export type Database = {
       }
       tutor_subjects: {
         Row: {
+          category_id: string | null
+          description: string | null
+          experience_years: number | null
           hourly_rate: number | null
           id: string
+          is_active: boolean | null
           subject_id: string | null
           tutor_id: string | null
         }
         Insert: {
+          category_id?: string | null
+          description?: string | null
+          experience_years?: number | null
           hourly_rate?: number | null
           id?: string
+          is_active?: boolean | null
           subject_id?: string | null
           tutor_id?: string | null
         }
         Update: {
+          category_id?: string | null
+          description?: string | null
+          experience_years?: number | null
           hourly_rate?: number | null
           id?: string
+          is_active?: boolean | null
           subject_id?: string | null
           tutor_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tutor_subjects_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tutor_subjects_subject_id_fkey"
             columns: ["subject_id"]

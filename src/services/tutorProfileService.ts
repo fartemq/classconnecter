@@ -1,7 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
-import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
 /**
  * Save a tutor's profile information
@@ -197,10 +196,9 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
     
     // Transform subjects data to match TutorSubject type
     const subjects = subjectsData?.map(item => {
-      const subject = item.subjects ? ensureSingleObject(item.subjects) : { name: "" };
       return {
         id: item.id,
-        name: subject?.name || "",
+        name: item.subjects?.name || "",
         hourlyRate: item.hourly_rate || 0,
         experienceYears: item.experience_years || undefined,
         description: item.description || undefined
