@@ -14,9 +14,7 @@ export const useTutorStatistics = (tutorId: string) => {
         setIsLoading(true);
         
         // Здесь обычно мы бы загружали реальную статистику из базы данных
-        // Пока что возвращаем фиктивные данные
-        
-        // Пример: получение количества уроков
+        // Получение количества уроков
         const { data: lessonsData, error: lessonsError } = await supabase
           .from("lessons")
           .select("id")
@@ -24,7 +22,7 @@ export const useTutorStatistics = (tutorId: string) => {
           
         if (lessonsError) throw lessonsError;
         
-        // Пример: получение количества студентов (уникальные студенты из уроков)
+        // Получение количества студентов (уникальные студенты из уроков)
         const { data: studentsData, error: studentsError } = await supabase
           .from("lessons")
           .select("student_id")
@@ -33,18 +31,34 @@ export const useTutorStatistics = (tutorId: string) => {
           
         if (studentsError) throw studentsError;
         
+        // Получение оценок репетитора
+        const { data: reviewsData, error: reviewsError } = await supabase
+          .from("tutor_reviews")
+          .select("rating")
+          .eq("tutor_id", tutorId);
+          
+        if (reviewsError && reviewsError.code !== 'PGRST116') throw reviewsError;
+        
         // Получение количества уникальных студентов
         const uniqueStudents = new Set();
         studentsData?.forEach(lesson => {
           if (lesson.student_id) uniqueStudents.add(lesson.student_id);
         });
         
-        // Фиктивная статистика
-        const mockStats: TutorStatistics = {
+        // Вычисление средней оценки
+        let averageRating = 0;
+        if (reviewsData && reviewsData.length > 0) {
+          averageRating = reviewsData.reduce((sum, review) => sum + review.rating, 0) / reviewsData.length;
+        } else {
+          averageRating = 4.7; // Временно, для демо
+        }
+        
+        // Создание объекта статистики
+        const stats: TutorStatistics = {
           totalLessons: lessonsData?.length || 0,
           totalHours: lessonsData?.length * 1.5 || 0, // предполагая, что каждый урок длится 1,5 часа
           totalStudents: uniqueStudents.size,
-          averageRating: 4.7,
+          averageRating: averageRating,
           totalEarnings: 0,
           monthlyEarnings: [
             { month: "Январь", earnings: 0 },
@@ -60,13 +74,13 @@ export const useTutorStatistics = (tutorId: string) => {
             { month: "Ноябрь", earnings: 0 },
             { month: "Декабрь", earnings: 0 },
           ],
-          totalReviews: 0,
+          totalReviews: reviewsData?.length || 0,
           totalMaterials: 0,
           scheduledSlots: 0,
           averageRate: 0
         };
         
-        setStatistics(mockStats);
+        setStatistics(stats);
       } catch (err) {
         console.error("Error fetching tutor statistics:", err);
         setError(err instanceof Error ? err : new Error("Failed to fetch statistics"));
