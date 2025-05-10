@@ -20,6 +20,7 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
   const [isLoading, setIsLoading] = useState(false);
   const [hasSubjects, setHasSubjects] = useState(true);
   const [hasSchedule, setHasSchedule] = useState(true);
+  const [showValidation, setShowValidation] = useState(true);
   const [validationResult, setValidationResult] = useState<{
     isValid: boolean;
     missingFields: string[];
@@ -39,6 +40,9 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
         
         const result = await validateTutorProfile(tutorId);
         setValidationResult(result);
+        
+        // Show validation only if profile is incomplete
+        setShowValidation(!result.isValid);
       } catch (error) {
         console.error("Error checking profile completeness:", error);
       }
@@ -46,6 +50,10 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
     
     checkProfileCompleteness();
   }, [tutorId]);
+
+  const handleDismissValidation = () => {
+    setShowValidation(false);
+  };
 
   const handleTogglePublish = async () => {
     try {
@@ -62,6 +70,7 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
             variant: "destructive",
           });
           setValidationResult(result);
+          setShowValidation(true);
           setIsLoading(false);
           return;
         }
@@ -112,11 +121,15 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Profile Completeness Status */}
-        <ValidationAlert 
-          isValid={validationResult.isValid} 
-          missingFields={validationResult.missingFields} 
-          warnings={validationResult.warnings} 
-        />
+        {showValidation && (
+          <ValidationAlert 
+            isValid={validationResult.isValid} 
+            missingFields={validationResult.missingFields} 
+            warnings={validationResult.warnings}
+            onDismiss={handleDismissValidation}
+            showDismiss={true}
+          />
+        )}
         
         {!hasSubjects && (
           <RecommendationAlert

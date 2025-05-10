@@ -6,6 +6,8 @@ import { fetchTutorProfile, saveTutorProfile } from "@/services/tutorProfileServ
 import { toast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
 import { TutorAboutForm } from "./forms/TutorAboutForm";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 interface TutorAboutTabProps {
   profile: Profile;
@@ -14,23 +16,42 @@ interface TutorAboutTabProps {
 export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
   const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Загрузка данных профиля репетитора
   useEffect(() => {
     const loadTutorProfile = async () => {
       try {
         setLoadingProfile(true);
+        setError(null);
         console.log("Loading tutor profile for:", profile.id);
+        
+        if (!profile.id) {
+          throw new Error("Идентификатор пользователя не найден");
+        }
+        
         const data = await fetchTutorProfile(profile.id);
         
         if (data) {
           console.log("Tutor profile loaded:", data);
           setTutorProfile(data);
         } else {
-          console.log("No tutor profile data returned");
+          console.log("No tutor profile data returned, creating initial structure");
+          // Create an initial structure for a new tutor
+          setTutorProfile({
+            id: profile.id,
+            firstName: profile.first_name || "",
+            lastName: profile.last_name || "",
+            bio: profile.bio || "",
+            city: profile.city || "",
+            avatarUrl: profile.avatar_url || undefined,
+            subjects: [],
+            isPublished: false
+          });
         }
       } catch (error) {
         console.error("Error loading tutor profile:", error);
+        setError("Не удалось загрузить данные профиля репетитора");
         toast({
           title: "Ошибка загрузки профиля",
           description: "Не удалось загрузить данные профиля репетитора",
@@ -41,8 +62,11 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
       }
     };
     
-    if (profile) {
+    if (profile && profile.id) {
       loadTutorProfile();
+    } else {
+      setLoadingProfile(false);
+      setError("Информация о профиле недоступна");
     }
   }, [profile]);
 
@@ -72,6 +96,10 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
       console.log("Avatar file:", avatarFile ? "Present" : "Not present");
       console.log("Avatar URL:", avatarUrl);
       
+      if (!profile.id) {
+        throw new Error("Идентификатор пользователя не найден");
+      }
+      
       const result = await saveTutorProfile(values, profile.id, avatarFile, avatarUrl);
       
       if (result.success) {
@@ -83,7 +111,23 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
         
         // Обновляем локальные данные
         setTutorProfile(prev => {
-          if (!prev) return null;
+          if (!prev) return {
+            id: profile.id,
+            firstName: values.firstName,
+            lastName: values.lastName,
+            bio: values.bio,
+            city: values.city,
+            educationInstitution: values.educationInstitution || "",
+            degree: values.degree || "",
+            graduationYear: values.graduationYear || new Date().getFullYear(),
+            methodology: values.methodology || "",
+            experience: values.experience || 0,
+            achievements: values.achievements || "",
+            videoUrl: values.videoUrl || "",
+            avatarUrl: result.avatarUrl || null,
+            subjects: []
+          };
+          
           return {
             ...prev,
             firstName: values.firstName,
@@ -102,10 +146,20 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
         });
       } else {
         console.error("Failed to save profile:", result);
+        toast({
+          title: "Ошибка сохранения", 
+          description: result.error?.message || "Не удалось сохранить профиль",
+          variant: "destructive",
+        });
         throw new Error("Не удалось сохранить профиль");
       }
     } catch (error) {
       console.error("Error in form submission:", error);
+      toast({
+        title: "Ошибка сохранения",
+        description: error instanceof Error ? error.message : "Произошла ошибка при сохранении профиля",
+        variant: "destructive",
+      });
       throw error;
     }
   };
@@ -115,6 +169,16 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
       <div className="flex justify-center items-center p-8">
         <Loader size="lg" />
       </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Ошибка</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
     );
   }
 

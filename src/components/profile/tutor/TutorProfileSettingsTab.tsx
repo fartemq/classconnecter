@@ -1,7 +1,6 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PublishProfileSection } from "./PublishProfileSection";
 import { Profile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { Edit, User, AlertTriangle, CheckCircle2 } from "lucide-react";

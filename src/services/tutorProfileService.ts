@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
@@ -12,16 +11,22 @@ export const saveTutorProfile = async (
   userId: string, 
   avatarFile: File | null, 
   avatarUrl: string | null
-): Promise<{ success: boolean; avatarUrl: string | null }> => {
+): Promise<{ success: boolean; avatarUrl: string | null; error?: any }> => {
   try {
     console.log("Saving tutor profile for user:", userId);
+    console.log("Form values:", values);
     
     // Upload avatar if selected
     let finalAvatarUrl = avatarUrl;
     if (avatarFile) {
       console.log("Uploading avatar file");
-      finalAvatarUrl = await uploadAvatar(avatarFile, userId);
-      console.log("Avatar uploaded, URL:", finalAvatarUrl);
+      try {
+        finalAvatarUrl = await uploadAvatar(avatarFile, userId);
+        console.log("Avatar uploaded, URL:", finalAvatarUrl);
+      } catch (avatarError) {
+        console.error("Error uploading avatar:", avatarError);
+        // Continue with the rest of the profile update even if avatar upload fails
+      }
     }
     
     // Update profile in the database
@@ -31,20 +36,20 @@ export const saveTutorProfile = async (
       last_name: values.lastName,
       bio: values.bio,
       city: values.city,
-      avatar_url: finalAvatarUrl,
+      avatar_url: finalAvatarUrl || avatarUrl,
       updated_at: new Date().toISOString(),
     }).eq("id", userId);
     
     if (profileError) {
       console.error("Error updating profile:", profileError);
-      throw profileError;
+      return { success: false, avatarUrl: null, error: profileError };
     }
     
     // Check if tutor_profiles exists
     console.log("Checking existing tutor profile");
     const { data: existingTutorProfile, error: checkError } = await supabase
       .from("tutor_profiles")
-      .select()
+      .select("id")
       .eq("id", userId)
       .maybeSingle();
     
@@ -66,7 +71,7 @@ export const saveTutorProfile = async (
       
       if (tutorProfileError) {
         console.error("Error updating tutor profile:", tutorProfileError);
-        throw tutorProfileError;
+        return { success: false, avatarUrl: finalAvatarUrl || avatarUrl, error: tutorProfileError };
       }
     } else {
       // Create new record
@@ -85,15 +90,15 @@ export const saveTutorProfile = async (
       
       if (tutorProfileError) {
         console.error("Error creating tutor profile:", tutorProfileError);
-        throw tutorProfileError;
+        return { success: false, avatarUrl: finalAvatarUrl || avatarUrl, error: tutorProfileError };
       }
     }
     
     console.log("Profile saved successfully");
-    return { success: true, avatarUrl: finalAvatarUrl };
+    return { success: true, avatarUrl: finalAvatarUrl || avatarUrl };
   } catch (error) {
     console.error("Error saving tutor profile:", error);
-    return { success: false, avatarUrl: null };
+    return { success: false, avatarUrl: null, error };
   }
 };
 

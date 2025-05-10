@@ -33,9 +33,12 @@ export const useTutorPublishStatus = () => {
           .eq("id", user.id)
           .maybeSingle();
           
-        if (error && error.code !== 'PGRST116') {
+        if (error) {
           console.error("Error fetching publish status:", error);
-          throw error;
+          // Не выбрасываем ошибку, если tutor_profiles не найден (код PGRST116)
+          if (error.code !== 'PGRST116') {
+            throw error;
+          }
         }
         
         // Если данные существуют, устанавливаем статус публикации
@@ -104,6 +107,10 @@ export const useTutorPublishStatus = () => {
           .insert({
             id: user.id,
             is_published: newStatus,
+            education_institution: "",
+            degree: "",
+            graduation_year: new Date().getFullYear(),
+            experience: 0,
             updated_at: new Date().toISOString()
           });
           
