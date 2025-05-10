@@ -19,13 +19,14 @@ export const ValidationAlert: React.FC<ValidationAlertProps> = ({
   onDismiss,
   showDismiss = false
 }) => {
-  if (isValid && warnings.length === 0) {
+  // Если профиль валиден и нет предупреждений, не показываем предупреждение
+  if (isValid && (!warnings || warnings.length === 0)) {
     return null;
   }
 
   if (!isValid) {
     return (
-      <Alert variant="destructive" className="relative">
+      <Alert variant="destructive" className="relative mb-4">
         {showDismiss && onDismiss && (
           <Button 
             variant="ghost" 
@@ -42,7 +43,7 @@ export const ValidationAlert: React.FC<ValidationAlertProps> = ({
         <AlertDescription>
           <p>Следующие поля требуют заполнения:</p>
           <ul className="list-disc pl-5 mt-2">
-            {missingFields.map((field, index) => (
+            {Array.isArray(missingFields) && missingFields.map((field, index) => (
               <li key={index}>{field}</li>
             ))}
           </ul>
@@ -51,9 +52,9 @@ export const ValidationAlert: React.FC<ValidationAlertProps> = ({
     );
   }
 
-  if (warnings.length > 0) {
+  if (Array.isArray(warnings) && warnings.length > 0) {
     return (
-      <Alert variant="default" className="bg-amber-50 border-amber-200 relative">
+      <Alert variant="default" className="bg-amber-50 border-amber-200 relative mb-4">
         {showDismiss && onDismiss && (
           <Button 
             variant="ghost" 

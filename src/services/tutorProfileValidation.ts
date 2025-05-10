@@ -5,6 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
  * Проверяет, добавил ли репетитор хотя бы один предмет
  */
 export async function hasTutorAddedSubjects(tutorId: string): Promise<boolean> {
+  if (!tutorId) {
+    console.error("hasTutorAddedSubjects: No tutor ID provided");
+    return false;
+  }
+
   try {
     console.log("Checking if tutor has added subjects:", tutorId);
     // Проверка наличия предметов у репетитора
@@ -16,11 +21,11 @@ export async function hasTutorAddedSubjects(tutorId: string): Promise<boolean> {
       
     if (error) {
       console.error("Error checking tutor subjects:", error);
-      throw error;
+      return false;
     }
     
     console.log("Tutor subjects check result:", data);
-    return !!data && data.length > 0;
+    return Array.isArray(data) && data.length > 0;
   } catch (error) {
     console.error("Error checking if tutor has added subjects:", error);
     return false;
@@ -31,6 +36,11 @@ export async function hasTutorAddedSubjects(tutorId: string): Promise<boolean> {
  * Проверяет, добавил ли репетитор расписание
  */
 export async function hasTutorAddedSchedule(tutorId: string): Promise<boolean> {
+  if (!tutorId) {
+    console.error("hasTutorAddedSchedule: No tutor ID provided");
+    return false;
+  }
+
   try {
     console.log("Checking if tutor has added schedule:", tutorId);
     // Проверка наличия расписания у репетитора
@@ -43,11 +53,11 @@ export async function hasTutorAddedSchedule(tutorId: string): Promise<boolean> {
     if (error) {
       console.error("Error checking tutor schedule:", error);
       // Don't throw for PGRST116 (no results) error
-      if (error.code !== 'PGRST116') throw error;
+      if (error.code !== 'PGRST116') return false;
     }
     
     console.log("Tutor schedule check result:", data);
-    return !!data && data.length > 0;
+    return Array.isArray(data) && data.length > 0;
   } catch (error) {
     console.error("Error checking if tutor has added schedule:", error);
     return false;
@@ -62,6 +72,15 @@ export async function validateTutorProfile(tutorId: string): Promise<{
   missingFields: string[];
   warnings: string[];
 }> {
+  if (!tutorId) {
+    console.error("validateTutorProfile: No tutor ID provided");
+    return {
+      isValid: false,
+      missingFields: ["Отсутствует идентификатор пользователя"],
+      warnings: []
+    };
+  }
+
   try {
     console.log("Validating tutor profile for ID:", tutorId);
     
@@ -74,7 +93,11 @@ export async function validateTutorProfile(tutorId: string): Promise<{
       
     if (profileError) {
       console.error("Error fetching profile data:", profileError);
-      throw profileError;
+      return {
+        isValid: false,
+        missingFields: ["Ошибка получения данных профиля"],
+        warnings: []
+      };
     }
     
     if (!profileData) {
@@ -95,10 +118,13 @@ export async function validateTutorProfile(tutorId: string): Promise<{
       .eq("id", tutorId)
       .maybeSingle();
     
-    // Не выбрасываем ошибку, если tutor_profile не найден (код PGRST116)  
     if (tutorError && tutorError.code !== 'PGRST116') {
       console.error("Error fetching tutor profile data:", tutorError);
-      throw tutorError;
+      return {
+        isValid: false,
+        missingFields: ["Ошибка получения данных репетитора"],
+        warnings: []
+      };
     }
     
     console.log("Tutor data fetched:", tutorData);
@@ -111,7 +137,11 @@ export async function validateTutorProfile(tutorId: string): Promise<{
       
     if (subjectsError) {
       console.error("Error fetching tutor subjects:", subjectsError);
-      throw subjectsError;
+      return {
+        isValid: false,
+        missingFields: ["Ошибка получения данных о предметах"],
+        warnings: []
+      };
     }
     
     console.log("Subjects data fetched:", subjectsData);
@@ -126,10 +156,10 @@ export async function validateTutorProfile(tutorId: string): Promise<{
     if (!profileData.last_name || profileData.last_name.trim() === "") 
       missingFields.push("Фамилия");
       
-    if (!profileData.bio || profileData.bio.trim() === "" || profileData.bio.length < 20) 
+    if (!profileData.bio || profileData.bio === null || profileData.bio.trim() === "" || profileData.bio.length < 20) 
       missingFields.push("О себе");
       
-    if (!profileData.city || profileData.city.trim() === "") 
+    if (!profileData.city || profileData.city === null || profileData.city.trim() === "") 
       missingFields.push("Город");
       
     if (!profileData.avatar_url) 
@@ -143,7 +173,7 @@ export async function validateTutorProfile(tutorId: string): Promise<{
       missingFields.push("Специальность");
     
     // Проверка наличия предметов
-    if (!subjectsData || subjectsData.length === 0) {
+    if (!subjectsData || !Array.isArray(subjectsData) || subjectsData.length === 0) {
       missingFields.push("Предметы обучения");
     }
     

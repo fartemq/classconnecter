@@ -8,12 +8,17 @@ import { validateTutorProfile } from "@/services/tutorProfileValidation";
 export const useTutorPublishStatus = () => {
   const [isPublished, setIsPublished] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [alertDismissed, setAlertDismissed] = useState(false);
   const [profileStatus, setProfileStatus] = useState<{
     isValid: boolean;
     missingFields: string[];
     warnings: string[];
   }>({ isValid: true, missingFields: [], warnings: [] });
   const { user } = useAuth();
+  
+  const dismissAlert = () => {
+    setAlertDismissed(true);
+  };
   
   useEffect(() => {
     const checkPublishStatus = async () => {
@@ -56,6 +61,11 @@ export const useTutorPublishStatus = () => {
         
       } catch (error) {
         console.error("Error checking publish status:", error);
+        toast({
+          title: "Ошибка",
+          description: "Не удалось проверить статус публикации профиля",
+          variant: "destructive",
+        });
       } finally {
         setIsLoading(false);
       }
@@ -85,6 +95,7 @@ export const useTutorPublishStatus = () => {
             description: `Пожалуйста, заполните следующие поля: ${missingFieldsText}`,
             variant: "destructive",
           });
+          setProfileStatus(validationResult);
           setIsLoading(false);
           return false;
         }
@@ -116,7 +127,12 @@ export const useTutorPublishStatus = () => {
           
         if (createError) {
           console.error("Error creating tutor profile:", createError);
-          throw createError;
+          toast({
+            title: "Ошибка",
+            description: "Не удалось создать профиль репетитора",
+            variant: "destructive",
+          });
+          return false;
         }
       } else {
         // Обновление статуса публикации
@@ -131,7 +147,12 @@ export const useTutorPublishStatus = () => {
         
         if (error) {
           console.error("Error updating publish status:", error);
-          throw error;
+          toast({
+            title: "Ошибка",
+            description: "Не удалось изменить статус публикации",
+            variant: "destructive",
+          });
+          return false;
         }
       }
       
@@ -161,6 +182,8 @@ export const useTutorPublishStatus = () => {
     isPublished,
     isLoading,
     togglePublishStatus,
-    profileStatus
+    profileStatus,
+    alertDismissed,
+    dismissAlert
   };
 };
