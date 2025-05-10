@@ -197,9 +197,15 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
     
     // Transform subjects data to match TutorSubject type
     const subjects = subjectsData?.map(item => {
+      // Fix the type issue by properly checking and accessing the subjects property
+      let subjectName = "";
+      if (item.subjects && typeof item.subjects === 'object' && 'name' in item.subjects) {
+        subjectName = item.subjects.name as string;
+      }
+      
       return {
         id: item.id,
-        name: item.subjects ? item.subjects.name : "",
+        name: subjectName,
         hourlyRate: item.hourly_rate || 0,
         experienceYears: item.experience_years || undefined,
         description: item.description || undefined
