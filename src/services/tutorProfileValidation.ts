@@ -91,3 +91,43 @@ export async function validateTutorProfile(tutorId: string): Promise<{
     };
   }
 }
+
+/**
+ * Check if tutor has added any subjects
+ */
+export async function hasTutorAddedSubjects(tutorId: string): Promise<boolean> {
+  try {
+    const { count, error } = await supabase
+      .from("tutor_subjects")
+      .select("*", { count: 'exact', head: true })
+      .eq("tutor_id", tutorId)
+      .eq("is_active", true);
+      
+    if (error) throw error;
+    
+    return count !== null && count > 0;
+  } catch (error) {
+    console.error("Error checking if tutor has subjects:", error);
+    return false;
+  }
+}
+
+/**
+ * Check if tutor has added any schedule slots
+ */
+export async function hasTutorAddedSchedule(tutorId: string): Promise<boolean> {
+  try {
+    const { count, error } = await supabase
+      .from("tutor_schedule")
+      .select("*", { count: 'exact', head: true })
+      .eq("tutor_id", tutorId)
+      .eq("is_available", true);
+      
+    if (error) throw error;
+    
+    return count !== null && count > 0;
+  } catch (error) {
+    console.error("Error checking if tutor has schedule:", error);
+    return false;
+  }
+}
