@@ -20,10 +20,10 @@ ON public.tutor_profiles
 FOR UPDATE
 USING (auth.uid() = id);
 
-CREATE POLICY "Everyone can view tutor profiles"
+CREATE POLICY "Everyone can view published tutor profiles"
 ON public.tutor_profiles
 FOR SELECT
-USING (true);
+USING (is_published = true OR auth.uid() = id);
 
 -- Включить Row Level Security для таблицы student_profiles
 ALTER TABLE public.student_profiles ENABLE ROW LEVEL SECURITY;
@@ -46,5 +46,29 @@ USING (auth.uid() = id);
 
 CREATE POLICY "Everyone can view student profiles"
 ON public.student_profiles
+FOR SELECT
+USING (true);
+
+-- Enable RLS for tutor_subjects table
+ALTER TABLE public.tutor_subjects ENABLE ROW LEVEL SECURITY;
+
+-- Create policies for tutor_subjects
+CREATE POLICY "Users can insert their own subjects"
+ON public.tutor_subjects
+FOR INSERT
+WITH CHECK (auth.uid() = tutor_id);
+
+CREATE POLICY "Users can update their own subjects"
+ON public.tutor_subjects
+FOR UPDATE
+USING (auth.uid() = tutor_id);
+
+CREATE POLICY "Users can delete their own subjects"
+ON public.tutor_subjects
+FOR DELETE
+USING (auth.uid() = tutor_id);
+
+CREATE POLICY "Everyone can view tutor subjects"
+ON public.tutor_subjects
 FOR SELECT
 USING (true);

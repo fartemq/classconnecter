@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { TutorAboutTab } from "./TutorAboutTab";
 import { SubjectsTab } from "./SubjectsTab";
 import { MethodologyTab } from "./MethodologyTab";
@@ -105,7 +105,7 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
       )}
 
       {profileStatus.isValid && profileStatus.warnings.length > 0 && (
-        <Alert variant="default">
+        <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Рекомендуем дополнить профиль</AlertTitle>
           <AlertDescription>
@@ -129,39 +129,46 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
         </Alert>
       )}
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="w-full border-b mb-4">
-          <TabsTrigger value="about" className="flex-1">Основная информация</TabsTrigger>
-          <TabsTrigger value="subjects" className="flex-1">Предметы и цены</TabsTrigger>
-          <TabsTrigger value="methodology" className="flex-1">Методика преподавания</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="about">
-          <Card>
-            <CardContent className="pt-6">
+      <Card className="overflow-hidden border rounded-lg">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="w-full flex rounded-none border-b">
+            <TabsTrigger 
+              value="about" 
+              className="flex-1 rounded-none border-r data-[state=active]:bg-muted"
+            >
+              Основная информация
+            </TabsTrigger>
+            <TabsTrigger 
+              value="subjects" 
+              className="flex-1 rounded-none border-r data-[state=active]:bg-muted"
+            >
+              Предметы и цены
+            </TabsTrigger>
+            <TabsTrigger 
+              value="methodology" 
+              className="flex-1 rounded-none data-[state=active]:bg-muted"
+            >
+              Методика преподавания
+            </TabsTrigger>
+          </TabsList>
+          
+          <div className="p-6">
+            <TabsContent value="about">
               <TutorAboutTab profile={profile} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="subjects">
-          <Card>
-            <CardContent className="pt-6">
+            </TabsContent>
+            
+            <TabsContent value="subjects">
               <SubjectsTab tutorId={profile.id} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="methodology">
-          <Card>
-            <CardContent className="pt-6">
+            </TabsContent>
+            
+            <TabsContent value="methodology">
               {tutorProfile && (
                 <MethodologyTab profile={tutorProfile} />
               )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </Card>
     </div>
   );
 };

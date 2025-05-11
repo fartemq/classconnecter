@@ -1,7 +1,6 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
@@ -10,6 +9,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader } from "@/components/ui/loader";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
 
 interface MethodologyTabProps {
   profile: TutorProfile;
@@ -36,51 +37,54 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
         videoUrl,
       });
 
-      // First, check if the tutor_profiles record exists
-      const { data: existingRecord, error: checkError } = await supabase
+      // Check if tutor_profiles exists
+      const { data: existingProfile, error: checkError } = await supabase
         .from("tutor_profiles")
         .select("id")
         .eq("id", profile.id)
-        .maybeSingle();
+        .single();
         
+      console.log("Existing profile check:", existingProfile, checkError);
+      
       if (checkError && checkError.code !== 'PGRST116') {
         throw new Error(`Ошибка проверки профиля: ${checkError.message}`);
       }
       
-      // If no record exists, create one first
-      if (!existingRecord) {
-        console.log("Creating new tutor_profiles record");
-        const { error: createError } = await supabase
+      // Prepare data for update or insert
+      const profileData = {
+        methodology,
+        experience,
+        achievements,
+        video_url: videoUrl,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (!existingProfile) {
+        // Insert new record with required ID
+        console.log("Creating new tutor profile");
+        const { error: insertError } = await supabase
           .from("tutor_profiles")
           .insert({
+            ...profileData,
             id: profile.id,
-            methodology,
-            experience,
-            achievements,
-            video_url: videoUrl,
-            updated_at: new Date().toISOString(),
+            is_published: false,
+            education_verified: false
           });
 
-        if (createError) {
-          console.error("Error creating tutor_profiles record:", createError);
-          throw new Error(`Не удалось создать запись профиля: ${createError.message}`);
+        if (insertError) {
+          console.error("Error creating tutor profile:", insertError);
+          throw new Error(`Не удалось создать профиль: ${insertError.message}`);
         }
       } else {
         // Update existing record
-        console.log("Updating existing tutor_profiles record");
+        console.log("Updating existing tutor profile");
         const { error: updateError } = await supabase
           .from("tutor_profiles")
-          .update({
-            methodology,
-            experience,
-            achievements,
-            video_url: videoUrl,
-            updated_at: new Date().toISOString(),
-          })
+          .update(profileData)
           .eq("id", profile.id);
 
         if (updateError) {
-          console.error("Error updating methodology:", updateError);
+          console.error("Error updating tutor profile:", updateError);
           throw new Error(`Не удалось обновить данные: ${updateError.message}`);
         }
       }
@@ -89,9 +93,9 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
         title: "Информация обновлена",
         description: "Ваша методология преподавания успешно сохранена",
       });
-    } catch (error) {
-      console.error("Error updating methodology:", error);
-      const errorMessage = error instanceof Error ? error.message : "Не удалось обновить информацию о методологии преподавания";
+    } catch (err) {
+      console.error("Error saving methodology:", err);
+      const errorMessage = err instanceof Error ? err.message : "Не удалось обновить информацию";
       
       setError(errorMessage);
       toast({
@@ -125,7 +129,7 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Методология преподавания</h2>
+      <h2 className="text-2xl font-semibold mb-6">Методика преподавания</h2>
       
       {error && (
         <Alert variant="destructive" className="mb-4">
@@ -135,86 +139,79 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Ваш подход к преподаванию</CardTitle>
-            <CardDescription>
-              Расскажите подробнее о вашей методике обучения и подходе к учебному процессу
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Методика преподавания
-              </label>
-              <Textarea
-                value={methodology}
-                onChange={(e) => setMethodology(e.target.value)}
-                placeholder="Опишите свою методику преподавания..."
-                className="min-h-[150px]"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Расскажите, какие методы и подходы вы используете в обучении
-              </p>
-            </div>
+        <Card className="p-6 space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="experience">Опыт преподавания (лет)</Label>
+            <Input
+              id="experience"
+              type="number"
+              value={experience === null ? "" : experience}
+              onChange={(e) => setExperience(Number(e.target.value) || 0)}
+              min={0}
+              max={50}
+              className="max-w-xs"
+            />
+            <p className="text-sm text-gray-500">
+              Укажите ваш стаж преподавания в годах
+            </p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Опыт преподавания (лет)
-              </label>
-              <Input
-                type="number"
-                value={experience === null ? "" : experience}
-                onChange={(e) => setExperience(Number(e.target.value) || 0)}
-                min={0}
-                max={50}
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="methodology">Методика преподавания</Label>
+            <Textarea
+              id="methodology"
+              value={methodology}
+              onChange={(e) => setMethodology(e.target.value)}
+              placeholder="Опишите свою методику преподавания..."
+              className="min-h-[150px]"
+            />
+            <p className="text-sm text-gray-500">
+              Расскажите, какие методы и подходы вы используете в обучении
+            </p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Достижения и сертификаты
-              </label>
-              <Textarea
-                value={achievements}
-                onChange={(e) => setAchievements(e.target.value)}
-                placeholder="Перечислите ваши профессиональные достижения, сертификаты и награды..."
-                className="min-h-[100px]"
-              />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="achievements">Достижения и сертификаты</Label>
+            <Textarea
+              id="achievements"
+              value={achievements}
+              onChange={(e) => setAchievements(e.target.value)}
+              placeholder="Перечислите ваши профессиональные достижения, сертификаты и награды..."
+              className="min-h-[100px]"
+            />
+            <p className="text-sm text-gray-500">
+              Укажите ваши дипломы, награды и профессиональные успехи
+            </p>
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Видео-презентация (URL)
-              </label>
-              <Input
-                type="url"
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-                placeholder="https://youtu.be/example"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Ссылка на видео-презентацию, где вы рассказываете о своем опыте преподавания
-              </p>
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="video-url">Видео-презентация (URL)</Label>
+            <Input
+              id="video-url"
+              type="url"
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              placeholder="https://youtu.be/example"
+            />
+            <p className="text-sm text-gray-500">
+              Ссылка на YouTube-видео, где вы рассказываете о своем опыте
+            </p>
+          </div>
 
-            {videoUrl && getYoutubeEmbedUrl(videoUrl) && (
-              <div className="mt-4">
-                <label className="block text-sm font-medium mb-2">
-                  Предпросмотр видео:
-                </label>
-                <div className="aspect-w-16 aspect-h-9">
-                  <iframe
-                    src={getYoutubeEmbedUrl(videoUrl) || ""}
-                    title="Видео-презентация"
-                    className="w-full h-64 rounded-md"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  ></iframe>
-                </div>
+          {videoUrl && getYoutubeEmbedUrl(videoUrl) && (
+            <div className="mt-4">
+              <Label className="mb-2 block">Предпросмотр видео:</Label>
+              <div className="aspect-video">
+                <iframe
+                  src={getYoutubeEmbedUrl(videoUrl) || ""}
+                  title="Видео-презентация"
+                  className="w-full h-full rounded-md"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                ></iframe>
               </div>
-            )}
-          </CardContent>
+            </div>
+          )}
         </Card>
 
         <div className="flex justify-end">

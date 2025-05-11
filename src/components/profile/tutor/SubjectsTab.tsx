@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
@@ -12,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { saveTutorSubjects, fetchSubjectsAndCategories } from "@/services/tutorSubjectsService";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 
 interface SubjectsTabProps {
   tutorId: string;
@@ -124,7 +124,7 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({ tutorId }) => {
   
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold">Предметы и стоимость</h2>
+      <h2 className="text-2xl font-semibold mb-6">Предметы и стоимость</h2>
       
       {error && (
         <Alert variant="destructive">
@@ -135,80 +135,76 @@ export const SubjectsTab: React.FC<SubjectsTabProps> = ({ tutorId }) => {
       
       <div className="space-y-6">
         {/* Hourly rate section */}
-        <Card>
-          <CardContent className="pt-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Стоимость занятия</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="hourly-rate">Стоимость часа (₽)</Label>
-                  <Input
-                    id="hourly-rate"
-                    type="number"
-                    min={0}
-                    value={hourlyRate}
-                    onChange={(e) => setHourlyRate(Number(e.target.value))}
-                  />
-                  <p className="text-sm text-gray-500">
-                    Укажите стоимость одного часа занятий
-                  </p>
-                </div>
+        <Card className="p-6">
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium">Стоимость занятия</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="hourly-rate">Стоимость часа (₽) *</Label>
+                <Input
+                  id="hourly-rate"
+                  type="number"
+                  min={0}
+                  value={hourlyRate}
+                  onChange={(e) => setHourlyRate(Number(e.target.value))}
+                />
+                <p className="text-sm text-gray-500">
+                  Укажите стоимость одного часа занятий
+                </p>
               </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
         
         {/* Subject selection */}
-        <Card>
-          <CardContent className="pt-6">
+        <Card className="p-6">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-lg font-medium">Выбор предметов</h3>
+              <Badge>{selectedSubjects.length} выбрано</Badge>
+            </div>
+            
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-medium">Выбор предметов</h3>
-                <Badge>{selectedSubjects.length} выбрано</Badge>
+              <div>
+                <Label htmlFor="subject-select">Добавить предмет *</Label>
+                <Select 
+                  onValueChange={(value) => handleSelectSubject(value)}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Выберите предмет" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {subjects.filter(subject => !selectedSubjects.includes(subject.id)).map((subject) => (
+                      <SelectItem key={subject.id} value={subject.id}>
+                        {subject.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="subject-select">Добавить предмет</Label>
-                  <Select 
-                    onValueChange={(value) => handleSelectSubject(value)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Выберите предмет" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subjects.filter(subject => !selectedSubjects.includes(subject.id)).map((subject) => (
-                        <SelectItem key={subject.id} value={subject.id}>
-                          {subject.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Выбранные предметы:</h4>
-                  {selectedSubjects.length === 0 ? (
-                    <p className="text-sm text-gray-500">Пока не выбрано ни одного предмета</p>
-                  ) : (
-                    <div className="flex flex-wrap gap-2">
-                      {selectedSubjects.map((subjectId) => (
-                        <Badge 
-                          key={subjectId} 
-                          className="flex items-center gap-1 px-2 py-1 cursor-pointer"
-                          variant="secondary"
-                          onClick={() => handleSelectSubject(subjectId)}
-                        >
-                          {getSubjectName(subjectId)}
-                          <Trash className="h-3 w-3 text-gray-500" />
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              <div>
+                <h4 className="text-sm font-medium mb-2">Выбранные предметы:</h4>
+                {selectedSubjects.length === 0 ? (
+                  <p className="text-sm text-gray-500">Пока не выбрано ни одного предмета</p>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedSubjects.map((subjectId) => (
+                      <Badge 
+                        key={subjectId} 
+                        className="flex items-center gap-1 px-2 py-1 cursor-pointer"
+                        variant="secondary"
+                        onClick={() => handleSelectSubject(subjectId)}
+                      >
+                        {getSubjectName(subjectId)}
+                        <Trash className="h-3 w-3 text-gray-500" />
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
-          </CardContent>
+          </div>
         </Card>
         
         <div className="flex justify-end">
