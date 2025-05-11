@@ -1,132 +1,167 @@
 
-import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Profile } from "@/hooks/useProfile";
+import React, { useState, useEffect } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Edit, User, AlertTriangle, CheckCircle2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { TutorAboutTab } from "./TutorAboutTab";
+import { SubjectsTab } from "./SubjectsTab";
+import { MethodologyTab } from "./MethodologyTab";
 import { useTutorPublishStatus } from "@/hooks/useTutorPublishStatus";
+import { AlertCircle, CheckCircle, AlertTriangle } from "lucide-react";
+import { Profile } from "@/hooks/profiles/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { TutorPublishController } from "./TutorPublishController";
+import { fetchTutorProfile } from "@/services/tutorProfileService"; 
+import { TutorProfile } from "@/types/tutor";
+import { Loader } from "@/components/ui/loader";
 
 interface TutorProfileSettingsTabProps {
   profile: Profile;
 }
 
 export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProps) => {
-  const navigate = useNavigate();
-  const { isPublished, isLoading, togglePublishStatus, profileStatus } = useTutorPublishStatus();
-  
-  const handleEditProfile = () => {
-    navigate("/profile/tutor/complete");
+  const [activeTab, setActiveTab] = useState("about");
+  const { 
+    isPublished, 
+    togglePublishStatus, 
+    isLoading: statusLoading, 
+    profileStatus, 
+    alertDismissed, 
+    dismissAlert 
+  } = useTutorPublishStatus();
+  const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load tutor profile data
+  useEffect(() => {
+    const loadTutorProfile = async () => {
+      if (!profile?.id) return;
+      
+      try {
+        setIsLoading(true);
+        const data = await fetchTutorProfile(profile.id);
+        setTutorProfile(data);
+      } catch (error) {
+        console.error("Error loading tutor profile:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadTutorProfile();
+  }, [profile?.id]);
+
+  // Handle publish/unpublish button click
+  const handlePublishClick = async () => {
+    await togglePublishStatus();
   };
+
+  // Determine button text and style
+  const buttonText = isPublished ? "Снять с публикации" : "Опубликовать профиль";
+  const buttonVariant = isPublished ? "destructive" : "default";
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <Loader size="lg" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Моя анкета</h1>
-        <Button onClick={handleEditProfile} variant="outline">
-          <Edit className="h-4 w-4 mr-2" />
-          Редактировать анкету
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Настройки профиля</h1>
+        <Button 
+          variant={buttonVariant as any}
+          onClick={handlePublishClick} 
+          disabled={statusLoading || !profileStatus.isValid}
+        >
+          {statusLoading ? <Loader size="sm" className="mr-2" /> : null}
+          {buttonText}
         </Button>
       </div>
-      
-      {/* Publishing Status Alert */}
-      {isPublished ? (
-        <Alert className="bg-green-50 border-green-200 text-green-800">
-          <CheckCircle2 className="h-5 w-5 text-green-600" />
-          <AlertTitle className="text-green-800">Ваша анкета опубликована</AlertTitle>
-          <AlertDescription className="text-green-700">
-            Студенты могут найти вас в поиске и просматривать ваш профиль.
-          </AlertDescription>
-        </Alert>
-      ) : (
-        <Alert className="bg-amber-50 border-amber-200">
-          <AlertTriangle className="h-5 w-5 text-amber-600" />
-          <AlertTitle>Ваша анкета не опубликована</AlertTitle>
+
+      {!alertDismissed && profileStatus.missingFields.length > 0 && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Профиль не готов к публикации</AlertTitle>
           <AlertDescription>
-            Для отображения в поиске студентов опубликуйте анкету в разделе "Публикация профиля" ниже.
+            <p>Для публикации профиля необходимо заполнить следующую информацию:</p>
+            <ul className="list-disc list-inside mt-2">
+              {profileStatus.missingFields.map((field, i) => (
+                <li key={i}>{field}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="mt-2" 
+            onClick={() => dismissAlert()}
+          >
+            Закрыть
+          </Button>
+        </Alert>
+      )}
+
+      {profileStatus.isValid && profileStatus.warnings.length > 0 && (
+        <Alert variant="warning">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Рекомендуем дополнить профиль</AlertTitle>
+          <AlertDescription>
+            <p>Для лучшей привлекательности профиля рекомендуем заполнить:</p>
+            <ul className="list-disc list-inside mt-2">
+              {profileStatus.warnings.map((warning, i) => (
+                <li key={i}>{warning}</li>
+              ))}
+            </ul>
           </AlertDescription>
         </Alert>
       )}
-      
-      {/* Профиль репетитора */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Информация об анкете
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center">
-            <div className="h-20 w-20 rounded-full overflow-hidden bg-gray-100 mr-6">
-              {profile.avatar_url ? (
-                <img 
-                  src={profile.avatar_url} 
-                  alt={`${profile.first_name} ${profile.last_name}`} 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500">
-                  <User className="h-8 w-8" />
-                </div>
-              )}
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold">{profile.first_name} {profile.last_name || ""}</h2>
-              <p className="text-gray-500">{profile.city || "Город не указан"}</p>
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Имя</h3>
-              <p className="text-lg">{profile.first_name}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Фамилия</h3>
-              <p className="text-lg">{profile.last_name || "Не указана"}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Город</h3>
-              <p className="text-lg">{profile.city || "Не указан"}</p>
-            </div>
-            <div>
-              <h3 className="text-sm font-medium text-gray-500">Телефон</h3>
-              <p className="text-lg">{profile.phone || "Не указан"}</p>
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="text-sm font-medium text-gray-500">О себе</h3>
-            <p className="text-lg">{profile.bio || "Нет информации"}</p>
-          </div>
-          
-          <div className="pt-4">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Образование</h3>
-            <div className="bg-gray-50 p-3 rounded">
-              <p><strong>Учебное заведение:</strong> {profile.education_institution || "Не указано"}</p>
-              <p><strong>Специальность:</strong> {profile.degree || "Не указана"}</p>
-              <p><strong>Год окончания:</strong> {profile.graduation_year || "Не указан"}</p>
-            </div>
-          </div>
-          
-          <div className="pt-4">
-            <h3 className="text-sm font-medium text-gray-500 mb-2">Опыт преподавания</h3>
-            <p>{profile.experience ? `${profile.experience} лет` : "Опыт работы не указан"}</p>
-            <h3 className="text-sm font-medium text-gray-500 mt-3 mb-2">Методика преподавания</h3>
-            <p>{profile.methodology || "Не указана"}</p>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Секция публикации профиля */}
-      <TutorPublishController 
-        tutorId={profile.id} 
-        isPublished={isPublished}
-        onPublishStatusChange={togglePublishStatus}
-      />
+      {isPublished && (
+        <Alert>
+          <CheckCircle className="h-4 w-4" />
+          <AlertTitle>Профиль опубликован</AlertTitle>
+          <AlertDescription>
+            Ваш профиль сейчас опубликован и доступен для поиска студентам
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full border-b mb-4">
+          <TabsTrigger value="about" className="flex-1">Основная информация</TabsTrigger>
+          <TabsTrigger value="subjects" className="flex-1">Предметы и цены</TabsTrigger>
+          <TabsTrigger value="methodology" className="flex-1">Методика преподавания</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="about">
+          <Card>
+            <CardContent className="pt-6">
+              <TutorAboutTab profile={profile} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="subjects">
+          <Card>
+            <CardContent className="pt-6">
+              <SubjectsTab tutorId={profile.id} />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="methodology">
+          <Card>
+            <CardContent className="pt-6">
+              {tutorProfile && (
+                <MethodologyTab profile={tutorProfile} />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

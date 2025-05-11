@@ -320,6 +320,7 @@ export type Database = {
       }
       tutor_profiles: {
         Row: {
+          achievements: string | null
           degree: string | null
           education_institution: string | null
           education_verified: boolean | null
@@ -329,8 +330,10 @@ export type Database = {
           is_published: boolean | null
           methodology: string | null
           updated_at: string | null
+          video_url: string | null
         }
         Insert: {
+          achievements?: string | null
           degree?: string | null
           education_institution?: string | null
           education_verified?: boolean | null
@@ -340,8 +343,10 @@ export type Database = {
           is_published?: boolean | null
           methodology?: string | null
           updated_at?: string | null
+          video_url?: string | null
         }
         Update: {
+          achievements?: string | null
           degree?: string | null
           education_institution?: string | null
           education_verified?: boolean | null
@@ -351,6 +356,7 @@ export type Database = {
           is_published?: boolean | null
           methodology?: string | null
           updated_at?: string | null
+          video_url?: string | null
         }
         Relationships: [
           {

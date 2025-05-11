@@ -45,7 +45,9 @@ export const saveTutorProfile = async (
     }
     
     // Check if education info is provided
-    if (values.educationInstitution && values.degree && values.graduationYear) {
+    if (values.educationInstitution || values.degree || values.graduationYear || 
+        values.methodology !== undefined || values.experience !== undefined || 
+        values.achievements !== undefined || values.videoUrl !== undefined) {
       // Check if tutor_profiles exists
       console.log("Checking existing tutor profile");
       const { data: existingTutorProfile, error: checkError } = await supabase
@@ -178,7 +180,11 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
       degree: "",
       graduation_year: new Date().getFullYear(),
       is_published: false,
-      education_verified: false
+      education_verified: false,
+      methodology: "",
+      experience: 0,
+      achievements: "",
+      video_url: ""
     };
     
     // Fetch tutor subjects
