@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -29,6 +30,7 @@ const TutorCompletePage = () => {
   const [initialValues, setInitialValues] = useState<Partial<TutorFormValues>>({});
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [savedValues, setSavedValues] = useState<Partial<TutorFormValues>>({});
 
   // Load data: user info and subjects
   const loadData = useCallback(async () => {
@@ -134,19 +136,23 @@ const TutorCompletePage = () => {
           }
           
           setInitialValues(values);
+          setSavedValues(values);
         } catch (profileDataError) {
           console.error("Error loading profile data:", profileDataError);
           // Continue with default values
-          setInitialValues({
+          const defaultValues = {
             firstName: profileData.first_name || "",
             lastName: profileData.last_name || "",
             bio: profileData.bio || "",
             city: profileData.city || "",
-            avatarUrl: profileData.avatar_url || "",
+            avatarUrl: profileData.avatar_url || null,
             subjects: [],
             teachingLevels: ["школьник", "студент", "взрослый"],
             hourlyRate: 0
-          });
+          };
+          
+          setInitialValues(defaultValues);
+          setSavedValues(defaultValues);
         }
       }
     } catch (error) {
@@ -177,21 +183,41 @@ const TutorCompletePage = () => {
       console.log("Submitting form values:", values);
       
       // Save profile data
-      const result = await saveTutorProfile(values, user.id, avatarFile, initialValues.avatarUrl);
+      const result = await saveTutorProfile(values, user.id, avatarFile, savedValues.avatarUrl);
       
       if (!result.success) {
         throw new Error(result.error || "Ошибка сохранения профиля");
       }
+
+      // Update saved avatar URL if it was updated
+      if (result.avatarUrl) {
+        setSavedValues(prev => ({
+          ...prev,
+          avatarUrl: result.avatarUrl
+        }));
+      }
       
-      // Save subjects
-      await saveTutorSubjects(user.id, values.subjects, values.hourlyRate);
+      // Save subjects if this is the final submission
+      const isFinal = !!values.methodology || !!values.achievements || !!values.videoUrl;
       
-      toast({
-        title: "Профиль успешно создан!",
-        description: "Теперь вы можете начать работу с учениками",
-      });
+      if (isFinal) {
+        await saveTutorSubjects(user.id, values.subjects, values.hourlyRate);
+        
+        toast({
+          title: "Профиль успешно создан!",
+          description: "Теперь вы можете начать работу с учениками",
+        });
+        
+        navigate("/profile/tutor?tab=dashboard");
+      } else {
+        // Save current form values to state
+        setSavedValues(prevValues => ({
+          ...prevValues,
+          ...values
+        }));
+      }
       
-      navigate("/profile/tutor?tab=dashboard");
+      return result;
     } catch (error) {
       console.error("Error saving profile:", error);
       toast({
@@ -199,6 +225,7 @@ const TutorCompletePage = () => {
         description: error instanceof Error ? error.message : "Произошла ошибка при сохранении профиля",
         variant: "destructive",
       });
+      throw error;
     } finally {
       setIsLoading(false);
     }
@@ -232,7 +259,7 @@ const TutorCompletePage = () => {
         </CardHeader>
         <CardContent>
           <ProfileCompletionForm
-            initialValues={initialValues}
+            initialValues={{...initialValues, ...savedValues}}
             onSubmit={handleSubmit}
             subjects={subjects || []}
             isLoading={isLoading}

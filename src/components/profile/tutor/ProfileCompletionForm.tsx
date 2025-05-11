@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -36,28 +37,38 @@ import { ValidationMessage } from "./ValidationMessage";
 import { Loader } from "@/components/ui/loader";
 import { useToast } from "@/hooks/use-toast";
 
-// Define the schema for our tutor profile form with more validation
-const formSchema = z.object({
+// Schema for Step 1: Personal Information
+const personalInfoSchema = z.object({
   firstName: z.string().min(2, { message: "Имя должно содержать минимум 2 символа" }),
   lastName: z.string().min(2, { message: "Фамилия должна содержать минимум 2 символа" }),
   bio: z.string().min(20, { message: "Опишите ваш опыт преподавания (минимум 20 символов)" }),
   city: z.string().min(2, { message: "Укажите город" }),
-  hourlyRate: z.coerce.number().positive({ message: "Цена должна быть положительным числом" }),
   subjects: z.array(z.string()).min(1, { message: "Выберите хотя бы один предмет" }),
   teachingLevels: z.array(z.enum(["школьник", "студент", "взрослый"])).min(1, {
     message: "Выберите хотя бы один уровень обучения",
   }),
-  avatarUrl: z.string().optional(),
+  hourlyRate: z.coerce.number().positive({ message: "Цена должна быть положительным числом" }),
+});
+
+// Schema for Step 2: Education
+const educationSchema = z.object({
   educationInstitution: z.string().min(2, { message: "Укажите учебное заведение" }),
   degree: z.string().min(2, { message: "Укажите специальность/степень" }),
   graduationYear: z.coerce.number()
     .min(1950, { message: "Год не может быть ранее 1950" })
     .max(new Date().getFullYear(), { message: `Год не может быть позже ${new Date().getFullYear()}` }),
+});
+
+// Schema for Step 3: Teaching Methodology
+const methodologySchema = z.object({
   methodology: z.string().optional(),
   experience: z.coerce.number().min(0, { message: "Опыт не может быть отрицательным" }).optional(),
   achievements: z.string().optional(),
   videoUrl: z.string().url({ message: "Введите корректный URL видео" }).optional().or(z.literal('')),
 });
+
+// Complete form schema for final validation
+const formSchema = personalInfoSchema.merge(educationSchema).merge(methodologySchema);
 
 interface ProfileCompletionFormProps {
   initialValues: Partial<TutorFormValues>;
@@ -75,6 +86,7 @@ export const ProfileCompletionForm = ({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialValues.avatarUrl || null);
   const [activeTab, setActiveTab] = useState("personal");
+  const [stepSaving, setStepSaving] = useState(false);
   const { toast } = useToast();
   
   const currentYear = new Date().getFullYear();
@@ -106,13 +118,73 @@ export const ProfileCompletionForm = ({
     setAvatarUrl(url);
   };
 
+  // Function to validate the current step
+  const validateCurrentStep = () => {
+    switch (activeTab) {
+      case "personal":
+        return form.trigger(["firstName", "lastName", "city", "bio", "subjects", "teachingLevels", "hourlyRate"]);
+      case "education":
+        return form.trigger(["educationInstitution", "degree", "graduationYear"]);
+      case "methodology":
+        return form.trigger(["methodology", "experience", "achievements", "videoUrl"]);
+      default:
+        return false;
+    }
+  };
+
+  // Function to save the current step and proceed to the next
+  const handleStepContinue = async () => {
+    const isValid = await validateCurrentStep();
+    
+    if (!isValid) {
+      toast({
+        title: "Проверьте форму",
+        description: "Пожалуйста, заполните все обязательные поля этого раздела",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      setStepSaving(true);
+      // Interim save of current data
+      const currentValues = form.getValues();
+      await onSubmit(currentValues, avatarFile);
+      
+      // Show success message and move to next tab
+      toast({
+        title: "Данные сохранены",
+        description: "Информация успешно сохранена, переходим к следующему разделу",
+      });
+      
+      // Navigate to the next tab
+      if (activeTab === "personal") {
+        setActiveTab("education");
+      } else if (activeTab === "education") {
+        setActiveTab("methodology");
+      }
+    } catch (error) {
+      console.error("Error saving step:", error);
+      toast({
+        title: "Ошибка сохранения",
+        description: "Не удалось сохранить данные, попробуйте еще раз",
+        variant: "destructive",
+      });
+    } finally {
+      setStepSaving(false);
+    }
+  };
+
+  // Handle final submission
   const handleSubmit = async (values: TutorFormValues) => {
     try {
-      // Validate form before submission
-      if (!form.formState.isValid) {
+      // Validate the entire form before final submission
+      const isValid = await form.trigger();
+      
+      if (!isValid) {
         // Find tab with errors and navigate to it
         const errors = form.formState.errors;
-        if (errors.firstName || errors.lastName || errors.city || errors.bio || errors.subjects || errors.teachingLevels) {
+        if (errors.firstName || errors.lastName || errors.city || errors.bio || errors.subjects || errors.teachingLevels || errors.hourlyRate) {
           setActiveTab("personal");
         } else if (errors.educationInstitution || errors.degree || errors.graduationYear) {
           setActiveTab("education");
@@ -132,6 +204,11 @@ export const ProfileCompletionForm = ({
       await onSubmit(values, avatarFile);
     } catch (error) {
       console.error("Error submitting form:", error);
+      toast({
+        title: "Ошибка сохранения",
+        description: "Не удалось сохранить данные профиля",
+        variant: "destructive",
+      });
     }
   };
 
@@ -180,7 +257,7 @@ export const ProfileCompletionForm = ({
               <CardHeader>
                 <CardTitle>Основная информация</CardTitle>
                 <CardDescription>
-                  За��олните основную информацию о себе для улучшения вашего профиля
+                  Заполните основную информацию о себе для улучшения вашего профиля
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -279,6 +356,16 @@ export const ProfileCompletionForm = ({
                 />
               </CardContent>
             </Card>
+            <div className="flex justify-end mt-4">
+              <Button 
+                type="button" 
+                onClick={handleStepContinue} 
+                disabled={stepSaving}
+              >
+                {stepSaving && <Loader size="sm" className="mr-2" />}
+                {stepSaving ? "Сохранение..." : "Сохранить и продолжить"}
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="education">
@@ -350,6 +437,16 @@ export const ProfileCompletionForm = ({
                 />
               </CardContent>
             </Card>
+            <div className="flex justify-end mt-4">
+              <Button 
+                type="button" 
+                onClick={handleStepContinue} 
+                disabled={stepSaving}
+              >
+                {stepSaving && <Loader size="sm" className="mr-2" />}
+                {stepSaving ? "Сохранение..." : "Сохранить и продолжить"}
+              </Button>
+            </div>
           </TabsContent>
 
           <TabsContent value="methodology">
@@ -435,19 +532,17 @@ export const ProfileCompletionForm = ({
                 />
               </CardContent>
             </Card>
+            <div className="flex justify-end mt-4">
+              <Button 
+                type="submit" 
+                disabled={isLoading}
+              >
+                {isLoading && <Loader size="sm" className="mr-2" />}
+                {isLoading ? "Сохранение..." : "Завершить регистрацию"}
+              </Button>
+            </div>
           </TabsContent>
         </Tabs>
-
-        <div className="flex justify-end">
-          <Button 
-            type="submit" 
-            disabled={isLoading || !form.formState.isValid}
-            className="ml-auto"
-          >
-            {isLoading && <Loader size="sm" className="mr-2" />}
-            {isLoading ? "Сохранение..." : "Сохранить и продолжить"}
-          </Button>
-        </div>
       </form>
     </Form>
   );
