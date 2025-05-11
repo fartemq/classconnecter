@@ -3,15 +3,11 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Upload, Check, AlertTriangle } from "lucide-react";
+import { Check, Info, AlertTriangle, LightbulbIcon, ChevronDown, ChevronUp } from "lucide-react";
 import { validateTutorProfile, hasTutorAddedSubjects, hasTutorAddedSchedule } from "@/services/tutorProfileValidation";
 import { ProfileStatusBadge } from "./publish/ProfileStatusBadge";
-import { ValidationAlert } from "./publish/ValidationAlert";
-import { RecommendationAlert } from "./publish/RecommendationAlert";
-import { ProfileStatusIndicator } from "./publish/ProfileStatusIndicator";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Link } from "react-router-dom";
 
 interface TutorPublishControllerProps {
@@ -40,12 +36,15 @@ export function TutorPublishController({
   useEffect(() => {
     const checkProfileCompleteness = async () => {
       try {
+        // Проверка наличия предметов
         const hasAddedSubjects = await hasTutorAddedSubjects(tutorId);
         setHasSubjects(hasAddedSubjects);
         
+        // Проверка наличия расписания
         const hasAddedSchedule = await hasTutorAddedSchedule(tutorId);
         setHasSchedule(hasAddedSchedule);
         
+        // Общая проверка профиля
         const result = await validateTutorProfile(tutorId);
         setValidationResult(result);
       } catch (error) {
@@ -66,23 +65,13 @@ export function TutorPublishController({
         
         if (!result.isValid) {
           toast({
-            title: "Профиль не полностью заполнен",
-            description: "Пожалуйста, заполните все обязательные поля профиля перед публикацией",
+            title: "Профиль не готов к публикации",
+            description: "Пожалуйста, заполните все обязательные поля профиля",
             variant: "destructive",
           });
           setValidationResult(result);
           setIsLoading(false);
           return;
-        }
-        
-        // Показываем предупреждения, но разрешаем публикацию
-        if (result.warnings.length > 0) {
-          const warningText = result.warnings.join("\n");
-          toast({
-            title: "Предупреждение",
-            description: warningText,
-            variant: "default",
-          });
         }
       }
       
@@ -96,8 +85,8 @@ export function TutorPublishController({
         title: isPublished ? "Профиль снят с публикации" : "Профиль успешно опубликован!",
         description: isPublished 
           ? "Ваш профиль больше не виден студентам" 
-          : "Теперь студенты могут находить вас в поиске и связываться с вами",
-        variant: isPublished ? "default" : "default",
+          : "Теперь студенты могут находить вас в поиске",
+        variant: "default",
       });
     } catch (error) {
       console.error("Error toggling publish status:", error);
@@ -111,94 +100,166 @@ export function TutorPublishController({
     }
   };
 
+  // Визуализация списка недостающих полей
+  const renderMissingFieldsList = () => {
+    if (!validationResult.missingFields || validationResult.missingFields.length === 0) return null;
+    
+    return (
+      <ul className="list-disc text-sm text-red-600 pl-5 space-y-1 mt-2">
+        {validationResult.missingFields.map((field, index) => (
+          <li key={index}>{field}</li>
+        ))}
+      </ul>
+    );
+  };
+
   return (
-    <Card className="shadow-sm">
-      <CardHeader>
+    <Card className="shadow-sm border-none">
+      <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-xl">Публикация профиля</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-xl font-bold">Публикация профиля</CardTitle>
+            <CardDescription className="text-muted-foreground">
               Управляйте доступностью вашего профиля для учеников
             </CardDescription>
           </div>
           <ProfileStatusBadge isPublished={isPublished} />
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Profile Completeness Status */}
-        <ValidationAlert 
-          isValid={validationResult.isValid} 
-          missingFields={validationResult.missingFields} 
-          warnings={validationResult.warnings} 
-        />
-        
-        {!hasSubjects && (
-          <RecommendationAlert
-            title="Рекомендация по улучшению профиля"
-            message="У вас не добавлено ни одного предмета. Добавьте предметы, чтобы ученики могли легче находить вас в поиске."
-          />
-        )}
-        
-        {!hasSchedule && (
-          <RecommendationAlert
-            title="Рекомендация по улучшению профиля"
-            message="У вас не добавлено расписание. Добавьте доступные слоты времени, чтобы ученики могли записаться к вам на занятия."
-          />
-        )}
+      
+      <CardContent className="space-y-5">
+        {/* Статус профиля и рекомендации */}
+        <div className="space-y-4">
+          {/* Основной статус - не полностью заполнено */}
+          {!validationResult.isValid && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 text-red-500">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-red-800 font-medium">Профиль не полностью заполнен</h3>
+                  <p className="text-red-700 text-sm mt-1">Следующие поля требуют заполнения:</p>
+                  {renderMissingFieldsList()}
+                </div>
+              </div>
+            </div>
+          )}
 
-        <ProfileStatusIndicator isPublished={isPublished} />
-
+          {/* Рекомендации */}
+          {!hasSubjects && (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 text-blue-500">
+                  <LightbulbIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-blue-800 font-medium">Рекомендация по улучшению профиля</h3>
+                  <p className="text-blue-700 text-sm mt-1">
+                    У вас не добавлено ни одного предмета. Добавьте предметы, чтобы ученики могли легче находить вас в поиске.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {!hasSchedule && (
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+              <div className="flex gap-3">
+                <div className="flex-shrink-0 text-blue-500">
+                  <LightbulbIcon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-blue-800 font-medium">Рекомендация по улучшению профиля</h3>
+                  <p className="text-blue-700 text-sm mt-1">
+                    У вас не добавлено расписание. Добавьте доступные слоты времени, чтобы ученики могли записаться на занятия.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Статус публикации */}
+          <div className="bg-amber-50 border border-amber-100 rounded-lg p-4">
+            <div className="flex gap-3">
+              <div className="flex-shrink-0 text-amber-500">
+                <Info className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-amber-800 font-medium">
+                  {isPublished
+                    ? "Ваш профиль опубликован"
+                    : "Ваш профиль не опубликован"}
+                </h3>
+                <p className="text-amber-700 text-sm mt-1">
+                  {isPublished
+                    ? "Ученики могут видеть ваш профиль и отправлять запросы на обучение."
+                    : "Ученики не могут видеть ваш профиль. Опубликуйте его, чтобы начать принимать запросы."}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Детали заполнения */}
         {!validationResult.isValid && (
           <Collapsible 
             open={openDetails} 
             onOpenChange={setOpenDetails}
-            className="border rounded-md p-4 bg-gray-50"
+            className="border rounded-md overflow-hidden"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                <h4 className="text-sm font-medium">Что нужно заполнить</h4>
+            <CollapsibleTrigger asChild className="w-full">
+              <div className="p-3 bg-gray-50 flex items-center justify-between hover:bg-gray-100 cursor-pointer">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  <h4 className="font-medium text-sm">Что нужно заполнить</h4>
+                </div>
+                <div className="text-muted-foreground">
+                  {openDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                </div>
               </div>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  {openDetails ? "Скрыть детали" : "Показать детали"}
-                </Button>
-              </CollapsibleTrigger>
-            </div>
-            <Separator className="my-2" />
+            </CollapsibleTrigger>
+            <Separator />
             <CollapsibleContent>
-              <ul className="list-disc pl-5 space-y-1 text-sm">
-                {validationResult.missingFields.map((field, index) => (
-                  <li key={index}>{field}</li>
-                ))}
-              </ul>
-              <div className="mt-3">
-                <Link to="/profile/tutor/complete" className="text-blue-600 text-sm hover:underline">
+              <div className="p-4 bg-white">
+                <div className="mb-3">
+                  <ul className="list-disc pl-5 space-y-1 text-sm">
+                    {validationResult.missingFields.map((field, index) => (
+                      <li key={index}>{field}</li>
+                    ))}
+                  </ul>
+                </div>
+                <Link to="/profile/tutor/complete" className="text-blue-600 text-sm inline-flex items-center hover:underline">
                   Перейти к заполнению профиля
                 </Link>
               </div>
             </CollapsibleContent>
           </Collapsible>
         )}
-
-        <Button 
-          onClick={handleTogglePublish} 
-          disabled={isLoading || (!isPublished && !validationResult.isValid)}
-          variant={isPublished ? "destructive" : "default"}
-          className="w-full md:w-auto"
-        >
-          {isPublished ? (
-            <>
-              <Upload className="h-4 w-4 mr-2" />
-              {isLoading ? "Обработка..." : "Снять с публикации"}
-            </>
-          ) : (
-            <>
-              <Check className="h-4 w-4 mr-2" />
-              {isLoading ? "Обработка..." : "Опубликовать профиль"}
-            </>
+        
+        {/* Кнопка публикации */}
+        <div className="pt-2">
+          <Button 
+            onClick={handleTogglePublish} 
+            disabled={isLoading || (!isPublished && !validationResult.isValid)}
+            variant={isPublished ? "destructive" : "default"}
+            className="w-full md:w-auto"
+            size="lg"
+          >
+            {isPublished ? (
+              <>Снять с публикации</>
+            ) : (
+              <><Check className="h-4 w-4 mr-2" /> Опубликовать профиль</>
+            )}
+            {isLoading && <span className="ml-2">...</span>}
+          </Button>
+          
+          {!validationResult.isValid && !isPublished && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Для публикации необходимо заполнить все обязательные поля профиля
+            </p>
           )}
-        </Button>
+        </div>
       </CardContent>
     </Card>
   );
