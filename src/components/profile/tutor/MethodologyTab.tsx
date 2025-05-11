@@ -11,12 +11,14 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
+import { useAuth } from "@/hooks/useAuth";
 
 interface MethodologyTabProps {
   profile: TutorProfile;
 }
 
 export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
+  const { user } = useAuth();
   const [methodology, setMethodology] = useState(profile.methodology || "");
   const [experience, setExperience] = useState(profile.experience || 0);
   const [achievements, setAchievements] = useState(profile.achievements || "");
@@ -28,6 +30,12 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+
+    if (!user?.id) {
+      setError("Необходимо авторизоваться");
+      setIsLoading(false);
+      return;
+    }
 
     try {
       console.log("Saving methodology data:", {
@@ -41,14 +49,10 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
       const { data: existingProfile, error: checkError } = await supabase
         .from("tutor_profiles")
         .select("id")
-        .eq("id", profile.id)
+        .eq("id", user.id)
         .single();
         
       console.log("Existing profile check:", existingProfile, checkError);
-      
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw new Error(`Ошибка проверки профиля: ${checkError.message}`);
-      }
       
       // Prepare data for update or insert
       const profileData = {
@@ -66,7 +70,7 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
           .from("tutor_profiles")
           .insert({
             ...profileData,
-            id: profile.id,
+            id: user.id,
             is_published: false,
             education_verified: false
           });
@@ -81,7 +85,7 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
         const { error: updateError } = await supabase
           .from("tutor_profiles")
           .update(profileData)
-          .eq("id", profile.id);
+          .eq("id", user.id);
 
         if (updateError) {
           console.error("Error updating tutor profile:", updateError);
