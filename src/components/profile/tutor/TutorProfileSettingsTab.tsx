@@ -105,7 +105,7 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
       )}
 
       {profileStatus.isValid && profileStatus.warnings.length > 0 && (
-        <Alert>
+        <Alert variant="warning">
           <AlertTriangle className="h-4 w-4" />
           <AlertTitle>Рекомендуем дополнить профиль</AlertTitle>
           <AlertDescription>

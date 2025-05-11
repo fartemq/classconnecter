@@ -5,12 +5,10 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { PersonalInfoForm } from "./PersonalInfoForm";
 import { EducationForm } from "./EducationForm";
-import { TeachingMethodForm } from "./TeachingMethodForm";
 import { toast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
 
@@ -32,31 +30,24 @@ const educationSchema = z.object({
     .max(new Date().getFullYear(), { message: `Год не может быть позже ${new Date().getFullYear()}` }),
 });
 
-// Дополнительные поля (необязательные)
-const optionalSchema = z.object({
-  methodology: z.string().optional(),
+// Объединенная схема с необязательными полями
+const formSchema = personalSchema.merge(educationSchema).extend({
   experience: z.coerce.number().optional(),
   achievements: z.string().optional(),
   videoUrl: z.string().url({ message: "Введите корректный URL видео" }).optional().or(z.literal('')),
 });
 
-// Общая схема с объединением всех полей
-const formSchema = personalSchema.merge(educationSchema).merge(optionalSchema);
-
 interface TutorAboutFormProps {
   initialData: TutorFormValues;
   tutorProfile: TutorProfile | null;
   onSubmit: (values: TutorFormValues, avatarFile: File | null, avatarUrl: string | null) => Promise<void>;
-  defaultTab?: string;
 }
 
 export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({ 
   initialData, 
   tutorProfile, 
-  onSubmit, 
-  defaultTab = "personal"
+  onSubmit
 }) => {
-  const [activeTab, setActiveTab] = useState(defaultTab);
   const [isLoading, setIsLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialData.avatarUrl || null);
@@ -89,60 +80,29 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)}>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="personal">Основная информация</TabsTrigger>
-            <TabsTrigger value="education">Образование</TabsTrigger>
-            <TabsTrigger value="teaching">Преподавание</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="personal">
-            <Card>
-              <CardHeader>
-                <CardTitle>Основная информация</CardTitle>
-                <CardDescription>
-                  Расскажите о себе и своем опыте преподавания
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <PersonalInfoForm 
-                  control={form.control} 
-                  avatarUrl={avatarUrl} 
-                  onAvatarChange={handleAvatarChange} 
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="education">
-            <Card>
-              <CardHeader>
-                <CardTitle>Образование</CardTitle>
-                <CardDescription>
-                  Информация о вашем образовании и квалификации
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <EducationForm control={form.control} tutorProfile={tutorProfile} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-          
-          <TabsContent value="teaching">
-            <Card>
-              <CardHeader>
-                <CardTitle>Методология преподавания</CardTitle>
-                <CardDescription>
-                  Дополнительная информация о вашей методике и достижениях
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <TeachingMethodForm control={form.control} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Основная информация и образование</CardTitle>
+            <CardDescription>
+              Расскажите о себе, своем опыте преподавания и образовании
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Personal Info */}
+            <PersonalInfoForm 
+              control={form.control} 
+              avatarUrl={avatarUrl} 
+              onAvatarChange={handleAvatarChange} 
+            />
+            
+            {/* Education */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-medium mb-4">Образование</h3>
+              <EducationForm control={form.control} tutorProfile={tutorProfile} />
+            </div>
+          </CardContent>
+        </Card>
         
         <div className="flex justify-end mt-6">
           <Button type="submit" disabled={isLoading}>
