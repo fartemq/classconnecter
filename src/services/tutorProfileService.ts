@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
@@ -36,7 +35,7 @@ export const saveTutorProfile = async (
       last_name: values.lastName,
       bio: values.bio,
       city: values.city,
-      avatar_url: finalAvatarUrl || avatarUrl,
+      avatar_url: finalAvatarUrl,
       updated_at: new Date().toISOString(),
     }).eq("id", userId);
     
@@ -77,7 +76,7 @@ export const saveTutorProfile = async (
       
       if (tutorProfileError) {
         console.error("Error updating tutor profile:", tutorProfileError);
-        return { success: false, avatarUrl: finalAvatarUrl || avatarUrl, error: tutorProfileError };
+        return { success: false, avatarUrl: finalAvatarUrl, error: tutorProfileError };
       }
     } else {
       // Create new record
@@ -90,12 +89,12 @@ export const saveTutorProfile = async (
       
       if (tutorProfileError) {
         console.error("Error creating tutor profile:", tutorProfileError);
-        return { success: false, avatarUrl: finalAvatarUrl || avatarUrl, error: tutorProfileError };
+        return { success: false, avatarUrl: finalAvatarUrl, error: tutorProfileError };
       }
     }
     
     console.log("Profile saved successfully");
-    return { success: true, avatarUrl: finalAvatarUrl || avatarUrl };
+    return { success: true, avatarUrl: finalAvatarUrl };
   } catch (error) {
     console.error("Error saving tutor profile:", error);
     return { success: false, avatarUrl: null, error };
@@ -300,4 +299,3 @@ export const checkProfileCompleteness = async (tutorId: string): Promise<{
     };
   }
 };
-

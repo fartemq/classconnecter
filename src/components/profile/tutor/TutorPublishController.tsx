@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Check, Info, AlertTriangle, LightbulbIcon, ChevronDown, ChevronUp } from "lucide-react";
-import { validateTutorProfile, hasTutorAddedSubjects, hasTutorAddedSchedule } from "@/services/tutorProfileValidation";
+import { validateTutorProfile } from "@/services/tutorProfileValidation";
 import { ProfileStatusBadge } from "./publish/ProfileStatusBadge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -22,8 +22,6 @@ export function TutorPublishController({
   onPublishStatusChange 
 }: TutorPublishControllerProps) {
   const [isLoading, setIsLoading] = useState(false);
-  const [hasSubjects, setHasSubjects] = useState(true);
-  const [hasSchedule, setHasSchedule] = useState(true);
   const [openDetails, setOpenDetails] = useState(false);
   const [validationResult, setValidationResult] = useState<{
     isValid: boolean;
@@ -36,14 +34,6 @@ export function TutorPublishController({
   useEffect(() => {
     const checkProfileCompleteness = async () => {
       try {
-        // Проверка наличия предметов
-        const hasAddedSubjects = await hasTutorAddedSubjects(tutorId);
-        setHasSubjects(hasAddedSubjects);
-        
-        // Проверка наличия расписания
-        const hasAddedSchedule = await hasTutorAddedSchedule(tutorId);
-        setHasSchedule(hasAddedSchedule);
-        
         // Общая проверка профиля
         const result = await validateTutorProfile(tutorId);
         setValidationResult(result);
@@ -128,75 +118,23 @@ export function TutorPublishController({
       </CardHeader>
       
       <CardContent className="space-y-5">
-        {/* Статус профиля и рекомендации */}
-        <div className="space-y-4">
-          {/* Основной статус - не полностью заполнено */}
-          {!validationResult.isValid && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 text-red-500">
-                  <AlertTriangle className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-red-800 font-medium">Профиль не полностью заполнен</h3>
-                  <p className="text-red-700 text-sm mt-1">Следующие поля требуют заполнения:</p>
-                  {renderMissingFieldsList()}
-                </div>
-              </div>
+        {/* Статус публикации */}
+        <div className="bg-amber-50 border border-amber-100 rounded-lg p-4">
+          <div className="flex gap-3">
+            <div className="flex-shrink-0 text-amber-500">
+              <Info className="h-5 w-5" />
             </div>
-          )}
-
-          {/* Рекомендации */}
-          {!hasSubjects && (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 text-blue-500">
-                  <LightbulbIcon className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-blue-800 font-medium">Рекомендация по улучшению профиля</h3>
-                  <p className="text-blue-700 text-sm mt-1">
-                    У вас не добавлено ни одного предмета. Добавьте предметы, чтобы ученики могли легче находить вас в поиске.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {!hasSchedule && (
-            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-              <div className="flex gap-3">
-                <div className="flex-shrink-0 text-blue-500">
-                  <LightbulbIcon className="h-5 w-5" />
-                </div>
-                <div>
-                  <h3 className="text-blue-800 font-medium">Рекомендация по улучшению профиля</h3>
-                  <p className="text-blue-700 text-sm mt-1">
-                    У вас не добавлено расписание. Добавьте доступные слоты времени, чтобы ученики могли записаться на занятия.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {/* Статус публикации */}
-          <div className="bg-amber-50 border border-amber-100 rounded-lg p-4">
-            <div className="flex gap-3">
-              <div className="flex-shrink-0 text-amber-500">
-                <Info className="h-5 w-5" />
-              </div>
-              <div>
-                <h3 className="text-amber-800 font-medium">
-                  {isPublished
-                    ? "Ваш профиль опубликован"
-                    : "Ваш профиль не опубликован"}
-                </h3>
-                <p className="text-amber-700 text-sm mt-1">
-                  {isPublished
-                    ? "Ученики могут видеть ваш профиль и отправлять запросы на обучение."
-                    : "Ученики не могут видеть ваш профиль. Опубликуйте его, чтобы начать принимать запросы."}
-                </p>
-              </div>
+            <div>
+              <h3 className="text-amber-800 font-medium">
+                {isPublished
+                  ? "Ваш профиль опубликован"
+                  : "Ваш профиль не опубликован"}
+              </h3>
+              <p className="text-amber-700 text-sm mt-1">
+                {isPublished
+                  ? "Ученики могут видеть ваш профиль и отправлять запросы на обучение."
+                  : "Ученики не могут видеть ваш профиль. Опубликуйте его, чтобы начать принимать запросы."}
+              </p>
             </div>
           </div>
         </div>

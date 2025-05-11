@@ -64,6 +64,7 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
   const form = useForm<TutorFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
+    mode: "onChange",
   });
 
   const handleAvatarChange = (file: File | null, url: string | null) => {
@@ -77,6 +78,7 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
       console.log("Form submitted with values:", values);
       console.log("Avatar file:", avatarFile);
       console.log("Avatar URL:", avatarUrl);
+      
       await onSubmit(values, avatarFile, avatarUrl);
       
       toast({
@@ -153,8 +155,8 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
         </Tabs>
         
         <div className="flex justify-end mt-6">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? <Loader size="sm" className="mr-2" /> : null}
+          <Button type="submit" disabled={isLoading || !form.formState.isValid}>
+            {isLoading && <Loader size="sm" className="mr-2" />}
             {isLoading ? "Сохранение..." : "Сохранить изменения"}
           </Button>
         </div>

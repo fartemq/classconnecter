@@ -75,7 +75,6 @@ export const ProfileCompletionForm = ({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialValues.avatarUrl || null);
   const [activeTab, setActiveTab] = useState("personal");
-  const [isSubmitted, setIsSubmitted] = useState(false);
   
   const currentYear = new Date().getFullYear();
   const yearsArray = Array.from({ length: currentYear - 1949 }, (_, i) => currentYear - i);
@@ -87,9 +86,9 @@ export const ProfileCompletionForm = ({
       lastName: initialValues.lastName || "",
       bio: initialValues.bio || "",
       city: initialValues.city || "",
-      hourlyRate: initialValues.hourlyRate || 0,
+      hourlyRate: initialValues.hourlyRate || 1000,
       subjects: initialValues.subjects || [],
-      teachingLevels: initialValues.teachingLevels || [],
+      teachingLevels: initialValues.teachingLevels || ["школьник", "студент", "взрослый"],
       educationInstitution: initialValues.educationInstitution || "",
       degree: initialValues.degree || "",
       graduationYear: initialValues.graduationYear || currentYear,
@@ -98,6 +97,7 @@ export const ProfileCompletionForm = ({
       achievements: initialValues.achievements || "",
       videoUrl: initialValues.videoUrl || "",
     },
+    mode: "onChange",
   });
 
   const handleAvatarChange = (file: File | null, url: string | null) => {
@@ -106,25 +106,46 @@ export const ProfileCompletionForm = ({
   };
 
   const handleSubmit = async (values: TutorFormValues) => {
-    setIsSubmitted(true);
-    if (form.formState.isValid) {
-      await onSubmit(values, avatarFile);
-    } else {
-      // Show validation errors and switch to the tab with errors
-      const errors = form.formState.errors;
-      if (errors.firstName || errors.lastName || errors.city || errors.bio || errors.subjects || errors.teachingLevels) {
-        setActiveTab("personal");
-      } else if (errors.educationInstitution || errors.degree || errors.graduationYear) {
-        setActiveTab("education");
-      } else if (errors.methodology || errors.experience || errors.achievements || errors.videoUrl) {
-        setActiveTab("methodology");
+    try {
+      // Validate form before submission
+      if (!form.formState.isValid) {
+        // Find tab with errors and navigate to it
+        const errors = form.formState.errors;
+        if (errors.firstName || errors.lastName || errors.city || errors.bio || errors.subjects || errors.teachingLevels) {
+          setActiveTab("personal");
+        } else if (errors.educationInstitution || errors.degree || errors.graduationYear) {
+          setActiveTab("education");
+        } else if (errors.methodology || errors.experience || errors.achievements || errors.videoUrl) {
+          setActiveTab("methodology");
+        }
+        
+        // Show toast with error
+        toast({
+          title: "Ошибка заполнения формы",
+          description: "Пожалуйста, проверьте все обязательные поля",
+          variant: "destructive",
+        });
+        return;
       }
+      
+      await onSubmit(values, avatarFile);
+    } catch (error) {
+      console.error("Error submitting form:", error);
     }
   };
 
   // Function to render video preview
   const renderVideoPreview = (url: string | undefined) => {
     if (!url) return null;
+    
+    // Extract video ID from YouTube URL
+    const videoId = url.includes("youtube.com/watch?v=") 
+      ? url.split("v=")[1]?.split("&")[0]
+      : url.includes("youtu.be/")
+        ? url.split("youtu.be/")[1]?.split("?")[0]
+        : null;
+        
+    if (!videoId) return null;
     
     return (
       <div className="mt-2">
@@ -133,7 +154,7 @@ export const ProfileCompletionForm = ({
           <iframe 
             width="100%" 
             height="100%" 
-            src={url.replace("watch?v=", "embed/")} 
+            src={`https://www.youtube.com/embed/${videoId}`}
             frameBorder="0" 
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
             allowFullScreen
@@ -169,15 +190,6 @@ export const ProfileCompletionForm = ({
                     firstName={form.getValues("firstName")}
                     onChange={handleAvatarChange}
                   />
-                  {isSubmitted && !avatarUrl && (
-                    <div className="mt-2">
-                      <ValidationMessage 
-                        title="Загрузите фотографию" 
-                        message="Профиль с фотографией вызывает больше доверия у студентов" 
-                        variant="warning" 
-                      />
-                    </div>
-                  )}
                 </div>
 
                 {/* First name */}
@@ -226,7 +238,7 @@ export const ProfileCompletionForm = ({
                 />
 
                 {/* Subjects */}
-                <EnhancedSubjectSelection form={form} subjects={subjects} isSubmitted={isSubmitted} />
+                <EnhancedSubjectSelection form={form} subjects={subjects} isSubmitted={false} />
 
                 {/* Teaching levels */}
                 <TeachingLevels form={form} />
@@ -428,7 +440,7 @@ export const ProfileCompletionForm = ({
         <div className="flex justify-end">
           <Button 
             type="submit" 
-            disabled={isLoading}
+            disabled={isLoading || !form.formState.isValid}
             className="ml-auto"
           >
             {isLoading && <Loader size="sm" className="mr-2" />}
