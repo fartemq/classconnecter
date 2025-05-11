@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -35,6 +34,7 @@ import {
 } from "@/components/ui/select";
 import { ValidationMessage } from "./ValidationMessage";
 import { Loader } from "@/components/ui/loader";
+import { useToast } from "@/hooks/use-toast";
 
 // Define the schema for our tutor profile form with more validation
 const formSchema = z.object({
@@ -75,6 +75,7 @@ export const ProfileCompletionForm = ({
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialValues.avatarUrl || null);
   const [activeTab, setActiveTab] = useState("personal");
+  const { toast } = useToast();
   
   const currentYear = new Date().getFullYear();
   const yearsArray = Array.from({ length: currentYear - 1949 }, (_, i) => currentYear - i);
@@ -179,7 +180,7 @@ export const ProfileCompletionForm = ({
               <CardHeader>
                 <CardTitle>Основная информация</CardTitle>
                 <CardDescription>
-                  Заполните основную информацию о себе для улучшения вашего профиля
+                  За��олните основную информацию о себе для улучшения вашего профиля
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
