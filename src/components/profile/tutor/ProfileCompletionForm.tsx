@@ -72,7 +72,11 @@ const formSchema = personalInfoSchema.merge(educationSchema).merge(methodologySc
 
 interface ProfileCompletionFormProps {
   initialValues: Partial<TutorFormValues>;
-  onSubmit: (values: TutorFormValues, avatarFile: File | null) => Promise<void>;
+  onSubmit: (values: TutorFormValues, avatarFile: File | null) => Promise<{
+    success: boolean;
+    avatarUrl: string | null;
+    error?: any;
+  }>;
   subjects: any[];
   isLoading: boolean;
 }
@@ -149,7 +153,11 @@ export const ProfileCompletionForm = ({
       setStepSaving(true);
       // Interim save of current data
       const currentValues = form.getValues();
-      await onSubmit(currentValues, avatarFile);
+      const result = await onSubmit(currentValues, avatarFile);
+      
+      if (!result.success) {
+        throw new Error(result.error || "Ошибка сохранения данных");
+      }
       
       // Show success message and move to next tab
       toast({
@@ -201,7 +209,11 @@ export const ProfileCompletionForm = ({
         return;
       }
       
-      await onSubmit(values, avatarFile);
+      const result = await onSubmit(values, avatarFile);
+      
+      if (!result.success) {
+        throw new Error(result.error || "Ошибка сохранения профиля");
+      }
     } catch (error) {
       console.error("Error submitting form:", error);
       toast({

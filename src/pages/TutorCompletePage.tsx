@@ -174,7 +174,7 @@ const TutorCompletePage = () => {
         description: "Пользователь не авторизован",
         variant: "destructive",
       });
-      return;
+      return { success: false, avatarUrl: null, error: "Пользователь не авторизован" };
     }
     
     setIsLoading(true);
@@ -225,7 +225,11 @@ const TutorCompletePage = () => {
         description: error instanceof Error ? error.message : "Произошла ошибка при сохранении профиля",
         variant: "destructive",
       });
-      throw error;
+      return { 
+        success: false, 
+        avatarUrl: null, 
+        error: error instanceof Error ? error.message : "Произошла ошибка при сохранении профиля" 
+      };
     } finally {
       setIsLoading(false);
     }
