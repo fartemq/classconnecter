@@ -105,10 +105,10 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
       )}
 
       {profileStatus.isValid && profileStatus.warnings.length > 0 && (
-        <Alert variant="warning">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Рекомендуем дополнить профиль</AlertTitle>
-          <AlertDescription>
+        <Alert variant="default" className="bg-amber-50 border-amber-200">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertTitle className="text-amber-800">Рекомендуем дополнить профиль</AlertTitle>
+          <AlertDescription className="text-amber-700">
             <p>Для лучшей привлекательности профиля рекомендуем заполнить:</p>
             <ul className="list-disc list-inside mt-2">
               {profileStatus.warnings.map((warning, i) => (
