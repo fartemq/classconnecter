@@ -20,7 +20,7 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
   const [error, setError] = useState<string | null>(null);
   const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
   
-  // Initialize form values
+  // Initialize form values - adding defaults for missing properties
   const getInitialValues = (profile: Profile): TutorFormValues => {
     return {
       firstName: profile.first_name || "",
@@ -33,6 +33,11 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
       graduationYear: profile.graduation_year || new Date().getFullYear(),
       experience: profile.experience || 0,
       methodology: profile.methodology || "",
+      // Add missing required properties with default values
+      hourlyRate: 0,
+      subjects: [],
+      teachingLevels: [],
+      // These fields don't exist in Profile type, but are used in the component
       achievements: profile.achievements || "",
       videoUrl: profile.video_url || "",
     };
@@ -53,8 +58,9 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
       educationVerified: false,
       methodology: profile.methodology || "",
       experience: profile.experience || 0,
-      achievements: profile.achievements || undefined,
-      videoUrl: profile.video_url || undefined,
+      // Access these properties safely with type assertion
+      achievements: (profile as any).achievements || "",
+      videoUrl: (profile as any).video_url || "",
       isPublished: false
     });
     setIsLoading(false);

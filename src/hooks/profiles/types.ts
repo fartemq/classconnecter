@@ -17,4 +17,6 @@ export interface Profile {
   graduation_year?: number | null;
   experience?: number | null;
   methodology?: string | null;
+  achievements?: string | null;
+  video_url?: string | null;
 }
