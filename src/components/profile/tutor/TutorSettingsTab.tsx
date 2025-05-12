@@ -4,11 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Profile } from "@/hooks/useProfile";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { Bell, Lock, LogOut, Settings } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TutorSettingsTabProps {
   profile: Profile;
@@ -16,15 +16,16 @@ interface TutorSettingsTabProps {
 
 export const TutorSettingsTab = ({ profile }: TutorSettingsTabProps) => {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
   
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut();
       toast({
         title: "Выход выполнен успешно",
         description: "Вы вышли из своего аккаунта",
       });
-      navigate("/login");
+      navigate("/");
     } catch (error) {
       console.error("Error signing out:", error);
       toast({

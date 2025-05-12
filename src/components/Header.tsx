@@ -1,8 +1,6 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { TutorNavigation } from "./header/TutorNavigation";
-import { StudentNavigation } from "./header/StudentNavigation";
 import { GuestNavigation } from "./header/GuestNavigation";
 import { MobileNavigation } from "./header/MobileNavigation";
 import { AuthButtons } from "./header/AuthButtons";
@@ -19,20 +17,12 @@ export const Header = () => {
 
   // Generate navigation items based on user role and path
   const getNavigationItems = () => {
-    // If user is a student, show student navigation on all student profile pages
-    if (user && userRole === "student" && isStudentProfile) {
-      return <StudentNavigation />;
-    }
-    // If user is a tutor, show tutor navigation
-    else if (user && userRole === "tutor" && isTutorProfile) {
-      return <TutorNavigation />;
-    } 
-    // For unauthenticated users or non-profile pages, show standard menu
-    else if (!isStudentProfile && !isTutorProfile) {
+    // Only show navigation for non-profile pages
+    if (!isStudentProfile && !isTutorProfile) {
       return <GuestNavigation />;
     }
     
-    // Return null for other cases
+    // Return null for profile pages since we use sidebar navigation
     return null;
   };
 
