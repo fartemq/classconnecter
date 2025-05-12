@@ -95,9 +95,9 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
       
       setError(errorMessage);
       toast({
+        variant: "destructive",
         title: "Ошибка сохранения",
         description: errorMessage,
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);

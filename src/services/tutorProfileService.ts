@@ -28,7 +28,8 @@ export const saveTutorProfile = async (
       }
     }
     
-    // Update profile in the database
+    // Update basic profile information in the profiles table
+    // Важно: сохраняем только базовые поля в таблицу profiles
     console.log("Updating basic profile");
     const { error: profileError } = await supabase.from("profiles").update({
       first_name: values.firstName,
@@ -36,11 +37,6 @@ export const saveTutorProfile = async (
       bio: values.bio,
       city: values.city,
       avatar_url: finalAvatarUrl,
-      education_institution: values.educationInstitution,
-      degree: values.degree,
-      graduation_year: values.graduationYear,
-      experience: values.experience,
-      methodology: values.methodology,
       updated_at: new Date().toISOString(),
     }).eq("id", userId);
     
