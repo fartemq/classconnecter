@@ -10,16 +10,19 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { fetchTutorProfile } from "@/services/tutorProfileService"; 
 import { TutorProfile } from "@/types/tutor";
 import { Loader } from "@/components/ui/loader";
-import { ProfilePublishSection } from "./publish/ProfilePublishSection";
+import { TutorPublishController } from "./TutorPublishController";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TutorProfileSettingsTabProps {
   profile: Profile;
 }
 
 export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProps) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("about");
   const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load tutor profile data
   useEffect(() => {
@@ -30,8 +33,9 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
         setIsLoading(true);
         const data = await fetchTutorProfile(profile.id);
         setTutorProfile(data);
-      } catch (error) {
-        console.error("Error loading tutor profile:", error);
+      } catch (err) {
+        console.error("Error loading tutor profile:", err);
+        setError("Не удалось загрузить профиль преподавателя");
       } finally {
         setIsLoading(false);
       }
@@ -48,6 +52,15 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
     );
   }
 
+  if (error) {
+    return (
+      <Alert variant="destructive" className="mb-4">
+        <AlertTitle>Ошибка</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
+    );
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -55,7 +68,18 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
       </div>
 
       {/* Publication status section */}
-      <ProfilePublishSection tutorId={profile.id} />
+      <TutorPublishController 
+        tutorId={profile.id}
+        isPublished={tutorProfile?.isPublished || false}
+        onPublishStatusChange={async (newStatus) => {
+          try {
+            // This will be implemented in the TutorPublishController component
+            return true;
+          } catch (error) {
+            return false;
+          }
+        }}
+      />
       
       <Card className="overflow-hidden border rounded-lg">
         <Tabs value={activeTab} onValueChange={setActiveTab}>

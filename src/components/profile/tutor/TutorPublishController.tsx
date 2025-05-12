@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import { ProfileStatusBadge } from "./publish/ProfileStatusBadge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Link } from "react-router-dom";
+import { publishTutorProfile } from "@/services/tutorProfileService";
 
 interface TutorPublishControllerProps {
   tutorId: string;
@@ -65,11 +65,15 @@ export function TutorPublishController({
         }
       }
       
-      const success = await onPublishStatusChange(!isPublished);
+      // Вызвать сервисную функцию для изменения статуса публикации
+      const success = await publishTutorProfile(tutorId, !isPublished);
       
       if (!success) {
         throw new Error("Не удалось изменить статус публикации");
       }
+      
+      // Уведомить родительский компонент об изменении статуса
+      await onPublishStatusChange(!isPublished);
       
       toast({
         title: isPublished ? "Профиль снят с публикации" : "Профиль успешно опубликован!",
@@ -78,6 +82,9 @@ export function TutorPublishController({
           : "Теперь студенты могут находить вас в поиске",
         variant: "default",
       });
+      
+      // Обновить локальное состояние для немедленного отображения
+      // Это не нужно благодаря пробросу через пропсы и состояние родителя
     } catch (error) {
       console.error("Error toggling publish status:", error);
       toast({
@@ -167,7 +174,7 @@ export function TutorPublishController({
                     ))}
                   </ul>
                 </div>
-                <Link to="/profile/tutor/complete" className="text-blue-600 text-sm inline-flex items-center hover:underline">
+                <Link to="/profile/tutor?tab=about" className="text-blue-600 text-sm inline-flex items-center hover:underline">
                   Перейти к заполнению профиля
                 </Link>
               </div>

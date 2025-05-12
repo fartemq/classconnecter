@@ -20,7 +20,7 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
   const [error, setError] = useState<string | null>(null);
   const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
   
-  // Initialize form values - adding defaults for missing properties
+  // Initialize form values with defaults for required TutorFormValues properties
   const getInitialValues = (profile: Profile): TutorFormValues => {
     return {
       firstName: profile.first_name || "",
@@ -33,13 +33,13 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
       graduationYear: profile.graduation_year || new Date().getFullYear(),
       experience: profile.experience || 0,
       methodology: profile.methodology || "",
-      // Add missing required properties with default values
+      // Required fields that don't exist in Profile type
       hourlyRate: 0,
       subjects: [],
       teachingLevels: [],
-      // These fields don't exist in Profile type, but are used in the component
-      achievements: profile.achievements || "",
-      videoUrl: profile.video_url || "",
+      // Access potential extended fields safely
+      achievements: (profile as any).achievements || "",
+      videoUrl: (profile as any).video_url || "",
     };
   };
 
@@ -77,6 +77,7 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
 
     try {
       console.log("Submitting form with values:", values);
+      console.log("User ID:", user.id);
       
       const result = await saveTutorProfile(values, user.id, avatarFile, avatarUrl);
       

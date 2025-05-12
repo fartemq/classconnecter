@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
@@ -37,6 +36,11 @@ export const saveTutorProfile = async (
       bio: values.bio,
       city: values.city,
       avatar_url: finalAvatarUrl,
+      education_institution: values.educationInstitution,
+      degree: values.degree,
+      graduation_year: values.graduationYear,
+      experience: values.experience,
+      methodology: values.methodology,
       updated_at: new Date().toISOString(),
     }).eq("id", userId);
     
@@ -111,17 +115,42 @@ export const publishTutorProfile = async (tutorId: string, isPublished: boolean)
   try {
     console.log("Publishing tutor profile for:", tutorId, "Status:", isPublished);
     
-    const { error } = await supabase
+    // Check if tutor_profiles exists
+    const { data: existingProfile, error: checkError } = await supabase
       .from("tutor_profiles")
-      .update({
-        is_published: isPublished,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", tutorId);
+      .select("id")
+      .eq("id", tutorId)
+      .maybeSingle();
+    
+    if (!existingProfile) {
+      // Create profile if it doesn't exist
+      const { error: insertError } = await supabase
+        .from("tutor_profiles")
+        .insert({
+          id: tutorId,
+          is_published: isPublished,
+          education_verified: false,
+          updated_at: new Date().toISOString()
+        });
       
-    if (error) {
-      console.error("Error publishing tutor profile:", error);
-      throw error;
+      if (insertError) {
+        console.error("Error creating tutor profile for publishing:", insertError);
+        return false;
+      }
+    } else {
+      // Update existing profile
+      const { error } = await supabase
+        .from("tutor_profiles")
+        .update({
+          is_published: isPublished,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", tutorId);
+        
+      if (error) {
+        console.error("Error publishing tutor profile:", error);
+        return false;
+      }
     }
     
     console.log("Profile publish status updated successfully");
