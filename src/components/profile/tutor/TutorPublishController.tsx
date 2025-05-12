@@ -1,14 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { Check, Info, AlertTriangle, LightbulbIcon, ChevronDown, ChevronUp } from "lucide-react";
+import { Check, Info, AlertTriangle, ChevronDown, ChevronUp } from "lucide-react";
 import { validateTutorProfile } from "@/services/tutorProfileValidation";
 import { ProfileStatusBadge } from "./publish/ProfileStatusBadge";
 import { Separator } from "@/components/ui/separator";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Link } from "react-router-dom";
 import { publishTutorProfile } from "@/services/tutorProfileService";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface TutorPublishControllerProps {
   tutorId: string;
@@ -63,6 +65,13 @@ export function TutorPublishController({
           setIsLoading(false);
           return;
         }
+        
+        // Show success toast for publication
+        toast({
+          title: "Профиль успешно опубликован!",
+          description: "Теперь ученики могут находить вас в поиске и связываться с вами.",
+          variant: "default",
+        });
       }
       
       // Вызвать сервисную функцию для изменения статуса публикации
@@ -75,16 +84,6 @@ export function TutorPublishController({
       // Уведомить родительский компонент об изменении статуса
       await onPublishStatusChange(!isPublished);
       
-      toast({
-        title: isPublished ? "Профиль снят с публикации" : "Профиль успешно опубликован!",
-        description: isPublished 
-          ? "Ваш профиль больше не виден студентам" 
-          : "Теперь студенты могут находить вас в поиске",
-        variant: "default",
-      });
-      
-      // Обновить локальное состояние для немедленного отображения
-      // Это не нужно благодаря пробросу через пропсы и состояние родителя
     } catch (error) {
       console.error("Error toggling publish status:", error);
       toast({
@@ -95,19 +94,6 @@ export function TutorPublishController({
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Визуализация списка недостающих полей
-  const renderMissingFieldsList = () => {
-    if (!validationResult.missingFields || validationResult.missingFields.length === 0) return null;
-    
-    return (
-      <ul className="list-disc text-sm text-red-600 pl-5 space-y-1 mt-2">
-        {validationResult.missingFields.map((field, index) => (
-          <li key={index}>{field}</li>
-        ))}
-      </ul>
-    );
   };
 
   return (
@@ -146,7 +132,27 @@ export function TutorPublishController({
           </div>
         </div>
         
-        {/* Детали заполнения */}
+        {/* Что нужно заполнить */}
+        {!validationResult.isValid && (
+          <Alert variant="warning" className="bg-amber-50 border-amber-200">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Что нужно заполнить</AlertTitle>
+            <AlertDescription>
+              <ul className="list-disc pl-5 space-y-1 mt-2">
+                {validationResult.missingFields.map((field, index) => (
+                  <li key={index}>{field}</li>
+                ))}
+              </ul>
+              <div className="mt-3">
+                <Link to="/profile/tutor?tab=profile" className="text-blue-600 text-sm hover:underline">
+                  Перейти к заполнению профиля
+                </Link>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {/* Детали заполнения - расширяемый блок */}
         {!validationResult.isValid && (
           <Collapsible 
             open={openDetails} 
@@ -157,7 +163,7 @@ export function TutorPublishController({
               <div className="p-3 bg-gray-50 flex items-center justify-between hover:bg-gray-100 cursor-pointer">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  <h4 className="font-medium text-sm">Что нужно заполнить</h4>
+                  <h4 className="font-medium text-sm">Подробности</h4>
                 </div>
                 <div className="text-muted-foreground">
                   {openDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -168,13 +174,16 @@ export function TutorPublishController({
             <CollapsibleContent>
               <div className="p-4 bg-white">
                 <div className="mb-3">
+                  <p className="text-sm text-gray-600 mb-2">
+                    Для публикации профиля необходимо заполнить следующую информацию:
+                  </p>
                   <ul className="list-disc pl-5 space-y-1 text-sm">
                     {validationResult.missingFields.map((field, index) => (
                       <li key={index}>{field}</li>
                     ))}
                   </ul>
                 </div>
-                <Link to="/profile/tutor?tab=about" className="text-blue-600 text-sm inline-flex items-center hover:underline">
+                <Link to="/profile/tutor?tab=profile" className="text-blue-600 text-sm inline-flex items-center hover:underline">
                   Перейти к заполнению профиля
                 </Link>
               </div>

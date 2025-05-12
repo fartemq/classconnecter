@@ -23,6 +23,7 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
   const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isPublished, setIsPublished] = useState(false);
 
   // Load tutor profile data
   useEffect(() => {
@@ -33,6 +34,7 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
         setIsLoading(true);
         const data = await fetchTutorProfile(profile.id);
         setTutorProfile(data);
+        setIsPublished(data?.isPublished || false);
       } catch (err) {
         console.error("Error loading tutor profile:", err);
         setError("Не удалось загрузить профиль преподавателя");
@@ -43,6 +45,11 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
     
     loadTutorProfile();
   }, [profile?.id]);
+
+  const handlePublishStatusChange = async (newStatus: boolean) => {
+    setIsPublished(newStatus);
+    return true;
+  };
 
   if (isLoading) {
     return (
@@ -70,15 +77,8 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
       {/* Publication status section */}
       <TutorPublishController 
         tutorId={profile.id}
-        isPublished={tutorProfile?.isPublished || false}
-        onPublishStatusChange={async (newStatus) => {
-          try {
-            // This will be implemented in the TutorPublishController component
-            return true;
-          } catch (error) {
-            return false;
-          }
-        }}
+        isPublished={isPublished}
+        onPublishStatusChange={handlePublishStatusChange}
       />
       
       <Card className="overflow-hidden border rounded-lg">
