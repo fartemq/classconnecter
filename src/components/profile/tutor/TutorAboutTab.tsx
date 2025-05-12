@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { TutorAboutForm } from "./TutorAboutForm";
+import { TutorAboutForm } from "./forms/TutorAboutForm";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { Profile } from "@/hooks/profiles/types";
 import { saveTutorProfile } from "@/services/tutorProfileService";

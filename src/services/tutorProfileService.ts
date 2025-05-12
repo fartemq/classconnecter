@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
@@ -44,62 +45,54 @@ export const saveTutorProfile = async (
       return { success: false, avatarUrl: null, error: profileError };
     }
     
-    // Check if education info is provided
-    if (values.educationInstitution || values.degree || values.graduationYear || 
-        values.methodology !== undefined || values.experience !== undefined || 
-        values.achievements !== undefined || values.videoUrl !== undefined) {
-      // Check if tutor_profiles exists
-      console.log("Checking existing tutor profile");
-      const { data: existingTutorProfile, error: checkError } = await supabase
+    // Check if tutor_profiles exists
+    console.log("Checking existing tutor profile");
+    const { data: existingTutorProfile, error: checkError } = await supabase
+      .from("tutor_profiles")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+      
+    console.log("Tutor profile exists check:", existingTutorProfile, checkError);
+    
+    // Prepare tutor profile data
+    const tutorProfileData: any = {
+      updated_at: new Date().toISOString(),
+      education_institution: values.educationInstitution || null,
+      degree: values.degree || null,
+      graduation_year: values.graduationYear || null,
+      methodology: values.methodology || null,
+      experience: values.experience || null,
+      achievements: values.achievements || null,
+      video_url: values.videoUrl || null
+    };
+    
+    if (existingTutorProfile) {
+      // Update existing record
+      console.log("Updating existing tutor profile with data:", tutorProfileData);
+      const { error: tutorProfileError } = await supabase
         .from("tutor_profiles")
-        .select("id")
-        .eq("id", userId)
-        .maybeSingle();
+        .update(tutorProfileData)
+        .eq("id", userId);
       
-      console.log("Tutor profile exists check:", existingTutorProfile, checkError);
+      if (tutorProfileError) {
+        console.error("Error updating tutor profile:", tutorProfileError);
+        return { success: false, avatarUrl: finalAvatarUrl, error: tutorProfileError };
+      }
+    } else {
+      // Create new record
+      console.log("Creating new tutor profile");
+      tutorProfileData.id = userId;
+      tutorProfileData.is_published = false;
+      tutorProfileData.education_verified = false;
       
-      // Prepare tutor profile data
-      const tutorProfileData: any = {
-        updated_at: new Date().toISOString(),
-      };
+      const { error: tutorProfileError } = await supabase
+        .from("tutor_profiles")
+        .insert(tutorProfileData);
       
-      // Add education data if provided
-      if (values.educationInstitution) tutorProfileData.education_institution = values.educationInstitution;
-      if (values.degree) tutorProfileData.degree = values.degree;
-      if (values.graduationYear) tutorProfileData.graduation_year = values.graduationYear;
-      
-      // Add methodology data if provided
-      if (values.methodology !== undefined) tutorProfileData.methodology = values.methodology;
-      if (values.experience !== undefined) tutorProfileData.experience = values.experience;
-      if (values.achievements !== undefined) tutorProfileData.achievements = values.achievements;
-      if (values.videoUrl !== undefined) tutorProfileData.video_url = values.videoUrl;
-      
-      if (existingTutorProfile) {
-        // Update existing record
-        console.log("Updating existing tutor profile with data:", tutorProfileData);
-        const { error: tutorProfileError } = await supabase
-          .from("tutor_profiles")
-          .update(tutorProfileData)
-          .eq("id", userId);
-        
-        if (tutorProfileError) {
-          console.error("Error updating tutor profile:", tutorProfileError);
-          return { success: false, avatarUrl: finalAvatarUrl, error: tutorProfileError };
-        }
-      } else {
-        // Create new record
-        console.log("Creating new tutor profile");
-        tutorProfileData.id = userId;
-        tutorProfileData.is_published = false;
-        
-        const { error: tutorProfileError } = await supabase
-          .from("tutor_profiles")
-          .insert(tutorProfileData);
-        
-        if (tutorProfileError) {
-          console.error("Error creating tutor profile:", tutorProfileError);
-          return { success: false, avatarUrl: finalAvatarUrl, error: tutorProfileError };
-        }
+      if (tutorProfileError) {
+        console.error("Error creating tutor profile:", tutorProfileError);
+        return { success: false, avatarUrl: finalAvatarUrl, error: tutorProfileError };
       }
     }
     
