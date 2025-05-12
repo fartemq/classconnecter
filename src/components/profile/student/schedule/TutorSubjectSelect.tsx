@@ -41,7 +41,7 @@ export const TutorSubjectSelect = ({
         </SelectTrigger>
         <SelectContent>
           {actualSubjects.map((subject) => (
-            <SelectItem key={subject.id} value={subject.id}>
+            <SelectItem key={subject.id} value={subject.id || "no-id"}>
               {subject.name}
             </SelectItem>
           ))}

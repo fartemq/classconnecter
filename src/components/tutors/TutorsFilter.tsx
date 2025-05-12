@@ -113,9 +113,9 @@ export const TutorsFilter = () => {
               <SelectValue placeholder="Выберите предмет" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Все предметы</SelectItem>
+              <SelectItem value="all">Все предметы</SelectItem>
               {subjects.map(subject => (
-                <SelectItem key={subject.id} value={subject.name}>
+                <SelectItem key={subject.id} value={subject.id}>
                   {subject.name}
                 </SelectItem>
               ))}
@@ -134,7 +134,7 @@ export const TutorsFilter = () => {
               <SelectValue placeholder="Выберите город" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">Все города</SelectItem>
+              <SelectItem value="all">Все города</SelectItem>
               {cities.map(city => (
                 <SelectItem key={city} value={city}>
                   {city}
