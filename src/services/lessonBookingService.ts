@@ -11,16 +11,30 @@ export interface BookingRequest {
   endTime: string;
 }
 
-export const bookLesson = async (request: BookingRequest): Promise<{ success: boolean; error?: string }> => {
+export const bookLesson = async (request: BookingRequest): Promise<{ success: boolean; error?: string; lessonId?: string }> => {
   try {
     const { studentId, tutorId, subjectId, date, startTime, endTime } = request;
     
     // Format the date as ISO string (YYYY-MM-DD)
     const formattedDate = format(date, 'yyyy-MM-dd');
     
-    console.log("Booking lesson with formatted date:", formattedDate);
-    console.log("Start time:", startTime);
-    console.log("End time:", endTime);
+    console.log("Starting lesson booking process");
+    console.log("Booking details:", { 
+      studentId, 
+      tutorId, 
+      subjectId, 
+      date: formattedDate, 
+      startTime, 
+      endTime 
+    });
+    
+    // Validate inputs
+    if (!studentId || !tutorId || !subjectId || !formattedDate || !startTime || !endTime) {
+      return { 
+        success: false, 
+        error: "Не все обязательные поля заполнены" 
+      };
+    }
     
     // Check if there are any exceptions for this date
     const { data: exceptions, error: exceptionsError } = await supabase
@@ -39,6 +53,7 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
     }
     
     if (exceptions && exceptions.length > 0) {
+      console.log("Tutor has a full day exception on this date");
       return {
         success: false,
         error: "Репетитор недоступен в выбранную дату"
@@ -48,11 +63,13 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
     // Get the day of week (1-7, where 1 is Monday)
     const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
     
+    console.log("Checking if the selected time slot exists and is available");
+    
     // Check if the slot exists and is available
     const { data: slotData, error: slotError } = await supabase
       .from('tutor_schedule')
       .select('*')
-      .eq('id', startTime)
+      .eq('id', startTime) // Using ID from the slot
       .eq('tutor_id', tutorId)
       .eq('day_of_week', dayOfWeek)
       .eq('is_available', true);
@@ -66,20 +83,22 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
     }
     
     if (!slotData || slotData.length === 0) {
+      console.log("Selected slot not found or not available");
       return { 
         success: false, 
         error: "Выбранный слот недоступен" 
       };
     }
     
-    // Check if there's already a lesson booked for this slot
+    console.log("Checking for existing bookings at this time");
+    
+    // Check if there's already a lesson booked for this slot and date
     const { data: existingLessons, error: lessonsError } = await supabase
       .from('lessons')
       .select('*')
       .eq('tutor_id', tutorId)
       .eq('date', formattedDate)
-      .in('status', ['pending', 'confirmed'])
-      .or(`start_time.eq.${startTime},end_time.eq.${endTime}`);
+      .in('status', ['pending', 'confirmed']);
       
     if (lessonsError) {
       console.error("Error checking existing lessons:", lessonsError);
@@ -89,12 +108,27 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
       };
     }
     
+    // Check for time conflicts
     if (existingLessons && existingLessons.length > 0) {
-      return { 
-        success: false, 
-        error: "Это время уже забронировано другим учеником" 
-      };
+      const selectedSlot = slotData[0];
+      const hasConflict = existingLessons.some(lesson => {
+        // Check if time periods overlap
+        return (
+          (selectedSlot.start_time < lesson.end_time && 
+           selectedSlot.end_time > lesson.start_time)
+        );
+      });
+      
+      if (hasConflict) {
+        console.log("Time conflict detected with existing lesson");
+        return { 
+          success: false, 
+          error: "Это время уже забронировано другим учеником" 
+        };
+      }
     }
+    
+    console.log("All checks passed, creating the lesson");
     
     // Create the lesson
     const { data, error } = await supabase
@@ -104,8 +138,8 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
         tutor_id: tutorId,
         subject_id: subjectId,
         date: formattedDate,
-        start_time: startTime,
-        end_time: endTime,
+        start_time: slotData[0].start_time,
+        end_time: slotData[0].end_time,
         status: 'pending'
       })
       .select();
@@ -114,18 +148,21 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
       console.error("Error creating lesson:", error);
       return { 
         success: false, 
-        error: "Не удалось создать занятие" 
+        error: "Не удалось создать занятие: " + error.message 
       };
     }
     
     console.log("Lesson created successfully:", data);
     
-    return { success: true };
+    return { 
+      success: true,
+      lessonId: data[0]?.id
+    };
   } catch (error) {
-    console.error("Error booking lesson:", error);
+    console.error("Unexpected error booking lesson:", error);
     return { 
       success: false, 
-      error: "Произошла ошибка при бронировании занятия" 
+      error: "Произошла непредвиденная ошибка при бронировании занятия" 
     };
   }
 };

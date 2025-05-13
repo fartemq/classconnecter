@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Loader } from "@/components/ui/loader";
@@ -15,21 +15,31 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 
 const PublicTutorProfilePage = () => {
   const [tutor, setTutor] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("about");
   const [scheduleOpen, setScheduleOpen] = useState(false);
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  // Check if there's an action parameter in the URL
+  useEffect(() => {
+    const action = searchParams.get("action");
+    if (action === "book") {
+      setScheduleOpen(true);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchTutorData = async () => {
-      if (!id) return;
+      if (!id) {
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
@@ -53,6 +63,7 @@ const PublicTutorProfilePage = () => {
           description: "Не удалось загрузить профиль репетитора",
           variant: "destructive",
         });
+        navigate("/tutors");
       } finally {
         setLoading(false);
       }
@@ -180,9 +191,9 @@ const PublicTutorProfilePage = () => {
           {/* Tabs Content */}
           <Tabs defaultValue="about" className="mb-8">
             <TabsList className="mb-6">
-              <TabsTrigger value="about" onClick={() => setActiveTab("about")}>О репетиторе</TabsTrigger>
-              <TabsTrigger value="subjects" onClick={() => setActiveTab("subjects")}>Предметы</TabsTrigger>
-              <TabsTrigger value="reviews" onClick={() => setActiveTab("reviews")}>Отзывы</TabsTrigger>
+              <TabsTrigger value="about">О репетиторе</TabsTrigger>
+              <TabsTrigger value="subjects">Предметы</TabsTrigger>
+              <TabsTrigger value="reviews">Отзывы</TabsTrigger>
             </TabsList>
             
             <TabsContent value="about" className="pt-2">
