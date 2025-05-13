@@ -3,12 +3,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
-import { Profile } from "./types";
+import { useAuth } from "@/hooks/auth";
+import { Profile, ProfileUpdateParams } from "./types";
 import { 
   createBasicProfile, 
   createRoleSpecificProfile, 
   fetchTutorProfileData,
+  updateStudentProfile,
   checkRoleMatch 
 } from "./profileUtils";
 
@@ -30,6 +31,8 @@ export const useProfile = (requiredRole?: string) => {
         return false;
       }
 
+      console.log("Updating profile with data:", updatedProfile);
+
       // Update the main profile data
       const { error: profileError } = await supabase
         .from("profiles")
@@ -50,22 +53,9 @@ export const useProfile = (requiredRole?: string) => {
 
       // If this is a student, update student-specific profile data
       if (requiredRole === 'student' || userRole === 'student') {
-        const { error: studentError } = await supabase
-          .from("student_profiles")
-          .update({
-            educational_level: updatedProfile.educational_level,
-            subjects: updatedProfile.subjects,
-            learning_goals: updatedProfile.learning_goals,
-            preferred_format: updatedProfile.preferred_format,
-            school: updatedProfile.school,
-            grade: updatedProfile.grade,
-            budget: updatedProfile.budget
-          })
-          .eq("id", user.id);
-
-        if (studentError) {
-          console.error("Error updating student profile:", studentError);
-          throw studentError;
+        const success = await updateStudentProfile(user.id, updatedProfile);
+        if (!success) {
+          throw new Error("Failed to update student profile");
         }
       }
       

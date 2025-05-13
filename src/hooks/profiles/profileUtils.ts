@@ -153,3 +153,58 @@ export function checkRoleMatch(
   }
   return true;
 }
+
+/**
+ * Updates a student profile with the given data
+ */
+export async function updateStudentProfile(
+  userId: string,
+  profileData: any
+): Promise<boolean> {
+  try {
+    // First check if the student profile already exists
+    const { data: existingProfile } = await supabase
+      .from("student_profiles")
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+      
+    const studentData = {
+      educational_level: profileData.educational_level,
+      subjects: profileData.subjects || [],
+      learning_goals: profileData.learning_goals,
+      preferred_format: profileData.preferred_format || [],
+      school: profileData.school,
+      grade: profileData.grade,
+      budget: profileData.budget
+    };
+    
+    if (existingProfile) {
+      // Update existing record
+      const { error } = await supabase
+        .from("student_profiles")
+        .update(studentData)
+        .eq("id", userId);
+        
+      if (error) {
+        console.error("Error updating student profile:", error);
+        return false;
+      }
+    } else {
+      // Create new record
+      const { error } = await supabase
+        .from("student_profiles")
+        .insert({ ...studentData, id: userId });
+        
+      if (error) {
+        console.error("Error creating student profile:", error);
+        return false;
+      }
+    }
+    
+    return true;
+  } catch (error) {
+    console.error("Error in updateStudentProfile:", error);
+    return false;
+  }
+}

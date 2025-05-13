@@ -8,9 +8,9 @@ import { AlertCircle, Calendar, MessageCircle, Star, BookOpen, CheckCircle, Grad
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { TutorScheduleView } from "@/components/profile/student/schedule/TutorScheduleView";
-import { fetchPublicTutorById } from "@/services/publicTutorService";
+import { fetchPublicTutorById } from "@/services/public/tutorProfileService";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
