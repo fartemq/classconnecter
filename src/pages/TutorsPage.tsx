@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { fetchPublicTutors, PublicTutorProfile } from "@/services/publicTutorService";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogIn, UserPlus } from "lucide-react";
+import { LogIn, UserPlus, BookOpen, CheckCircle, Star, Users } from "lucide-react";
 
 const TutorsPage = () => {
   const [searchParams] = useSearchParams();
@@ -61,35 +61,57 @@ const TutorsPage = () => {
   }, [searchParams, toast, subjectFilter, user]);
 
   const renderAuthPrompt = () => (
-    <div className="flex flex-col items-center justify-center bg-white rounded-lg shadow-md p-8 max-w-2xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold text-center">Для поиска репетиторов необходимо зарегистрироваться</h2>
-      <p className="text-gray-600 text-center">
+    <div className="flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl shadow-lg p-10 max-w-3xl mx-auto space-y-8 border border-blue-100">
+      <div className="bg-white p-4 rounded-full shadow-md">
+        <Users size={48} className="text-primary" />
+      </div>
+      
+      <h2 className="text-3xl font-bold text-center text-gray-800">Для поиска репетиторов необходимо зарегистрироваться</h2>
+      
+      <p className="text-gray-600 text-center text-lg max-w-lg">
         Пройдите быструю регистрацию, чтобы получить доступ к полному списку репетиторов и найти подходящего специалиста для ваших целей обучения.
       </p>
-      <div className="flex flex-col sm:flex-row gap-4 w-full max-w-md">
-        <Button asChild className="flex-1" variant="default">
+      
+      <div className="flex flex-col sm:flex-row gap-5 w-full max-w-md">
+        <Button asChild size="lg" className="flex-1 py-6 text-base">
           <Link to="/register" className="flex items-center justify-center">
-            <UserPlus className="mr-2 h-5 w-5" />
+            <UserPlus className="mr-3 h-5 w-5" />
             Зарегистрироваться
           </Link>
         </Button>
-        <Button asChild className="flex-1" variant="outline">
+        
+        <Button asChild size="lg" variant="outline" className="flex-1 py-6 text-base">
           <Link to="/login" className="flex items-center justify-center">
-            <LogIn className="mr-2 h-5 w-5" />
+            <LogIn className="mr-3 h-5 w-5" />
             Войти
           </Link>
         </Button>
       </div>
       
-      <div className="mt-8 p-4 border border-blue-100 bg-blue-50 rounded-lg">
-        <h3 className="text-lg font-semibold text-blue-800 mb-2">Преимущества регистрации</h3>
-        <ul className="list-disc pl-5 text-blue-700 space-y-1">
-          <li>Удобный поиск репетиторов по предметам и фильтрам</li>
-          <li>Возможность связаться с репетиторами напрямую</li>
-          <li>Сохранение истории общения и занятий</li>
-          <li>Отслеживание прогресса обучения</li>
-          <li>Доступ к образовательным материалам</li>
-        </ul>
+      <div className="mt-6 p-6 bg-white rounded-xl shadow-sm border border-blue-50 w-full max-w-2xl">
+        <h3 className="text-xl font-semibold text-primary mb-4 text-center">Преимущества регистрации</h3>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div className="flex items-start space-x-3">
+            <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0 mt-0.5" />
+            <span className="text-gray-700">Удобный поиск репетиторов по предметам и фильтрам</span>
+          </div>
+          
+          <div className="flex items-start space-x-3">
+            <CheckCircle className="h-6 w-6 text-green-500 flex-shrink-0 mt-0.5" />
+            <span className="text-gray-700">Возможность связаться с репетиторами напрямую</span>
+          </div>
+          
+          <div className="flex items-start space-x-3">
+            <BookOpen className="h-6 w-6 text-blue-500 flex-shrink-0 mt-0.5" />
+            <span className="text-gray-700">Доступ к образовательным материалам</span>
+          </div>
+          
+          <div className="flex items-start space-x-3">
+            <Star className="h-6 w-6 text-yellow-500 flex-shrink-0 mt-0.5" />
+            <span className="text-gray-700">Сохранение истории общения и занятий</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -98,8 +120,8 @@ const TutorsPage = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-grow bg-gray-50">
-        <div className="container mx-auto py-8 px-4">
-          <h1 className="text-3xl font-bold mb-8 text-center">Поиск репетиторов</h1>
+        <div className="container mx-auto py-12 px-4">
+          <h1 className="text-3xl font-bold mb-10 text-center">Поиск репетиторов</h1>
           
           {user ? (
             <div className="flex flex-col lg:flex-row gap-8">
