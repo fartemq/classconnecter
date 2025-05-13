@@ -12,7 +12,7 @@ import { TutorSearchResult, searchTutors, TutorSearchFilters } from '@/services/
 import { Loader } from '@/components/ui/loader';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuth } from '@/hooks/useAuth';
 
 // For pagination
 import { Button as PaginationButton } from '@/components/ui/button';
