@@ -47,8 +47,20 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       
     // Construct simple subjects array
     const subjects = subjectsData?.map(item => {
-      // Safely get the subject info
-      const subjectInfo = item.subjects as { id: string, name: string } | null;
+      // Handle subject information correctly
+      const subjectData = item.subjects;
+      let subjectInfo: { id: string, name: string } | null = null;
+      
+      // Handle both array and single object formats
+      if (Array.isArray(subjectData)) {
+        // If it's an array, take the first item if available
+        subjectInfo = subjectData.length > 0 
+          ? { id: subjectData[0].id, name: subjectData[0].name } 
+          : null;
+      } else if (typeof subjectData === 'object' && subjectData !== null) {
+        // If it's an object, use it directly
+        subjectInfo = subjectData as { id: string, name: string };
+      }
       
       return {
         id: item.id,
@@ -185,8 +197,20 @@ export const fetchPublicTutors = async (
         tutorSubjectsMap[tutorId] = [];
       }
       
-      // Safely get the subject info
-      const subjectInfo = subjectEntry.subjects as { id: string, name: string } | null;
+      // Handle subject information correctly
+      const subjectData = subjectEntry.subjects;
+      let subjectInfo: { id: string, name: string } | null = null;
+      
+      // Handle both array and single object formats
+      if (Array.isArray(subjectData)) {
+        // If it's an array, take the first item if available
+        subjectInfo = subjectData.length > 0 
+          ? { id: subjectData[0].id, name: subjectData[0].name } 
+          : null;
+      } else if (typeof subjectData === 'object' && subjectData !== null) {
+        // If it's an object, use it directly
+        subjectInfo = subjectData as { id: string, name: string };
+      }
       
       if (subjectInfo) {
         tutorSubjectsMap[tutorId].push({

@@ -55,15 +55,33 @@ export const fetchTutorsList = async (limit: number = 10): Promise<PublicTutorPr
         tutorSubjectsMap[tutorId] = [];
       }
       
-      // Safely get the subject info
-      const subjectInfo = subjectEntry.subjects as { id: string, name: string } | null;
+      // Use type assertion to handle the object properly
+      // The error occurs because subjects might be an array when we expect a single object
+      const subjectData = subjectEntry.subjects;
       
-      if (subjectInfo) {
-        tutorSubjectsMap[tutorId].push({
-          id: subjectInfo.id,
-          name: subjectInfo.name,
-          hourlyRate: subjectEntry.hourly_rate || 0
-        });
+      // Handle potential null or unexpected format
+      if (subjectData) {
+        // Make sure we extract a single object properly regardless of how it's structured
+        let subjectInfo: { id: string, name: string } | null = null;
+        
+        // Handle both array and single object formats
+        if (Array.isArray(subjectData)) {
+          // If it's an array, take the first item if available
+          subjectInfo = subjectData.length > 0 
+            ? { id: subjectData[0].id, name: subjectData[0].name } 
+            : null;
+        } else if (typeof subjectData === 'object') {
+          // If it's an object, use it directly
+          subjectInfo = subjectData as { id: string, name: string };
+        }
+        
+        if (subjectInfo) {
+          tutorSubjectsMap[tutorId].push({
+            id: subjectInfo.id,
+            name: subjectInfo.name,
+            hourlyRate: subjectEntry.hourly_rate || 0
+          });
+        }
       }
     });
     
