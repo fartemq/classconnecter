@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,6 +12,7 @@ import { TutorSearchResult, searchTutors, TutorSearchFilters } from '@/services/
 import { Loader } from '@/components/ui/loader';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/use-auth';
 
 // For pagination
 import { Button as PaginationButton } from '@/components/ui/button';
@@ -52,11 +52,23 @@ export const FindTutorsTab = () => {
   
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
   const itemsPerPage = 5;
 
   useEffect(() => {
+    // Redirect to login if not authenticated
+    if (!user) {
+      navigate('/login');
+      toast({
+        title: "Требуется авторизация",
+        description: "Для поиска репетиторов необходимо войти в систему",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     fetchTutors();
-  }, [currentPage]);
+  }, [currentPage, user, navigate]);
 
   const fetchTutors = async () => {
     setIsLoading(true);
