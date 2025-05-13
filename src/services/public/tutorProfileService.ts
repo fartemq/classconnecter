@@ -88,7 +88,7 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       degree: tutorInfo.degree || null,
       methodology: tutorInfo.methodology || null,
       isVerified: tutorInfo.education_verified || false,
-      subjects: subjects // This is correct now - an array of subject objects
+      subjects: subjects // Fixed: this is now treated as an array of subject objects
     };
     
     console.log("Successfully fetched tutor profile:", tutorProfile);
@@ -226,7 +226,7 @@ export const fetchPublicTutors = async (
         education_institution: null, // These fields are filled on the profile page
         degree: null,
         methodology: null,
-        subjects: tutorSubjectsMap[profile.id] || [] // This is correct now - an array of subject objects
+        subjects: tutorSubjectsMap[profile.id] || [] // Fixed: this is now treated as an array of subject objects
       };
     });
     

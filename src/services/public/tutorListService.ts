@@ -95,6 +95,7 @@ export const fetchTutorsList = async (limit: number = 10): Promise<PublicTutorPr
         education_institution: null,
         degree: null,
         methodology: null,
+        // Ensure we're setting the subjects array properly
         subjects: tutorSubjectsMap[profile.id] || []
       };
     });
