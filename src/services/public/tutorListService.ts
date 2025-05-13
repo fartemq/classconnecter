@@ -5,7 +5,7 @@ import { PublicTutorProfile } from "./types";
 /**
  * Fetches a list of public tutor profiles
  */
-export const fetchPublicTutors = async (filters?: any): Promise<PublicTutorProfile[]> => {
+export const fetchTutorsList = async (filters?: any): Promise<PublicTutorProfile[]> => {
   try {
     console.log("Fetching public tutors with filters:", filters);
     
@@ -118,5 +118,25 @@ export const fetchPublicTutors = async (filters?: any): Promise<PublicTutorProfi
   } catch (error) {
     console.error("Unexpected error fetching tutors:", error);
     return [];
+  }
+};
+
+/**
+ * Fetches a list of tutors for the public listing
+ */
+export const fetchPublicTutors = async (
+  page: number = 1, 
+  pageSize: number = 5, 
+  filters?: any
+): Promise<{ tutors: PublicTutorProfile[], totalCount: number }> => {
+  try {
+    const tutors = await fetchTutorsList(filters);
+    return {
+      tutors,
+      totalCount: tutors.length
+    };
+  } catch (error) {
+    console.error("Error fetching public tutors:", error);
+    return { tutors: [], totalCount: 0 };
   }
 };

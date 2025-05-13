@@ -59,6 +59,15 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
     // Generate random rating for demo purposes (in a real app, this would come from reviews)
     const rating = 3.5 + Math.random() * 1.5;
     
+    // Use non-null default values for tutorData properties
+    const tutorInfo = tutorData || {
+      experience: null,
+      education_institution: null,
+      degree: null,
+      methodology: null,
+      education_verified: false
+    };
+    
     const tutorProfile = {
       id: profileData.id,
       first_name: profileData.first_name || '',
@@ -67,11 +76,11 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       city: profileData.city || '',
       bio: profileData.bio || null,
       rating: rating,
-      experience: tutorData?.experience || null,
-      education_institution: tutorData?.education_institution || null,
-      degree: tutorData?.degree || null,
-      methodology: tutorData?.methodology || null,
-      isVerified: tutorData?.education_verified || false,
+      experience: tutorInfo.experience || null,
+      education_institution: tutorInfo.education_institution || null,
+      degree: tutorInfo.degree || null,
+      methodology: tutorInfo.methodology || null,
+      isVerified: tutorInfo.education_verified || false,
       subjects: subjects
     };
     
