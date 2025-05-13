@@ -47,7 +47,7 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       
     // Construct simple subjects array
     const subjects = subjectsData?.map(item => {
-      // Безопасно получаем название предмета
+      // Safely get the subject name
       const subjectObj = item.subjects as { id: string, name: string } | null;
       const subjectName = subjectObj ? subjectObj.name : '';
       
@@ -70,7 +70,7 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       education_verified: false
     };
     
-    // Добавим случайное число к URL аватара чтобы избежать проблем с кэшированием
+    // Add a random number to the avatar URL to avoid caching issues
     const avatarUrlWithParam = profileData.avatar_url 
       ? `${profileData.avatar_url}?${Math.random().toString(36).substring(7)}` 
       : null;
@@ -88,7 +88,7 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       degree: tutorInfo.degree || null,
       methodology: tutorInfo.methodology || null,
       isVerified: tutorInfo.education_verified || false,
-      subjects: subjects
+      subjects: subjects // This is correct now - an array of subject objects
     };
     
     console.log("Successfully fetched tutor profile:", tutorProfile);
@@ -186,7 +186,7 @@ export const fetchPublicTutors = async (
         tutorSubjectsMap[tutorId] = [];
       }
       
-      // Безопасно получаем название предмета
+      // Safely get the subject name
       const subjectObj = subjectEntry.subjects as { id: string, name: string } | null;
       const subjectName = subjectObj ? subjectObj.name : '';
       
@@ -202,13 +202,13 @@ export const fetchPublicTutors = async (
       // Generate random rating for demo purposes
       const rating = 3.5 + Math.random() * 1.5;
       
-      // Безопасно работаем с массивом tutor_profiles
+      // Safely work with tutor_profiles array
       const tutorProfileData = profile.tutor_profiles as any;
       const tutorProfile = tutorProfileData && Array.isArray(tutorProfileData) && tutorProfileData.length > 0
         ? tutorProfileData[0]
         : { experience: null, education_verified: false };
       
-      // Добавляем параметр к URL аватара для избежания кэширования
+      // Add a parameter to the avatar URL to avoid caching
       const avatarUrlWithParam = profile.avatar_url 
         ? `${profile.avatar_url}?${Math.random().toString(36).substring(7)}`
         : null;
@@ -223,10 +223,10 @@ export const fetchPublicTutors = async (
         rating: rating < 5 ? rating : 5,
         experience: tutorProfile.experience || null,
         isVerified: tutorProfile.education_verified || false,
-        education_institution: null, // Эти поля заполняем на странице профиля
+        education_institution: null, // These fields are filled on the profile page
         degree: null,
         methodology: null,
-        subjects: tutorSubjectsMap[profile.id] || []
+        subjects: tutorSubjectsMap[profile.id] || [] // This is correct now - an array of subject objects
       };
     });
     
