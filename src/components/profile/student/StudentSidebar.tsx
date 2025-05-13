@@ -1,29 +1,36 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, User, BookOpen, MessageSquare, Settings, Book } from "lucide-react";
+import { 
+  Home, Calendar, Search, Users, 
+  MessageSquare, FileText, Settings, 
+  User, Activity, Book
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const StudentSidebar = () => {
+export const StudentSidebar = () => {
   const location = useLocation();
   const currentPath = location.pathname;
-  const currentTab = new URLSearchParams(location.search).get('tab') || '';
-
-  const isActive = (path: string, tab?: string) => {
-    if (tab) {
-      return currentPath === path && currentTab === tab;
-    }
-    return currentPath === path;
-  };
 
   const menuItems = [
-    { path: "/profile/student", icon: <User className="mr-2 h-5 w-5" />, label: "Профиль" },
+    { path: "/profile/student", icon: <Home className="mr-2 h-5 w-5" />, label: "Главная" },
+    { path: "/profile/student/profile", icon: <User className="mr-2 h-5 w-5" />, label: "Моя анкета" },
     { path: "/profile/student/schedule", icon: <Calendar className="mr-2 h-5 w-5" />, label: "Расписание" },
-    { path: "/profile/student/tutors", icon: <BookOpen className="mr-2 h-5 w-5" />, label: "Мои репетиторы" },
+    { path: "/profile/student/find-tutors", icon: <Search className="mr-2 h-5 w-5" />, label: "Поиск репетиторов" },
+    { path: "/profile/student/my-tutors", icon: <Users className="mr-2 h-5 w-5" />, label: "Мои репетиторы" },
+    { path: "/profile/student/progress", icon: <Activity className="mr-2 h-5 w-5" />, label: "Мой прогресс" },
     { path: "/profile/student/chats", icon: <MessageSquare className="mr-2 h-5 w-5" />, label: "Сообщения" },
+    { path: "/profile/student/homework", icon: <FileText className="mr-2 h-5 w-5" />, label: "Домашние задания" },
     { path: "/profile/student/materials", icon: <Book className="mr-2 h-5 w-5" />, label: "Учебные материалы" },
     { path: "/profile/student/settings", icon: <Settings className="mr-2 h-5 w-5" />, label: "Настройки" },
   ];
+
+  const isActive = (path: string) => {
+    if (path === "/profile/student") {
+      return currentPath === path;
+    }
+    return currentPath.startsWith(path);
+  };
 
   return (
     <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -51,5 +58,3 @@ const StudentSidebar = () => {
     </div>
   );
 };
-
-export default StudentSidebar;

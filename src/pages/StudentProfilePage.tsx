@@ -11,6 +11,7 @@ import { Loader } from "@/components/ui/loader";
 import { useLocation } from "react-router-dom";
 import { ChatConversation } from "@/components/profile/student/ChatConversation";
 import { StudentProfileCard } from "@/components/profile/student/StudentProfileCard";
+import { StudentLayoutWithSidebar } from "@/components/profile/student/StudentLayoutWithSidebar";
 
 const StudentProfilePage = () => {
   const { profile, isLoading } = useProfile("student");
@@ -50,31 +51,19 @@ const StudentProfilePage = () => {
     );
   }
 
+  // Use the sidebar layout for all student profile pages
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-grow bg-gray-50 py-8">
-        <div className="container mx-auto px-4">
-          {isMainDashboard ? (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              <div className="lg:col-span-1">
-                {profile && <StudentProfileCard profile={profile} />}
-              </div>
-              <div className="lg:col-span-3">
-                <StudentDashboard profile={profile} />
-              </div>
-            </div>
-          ) : (
-            <div className="max-w-4xl mx-auto">
-              <Card className="p-6 shadow-md border-none">
-                {getTabContent()}
-              </Card>
-            </div>
-          )}
+    <StudentLayoutWithSidebar>
+      {isMainDashboard ? (
+        <div className="space-y-6">
+          {profile && <StudentDashboard profile={profile} />}
         </div>
-      </main>
-      <Footer className="py-2" />
-    </div>
+      ) : (
+        <Card className="p-6 shadow-md border-none">
+          {getTabContent()}
+        </Card>
+      )}
+    </StudentLayoutWithSidebar>
   );
 };
 
