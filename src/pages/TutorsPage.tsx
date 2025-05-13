@@ -29,16 +29,16 @@ const TutorsPage = () => {
         try {
           setLoading(true);
           
-          const tutorData = await fetchPublicTutors();
+          const result = await fetchPublicTutors();
           
           // Filter by subject if needed
           const filteredTutors = subjectFilter 
-            ? tutorData.filter(tutor => 
+            ? result.tutors.filter(tutor => 
                 tutor.subjects.some(s => 
                   s.name.toLowerCase() === subjectFilter.toLowerCase()
                 )
               )
-            : tutorData;
+            : result.tutors;
 
           setTutors(filteredTutors);
         } catch (error) {

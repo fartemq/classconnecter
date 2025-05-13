@@ -12,7 +12,7 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
     // Get base profile information
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select("id, first_name, last_name, avatar_url, city, role")
+      .select("id, first_name, last_name, avatar_url, city, role, bio")
       .eq("id", tutorId)
       .eq("role", "tutor")
       .single();
@@ -47,7 +47,7 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       
     // Construct simple subjects array
     const subjects = subjectsData?.map(item => {
-      const subjectName = item.subjects?.name || '';
+      const subjectName = item.subjects ? (item.subjects as any).name || '' : '';
       
       return {
         id: item.id,
@@ -103,6 +103,7 @@ export const fetchPublicTutors = async (
         last_name, 
         avatar_url,
         city,
+        bio,
         tutor_profiles!inner(is_published, experience, education_verified)
       `, { count: 'exact' })
       .eq("role", "tutor")
@@ -169,9 +170,11 @@ export const fetchPublicTutors = async (
         tutorSubjectsMap[tutorId] = [];
       }
       
+      const subjectName = subjectEntry.subjects ? (subjectEntry.subjects as any).name || '' : '';
+      
       tutorSubjectsMap[tutorId].push({
         id: subjectEntry.subject_id,
-        name: subjectEntry.subjects?.name || '',
+        name: subjectName,
         hourlyRate: subjectEntry.hourly_rate || 0
       });
     });
@@ -181,6 +184,8 @@ export const fetchPublicTutors = async (
       // Generate random rating for demo purposes
       const rating = 3.5 + Math.random() * 1.5;
       
+      const tutorProfile = profile.tutor_profiles[0] || {};
+      
       return {
         id: profile.id,
         first_name: profile.first_name || '',
@@ -189,8 +194,8 @@ export const fetchPublicTutors = async (
         city: profile.city || '',
         bio: profile.bio || null,
         rating: rating,
-        experience: profile.tutor_profiles?.experience || null,
-        isVerified: profile.tutor_profiles?.education_verified || false,
+        experience: tutorProfile.experience || null,
+        isVerified: tutorProfile.education_verified || false,
         education_institution: null,
         degree: null,
         methodology: null,

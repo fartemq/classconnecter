@@ -4,4 +4,5 @@
  */
 export * from './types';
 export * from './tutorProfileService';
-export * from './tutorListService';
+// Rename the export from tutorListService to avoid conflicts
+export { fetchPublicTutors as fetchTutorsList } from './tutorListService';

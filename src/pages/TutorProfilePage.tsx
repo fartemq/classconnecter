@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -55,7 +54,9 @@ const convertTutorProfileToProfile = (tutorProfile: TutorProfile): Profile => {
     degree: tutorProfile.degree,
     graduation_year: tutorProfile.graduationYear,
     experience: tutorProfile.experience,
-    methodology: tutorProfile.methodology
+    methodology: tutorProfile.methodology,
+    created_at: null, // Adding missing fields
+    updated_at: null  // Adding missing fields
   };
 };
 
