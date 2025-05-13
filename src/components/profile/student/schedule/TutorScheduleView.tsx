@@ -62,12 +62,16 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
         }
       } catch (error) {
         console.error("Error fetching tutor subjects:", error);
+        toast({
+          title: "Ошибка загрузки",
+          description: "Не удалось загрузить предметы репетитора",
+          variant: "destructive"
+        });
       }
     };
     
     fetchSubjects();
-  }, [tutorId, selectedSubject]);
-  
+  }, [tutorId]);
   
   const handleDateChange = (newDate: Date | undefined) => {
     if (!newDate) return;
@@ -114,7 +118,11 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
         endTime: slot.endTime,
       };
       
+      console.log("Booking request:", bookingRequest);
+      
       const result = await bookLesson(bookingRequest);
+      
+      console.log("Booking result:", result);
       
       if (result.success) {
         toast({

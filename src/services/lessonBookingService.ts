@@ -18,21 +18,9 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
     // Format the date as ISO string (YYYY-MM-DD)
     const formattedDate = format(date, 'yyyy-MM-dd');
     
-    // Check if the slot is still available
-    const { data: availableSlot, error: slotError } = await supabase
-      .from('tutor_schedule')
-      .select('*')
-      .eq('id', startTime)
-      .eq('tutor_id', tutorId)
-      .eq('is_available', true)
-      .single();
-      
-    if (slotError || !availableSlot) {
-      return { 
-        success: false, 
-        error: "Выбранный слот недоступен или уже занят" 
-      };
-    }
+    console.log("Booking lesson with formatted date:", formattedDate);
+    console.log("Start time:", startTime);
+    console.log("End time:", endTime);
     
     // Check if there are any exceptions for this date
     const { data: exceptions, error: exceptionsError } = await supabase
@@ -42,7 +30,13 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
       .eq('date', formattedDate)
       .eq('is_full_day', true);
       
-    if (exceptionsError) throw exceptionsError;
+    if (exceptionsError) {
+      console.error("Error checking exceptions:", exceptionsError);
+      return { 
+        success: false, 
+        error: "Не удалось проверить доступность репетитора" 
+      };
+    }
     
     if (exceptions && exceptions.length > 0) {
       return {
@@ -51,22 +45,80 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
       };
     }
     
+    // Get the day of week (1-7, where 1 is Monday)
+    const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
+    
+    // Check if the slot exists and is available
+    const { data: slotData, error: slotError } = await supabase
+      .from('tutor_schedule')
+      .select('*')
+      .eq('id', startTime)
+      .eq('tutor_id', tutorId)
+      .eq('day_of_week', dayOfWeek)
+      .eq('is_available', true);
+      
+    if (slotError) {
+      console.error("Error checking slot:", slotError);
+      return { 
+        success: false, 
+        error: "Не удалось проверить доступность слота" 
+      };
+    }
+    
+    if (!slotData || slotData.length === 0) {
+      return { 
+        success: false, 
+        error: "Выбранный слот недоступен" 
+      };
+    }
+    
+    // Check if there's already a lesson booked for this slot
+    const { data: existingLessons, error: lessonsError } = await supabase
+      .from('lessons')
+      .select('*')
+      .eq('tutor_id', tutorId)
+      .eq('date', formattedDate)
+      .in('status', ['pending', 'confirmed'])
+      .or(`start_time.eq.${startTime},end_time.eq.${endTime}`);
+      
+    if (lessonsError) {
+      console.error("Error checking existing lessons:", lessonsError);
+      return { 
+        success: false, 
+        error: "Не удалось проверить существующие занятия" 
+      };
+    }
+    
+    if (existingLessons && existingLessons.length > 0) {
+      return { 
+        success: false, 
+        error: "Это время уже забронировано другим учеником" 
+      };
+    }
+    
     // Create the lesson
     const { data, error } = await supabase
       .from('lessons')
       .insert({
-        tutor_id: tutorId,
         student_id: studentId,
+        tutor_id: tutorId,
         subject_id: subjectId,
         date: formattedDate,
         start_time: startTime,
         end_time: endTime,
         status: 'pending'
       })
-      .select()
-      .single();
+      .select();
     
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating lesson:", error);
+      return { 
+        success: false, 
+        error: "Не удалось создать занятие" 
+      };
+    }
+    
+    console.log("Lesson created successfully:", data);
     
     return { success: true };
   } catch (error) {
@@ -98,7 +150,7 @@ export const cancelLesson = async (lessonId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('lessons')
-      .update({ status: 'cancelled' })
+      .update({ status: 'canceled' })
       .eq('id', lessonId);
       
     if (error) throw error;

@@ -18,6 +18,99 @@ export const useProfile = (requiredRole?: string) => {
   const { user, userRole } = useAuth();
   const navigate = useNavigate();
 
+  // Function to update profile data
+  const updateProfile = async (updatedProfile: Partial<Profile>): Promise<boolean> => {
+    try {
+      if (!user) {
+        toast({
+          title: "Ошибка",
+          description: "Пользователь не авторизован",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Update the main profile data
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          first_name: updatedProfile.first_name,
+          last_name: updatedProfile.last_name,
+          bio: updatedProfile.bio,
+          city: updatedProfile.city,
+          phone: updatedProfile.phone,
+          avatar_url: updatedProfile.avatar_url,
+        })
+        .eq("id", user.id);
+
+      if (profileError) {
+        console.error("Error updating profile:", profileError);
+        throw profileError;
+      }
+
+      // If this is a student, update student-specific profile data
+      if (requiredRole === 'student' || userRole === 'student') {
+        const { error: studentError } = await supabase
+          .from("student_profiles")
+          .update({
+            educational_level: updatedProfile.educational_level,
+            subjects: updatedProfile.subjects,
+            learning_goals: updatedProfile.learning_goals,
+            preferred_format: updatedProfile.preferred_format,
+            school: updatedProfile.school,
+            grade: updatedProfile.grade,
+            budget: updatedProfile.budget
+          })
+          .eq("id", user.id);
+
+        if (studentError) {
+          console.error("Error updating student profile:", studentError);
+          throw studentError;
+        }
+      }
+      
+      // If this is a tutor, update tutor-specific profile data
+      else if (requiredRole === 'tutor' || userRole === 'tutor') {
+        const { error: tutorError } = await supabase
+          .from("tutor_profiles")
+          .update({
+            education_institution: updatedProfile.education_institution,
+            degree: updatedProfile.degree,
+            graduation_year: updatedProfile.graduation_year,
+            experience: updatedProfile.experience,
+            methodology: updatedProfile.methodology
+          })
+          .eq("id", user.id);
+
+        if (tutorError) {
+          console.error("Error updating tutor profile:", tutorError);
+          throw tutorError;
+        }
+      }
+
+      // Update local state
+      setProfile(prev => {
+        if (!prev) return updatedProfile as Profile;
+        return { ...prev, ...updatedProfile };
+      });
+
+      toast({
+        title: "Успешно",
+        description: "Профиль успешно обновлен",
+      });
+
+      return true;
+    } catch (error) {
+      console.error("Error in updateProfile:", error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось обновить профиль. Пожалуйста, попробуйте ещё раз.",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   useEffect(() => {
     let isMounted = true;
     
@@ -166,5 +259,5 @@ export const useProfile = (requiredRole?: string) => {
     };
   }, [navigate, requiredRole, user, userRole]);
 
-  return { profile, isLoading };
+  return { profile, isLoading, updateProfile };
 };
