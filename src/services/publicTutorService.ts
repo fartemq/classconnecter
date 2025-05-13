@@ -161,6 +161,8 @@ export const fetchPublicTutors = async (filters?: any): Promise<PublicTutorProfi
         bio,
         experience,
         education_institution,
+        degree,
+        methodology,
         is_published
       `)
       .in("id", tutorIds)
@@ -205,7 +207,7 @@ export const fetchPublicTutors = async (filters?: any): Promise<PublicTutorProfi
     });
     
     // Build public tutor profiles
-    const publicProfiles = profilesData
+    const publicProfiles: PublicTutorProfile[] = profilesData
       .filter(profile => tutorMap.has(profile.id))
       .map(profile => {
         const tutorInfo = tutorMap.get(profile.id);
@@ -224,6 +226,9 @@ export const fetchPublicTutors = async (filters?: any): Promise<PublicTutorProfi
           rating: rating < 5 ? rating : 5,
           experience: tutorInfo?.experience || null,
           isVerified: true, // Mockup for now
+          education_institution: tutorInfo?.education_institution || null,
+          degree: tutorInfo?.degree || null,
+          methodology: tutorInfo?.methodology || null,
           subjects: subjects
         };
       });

@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { TutorAboutTab } from "./TutorAboutTab";
 import { MethodologyTab } from "./MethodologyTab";
 import { MaterialsTab } from "./MaterialsTab";
-import { Profile } from "@/hooks/useProfile";
+import { Profile } from "@/hooks/profiles/types";
 import { fetchTutorProfile } from "@/services/tutorService";
 import { TutorProfile } from "@/types/tutor";
 import { Loader } from "@/components/ui/loader";
