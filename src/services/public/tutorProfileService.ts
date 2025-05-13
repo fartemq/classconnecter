@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { PublicTutorProfile } from "./types";
 
@@ -46,7 +47,9 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       
     // Construct simple subjects array
     const subjects = subjectsData?.map(item => {
-      const subjectName = item.subjects ? (item.subjects as any).name || '' : '';
+      // Безопасно получаем название предмета
+      const subjectObj = item.subjects as { id: string, name: string } | null;
+      const subjectName = subjectObj ? subjectObj.name : '';
       
       return {
         id: item.id,
@@ -67,11 +70,16 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       education_verified: false
     };
     
+    // Добавим случайное число к URL аватара чтобы избежать проблем с кэшированием
+    const avatarUrlWithParam = profileData.avatar_url 
+      ? `${profileData.avatar_url}?${Math.random().toString(36).substring(7)}` 
+      : null;
+    
     const tutorProfile = {
       id: profileData.id,
       first_name: profileData.first_name || '',
       last_name: profileData.last_name || '',
-      avatar_url: profileData.avatar_url,
+      avatar_url: avatarUrlWithParam,
       city: profileData.city || '',
       bio: profileData.bio || null,
       rating: rating,
@@ -178,7 +186,9 @@ export const fetchPublicTutors = async (
         tutorSubjectsMap[tutorId] = [];
       }
       
-      const subjectName = subjectEntry.subjects ? (subjectEntry.subjects as any).name || '' : '';
+      // Безопасно получаем название предмета
+      const subjectObj = subjectEntry.subjects as { id: string, name: string } | null;
+      const subjectName = subjectObj ? subjectObj.name : '';
       
       tutorSubjectsMap[tutorId].push({
         id: subjectEntry.subject_id,
@@ -192,22 +202,28 @@ export const fetchPublicTutors = async (
       // Generate random rating for demo purposes
       const rating = 3.5 + Math.random() * 1.5;
       
-      // Important: properly access the tutor_profiles array
-      const tutorProfile = profile.tutor_profiles && profile.tutor_profiles.length > 0 
-        ? profile.tutor_profiles[0] 
+      // Безопасно работаем с массивом tutor_profiles
+      const tutorProfileData = profile.tutor_profiles as any;
+      const tutorProfile = tutorProfileData && Array.isArray(tutorProfileData) && tutorProfileData.length > 0
+        ? tutorProfileData[0]
         : { experience: null, education_verified: false };
+      
+      // Добавляем параметр к URL аватара для избежания кэширования
+      const avatarUrlWithParam = profile.avatar_url 
+        ? `${profile.avatar_url}?${Math.random().toString(36).substring(7)}`
+        : null;
       
       return {
         id: profile.id,
         first_name: profile.first_name || '',
         last_name: profile.last_name || '',
-        avatar_url: profile.avatar_url,
+        avatar_url: avatarUrlWithParam,
         city: profile.city || '',
         bio: profile.bio || null,
-        rating: rating,
+        rating: rating < 5 ? rating : 5,
         experience: tutorProfile.experience || null,
         isVerified: tutorProfile.education_verified || false,
-        education_institution: null,
+        education_institution: null, // Эти поля заполняем на странице профиля
         degree: null,
         methodology: null,
         subjects: tutorSubjectsMap[profile.id] || []

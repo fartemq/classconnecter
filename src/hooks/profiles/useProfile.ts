@@ -112,12 +112,18 @@ export const useProfile = (requiredRole?: string) => {
         if (!user) {
           console.log("No active session found, redirecting to login");
           if (isMounted) {
-            toast({
-              title: "Требуется авторизация",
-              description: "Пожалуйста, войдите в систему для продолжения.",
-              variant: "destructive",
-            });
-            navigate("/login");
+            // Добавим небольшую задержку перед редиректом,
+            // чтобы избежать проблем с быстрыми переходами
+            setTimeout(() => {
+              if (isMounted) {
+                toast({
+                  title: "Требуется авторизация",
+                  description: "Пожалуйста, войдите в систему для продолжения.",
+                  variant: "destructive",
+                });
+                navigate("/login");
+              }
+            }, 100);
           }
           return;
         }
@@ -188,7 +194,11 @@ export const useProfile = (requiredRole?: string) => {
               degree: tutorData.degree,
               graduation_year: tutorData.graduation_year,
               experience: tutorData.experience,
-              methodology: tutorData.methodology
+              methodology: tutorData.methodology,
+              achievements: tutorData.achievements,
+              video_url: tutorData.video_url,
+              is_published: tutorData.is_published,
+              education_verified: tutorData.education_verified
             };
           }
         } 
@@ -223,7 +233,9 @@ export const useProfile = (requiredRole?: string) => {
           // Combine regular profile data with role-specific data
           setProfile({
             ...profileData,
-            ...additionalData
+            ...additionalData,
+            created_at: profileData.created_at || null,
+            updated_at: profileData.updated_at || null
           } as Profile);
         }
       } catch (error) {
@@ -234,7 +246,12 @@ export const useProfile = (requiredRole?: string) => {
             description: "Произошла ошибка при загрузке профиля.",
             variant: "destructive",
           });
-          navigate("/login");
+          // Добавим задержку перед редиректом
+          setTimeout(() => {
+            if (isMounted) {
+              navigate("/login");
+            }
+          }, 100);
         }
       } finally {
         if (isMounted) setIsLoading(false);

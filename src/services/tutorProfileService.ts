@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
@@ -14,6 +15,7 @@ export const saveTutorProfile = async (
   try {
     console.log("Saving tutor profile for user:", userId);
     console.log("Form values:", values);
+    console.log("Avatar file provided:", !!avatarFile);
     
     // Upload avatar if selected
     let finalAvatarUrl = avatarUrl;
@@ -29,14 +31,13 @@ export const saveTutorProfile = async (
     }
     
     // Update basic profile information in the profiles table
-    // Важно: сохраняем только базовые поля в таблицу profiles
     console.log("Updating basic profile");
     const { error: profileError } = await supabase.from("profiles").update({
       first_name: values.firstName,
       last_name: values.lastName,
       bio: values.bio,
       city: values.city,
-      avatar_url: finalAvatarUrl,
+      avatar_url: finalAvatarUrl, // Используем URL загруженного аватара
       updated_at: new Date().toISOString(),
     }).eq("id", userId);
     

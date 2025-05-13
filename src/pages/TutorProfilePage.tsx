@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/profiles/useProfile";
 import { TutorSidebar } from "@/components/profile/tutor/TutorSidebar";
 import { StudentsTab } from "@/components/profile/tutor/StudentsTab";
 import { TeachingInfoTab } from "@/components/profile/tutor/TeachingInfoTab";
@@ -34,8 +35,10 @@ const convertProfileToTutorProfile = (profile: Profile): TutorProfile => {
     graduationYear: profile.graduation_year || undefined,
     experience: profile.experience || undefined,
     methodology: profile.methodology || undefined,
-    educationVerified: false,
-    isPublished: false
+    achievements: profile.achievements || undefined,
+    videoUrl: profile.video_url || undefined,
+    educationVerified: profile.education_verified || false,
+    isPublished: profile.is_published || false
   };
 };
 
@@ -55,6 +58,10 @@ const convertTutorProfileToProfile = (tutorProfile: TutorProfile): Profile => {
     graduation_year: tutorProfile.graduationYear,
     experience: tutorProfile.experience,
     methodology: tutorProfile.methodology,
+    achievements: tutorProfile.achievements,
+    video_url: tutorProfile.videoUrl,
+    education_verified: tutorProfile.educationVerified,
+    is_published: tutorProfile.isPublished,
     created_at: null, // Adding missing fields
     updated_at: null  // Adding missing fields
   };

@@ -14,6 +14,8 @@ interface AvatarUploadProps {
 
 export const AvatarUpload = ({ avatarUrl, firstName, onChange }: AvatarUploadProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  // Добавим случайный параметр к URL для избежания кэширования
+  const avatarUrlWithCache = avatarUrl ? `${avatarUrl}?${new Date().getTime()}` : null;
   
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) {
@@ -32,6 +34,7 @@ export const AvatarUpload = ({ avatarUrl, firstName, onChange }: AvatarUploadPro
       return;
     }
     
+    console.log("Avatar file selected:", file);
     onChange(file, URL.createObjectURL(file));
   };
 
@@ -43,7 +46,7 @@ export const AvatarUpload = ({ avatarUrl, firstName, onChange }: AvatarUploadPro
         onMouseLeave={() => setIsHovered(false)}
       >
         <Avatar className="w-24 h-24 border-2 border-primary">
-          <AvatarImage src={avatarUrl || ""} />
+          <AvatarImage src={avatarUrlWithCache || ""} />
           <AvatarFallback>{firstName.charAt(0) || "Р"}</AvatarFallback>
         </Avatar>
         {isHovered && (

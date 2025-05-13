@@ -58,6 +58,7 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
   });
 
   const handleAvatarChange = (file: File | null, url: string | null) => {
+    console.log("Avatar changed:", file, url);
     setAvatarFile(file);
     setAvatarUrl(url);
   };
@@ -65,7 +66,16 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
   const handleSubmit = async (values: TutorFormValues) => {
     try {
       setIsLoading(true);
+      console.log("Submitting form with values:", values);
+      console.log("Avatar file:", avatarFile);
+      console.log("Avatar URL:", avatarUrl);
+      
       await onSubmit(values, avatarFile, avatarUrl);
+      
+      // Очищаем файл аватара после успешного сохранения,
+      // чтобы не загружать его повторно при следующем сохранении
+      setAvatarFile(null);
+      
     } catch (error) {
       console.error("Error in form submission:", error);
       toast({

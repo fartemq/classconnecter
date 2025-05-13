@@ -8,16 +8,16 @@ export const uploadAvatar = async (avatarFile: File, userId: string): Promise<st
   try {
     console.log("Uploading avatar for user:", userId);
     
-    // Create a unique file name
+    // Create a unique file name with timestamp to avoid caching issues
     const fileExt = avatarFile.name.split('.').pop();
-    const fileName = `${userId}.${fileExt}`;
+    const fileName = `${userId}-${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`;
     
     // Upload the file
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError, data: uploadData } = await supabase.storage
       .from('avatars')
       .upload(filePath, avatarFile, {
-        cacheControl: '3600',
+        cacheControl: '0', // Disable caching to always fetch fresh image
         upsert: true
       });
     
