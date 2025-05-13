@@ -47,13 +47,12 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       
     // Construct simple subjects array
     const subjects = subjectsData?.map(item => {
-      // Safely get the subject name
-      const subjectObj = item.subjects as { id: string, name: string } | null;
-      const subjectName = subjectObj ? subjectObj.name : '';
+      // Safely get the subject info
+      const subjectInfo = item.subjects as { id: string, name: string } | null;
       
       return {
         id: item.id,
-        name: subjectName,
+        name: subjectInfo ? subjectInfo.name : '',
         hourlyRate: item.hourly_rate || 0
       };
     }) || [];
@@ -88,7 +87,7 @@ export const fetchPublicTutorById = async (tutorId: string): Promise<PublicTutor
       degree: tutorInfo.degree || null,
       methodology: tutorInfo.methodology || null,
       isVerified: tutorInfo.education_verified || false,
-      subjects: subjects // Fixed: this is now treated as an array of subject objects
+      subjects: subjects
     };
     
     console.log("Successfully fetched tutor profile:", tutorProfile);
@@ -186,15 +185,16 @@ export const fetchPublicTutors = async (
         tutorSubjectsMap[tutorId] = [];
       }
       
-      // Safely get the subject name
-      const subjectObj = subjectEntry.subjects as { id: string, name: string } | null;
-      const subjectName = subjectObj ? subjectObj.name : '';
+      // Safely get the subject info
+      const subjectInfo = subjectEntry.subjects as { id: string, name: string } | null;
       
-      tutorSubjectsMap[tutorId].push({
-        id: subjectEntry.subject_id,
-        name: subjectName,
-        hourlyRate: subjectEntry.hourly_rate || 0
-      });
+      if (subjectInfo) {
+        tutorSubjectsMap[tutorId].push({
+          id: subjectInfo.id,
+          name: subjectInfo.name,
+          hourlyRate: subjectEntry.hourly_rate || 0
+        });
+      }
     });
     
     // Generate tutors with all required data
@@ -223,10 +223,10 @@ export const fetchPublicTutors = async (
         rating: rating < 5 ? rating : 5,
         experience: tutorProfile.experience || null,
         isVerified: tutorProfile.education_verified || false,
-        education_institution: null, // These fields are filled on the profile page
+        education_institution: null,
         degree: null,
         methodology: null,
-        subjects: tutorSubjectsMap[profile.id] || [] // Fixed: this is now treated as an array of subject objects
+        subjects: tutorSubjectsMap[profile.id] || []
       };
     });
     

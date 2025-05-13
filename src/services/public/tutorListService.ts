@@ -56,14 +56,15 @@ export const fetchTutorsList = async (limit: number = 10): Promise<PublicTutorPr
       }
       
       // Safely get the subject info
-      const subjectObj = subjectEntry.subjects as { id: string, name: string } | null;
-      const subjectName = subjectObj ? subjectObj.name : '';
+      const subjectInfo = subjectEntry.subjects as { id: string, name: string } | null;
       
-      tutorSubjectsMap[tutorId].push({
-        id: subjectEntry.subject_id,
-        name: subjectName,
-        hourlyRate: subjectEntry.hourly_rate || 0
-      });
+      if (subjectInfo) {
+        tutorSubjectsMap[tutorId].push({
+          id: subjectInfo.id,
+          name: subjectInfo.name,
+          hourlyRate: subjectEntry.hourly_rate || 0
+        });
+      }
     });
     
     // Generate tutors with all required data
@@ -95,7 +96,6 @@ export const fetchTutorsList = async (limit: number = 10): Promise<PublicTutorPr
         education_institution: null,
         degree: null,
         methodology: null,
-        // Ensure we're setting the subjects array properly
         subjects: tutorSubjectsMap[profile.id] || []
       };
     });
