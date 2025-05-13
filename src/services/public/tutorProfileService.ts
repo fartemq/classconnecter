@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { PublicTutorProfile } from "./types";
 
@@ -193,7 +192,10 @@ export const fetchPublicTutors = async (
       // Generate random rating for demo purposes
       const rating = 3.5 + Math.random() * 1.5;
       
-      const tutorProfile = profile.tutor_profiles[0] || {};
+      // Important: properly access the tutor_profiles array
+      const tutorProfile = profile.tutor_profiles && profile.tutor_profiles.length > 0 
+        ? profile.tutor_profiles[0] 
+        : { experience: null, education_verified: false };
       
       return {
         id: profile.id,

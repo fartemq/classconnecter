@@ -4,6 +4,5 @@
  */
 export * from './public/types';
 export * from './public/tutorProfileService';
-export { fetchPublicTutors } from './public/tutorListService';
-export { fetchTutorsList } from './public/tutorListService';
-
+export { fetchPublicTutorsWithPagination as fetchPublicTutors } from './public/index';
+export { fetchTutorsList } from './public/index';

@@ -30,16 +30,17 @@ const TutorsPage = () => {
           setLoading(true);
           
           const result = await fetchPublicTutors();
+          let filteredTutors = result.tutors;
           
           // Filter by subject if needed
-          const filteredTutors = subjectFilter 
-            ? result.tutors.filter(tutor => 
-                tutor.subjects.some(s => 
-                  s.name.toLowerCase() === subjectFilter.toLowerCase()
-                )
+          if (subjectFilter) {
+            filteredTutors = filteredTutors.filter(tutor => 
+              tutor.subjects.some(s => 
+                s.name.toLowerCase() === subjectFilter.toLowerCase()
               )
-            : result.tutors;
-
+            );
+          }
+          
           setTutors(filteredTutors);
         } catch (error) {
           console.error("Error fetching tutors:", error);
