@@ -9,8 +9,16 @@ export interface Profile {
   city: string | null;
   phone: string | null;
   role: string;
+  
+  // Student profile specific fields
   school?: string | null;
   grade?: string | null;
+  educational_level?: string | null;
+  subjects?: string[] | null;
+  learning_goals?: string | null;
+  preferred_format?: string[] | null;
+  budget?: number | null;
+  
   // Tutor profile specific fields
   education_institution?: string | null;
   degree?: string | null;
