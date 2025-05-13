@@ -15,7 +15,7 @@ import { TutorProfileHeader } from "@/components/tutors/TutorProfileHeader";
 import { TutorTabs } from "@/components/tutors/TutorTabs";
 
 const PublicTutorProfilePage = () => {
-  const [tutor, setTutor] = useState(null);
+  const [tutor, setTutor] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("about");
   const [scheduleOpen, setScheduleOpen] = useState(false);
@@ -33,6 +33,7 @@ const PublicTutorProfilePage = () => {
         const tutorData = await fetchPublicTutorById(id);
         
         if (tutorData) {
+          console.log("Loaded tutor data:", tutorData);
           setTutor(tutorData);
         } else {
           toast({
@@ -123,7 +124,7 @@ const PublicTutorProfilePage = () => {
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle>
-              Расписание репетитора: {`${tutor.first_name} ${tutor.last_name || ''}`.trim()}
+              Расписание репетитора: {`${tutor.first_name || ''} ${tutor.last_name || ''}`.trim() || 'Репетитор'}
             </DialogTitle>
           </DialogHeader>
           {id && (

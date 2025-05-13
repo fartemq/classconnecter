@@ -27,7 +27,6 @@ import {
   MapPin, 
   Phone, 
   BookOpen,
-  Target,
   Video,
   Users
 } from "lucide-react";
@@ -178,21 +177,24 @@ export function ProfileTab() {
         throw new Error(`Failed to check student profile: ${checkError.message}`);
       }
       
+      // Prepare the student profile data
+      const studentProfileData = {
+        id: profile.id,
+        educational_level: values.educationalLevel,
+        subjects: values.subjects,
+        learning_goals: values.learningGoals,
+        preferred_format: values.preferredFormat,
+        school: values.school,
+        grade: values.grade,
+      };
+      
       // If no student profile, create one, otherwise update
       if (!existingProfile) {
         console.log("Creating new student profile");
         
         const { error: insertError } = await supabase
           .from('student_profiles')
-          .insert({
-            id: profile.id,
-            educational_level: values.educationalLevel,
-            subjects: values.subjects,
-            learning_goals: values.learningGoals,
-            preferred_format: values.preferredFormat,
-            school: values.school,
-            grade: values.grade,
-          });
+          .insert(studentProfileData);
         
         if (insertError) {
           throw new Error(`Failed to create student profile: ${insertError.message}`);
@@ -203,12 +205,7 @@ export function ProfileTab() {
         const { error: updateError } = await supabase
           .from('student_profiles')
           .update({
-            educational_level: values.educationalLevel,
-            subjects: values.subjects,
-            learning_goals: values.learningGoals,
-            preferred_format: values.preferredFormat,
-            school: values.school,
-            grade: values.grade,
+            ...studentProfileData,
             updated_at: new Date().toISOString(),
           })
           .eq('id', profile.id);
@@ -398,7 +395,7 @@ export function ProfileTab() {
                         disabled={availableSubjects.length === 0}
                         value={field.value?.[0] || ""}
                         onValueChange={(value) => {
-                          field.onChange([value]);
+                          if (value) field.onChange([value]);
                         }}
                       >
                         <SelectTrigger>

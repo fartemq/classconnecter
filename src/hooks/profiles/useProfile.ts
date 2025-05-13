@@ -89,30 +89,58 @@ export const useProfile = (requiredRole?: string) => {
           return;
         }
         
+        // Additional profile data based on role
+        let additionalData = {};
+        
         // If this is a tutor, fetch additional tutor profile data
-        let tutorData = null;
         if (profileData?.role === 'tutor') {
-          tutorData = await fetchTutorProfileData(user.id);
+          const tutorData = await fetchTutorProfileData(user.id);
           
           // Create tutor profile if needed
           if (!tutorData) {
             await createRoleSpecificProfile(user.id, 'tutor');
-            tutorData = await fetchTutorProfileData(user.id);
-          }
-        }
-        
-        console.log("Profile loaded successfully:", profileData);
-        if (isMounted && profileData) {
-          // Combine regular profile data with tutor profile data if available
-          setProfile({
-            ...profileData,
-            ...(tutorData && {
+          } else {
+            additionalData = {
               education_institution: tutorData.education_institution,
               degree: tutorData.degree,
               graduation_year: tutorData.graduation_year,
               experience: tutorData.experience,
               methodology: tutorData.methodology
-            })
+            };
+          }
+        } 
+        // If this is a student, fetch student profile data
+        else if (profileData?.role === 'student') {
+          const { data: studentData, error: studentError } = await supabase
+            .from("student_profiles")
+            .select("*")
+            .eq("id", user.id)
+            .maybeSingle();
+            
+          if (studentError && studentError.code !== 'PGRST116') {
+            console.error("Error fetching student profile:", studentError);
+          } else if (studentData) {
+            additionalData = {
+              educational_level: studentData.educational_level,
+              subjects: studentData.subjects,
+              learning_goals: studentData.learning_goals,
+              preferred_format: studentData.preferred_format,
+              school: studentData.school,
+              grade: studentData.grade,
+              budget: studentData.budget
+            };
+          } else {
+            // Create student profile if it doesn't exist
+            await createRoleSpecificProfile(user.id, 'student');
+          }
+        }
+        
+        console.log("Profile loaded successfully:", profileData);
+        if (isMounted && profileData) {
+          // Combine regular profile data with role-specific data
+          setProfile({
+            ...profileData,
+            ...additionalData
           } as Profile);
         }
       } catch (error) {

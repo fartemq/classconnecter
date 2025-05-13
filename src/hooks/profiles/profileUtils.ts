@@ -72,17 +72,31 @@ export async function createRoleSpecificProfile(userId: string, role: string): P
         return false;
       }
     } else {
-      const { error: studentProfileError } = await supabase
-        .from("student_profiles")
-        .insert({
-          id: userId,
-          educational_level: null,
-          subjects: [],
-          budget: null
-        });
-      
-      if (studentProfileError) {
-        console.error("Error creating student profile:", studentProfileError);
+      try {
+        // First check if the student profile already exists
+        const { data: existingProfile } = await supabase
+          .from("student_profiles")
+          .select("id")
+          .eq("id", userId)
+          .maybeSingle();
+          
+        if (!existingProfile) {
+          const { error: studentProfileError } = await supabase
+            .from("student_profiles")
+            .insert({
+              id: userId,
+              educational_level: "school",
+              subjects: [],
+              preferred_format: []
+            });
+          
+          if (studentProfileError) {
+            console.error("Error creating student profile:", studentProfileError);
+            return false;
+          }
+        }
+      } catch (error) {
+        console.error("Error creating/checking student profile:", error);
         return false;
       }
     }

@@ -28,8 +28,11 @@ interface TutorCardProps {
 const TutorCard = ({ tutor }: TutorCardProps) => {
   // Get minimum hourly rate
   const minRate = tutor.subjects.length > 0
-    ? Math.min(...tutor.subjects.map(s => s.hourlyRate))
+    ? Math.min(...tutor.subjects.map(s => s.hourlyRate || 0))
     : null;
+  
+  // Create a display name
+  const displayName = `${tutor.first_name || ''} ${tutor.last_name || ''}`.trim() || 'Репетитор';
   
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -38,9 +41,9 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
           {/* Avatar section */}
           <div className="flex-shrink-0 flex md:block justify-center">
             <Avatar className="h-20 w-20 border-2 border-white shadow">
-              <AvatarImage src={tutor.avatar_url || ''} alt={`${tutor.first_name} ${tutor.last_name || ''}`} />
+              <AvatarImage src={tutor.avatar_url || ''} alt={displayName} />
               <AvatarFallback className="text-xl">
-                {tutor.first_name.charAt(0)}{tutor.last_name?.charAt(0) || ''}
+                {(tutor.first_name?.charAt(0) || '') + (tutor.last_name?.charAt(0) || '')}
               </AvatarFallback>
             </Avatar>
           </div>
@@ -49,7 +52,7 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
           <div className="flex-grow">
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-semibold">
-                {tutor.first_name} {tutor.last_name || ''}
+                {displayName}
               </h3>
               {tutor.isVerified && (
                 <BadgeCheck className="text-blue-500 h-5 w-5" />
