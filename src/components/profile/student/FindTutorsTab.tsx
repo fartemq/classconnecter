@@ -127,7 +127,8 @@ export const FindTutorsTab = () => {
   };
 
   const handleViewTutorProfile = (id: string) => {
-    navigate(`/tutors/${id}`);
+    // Изменяем путь, чтобы оставаться в интерфейсе ученика
+    navigate(`/profile/student/chats/${id}`);
   };
 
   const handleContactTutor = (id: string) => {
