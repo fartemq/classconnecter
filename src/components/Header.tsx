@@ -4,7 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { GuestNavigation } from "./header/GuestNavigation";
 import { MobileNavigation } from "./header/MobileNavigation";
 import { AuthButtons } from "./header/AuthButtons";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 
 export const Header = () => {
   const { user, userRole } = useAuth();
@@ -39,7 +39,7 @@ export const Header = () => {
         
         {/* Only show auth buttons if not on profile pages */}
         {!isStudentProfile && !isTutorProfile && (
-          <AuthButtons isAuthenticated={!!user} userRole={userRole} />
+          <AuthButtons />
         )}
       </div>
       
