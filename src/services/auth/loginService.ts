@@ -16,14 +16,22 @@ export const loginUser = async (email: string, password: string): Promise<any> =
     if (error) {
       console.error("Login error:", error);
       
-      // Handle specific errors
+      // Handle specific errors with user-friendly messages in Russian
       if (error.message.includes("Email not confirmed")) {
         throw new Error("Пожалуйста, подтвердите свой email перед входом");
       } else if (error.message.includes("Invalid login credentials")) {
         throw new Error("Неверный email или пароль");
+      } else if (error.message === "Invalid login credentials") {
+        throw new Error("Неверный email или пароль");
+      } else if (error.message.includes("rate limit")) {
+        throw new Error("Слишком много попыток входа. Пожалуйста, попробуйте позже");
       }
       
-      throw error;
+      throw new Error(`Ошибка входа: ${error.message}`);
+    }
+    
+    if (!data || !data.user) {
+      throw new Error("Не удалось получить данные пользователя");
     }
     
     console.log("Login successful!");

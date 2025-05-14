@@ -19,7 +19,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         // First set up auth listener to avoid race conditions
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          async (event, currentSession) => {
+          (event, currentSession) => {
             console.log("Auth state change event:", event);
             
             // Set session and user immediately from the event
@@ -28,6 +28,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             // If user exists, get their role in a separate process to avoid deadlocks
             if (currentSession?.user) {
+              // Use setTimeout to avoid potential deadlocks with Supabase client
               setTimeout(async () => {
                 try {
                   const role = await fetchUserRole(currentSession.user);
