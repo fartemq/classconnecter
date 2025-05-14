@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
-import { validateTutorProfile } from "@/services/tutorProfileValidation";
+import { validateTutorProfile, publishTutorProfile } from "@/services/tutor";
 
 export const useTutorPublishStatus = () => {
   const [isPublished, setIsPublished] = useState(false);
@@ -101,70 +101,23 @@ export const useTutorPublishStatus = () => {
         }
       }
       
-      // Проверить существование записи tutor_profiles
-      const { data: existingProfile, error: checkError } = await supabase
-        .from("tutor_profiles")
-        .select("id")
-        .eq("id", user.id)
-        .maybeSingle();
+      // Publish or unpublish profile
+      const success = await publishTutorProfile(user.id, newStatus);
       
-      console.log("Existing profile check:", existingProfile, checkError);
-        
-      if (!existingProfile) {
-        // Создать запись, если она отсутствует
-        console.log("Creating new tutor profile record");
-        const { error: createError } = await supabase
-          .from("tutor_profiles")
-          .insert({
-            id: user.id,
-            is_published: newStatus,
-            education_institution: "",
-            degree: "",
-            graduation_year: new Date().getFullYear(),
-            experience: 0,
-            updated_at: new Date().toISOString()
-          });
-          
-        if (createError) {
-          console.error("Error creating tutor profile:", createError);
-          toast({
-            title: "Ошибка",
-            description: "Не удалось создать профиль репетитора",
-            variant: "destructive",
-          });
-          return false;
-        }
+      if (success) {
+        setIsPublished(newStatus);
+        toast({
+          title: newStatus ? "Профиль опубликован" : "Профиль снят с публикации",
+          description: newStatus 
+            ? "Теперь студенты могут видеть ваш профиль и связываться с вами" 
+            : "Ваш профиль больше не виден студентам",
+          variant: newStatus ? "default" : "destructive",
+        });
+        return true;
       } else {
-        // Обновление статуса публикации
-        console.log("Updating existing tutor profile");
-        const { error } = await supabase
-          .from("tutor_profiles")
-          .update({
-            is_published: newStatus,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", user.id);
-        
-        if (error) {
-          console.error("Error updating publish status:", error);
-          toast({
-            title: "Ошибка",
-            description: "Не удалось изменить статус публикации",
-            variant: "destructive",
-          });
-          return false;
-        }
+        throw new Error("Не удалось изменить статус публикации");
       }
       
-      setIsPublished(newStatus);
-      toast({
-        title: newStatus ? "Профиль опубликован" : "Профиль снят с публикации",
-        description: newStatus 
-          ? "Теперь студенты могут видеть ваш профиль и связываться с вами" 
-          : "Ваш профиль больше не виден студентам",
-        variant: newStatus ? "default" : "destructive",
-      });
-      return true;
     } catch (error) {
       console.error("Error toggling publish status:", error);
       toast({

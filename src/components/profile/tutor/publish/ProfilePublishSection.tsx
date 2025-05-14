@@ -4,11 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle, X, Info, AlertTriangle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { validateTutorProfile } from "@/services/tutorProfileValidation";
-import { publishTutorProfile } from "@/services/tutorProfileService";
+import { validateTutorProfile, publishTutorProfile } from "@/services/tutor";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProfilePublishSectionProps {
   tutorId: string;
@@ -230,6 +230,3 @@ export const ProfilePublishSection: React.FC<ProfilePublishSectionProps> = ({ tu
     </Card>
   );
 };
-
-// Fix: Import supabase client
-import { supabase } from "@/integrations/supabase/client";
