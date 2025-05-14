@@ -12,8 +12,20 @@ import {
   updateStudentProfile,
   checkRoleMatch 
 } from "./profileUtils";
+import { useStudentProfile } from "./useStudentProfile";
+import { useTutorProfile } from "./useTutorProfile";
 
 export const useProfile = (requiredRole?: string) => {
+  // Use the appropriate specialized hook based on the required role
+  if (requiredRole === 'student') {
+    return useStudentProfile();
+  } 
+  
+  if (requiredRole === 'tutor') {
+    return useTutorProfile();
+  }
+
+  // For general use or when role is unknown, use the full implementation
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -53,7 +65,7 @@ export const useProfile = (requiredRole?: string) => {
       }
 
       // If this is a student, update student-specific profile data
-      if (requiredRole === 'student' || userRole === 'student') {
+      if (userRole === 'student') {
         const success = await updateStudentProfile(user.id, updatedProfile);
         if (!success) {
           throw new Error("Failed to update student profile");
@@ -61,7 +73,7 @@ export const useProfile = (requiredRole?: string) => {
       }
       
       // If this is a tutor, update tutor-specific profile data
-      else if (requiredRole === 'tutor' || userRole === 'tutor') {
+      else if (userRole === 'tutor') {
         const { error: tutorError } = await supabase
           .from("tutor_profiles")
           .update({
@@ -69,7 +81,9 @@ export const useProfile = (requiredRole?: string) => {
             degree: updatedProfile.degree,
             graduation_year: updatedProfile.graduation_year,
             experience: updatedProfile.experience,
-            methodology: updatedProfile.methodology
+            methodology: updatedProfile.methodology,
+            achievements: updatedProfile.achievements,
+            video_url: updatedProfile.video_url
           })
           .eq("id", user.id);
 
@@ -104,8 +118,6 @@ export const useProfile = (requiredRole?: string) => {
 
   useEffect(() => {
     let isMounted = true;
-    let attempts = 0;
-    const maxAttempts = 3;
     
     const fetchProfile = async () => {
       try {
@@ -113,11 +125,8 @@ export const useProfile = (requiredRole?: string) => {
         
         // Check if user is authenticated
         if (!user) {
-          console.log("No active session found, redirecting to login");
           if (isMounted) {
             setError("Требуется авторизация");
-            // Добавим небольшую задержку перед редиректом,
-            // чтобы избежать проблем с быстрыми переходами
             setTimeout(() => {
               if (isMounted) {
                 toast({
@@ -133,7 +142,6 @@ export const useProfile = (requiredRole?: string) => {
         }
         
         // Get user profile
-        console.log("Fetching profile for user:", user.id);
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("*")
@@ -155,20 +163,11 @@ export const useProfile = (requiredRole?: string) => {
             }
             return;
           }
-          
-          // Error handling is done in createBasicProfile
           return;
         }
         
         if (profileError) {
           console.error("Profile error:", profileError);
-          attempts++;
-          
-          if (attempts < maxAttempts) {
-            // Try again after a short delay
-            setTimeout(fetchProfile, 1000);
-            return;
-          }
           
           if (isMounted) {
             setError("Не удалось загрузить данные профиля");
@@ -179,8 +178,6 @@ export const useProfile = (requiredRole?: string) => {
             });
             
             if (profileError.code === 'PGRST116') {
-              // Profile not found error
-              console.log("Profile not found, redirecting to login");
               navigate("/login");
             }
           }
@@ -200,10 +197,7 @@ export const useProfile = (requiredRole?: string) => {
         if (profileData?.role === 'tutor') {
           const tutorData = await fetchTutorProfileData(user.id);
           
-          // Create tutor profile if needed
-          if (!tutorData) {
-            await createRoleSpecificProfile(user.id, 'tutor');
-          } else {
+          if (tutorData) {
             additionalData = {
               education_institution: tutorData.education_institution,
               degree: tutorData.degree,
@@ -215,6 +209,8 @@ export const useProfile = (requiredRole?: string) => {
               is_published: tutorData.is_published,
               education_verified: tutorData.education_verified
             };
+          } else {
+            await createRoleSpecificProfile(user.id, 'tutor');
           }
         } 
         // If this is a student, fetch student profile data
@@ -238,14 +234,11 @@ export const useProfile = (requiredRole?: string) => {
               budget: studentData.budget
             };
           } else {
-            // Create student profile if it doesn't exist
             await createRoleSpecificProfile(user.id, 'student');
           }
         }
         
-        console.log("Profile loaded successfully:", profileData);
         if (isMounted && profileData) {
-          // Combine regular profile data with role-specific data
           setProfile({
             ...profileData,
             ...additionalData,
@@ -254,22 +247,6 @@ export const useProfile = (requiredRole?: string) => {
           } as Profile);
           setError(null);
         }
-      } catch (error) {
-        console.error("Error in useProfile hook:", error);
-        if (isMounted) {
-          setError("Произошла ошибка при загрузке профиля");
-          toast({
-            title: "Ошибка",
-            description: "Произошла ошибка при загрузке профиля.",
-            variant: "destructive",
-          });
-          // Добавим задержку перед редиректом
-          setTimeout(() => {
-            if (isMounted) {
-              navigate("/login");
-            }
-          }, 100);
-        }
       } finally {
         if (isMounted) setIsLoading(false);
       }
@@ -277,7 +254,6 @@ export const useProfile = (requiredRole?: string) => {
     
     fetchProfile();
     
-    // Cleanup function to avoid state updates after unmount
     return () => {
       isMounted = false;
     };

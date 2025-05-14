@@ -1,3 +1,5 @@
 
 export { useProfile } from './useProfile';
-export type { Profile } from './types';
+export { useStudentProfile } from './useStudentProfile';
+export { useTutorProfile } from './useTutorProfile';
+export type { Profile, ProfileUpdateParams } from './types';
