@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -83,7 +84,7 @@ const TutorProfilePage = () => {
     }
   }, [profile, hadFirstLoad]);
 
-  // Get tab from URL query parameter
+  // Get tab from URL query parameter and update URL without page reload
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
@@ -100,6 +101,13 @@ const TutorProfilePage = () => {
       }
     }
   }, [location.search, activeTab]);
+
+  // Handle tab change - update URL without page reload
+  const handleTabChange = (tabId: string) => {
+    setActiveTab(tabId);
+    // Use replace to avoid building up history stack
+    navigate({ pathname: "/profile/tutor", search: tabId === "dashboard" ? "" : `?tab=${tabId}` }, { replace: true });
+  };
 
   // Show error state if there's an error loading the profile
   if (error) {
@@ -214,7 +222,7 @@ const TutorProfilePage = () => {
             {/* Sidebar */}
             <div className="w-full lg:w-64 mb-4 lg:mb-0">
               <Card className="p-4 h-full">
-                <TutorSidebar activeTab={activeTab} />
+                <TutorSidebar activeTab={activeTab} onTabChange={handleTabChange} />
               </Card>
             </div>
             

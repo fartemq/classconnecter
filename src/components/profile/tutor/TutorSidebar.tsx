@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 const menuItems = [
   { id: "dashboard", label: "Главная", icon: Home },
   { id: "profile", label: "Моя анкета", icon: User },
+  { id: "teaching", label: "Информация о преподавании", icon: FileText },
   { id: "schedule", label: "Расписание", icon: Calendar },
   { id: "students", label: "Ученики", icon: Users },
   { id: "chats", label: "Сообщения", icon: MessageSquare },
@@ -27,17 +28,10 @@ const menuItems = [
 
 interface TutorSidebarProps {
   activeTab: string;
+  onTabChange: (tabId: string) => void;
 }
 
-export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab }) => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  
-  const handleTabChange = (tabId: string) => {
-    // Используем navigate для перехода на нужную вкладку
-    navigate(`/profile/tutor?tab=${tabId}`);
-  };
-  
+export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab, onTabChange }) => {
   return (
     <div className="py-2 space-y-1">
       {menuItems.map((item) => {
@@ -51,7 +45,7 @@ export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab }) => {
               "w-full justify-start",
               activeTab === item.id ? "bg-gray-100" : ""
             )}
-            onClick={() => handleTabChange(item.id)}
+            onClick={() => onTabChange(item.id)}
           >
             <Icon className="mr-2 h-4 w-4" />
             {item.label}
