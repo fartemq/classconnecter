@@ -4,3 +4,4 @@ export * from './registrationService';
 export * from './loginService';
 export * from './userService';
 export * from './logoutService';
+export * from './authUtils';

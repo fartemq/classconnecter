@@ -8,12 +8,11 @@ import { LoginForm, LoginFormValues } from "@/components/auth/LoginForm";
 import { LoginAlerts } from "@/components/auth/LoginAlerts";
 import { useAuth } from "@/hooks/auth";
 import { toast } from "@/hooks/use-toast";
-import { loginUser } from "@/services/auth/loginService";
 
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, userRole, isLoading: authLoading } = useAuth();
+  const { user, userRole, isLoading: authLoading, login } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [needConfirmation, setNeedConfirmation] = useState(false);
   const [loginAttempted, setLoginAttempted] = useState(false);
@@ -45,12 +44,16 @@ const LoginPage = () => {
     setErrorMessage(null);
     
     try {
-      await loginUser(values.email, values.password);
+      const result = await login(values.email, values.password);
       
-      toast({
-        title: "Успешный вход",
-        description: "Добро пожаловать в Stud.rep!",
-      });
+      if (result?.success) {
+        toast({
+          title: "Успешный вход",
+          description: "Добро пожаловать в Stud.rep!",
+        });
+      } else if (result?.error) {
+        setErrorMessage(result.error);
+      }
       
     } catch (error) {
       console.error("Login form error:", error);

@@ -4,16 +4,15 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/auth";
-import { logoutUser } from "@/services/auth/logoutService";
 
 export const AuthButtons = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, logout } = useAuth();
   const { toast } = useToast();
 
   // Function to handle logout
   const handleLogout = async () => {
     try {
-      await logoutUser();
+      await logout();
       toast({
         title: "Успешный выход",
         description: "Вы вышли из системы",

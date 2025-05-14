@@ -7,7 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { fetchUserRole } from "@/services/auth/userService";
 
 export const useAuth = () => {
-  const { user, setUser, isLoading, setIsLoading, userRole, setUserRole } = useAuthContext();
+  const { user, setUser, isLoading, setIsLoading, userRole, setUserRole, session, signOut } = useAuthContext();
   const [authChecked, setAuthChecked] = useState(false);
   const navigate = useNavigate();
 
@@ -71,8 +71,8 @@ export const useAuth = () => {
           } catch (roleError) {
             console.error("Error fetching user role after sign in:", roleError);
           }
-        } else if (event === "SIGNED_OUT" || event === "USER_DELETED") {
-          console.log("User signed out or deleted");
+        } else if (event === "SIGNED_OUT") {
+          console.log("User signed out");
           setUser(null);
           setUserRole(null);
         }
@@ -86,7 +86,7 @@ export const useAuth = () => {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [setUser, setUserRole, setIsLoading]);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
@@ -152,67 +152,17 @@ export const useAuth = () => {
     }
   };
 
-  const register = async (
-    email: string,
-    password: string,
-    userData: { first_name: string; last_name: string; role: string }
-  ) => {
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            first_name: userData.first_name,
-            last_name: userData.last_name,
-            role: userData.role,
-          },
-        },
-      });
-
-      if (error) throw error;
-
-      toast({
-        title: "Регистрация успешна",
-        description:
-          "На ваш email отправлено письмо с подтверждением. Пожалуйста, подтвердите ваш email.",
-      });
-      
-      return { success: true, user: data.user };
-    } catch (error: any) {
-      console.error("Registration error:", error);
-      
-      let errorMessage = "Ошибка регистрации. Пожалуйста, попробуйте снова.";
-      
-      if (error.message) {
-        if (error.message.includes("already registered")) {
-          errorMessage = "Этот email уже зарегистрирован";
-        }
-      }
-      
-      toast({
-        title: "Ошибка регистрации",
-        description: errorMessage,
-        variant: "destructive",
-      });
-      
-      return { 
-        success: false, 
-        error: errorMessage
-      };
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const logout = async () => {
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      
-      setUser(null);
-      setUserRole(null);
+      if (signOut) {
+        await signOut();
+      } else {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        
+        setUser(null);
+        setUserRole(null);
+      }
       
       toast({
         title: "Выход выполнен",
@@ -236,9 +186,10 @@ export const useAuth = () => {
     user,
     isLoading,
     login,
-    register,
     logout,
     userRole,
+    session,
+    signOut,
     isAuthenticated: !!user,
     authChecked,
   };
