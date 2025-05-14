@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { 
   Calendar, 
   Users, 
@@ -26,7 +26,6 @@ const tutorTabs = [
 
 export const TutorNavigation = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   
   // Function to check if a tutor tab is active
   const isTutorTabActive = (tabId: string) => {
@@ -40,28 +39,21 @@ export const TutorNavigation = () => {
     return tabId === tabParam;
   };
 
-  const handleTabClick = (e: React.MouseEvent<HTMLAnchorElement>, tabId: string) => {
-    e.preventDefault();
-    
-    // Navigate to the path without causing a full page reload
-    navigate({
-      pathname: "/profile/tutor",
-      search: tabId === "dashboard" ? "" : `?tab=${tabId}`
-    }, { replace: true });
-  };
-
   return (
     <>
       {tutorTabs.map((tab) => (
-        <a
+        <Link
           key={tab.id}
-          href={tab.path}
-          onClick={(e) => handleTabClick(e, tab.id)}
+          to={{
+            pathname: "/profile/tutor",
+            search: tab.id === "dashboard" ? "" : `?tab=${tab.id}`
+          }}
+          replace={true} // Use replace instead of push to avoid building history stack
           className={`${isTutorTabActive(tab.id) ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1.5 transition-colors`}
         >
           <tab.icon className="h-4 w-4" />
           {tab.name}
-        </a>
+        </Link>
       ))}
     </>
   );
