@@ -1,69 +1,59 @@
 
 import React from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { LogIn, User, LogOut } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/auth";
 import { logoutUser } from "@/services/auth/logoutService";
-import { toast } from "@/hooks/use-toast";
 
-interface AuthButtonsProps {
-  isAuthenticated: boolean;
-  userRole: string | null;
-}
+export const AuthButtons = () => {
+  const { user, userRole } = useAuth();
+  const { toast } = useToast();
 
-export const AuthButtons = ({ isAuthenticated, userRole }: AuthButtonsProps) => {
-  const navigate = useNavigate();
-
+  // Function to handle logout
   const handleLogout = async () => {
     try {
       await logoutUser();
       toast({
-        title: "Выход выполнен",
-        description: "Вы успешно вышли из системы"
+        title: "Успешный выход",
+        description: "Вы вышли из системы",
       });
-      // Перенаправление происходит в функции logoutUser
     } catch (error) {
-      console.error("Ошибка выхода:", error);
       toast({
         title: "Ошибка",
         description: "Не удалось выйти из системы",
-        variant: "destructive"
+        variant: "destructive",
       });
     }
   };
 
-  // Определяем URL для кнопки профиля в зависимости от роли пользователя
-  const getProfileUrl = () => {
-    if (userRole === "tutor") {
-      return "/profile/tutor";
-    } else {
-      return "/profile/student";
-    }
-  };
+  if (user) {
+    return (
+      <div className="flex items-center gap-4">
+        {userRole === "tutor" ? (
+          <Link to="/profile/tutor">
+            <Button variant="ghost">Мой профиль</Button>
+          </Link>
+        ) : (
+          <Link to="/profile/student">
+            <Button variant="ghost">Мой профиль</Button>
+          </Link>
+        )}
+        <Button onClick={handleLogout} variant="ghost">
+          Выйти
+        </Button>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center gap-3">
-      {isAuthenticated ? (
-        <>
-          <Button variant="default" className="bg-gray-900 hover:bg-gray-800" asChild>
-            <Link to={getProfileUrl()} className="flex items-center gap-2">
-              <User className="h-4 w-4" />
-              Профиль
-            </Link>
-          </Button>
-          <Button variant="outline" onClick={handleLogout} className="flex items-center gap-2">
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Выйти</span>
-          </Button>
-        </>
-      ) : (
-        <Button variant="default" className="bg-gray-900 hover:bg-gray-800" asChild>
-          <Link to="/login" className="flex items-center gap-2">
-            <LogIn className="h-4 w-4" />
-            Войти/Зарегистрироваться
-          </Link>
-        </Button>
-      )}
+    <div className="flex items-center gap-4">
+      <Link to="/login">
+        <Button variant="ghost">Войти</Button>
+      </Link>
+      <Link to="/register">
+        <Button>Регистрация</Button>
+      </Link>
     </div>
   );
 };
