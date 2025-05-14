@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from "react";
 import { useProfile } from "@/hooks/profiles/useProfile";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import { TutorProfile } from "@/types/tutor";
 import { TutorProfileError } from "@/components/profile/tutor/TutorProfileError";
 import { TutorProfileLoading } from "@/components/profile/tutor/TutorProfileLoading";
@@ -12,7 +11,6 @@ import { convertProfileToTutorProfile } from "@/utils/tutorProfileConverters";
 const TutorProfilePage = () => {
   const { profile, isLoading, error } = useProfile("tutor");
   const location = useLocation();
-  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
   const [hadFirstLoad, setHadFirstLoad] = useState(false);
@@ -27,50 +25,27 @@ const TutorProfilePage = () => {
     }
   }, [profile, hadFirstLoad]);
 
-  // Get tab from URL query parameter and update without page reload
+  // Determine active tab from URL path
   useEffect(() => {
-    console.log("Location changed:", location.search);
+    console.log("Location path:", location.pathname);
     
-    const params = new URLSearchParams(location.search);
-    const tab = params.get("tab");
+    // Get the last part of the path to determine the tab
+    const pathParts = location.pathname.split('/');
+    const lastPathPart = pathParts[pathParts.length - 1];
     
-    // Список валидных вкладок
+    // Valid tabs
     const validTabs = ["dashboard", "profile", "teaching", "schedule", "students", "chats", "stats", "settings", "materials"];
     
-    if (tab && validTabs.includes(tab)) {
-      console.log(`Setting active tab to: ${tab}`);
-      setActiveTab(tab);
-    } else if (!tab) {
-      // Если вкладка не указана, установим dashboard
-      if (activeTab !== "dashboard") {
-        console.log("No tab specified, setting to dashboard");
-        setActiveTab("dashboard");
-      }
+    // If we're at "/profile/tutor" exactly, it's the dashboard
+    if (location.pathname === "/profile/tutor") {
+      setActiveTab("dashboard");
+    } 
+    // Otherwise check if the last path segment is a valid tab
+    else if (validTabs.includes(lastPathPart)) {
+      console.log(`Setting active tab to: ${lastPathPart}`);
+      setActiveTab(lastPathPart);
     }
-  }, [location.search]);
-
-  // Handle tab change - update URL without page reload
-  const handleTabChange = (tabId: string) => {
-    console.log(`Tab change requested to: ${tabId}`);
-    
-    // Set the active tab in component state
-    setActiveTab(tabId);
-    
-    // Use navigate with replace to prevent building history stack
-    // This is intentionally commented out because the navigate is now handled
-    // in the TutorSidebar and TutorNavigation components
-    // This prevents double navigation which might cause issues
-    
-    /* 
-    navigate(
-      { 
-        pathname: "/profile/tutor", 
-        search: tabId === "dashboard" ? "" : `?tab=${tabId}` 
-      }, 
-      { replace: true }
-    );
-    */
-  };
+  }, [location.pathname]);
 
   // Show error state if there's an error loading the profile
   if (error) {
@@ -93,7 +68,6 @@ const TutorProfilePage = () => {
       <TutorProfileLayout
         tutorProfile={tutorProfile}
         activeTab={activeTab}
-        onTabChange={handleTabChange}
       />
     );
   }

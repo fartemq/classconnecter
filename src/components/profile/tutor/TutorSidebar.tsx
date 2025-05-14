@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { 
   Home,
   Calendar,
@@ -15,57 +15,39 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 const menuItems = [
-  { id: "dashboard", label: "Главная", icon: Home },
-  { id: "profile", label: "Моя анкета", icon: User },
-  { id: "teaching", label: "Информация о преподавании", icon: FileText },
-  { id: "schedule", label: "Расписание", icon: Calendar },
-  { id: "students", label: "Ученики", icon: Users },
-  { id: "chats", label: "Сообщения", icon: MessageSquare },
-  { id: "stats", label: "Статистика", icon: BarChart3 },
-  { id: "materials", label: "Материалы", icon: FileText },
-  { id: "settings", label: "Настройки", icon: Settings },
+  { id: "dashboard", label: "Главная", icon: Home, path: "/profile/tutor" },
+  { id: "profile", label: "Моя анкета", icon: User, path: "/profile/tutor/profile" },
+  { id: "teaching", label: "Информация о преподавании", icon: FileText, path: "/profile/tutor/teaching" },
+  { id: "schedule", label: "Расписание", icon: Calendar, path: "/profile/tutor/schedule" },
+  { id: "students", label: "Ученики", icon: Users, path: "/profile/tutor/students" },
+  { id: "chats", label: "Сообщения", icon: MessageSquare, path: "/profile/tutor/chats" },
+  { id: "stats", label: "Статистика", icon: BarChart3, path: "/profile/tutor/stats" },
+  { id: "materials", label: "Материалы", icon: FileText, path: "/profile/tutor/materials" },
+  { id: "settings", label: "Настройки", icon: Settings, path: "/profile/tutor/settings" },
 ];
 
-interface TutorSidebarProps {
-  activeTab: string;
-  onTabChange: (tabId: string) => void;
-}
-
-export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab, onTabChange }) => {
-  const navigate = useNavigate();
-
-  const handleSidebarTabChange = (tabId: string) => {
-    console.log(`Sidebar changing to tab: ${tabId}`);
-    
-    // Call the parent's onTabChange to update state there
-    onTabChange(tabId);
-    
-    // Also update the URL without a page reload
-    navigate({
-      pathname: "/profile/tutor",
-      search: tabId === "dashboard" ? "" : `?tab=${tabId}`
-    }, { replace: true });
-  };
-
+export const TutorSidebar: React.FC = () => {
   return (
     <div className="py-2 space-y-1">
       {menuItems.map((item) => {
         const Icon = item.icon;
         return (
-          <Button
+          <NavLink
             key={item.id}
-            variant={activeTab === item.id ? "secondary" : "ghost"}
-            size="sm"
-            className={cn(
-              "w-full justify-start",
-              activeTab === item.id ? "bg-gray-100" : ""
-            )}
-            onClick={() => handleSidebarTabChange(item.id)}
-            type="button"
+            to={item.path}
+            end={item.path === "/profile/tutor"}
+            className={({ isActive }) => 
+              cn(
+                "flex w-full items-center px-3 py-2 text-sm rounded-md transition-colors",
+                isActive
+                  ? "bg-gray-100 text-primary font-medium"
+                  : "text-gray-700 hover:bg-gray-50 hover:text-primary"
+              )
+            }
           >
             <Icon className="mr-2 h-4 w-4" />
             {item.label}
-          </Button>
+          </NavLink>
         );
       })}
     </div>

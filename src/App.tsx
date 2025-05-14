@@ -81,6 +81,14 @@ const App = () => {
               {/* Защищенные маршруты для репетиторов */}
               <Route element={<ProtectedRoute allowedRoles={["tutor"]} />}>
                 <Route path="/profile/tutor" element={<TutorProfilePage />} />
+                <Route path="/profile/tutor/profile" element={<TutorProfilePage />} />
+                <Route path="/profile/tutor/teaching" element={<TutorProfilePage />} />
+                <Route path="/profile/tutor/schedule" element={<TutorProfilePage />} />
+                <Route path="/profile/tutor/students" element={<TutorProfilePage />} />
+                <Route path="/profile/tutor/chats" element={<TutorProfilePage />} />
+                <Route path="/profile/tutor/stats" element={<TutorProfilePage />} />
+                <Route path="/profile/tutor/materials" element={<TutorProfilePage />} />
+                <Route path="/profile/tutor/settings" element={<TutorProfilePage />} />
                 <Route path="/profile/tutor/complete" element={<TutorCompletePage />} />
                 <Route path="/profile/tutor/assign-homework/:studentId" element={<HomeworkAssignmentPage />} />
                 <Route path="/profile/tutor/grade-homework/:homeworkId" element={<HomeworkGradingPage />} />

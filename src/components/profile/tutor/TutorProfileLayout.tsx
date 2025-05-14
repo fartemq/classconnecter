@@ -10,13 +10,11 @@ import { TutorProfileContent } from "@/components/profile/tutor/TutorProfileCont
 interface TutorProfileLayoutProps {
   tutorProfile: TutorProfile;
   activeTab: string;
-  onTabChange: (tabId: string) => void;
 }
 
 export const TutorProfileLayout: React.FC<TutorProfileLayoutProps> = ({ 
   tutorProfile, 
-  activeTab, 
-  onTabChange 
+  activeTab
 }) => {
   return (
     <div className="min-h-screen flex flex-col">
@@ -27,7 +25,7 @@ export const TutorProfileLayout: React.FC<TutorProfileLayoutProps> = ({
             {/* Sidebar */}
             <div className="w-full lg:w-64 mb-4 lg:mb-0">
               <Card className="p-4 h-full">
-                <TutorSidebar activeTab={activeTab} onTabChange={onTabChange} />
+                <TutorSidebar />
               </Card>
             </div>
             
