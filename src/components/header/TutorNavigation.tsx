@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { 
   Calendar, 
   Users, 
@@ -26,6 +26,7 @@ const tutorTabs = [
 
 export const TutorNavigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   // Function to check if a tutor tab is active
   const isTutorTabActive = (tabId: string) => {
@@ -39,21 +40,28 @@ export const TutorNavigation = () => {
     return tabId === tabParam;
   };
 
+  const handleTabClick = (e: React.MouseEvent<HTMLDivElement>, tabId: string) => {
+    e.preventDefault();
+    console.log(`Navigating to tab: ${tabId}`);
+    
+    // Use navigate with replace to prevent page reload
+    navigate({
+      pathname: "/profile/tutor",
+      search: tabId === "dashboard" ? "" : `?tab=${tabId}`
+    }, { replace: true });
+  };
+
   return (
     <>
       {tutorTabs.map((tab) => (
-        <Link
+        <div
           key={tab.id}
-          to={{
-            pathname: "/profile/tutor",
-            search: tab.id === "dashboard" ? "" : `?tab=${tab.id}`
-          }}
-          replace={true} // Use replace instead of push to avoid building history stack
-          className={`${isTutorTabActive(tab.id) ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1.5 transition-colors`}
+          onClick={(e) => handleTabClick(e, tab.id)}
+          className={`${isTutorTabActive(tab.id) ? "text-primary font-medium" : "text-gray-700"} hover:text-primary flex items-center gap-1.5 transition-colors cursor-pointer`}
         >
           <tab.icon className="h-4 w-4" />
           {tab.name}
-        </Link>
+        </div>
       ))}
     </>
   );

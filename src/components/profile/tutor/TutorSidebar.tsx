@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { 
   Home,
   Calendar,
@@ -32,6 +32,21 @@ interface TutorSidebarProps {
 }
 
 export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab, onTabChange }) => {
+  const navigate = useNavigate();
+
+  const handleSidebarTabChange = (tabId: string) => {
+    console.log(`Sidebar changing to tab: ${tabId}`);
+    
+    // Call the parent's onTabChange to update state there
+    onTabChange(tabId);
+    
+    // Also update the URL without a page reload
+    navigate({
+      pathname: "/profile/tutor",
+      search: tabId === "dashboard" ? "" : `?tab=${tabId}`
+    }, { replace: true });
+  };
+
   return (
     <div className="py-2 space-y-1">
       {menuItems.map((item) => {
@@ -45,7 +60,8 @@ export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab, onTabChan
               "w-full justify-start",
               activeTab === item.id ? "bg-gray-100" : ""
             )}
-            onClick={() => onTabChange(item.id)}
+            onClick={() => handleSidebarTabChange(item.id)}
+            type="button"
           >
             <Icon className="mr-2 h-4 w-4" />
             {item.label}

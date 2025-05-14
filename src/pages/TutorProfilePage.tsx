@@ -27,8 +27,10 @@ const TutorProfilePage = () => {
     }
   }, [profile, hadFirstLoad]);
 
-  // Get tab from URL query parameter and update URL without page reload
+  // Get tab from URL query parameter and update without page reload
   useEffect(() => {
+    console.log("Location changed:", location.search);
+    
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
     
@@ -36,20 +38,30 @@ const TutorProfilePage = () => {
     const validTabs = ["dashboard", "profile", "teaching", "schedule", "students", "chats", "stats", "settings", "materials"];
     
     if (tab && validTabs.includes(tab)) {
+      console.log(`Setting active tab to: ${tab}`);
       setActiveTab(tab);
     } else if (!tab) {
       // Если вкладка не указана, установим dashboard
       if (activeTab !== "dashboard") {
+        console.log("No tab specified, setting to dashboard");
         setActiveTab("dashboard");
       }
     }
-  }, [location.search, activeTab]);
+  }, [location.search]);
 
   // Handle tab change - update URL without page reload
   const handleTabChange = (tabId: string) => {
+    console.log(`Tab change requested to: ${tabId}`);
+    
+    // Set the active tab in component state
     setActiveTab(tabId);
     
-    // Use replace to prevent building history stack
+    // Use navigate with replace to prevent building history stack
+    // This is intentionally commented out because the navigate is now handled
+    // in the TutorSidebar and TutorNavigation components
+    // This prevents double navigation which might cause issues
+    
+    /* 
     navigate(
       { 
         pathname: "/profile/tutor", 
@@ -57,9 +69,7 @@ const TutorProfilePage = () => {
       }, 
       { replace: true }
     );
-
-    // Add console logging to debug navigation
-    console.log(`Tab changed to: ${tabId} with URL: /profile/tutor${tabId === "dashboard" ? "" : `?tab=${tabId}`}`);
+    */
   };
 
   // Show error state if there's an error loading the profile
