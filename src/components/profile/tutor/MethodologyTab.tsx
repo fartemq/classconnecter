@@ -7,7 +7,7 @@ import { toast } from "@/hooks/use-toast";
 import { TutorProfile } from "@/types/tutor";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader } from "@/components/ui/loader";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Save } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
@@ -29,6 +29,7 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
 
   // Set initial values from profile when component mounts or profile changes
   useEffect(() => {
+    console.log("Setting methodology values from profile:", profile);
     setMethodology(profile.methodology || "");
     setExperience(profile.experience || 0);
     setAchievements(profile.achievements || "");
@@ -73,10 +74,12 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
         updated_at: new Date().toISOString(),
       };
 
+      let result;
+      
       if (!existingProfile) {
         // Insert new record with required ID
         console.log("Creating new tutor profile");
-        const { error: insertError } = await supabase
+        result = await supabase
           .from("tutor_profiles")
           .insert({
             ...profileData,
@@ -85,25 +88,33 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
             education_verified: false
           });
 
-        if (insertError) {
-          console.error("Error creating tutor profile:", insertError);
-          throw new Error(`Не удалось создать профиль: ${insertError.message}`);
+        if (result.error) {
+          console.error("Error creating tutor profile:", result.error);
+          throw new Error(`Не удалось создать профиль: ${result.error.message}`);
         }
       } else {
         // Update existing record
         console.log("Updating existing tutor profile");
-        const { error: updateError } = await supabase
+        result = await supabase
           .from("tutor_profiles")
           .update(profileData)
           .eq("id", user.id);
 
-        if (updateError) {
-          console.error("Error updating tutor profile:", updateError);
-          throw new Error(`Не удалось обновить данные: ${updateError.message}`);
+        if (result.error) {
+          console.error("Error updating tutor profile:", result.error);
+          throw new Error(`Не удалось обновить данные: ${result.error.message}`);
         }
       }
-
+      
+      console.log("Save result:", result);
       setIsSaved(true);
+      
+      // Update the profile in-memory
+      profile.methodology = methodology;
+      profile.experience = experience;
+      profile.achievements = achievements;
+      profile.videoUrl = videoUrl;
+
       toast({
         title: "Информация обновлена",
         description: "Ваша методология преподавания успешно сохранена",
@@ -144,7 +155,9 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold mb-6">Методика преподавания</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Методика преподавания</h2>
+      </div>
       
       {error && (
         <Alert variant="destructive" className="mb-4">
@@ -237,7 +250,7 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
 
         <div className="flex justify-end">
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? <Loader size="sm" className="mr-2" /> : null}
+            {isLoading ? <Loader size="sm" className="mr-2" /> : <Save className="h-4 w-4 mr-2" />}
             {isLoading ? "Сохранение..." : "Сохранить изменения"}
           </Button>
         </div>

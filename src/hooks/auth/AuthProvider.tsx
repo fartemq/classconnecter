@@ -1,130 +1,86 @@
 
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { User, Session } from "@supabase/supabase-js";
+import React, { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
-import { fetchUserRole } from "./authUtils";
+import { User } from "@supabase/supabase-js";
+import { supabase } from "@/integrations/supabase/client";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const authInitialized = useRef(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
+  // Initialize by checking for an existing session
   useEffect(() => {
-    const initAuth = async () => {
-      if (authInitialized.current) return;
-      authInitialized.current = true;
-      
+    const initializeAuth = async () => {
       try {
-        // First set up auth listener to avoid race conditions
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-          (event, currentSession) => {
-            console.log("Auth state change event:", event);
-            
-            // Set session and user immediately from the event
-            setSession(currentSession);
-            setUser(currentSession?.user ?? null);
-            
-            // If user exists, get their role in a separate process to avoid deadlocks
-            if (currentSession?.user) {
-              // Use setTimeout to avoid potential deadlocks with Supabase client
-              setTimeout(async () => {
-                try {
-                  const role = await fetchUserRole(currentSession.user);
-                  setUserRole(role);
-                  console.log("Set user role to:", role);
-                } catch (error) {
-                  console.error("Error fetching user role:", error);
-                }
-              }, 0);
-            } else {
-              setUserRole(null);
-            }
-          }
-        );
-
-        // Then check for existing session
-        const { data: { session: existingSession } } = await supabase.auth.getSession();
-        setSession(existingSession);
-        setUser(existingSession?.user ?? null);
+        // Get session from supabase
+        const { data: { session } } = await supabase.auth.getSession();
         
-        // If there's an existing session, get the user role
-        if (existingSession?.user) {
-          try {
-            const role = await fetchUserRole(existingSession.user);
-            setUserRole(role);
-            console.log("Initial user role set to:", role);
-          } catch (error) {
-            console.error("Error fetching initial user role:", error);
-          }
+        // If user exists in session, set the user
+        if (session?.user) {
+          setUser(session.user);
+          console.log("Session user found:", session.user.id);
+          
+          // Get user metadata or profile to determine role
+          // This happens later through the useAuth hook
+        } else {
+          // No session, clear user state
+          setUser(null);
+          setUserRole(null);
         }
-
-        setIsLoading(false);
-        
-        return () => {
-          subscription.unsubscribe();
-        };
       } catch (error) {
-        console.error("Auth initialization error:", error);
+        console.error("Error checking authentication session:", error);
+        setUser(null);
+        setUserRole(null);
+      } finally {
+        // Mark auth as initialized and not loading
         setIsLoading(false);
+        setIsInitialized(true);
       }
     };
 
-    initAuth();
+    initializeAuth();
   }, []);
 
-  const signOut = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error("Error signing out:", error);
-        toast({
-          title: "Ошибка",
-          description: "Произошла ошибка при выходе",
-          variant: "destructive",
-        });
-        return;
+  // Set up auth state change listener
+  useEffect(() => {
+    if (!isInitialized) return;
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth state change:", event);
+        
+        // Handle auth events
+        if (event === "SIGNED_IN" && session?.user) {
+          console.log("User signed in (from AuthProvider):", session.user.id);
+          setUser(session.user);
+          // Role is fetched in useAuth hook
+        } else if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+          console.log("User signed out or deleted");
+          setUser(null);
+          setUserRole(null);
+        } else if (event === "TOKEN_REFRESHED" && session?.user) {
+          console.log("Token refreshed for user:", session.user.id);
+          setUser(session.user);
+        }
       }
-      
-      // Clear state after successful logout
-      setUser(null);
-      setSession(null);
-      setUserRole(null);
-      
-      toast({
-        title: "Выход выполнен успешно",
-        description: "Вы вышли из своей учетной записи",
-      });
-      
-      // Redirect to home page
-      navigate("/");
-    } catch (error) {
-      console.error("Error signing out:", error);
-      toast({
-        title: "Ошибка",
-        description: "Произошла ошибка при выходе",
-        variant: "destructive",
-      });
-    }
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [isInitialized]);
+
+  const contextValue = {
+    user,
+    setUser,
+    isLoading,
+    setIsLoading,
+    userRole, 
+    setUserRole
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        session,
-        isLoading,
-        signOut,
-        userRole,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
 };

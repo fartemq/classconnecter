@@ -3,6 +3,7 @@ import React, { useState, useRef } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 interface AvatarUploadProps {
   avatarUrl: string | null;
@@ -43,19 +44,32 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     // Validate file type
     const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
     if (!validTypes.includes(file.type)) {
-      alert('Пожалуйста, выберите файл изображения (JPEG, PNG или GIF)');
+      toast({
+        title: "Ошибка формата файла",
+        description: "Пожалуйста, выберите файл изображения (JPEG, PNG или GIF)",
+        variant: "destructive"
+      });
       return;
     }
     
     // Validate file size (2MB max)
     if (file.size > 2 * 1024 * 1024) {
-      alert('Размер файла не должен превышать 2 МБ');
+      toast({
+        title: "Файл слишком большой",
+        description: "Размер файла не должен превышать 2 МБ",
+        variant: "destructive"
+      });
       return;
     }
     
     // Create URL for preview and trigger the onChange callback immediately
     const imageUrl = URL.createObjectURL(file);
     onChange(file, imageUrl);
+    
+    toast({
+      title: "Фото загружено",
+      description: "Не забудьте сохранить изменения",
+    });
   };
 
   const handleClick = () => {
@@ -72,6 +86,9 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     setIsDragging(false);
   };
 
+  // Add random query parameter to bypass browser caching
+  const cacheBustedAvatarUrl = avatarUrl ? `${avatarUrl}${avatarUrl.includes('?') ? '&' : '?'}cb=${new Date().getTime()}` : null;
+
   return (
     <div
       className={`relative flex flex-col items-center ${
@@ -83,8 +100,8 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     >
       <div className="relative group">
         <Avatar className="h-24 w-24 cursor-pointer border-2 border-gray-200">
-          {avatarUrl ? (
-            <AvatarImage src={avatarUrl} alt={`${firstName} avatar`} />
+          {cacheBustedAvatarUrl ? (
+            <AvatarImage src={cacheBustedAvatarUrl} alt={`${firstName} avatar`} />
           ) : (
             <AvatarFallback className="bg-primary/20 text-primary text-xl">
               {getInitials(firstName)}
@@ -119,6 +136,9 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         <Upload className="h-4 w-4 mr-1" />
         Загрузить фото
       </Button>
+      <p className="text-xs text-muted-foreground mt-1">
+        Рекомендуемый формат: JPEG, PNG до 2 МБ
+      </p>
     </div>
   );
 };

@@ -2,41 +2,141 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Gets the currently logged in user
+ * Fetch the user's role from the profiles table
  */
-export const getCurrentUser = async () => {
+export const fetchUserRole = async (userId: string): Promise<string | null> => {
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
-    if (error) throw error;
-    return session?.user || null;
-  } catch (error) {
-    console.error("Get current user error:", error);
+    console.log("Fetching role for user:", userId);
+    
+    // First, check if the user exists in the auth.users table
+    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
+    
+    if (authError) {
+      console.error("Error fetching user from auth:", authError);
+      // Fall back to profiles table if admin API fails
+    } else if (authUser?.user) {
+      const userMetadata = authUser.user.user_metadata;
+      if (userMetadata && userMetadata.role) {
+        console.log("Found role in user metadata:", userMetadata.role);
+        return userMetadata.role;
+      }
+    }
+    
+    // If we can't get the role from auth metadata, check the profiles table
+    console.log("Checking profiles table for role");
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .single();
+      
+    if (profileError) {
+      console.error("Error fetching profile:", profileError);
+      
+      if (profileError.code === "PGRST116") {
+        console.log("Profile not found, user might be new");
+        return null;
+      }
+      
+      throw profileError;
+    }
+    
+    if (profile && profile.role) {
+      console.log("Found role in profiles table:", profile.role);
+      return profile.role;
+    }
+    
+    console.log("No role found for user");
     return null;
+  } catch (error) {
+    console.error("Error in fetchUserRole:", error);
+    throw error;
   }
 };
 
 /**
- * Gets the user role from the profiles table
+ * Update a user's profile
  */
-export const getUserRole = async (userId: string): Promise<string | null> => {
+export const updateUserProfile = async (
+  userId: string,
+  profileData: { 
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    bio?: string;
+    city?: string;
+    avatar_url?: string;
+    role?: string;
+  }
+) => {
   try {
-    console.log("Fetching role for user:", userId);
-    
-    const { data, error } = await supabase
+    // First check if profile exists
+    const { data: existingProfile, error: checkError } = await supabase
       .from("profiles")
-      .select("role")
+      .select("id")
       .eq("id", userId)
       .maybeSingle();
-
-    if (error) {
-      console.error("Error fetching user role:", error);
-      return null;
+      
+    if (checkError && checkError.code !== 'PGRST116') {
+      throw checkError;
     }
     
-    console.log("User role data:", data);
-    return data?.role || null;
+    // Add timestamp
+    const dataWithTimestamp = {
+      ...profileData,
+      updated_at: new Date().toISOString()
+    };
+    
+    if (!existingProfile) {
+      // Create new profile
+      const { error } = await supabase
+        .from("profiles")
+        .insert({
+          id: userId,
+          ...dataWithTimestamp,
+          created_at: new Date().toISOString()
+        });
+        
+      if (error) throw error;
+    } else {
+      // Update existing profile
+      const { error } = await supabase
+        .from("profiles")
+        .update(dataWithTimestamp)
+        .eq("id", userId);
+        
+      if (error) throw error;
+    }
+    
+    return { success: true };
   } catch (error) {
-    console.error("Error fetching user role:", error);
-    return null;
+    console.error("Error updating user profile:", error);
+    return { 
+      success: false, 
+      error 
+    };
+  }
+};
+
+/**
+ * Get a user's profile
+ */
+export const getUserProfile = async (userId: string) => {
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+      
+    if (error) throw error;
+    return { success: true, profile: data };
+  } catch (error) {
+    console.error("Error getting user profile:", error);
+    return { 
+      success: false, 
+      error,
+      profile: null
+    };
   }
 };

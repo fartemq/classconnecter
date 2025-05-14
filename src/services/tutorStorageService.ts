@@ -32,11 +32,12 @@ export const uploadAvatar = async (avatarFile: File, userId: string): Promise<st
       throw uploadError;
     }
     
-    // Get the public URL
+    // Get the public URL with cache-busting parameter
     const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-    console.log("Avatar uploaded successfully, URL:", data.publicUrl);
+    const publicUrl = `${data.publicUrl}?t=${Date.now()}`;
+    console.log("Avatar uploaded successfully, URL:", publicUrl);
     
-    return data.publicUrl;
+    return publicUrl;
   } catch (error) {
     console.error("Error uploading avatar:", error);
     throw new Error("Произошла ошибка при загрузке фотографии");
