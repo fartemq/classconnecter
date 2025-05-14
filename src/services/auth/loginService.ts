@@ -83,3 +83,16 @@ export const loginWithEmailAndPassword = async ({
     };
   }
 };
+
+/**
+ * Login user function
+ */
+export const loginUser = async (email: string, password: string) => {
+  const response = await loginWithEmailAndPassword({ email, password });
+  
+  if (!response.success) {
+    throw new Error(response.error);
+  }
+  
+  return response;
+};

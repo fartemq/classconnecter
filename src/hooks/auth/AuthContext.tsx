@@ -1,21 +1,29 @@
 
-import React, { createContext } from "react";
-import { User, Session } from "@supabase/supabase-js";
+import React, { createContext, Dispatch, SetStateAction } from "react";
+import { User } from "@supabase/supabase-js";
 
 // Define the context type
 export type AuthContextType = {
   user: User | null;
-  session: Session | null;
+  setUser: Dispatch<SetStateAction<User | null>>;
   isLoading: boolean;
-  signOut: () => Promise<void>;
+  setIsLoading: Dispatch<SetStateAction<boolean>>;
   userRole: string | null;
+  setUserRole: Dispatch<SetStateAction<string | null>>;
+  session?: any | null;
+  signOut?: () => Promise<void>;
 };
 
 // Create the context with default values
 export const AuthContext = createContext<AuthContextType>({
   user: null,
-  session: null,
+  setUser: () => {},
   isLoading: true,
-  signOut: async () => {},
+  setIsLoading: () => {},
   userRole: null,
+  setUserRole: () => {},
+  session: null,
+  signOut: async () => {},
 });
+
+export const useAuthContext = () => React.useContext(AuthContext);

@@ -8,7 +8,7 @@ import { LoginForm, LoginFormValues } from "@/components/auth/LoginForm";
 import { LoginAlerts } from "@/components/auth/LoginAlerts";
 import { useAuth } from "@/hooks/auth";
 import { toast } from "@/hooks/use-toast";
-import { loginUser } from "@/services/auth";
+import { loginUser } from "@/services/auth/loginService";
 
 const LoginPage = () => {
   const navigate = useNavigate();

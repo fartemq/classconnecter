@@ -3,12 +3,14 @@ import React, { useState, useEffect } from "react";
 import { AuthContext } from "./AuthContext";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { logoutUser } from "@/services/auth/logoutService";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isInitialized, setIsInitialized] = useState<boolean>(false);
+  const [session, setSession] = useState<any | null>(null);
 
   // Initialize by checking for an existing session
   useEffect(() => {
@@ -20,6 +22,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If user exists in session, set the user
         if (session?.user) {
           setUser(session.user);
+          setSession(session);
           console.log("Session user found:", session.user.id);
           
           // Get user metadata or profile to determine role
@@ -28,11 +31,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // No session, clear user state
           setUser(null);
           setUserRole(null);
+          setSession(null);
         }
       } catch (error) {
         console.error("Error checking authentication session:", error);
         setUser(null);
         setUserRole(null);
+        setSession(null);
       } finally {
         // Mark auth as initialized and not loading
         setIsLoading(false);
@@ -56,14 +61,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (event === "SIGNED_IN" && session?.user) {
           console.log("User signed in (from AuthProvider):", session.user.id);
           setUser(session.user);
+          setSession(session);
           // Role is fetched in useAuth hook
-        } else if (event === "SIGNED_OUT" || event === "USER_DELETED") {
-          console.log("User signed out or deleted");
+        } else if (event === "SIGNED_OUT") {
+          console.log("User signed out");
           setUser(null);
           setUserRole(null);
+          setSession(null);
         } else if (event === "TOKEN_REFRESHED" && session?.user) {
           console.log("Token refreshed for user:", session.user.id);
           setUser(session.user);
+          setSession(session);
         }
       }
     );
@@ -73,13 +81,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [isInitialized]);
 
+  // Provide a signOut function
+  const signOut = async () => {
+    try {
+      await logoutUser();
+      // Auth state listener will handle state updates
+    } catch (error) {
+      console.error("Error during sign out:", error);
+      throw error;
+    }
+  };
+
   const contextValue = {
     user,
     setUser,
     isLoading,
     setIsLoading,
     userRole, 
-    setUserRole
+    setUserRole,
+    session,
+    signOut
   };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
