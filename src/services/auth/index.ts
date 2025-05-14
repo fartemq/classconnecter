@@ -3,13 +3,15 @@
 import { loginUser, loginWithEmailAndPassword } from './loginService';
 import { logoutUser } from './logoutService';
 import { getUserProfile, updateUserProfile } from './userService';
+import { registerUser } from './registrationService';
 
 export { 
   loginUser, 
   loginWithEmailAndPassword,
   logoutUser,
   getUserProfile,
-  updateUserProfile
+  updateUserProfile,
+  registerUser
 };
 
 // Re-export the fetchUserRole from authUtils to prevent naming conflicts
