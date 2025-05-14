@@ -12,6 +12,8 @@ export type AuthContextType = {
   setUserRole: Dispatch<SetStateAction<string | null>>;
   session?: any | null;
   signOut?: () => Promise<void>;
+  login?: (email: string, password: string) => Promise<any>;
+  logout?: () => Promise<boolean>;
 };
 
 // Create the context with default values
@@ -24,6 +26,8 @@ export const AuthContext = createContext<AuthContextType>({
   setUserRole: () => {},
   session: null,
   signOut: async () => {},
+  login: async () => ({}),
+  logout: async () => false,
 });
 
 export const useAuthContext = () => React.useContext(AuthContext);
