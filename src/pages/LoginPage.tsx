@@ -44,19 +44,16 @@ const LoginPage = () => {
     setErrorMessage(null);
     
     try {
-      if (login) {
-        const result = await login(values.email, values.password);
-        
-        if (result?.success) {
-          toast({
-            title: "Успешный вход",
-            description: "Добро пожаловать в Stud.rep!",
-          });
-        } else if (result?.error) {
-          setErrorMessage(result.error);
-        }
-      } else {
-        setErrorMessage("Функция входа недоступна");
+      console.log("Attempting login with:", values.email);
+      const result = await login(values.email, values.password);
+      
+      if (result?.success) {
+        toast({
+          title: "Успешный вход",
+          description: "Добро пожаловать в Stud.rep!",
+        });
+      } else if (result?.error) {
+        setErrorMessage(result.error);
       }
     } catch (error) {
       console.error("Login form error:", error);

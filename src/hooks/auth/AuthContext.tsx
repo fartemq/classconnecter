@@ -12,8 +12,8 @@ export type AuthContextType = {
   setUserRole: Dispatch<SetStateAction<string | null>>;
   session?: any | null;
   signOut?: () => Promise<void>;
-  login?: (email: string, password: string) => Promise<any>;
-  logout?: () => Promise<boolean>;
+  login: (email: string, password: string) => Promise<any>;
+  logout: () => Promise<boolean>;
 };
 
 // Create the context with default values
@@ -26,7 +26,7 @@ export const AuthContext = createContext<AuthContextType>({
   setUserRole: () => {},
   session: null,
   signOut: async () => {},
-  login: async () => ({}),
+  login: async () => ({ success: false, error: "Функция входа не реализована" }),
   logout: async () => false,
 });
 

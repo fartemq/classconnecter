@@ -4,6 +4,9 @@ import { AuthContext } from "./AuthContext";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { logoutUser } from "@/services/auth/logoutService";
+import { loginWithEmailAndPassword } from "@/services/auth/loginService";
+import { fetchUserRole } from "@/services/auth/userService";
+import { toast } from "@/hooks/use-toast";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -25,8 +28,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(session);
           console.log("Session user found:", session.user.id);
           
-          // Get user metadata or profile to determine role
-          // This happens later through the useAuth hook
+          // Fetch user role
+          try {
+            const role = await fetchUserRole(session.user.id);
+            if (role) {
+              setUserRole(role);
+              console.log("User role found:", role);
+            }
+          } catch (roleError) {
+            console.error("Error fetching role during initialization:", roleError);
+          }
         } else {
           // No session, clear user state
           setUser(null);
@@ -54,7 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log("Auth state change:", event);
         
         // Handle auth events
@@ -62,7 +73,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log("User signed in (from AuthProvider):", session.user.id);
           setUser(session.user);
           setSession(session);
-          // Role is fetched in useAuth hook
+          
+          // Fetch user role
+          try {
+            const role = await fetchUserRole(session.user.id);
+            setUserRole(role);
+            console.log("User role set after sign in:", role);
+          } catch (roleError) {
+            console.error("Error fetching role after sign in:", roleError);
+          }
+          
         } else if (event === "SIGNED_OUT") {
           console.log("User signed out");
           setUser(null);
@@ -81,11 +101,48 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [isInitialized]);
 
-  // Provide a signOut function
-  const signOut = async () => {
+  // Provide a login function
+  const login = async (email: string, password: string) => {
+    console.log("Login called with email:", email);
+    try {
+      const response = await loginWithEmailAndPassword({ email, password });
+      
+      if (response.success && response.user) {
+        console.log("Login successful, user role:", response.role);
+        setUser(response.user);
+        setUserRole(response.role || null);
+        return response;
+      }
+      
+      return response;
+    } catch (error) {
+      console.error("Login error in AuthProvider:", error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "Произошла ошибка при входе" 
+      };
+    }
+  };
+
+  // Provide a logout function
+  const logout = async () => {
     try {
       await logoutUser();
-      // Auth state listener will handle state updates
+      setUser(null);
+      setUserRole(null);
+      setSession(null);
+      
+      return true;
+    } catch (error) {
+      console.error("Logout error:", error);
+      return false;
+    }
+  };
+
+  // Provide a signOut function (alias to logout for backward compatibility)
+  const signOut = async () => {
+    try {
+      await logout();
     } catch (error) {
       console.error("Error during sign out:", error);
       throw error;
@@ -100,7 +157,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userRole, 
     setUserRole,
     session,
-    signOut
+    signOut,
+    login,
+    logout
   };
 
   return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
