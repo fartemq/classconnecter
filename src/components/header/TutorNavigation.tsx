@@ -8,12 +8,14 @@ import {
   BarChart, 
   Settings, 
   Home, 
-  FileText
+  FileText,
+  User
 } from "lucide-react";
 
 // Tutor navigation tabs
 const tutorTabs = [
   { name: "Главная", path: "/profile/tutor", icon: Home },
+  { name: "Моя анкета", path: "/profile/tutor?tab=profile", icon: User },
   { name: "Информация о преподавании", path: "/profile/tutor?tab=teaching", icon: FileText },
   { name: "Расписание", path: "/profile/tutor?tab=schedule", icon: Calendar },
   { name: "Управление учениками", path: "/profile/tutor?tab=students", icon: Users },

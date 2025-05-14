@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
@@ -17,6 +16,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { TutorProfileSettingsTab } from "@/components/profile/tutor/TutorProfileSettingsTab";
 import { TutorProfile } from "@/types/tutor";
 import { Profile } from "@/hooks/profiles/types";
+import { TeachingInfoTab } from "@/components/profile/tutor/TeachingInfoTab";
 
 // Helper function to convert Profile to TutorProfile
 const convertProfileToTutorProfile = (profile: Profile): TutorProfile => {
@@ -87,16 +87,19 @@ const TutorProfilePage = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get("tab");
-    if (tab && ["dashboard", "profile", "schedule", "students", "chats", "stats", "settings", "materials"].includes(tab)) {
+    
+    // Список валидных вкладок
+    const validTabs = ["dashboard", "profile", "teaching", "schedule", "students", "chats", "stats", "settings", "materials"];
+    
+    if (tab && validTabs.includes(tab)) {
       setActiveTab(tab);
     } else if (!tab) {
-      // If no tab is specified, set to dashboard but avoid navigation loop
+      // Если вкладка не указана, установим dashboard
       if (activeTab !== "dashboard") {
         setActiveTab("dashboard");
-        navigate({ search: "?tab=dashboard" }, { replace: true });
       }
     }
-  }, [location.search, navigate, activeTab]);
+  }, [location.search, activeTab]);
 
   // Show error state if there's an error loading the profile
   if (error) {
@@ -182,6 +185,8 @@ const TutorProfilePage = () => {
       case "profile":
         // Pass the converted profile to components expecting Profile type
         return <TutorProfileSettingsTab profile={profileForComponents} />;
+      case "teaching":
+        return <TeachingInfoTab profile={profileForComponents} />;
       case "schedule":
         return <AdvancedScheduleTab tutorId={tutorProfile.id} />;
       case "students":

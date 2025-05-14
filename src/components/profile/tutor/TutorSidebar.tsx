@@ -10,7 +10,7 @@ import {
   FileText,
   User
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -31,8 +31,10 @@ interface TutorSidebarProps {
 
 export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   
   const handleTabChange = (tabId: string) => {
+    // Используем navigate для перехода на нужную вкладку
     navigate(`/profile/tutor?tab=${tabId}`);
   };
   
