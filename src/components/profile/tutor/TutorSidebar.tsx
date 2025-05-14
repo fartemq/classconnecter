@@ -10,7 +10,7 @@ import {
   FileText,
   User
 } from "lucide-react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +32,22 @@ interface TutorSidebarProps {
 }
 
 export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab, onTabChange }) => {
+  const navigate = useNavigate();
+
+  const handleTabChange = (tabId: string) => {
+    // Use the onTabChange callback to update the parent component state
+    onTabChange(tabId);
+    
+    // Update the URL without causing a full page reload
+    navigate(
+      { 
+        pathname: "/profile/tutor", 
+        search: tabId === "dashboard" ? "" : `?tab=${tabId}` 
+      }, 
+      { replace: true }
+    );
+  };
+
   return (
     <div className="py-2 space-y-1">
       {menuItems.map((item) => {
@@ -45,7 +61,7 @@ export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab, onTabChan
               "w-full justify-start",
               activeTab === item.id ? "bg-gray-100" : ""
             )}
-            onClick={() => onTabChange(item.id)}
+            onClick={() => handleTabChange(item.id)}
           >
             <Icon className="mr-2 h-4 w-4" />
             {item.label}
