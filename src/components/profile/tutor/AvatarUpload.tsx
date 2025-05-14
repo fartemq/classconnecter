@@ -1,10 +1,8 @@
 
-import React, { useState } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
-import { toast } from "@/hooks/use-toast";
+import React, { useState, useRef } from "react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { UploadIcon } from "lucide-react";
+import { Camera, Upload } from "lucide-react";
 
 interface AvatarUploadProps {
   avatarUrl: string | null;
@@ -12,74 +10,115 @@ interface AvatarUploadProps {
   onChange: (file: File | null, url: string | null) => void;
 }
 
-export const AvatarUpload = ({ avatarUrl, firstName, onChange }: AvatarUploadProps) => {
-  const [isHovered, setIsHovered] = useState(false);
-  // Добавим случайный параметр к URL для избежания кэширования
-  const avatarUrlWithCache = avatarUrl ? `${avatarUrl}?${new Date().getTime()}` : null;
+export const AvatarUpload: React.FC<AvatarUploadProps> = ({
+  avatarUrl,
+  firstName,
+  onChange,
+}) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const getInitials = (name: string) => {
+    return name ? name.charAt(0).toUpperCase() : "?";
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    handleSelectedFile(file);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      handleSelectedFile(file);
+    }
+  };
   
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0) {
+  const handleSelectedFile = (file: File | undefined) => {
+    if (!file) return;
+    
+    // Validate file type
+    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!validTypes.includes(file.type)) {
+      alert('Пожалуйста, выберите файл изображения (JPEG, PNG или GIF)');
       return;
     }
     
-    const file = e.target.files[0];
-    const fileSize = file.size / 1024 / 1024; // в МБ
-    
-    if (fileSize > 2) {
-      toast({
-        title: "Файл слишком большой",
-        description: "Максимальный размер файла - 2 МБ",
-        variant: "destructive",
-      });
+    // Validate file size (2MB max)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('Размер файла не должен превышать 2 МБ');
       return;
     }
     
-    console.log("Avatar file selected:", file);
-    onChange(file, URL.createObjectURL(file));
+    // Create URL for preview
+    const imageUrl = URL.createObjectURL(file);
+    onChange(file, imageUrl);
+  };
+
+  const handleClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
   };
 
   return (
-    <div className="flex flex-col items-center space-y-4">
-      <div 
-        className="relative" 
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <Avatar className="w-24 h-24 border-2 border-primary">
-          <AvatarImage src={avatarUrlWithCache || ""} />
-          <AvatarFallback>{firstName.charAt(0) || "Р"}</AvatarFallback>
+    <div
+      className={`relative flex flex-col items-center ${
+        isDragging ? "ring-2 ring-primary ring-offset-2" : ""
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div className="relative group">
+        <Avatar className="h-24 w-24 cursor-pointer border-2 border-gray-200">
+          {avatarUrl ? (
+            <AvatarImage src={avatarUrl} alt={`${firstName} avatar`} />
+          ) : (
+            <AvatarFallback className="bg-primary/20 text-primary text-xl">
+              {getInitials(firstName)}
+            </AvatarFallback>
+          )}
         </Avatar>
-        {isHovered && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full">
-            <label htmlFor="avatar-input" className="cursor-pointer flex flex-col items-center text-white">
-              <UploadIcon className="h-6 w-6" />
-              <span className="text-xs">Изменить</span>
-            </label>
-          </div>
-        )}
+        
+        <div 
+          className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+          onClick={handleClick}
+        >
+          <Camera className="h-6 w-6 text-white" />
+        </div>
       </div>
-      <div className="flex flex-col items-center">
-        <label htmlFor="avatar-input">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="cursor-pointer"
-          >
-            Загрузить фото
-          </Button>
-        </label>
-        <Input
-          id="avatar-input"
-          type="file"
-          accept="image/*"
-          onChange={handleAvatarChange}
-          className="hidden"
-        />
-        <p className="text-xs text-gray-500 mt-1">
-          Рекомендуемый размер: 400x400 пикселей (макс. 2 МБ)
-        </p>
-      </div>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="hidden"
+        aria-label="Upload avatar"
+      />
+
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        className="mt-3"
+        onClick={handleClick}
+      >
+        <Upload className="h-4 w-4 mr-1" />
+        Загрузить фото
+      </Button>
     </div>
   );
 };

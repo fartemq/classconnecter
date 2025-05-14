@@ -1,6 +1,6 @@
 
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Control } from "react-hook-form";
@@ -21,8 +21,18 @@ export const TeachingMethodForm: React.FC<TeachingMethodFormProps> = ({ control 
           <FormItem>
             <FormLabel>Опыт преподавания (в годах)</FormLabel>
             <FormControl>
-              <Input type="number" min="0" max="50" {...field} />
+              <Input 
+                type="number" 
+                min="0" 
+                max="50" 
+                className="w-full md:w-[200px]"
+                {...field} 
+                value={field.value || ''} 
+              />
             </FormControl>
+            <FormDescription>
+              Укажите ваш опыт преподавания в годах
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -38,10 +48,17 @@ export const TeachingMethodForm: React.FC<TeachingMethodFormProps> = ({ control 
             <FormControl>
               <Textarea
                 placeholder="Опишите свою методику преподавания..."
-                className="min-h-[100px]"
+                className="min-h-[160px] resize-y"
                 {...field}
+                value={field.value || ''} 
               />
             </FormControl>
+            <FormDescription className="flex justify-between">
+              <span>Расскажите подробнее о вашем подходе к преподаванию</span>
+              <span className="text-xs text-gray-500">
+                {(field.value?.length || 0)}/1000
+              </span>
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -57,10 +74,17 @@ export const TeachingMethodForm: React.FC<TeachingMethodFormProps> = ({ control 
             <FormControl>
               <Textarea
                 placeholder="Ваши достижения, награды, публикации..."
-                className="min-h-[100px]"
+                className="min-h-[120px] resize-y"
                 {...field}
+                value={field.value || ''} 
               />
             </FormControl>
+            <FormDescription className="flex justify-between">
+              <span>Перечислите свои профессиональные достижения, сертификаты, награды</span>
+              <span className="text-xs text-gray-500">
+                {(field.value?.length || 0)}/1000
+              </span>
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}
@@ -80,19 +104,19 @@ export const TeachingMethodForm: React.FC<TeachingMethodFormProps> = ({ control 
                 value={field.value || ''}
               />
             </FormControl>
+            <FormDescription>
+              Добавьте ссылку на видео, в котором вы рассказываете о своих методах преподавания (YouTube, Vimeo и др.)
+            </FormDescription>
             <FormMessage />
-            <p className="text-xs text-gray-500 mt-1">
-              Вы можете добавить ссылку на видео, в котором рассказываете о своей методике преподавания
-            </p>
             
             {field.value && (
               <div className="mt-4">
-                <label className="block text-sm font-medium mb-2">Предпросмотр видео:</label>
-                <div className="aspect-w-16 aspect-h-9 w-full">
+                <h5 className="text-sm font-medium mb-2">Предпросмотр видео:</h5>
+                <div className="aspect-video w-full max-w-xl bg-black rounded-md overflow-hidden">
                   <iframe
                     src={field.value.replace('youtu.be/', 'youtube.com/embed/').replace('youtube.com/watch?v=', 'youtube.com/embed/')}
                     title="Видео-презентация"
-                    className="w-full h-64 rounded-md"
+                    className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                   ></iframe>

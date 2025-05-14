@@ -1,6 +1,6 @@
 
 import React from "react";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Control } from "react-hook-form";
@@ -21,11 +21,24 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
   return (
     <div className="space-y-6">
       {/* Avatar upload */}
-      <AvatarUpload
-        avatarUrl={avatarUrl}
-        firstName={control._formValues.firstName}
-        onChange={onAvatarChange}
-      />
+      <div className="flex flex-col items-center sm:flex-row sm:items-start gap-6">
+        <AvatarUpload
+          avatarUrl={avatarUrl}
+          firstName={control._formValues.firstName}
+          onChange={onAvatarChange}
+        />
+        
+        <div className="text-sm space-y-2">
+          <h4 className="font-semibold">Фото профиля</h4>
+          <p className="text-gray-500">Добавьте фотографию, которая будет отображаться в вашем профиле.</p>
+          <ul className="list-disc pl-5 text-gray-500 space-y-1">
+            <li>Рекомендуемый размер: 400×400 пикселей</li>
+            <li>Формат: JPG, PNG или GIF</li>
+            <li>Максимальный размер: 2 МБ</li>
+          </ul>
+          <p className="text-gray-500 mt-2 italic">Вы можете перетащить изображение прямо на область загрузки</p>
+        </div>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* First name */}
@@ -67,9 +80,28 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
           <FormItem>
             <FormLabel>Город *</FormLabel>
             <FormControl>
-              <Input placeholder="Москва" {...field} />
+              <Input 
+                placeholder="Москва" 
+                list="cities-list" 
+                {...field} 
+              />
             </FormControl>
+            <FormDescription>
+              Введите название города, в котором вы проводите занятия
+            </FormDescription>
             <FormMessage />
+            <datalist id="cities-list">
+              <option value="Москва" />
+              <option value="Санкт-Петербург" />
+              <option value="Новосибирск" />
+              <option value="Екатеринбург" />
+              <option value="Казань" />
+              <option value="Нижний Новгород" />
+              <option value="Челябинск" />
+              <option value="Самара" />
+              <option value="Омск" />
+              <option value="Ростов-на-Дону" />
+            </datalist>
           </FormItem>
         )}
       />
@@ -84,10 +116,16 @@ export const PersonalInfoForm: React.FC<PersonalInfoFormProps> = ({
             <FormControl>
               <Textarea
                 placeholder="Расскажите о своем опыте и методике преподавания..."
-                className="min-h-[120px]"
+                className="min-h-[160px] resize-y"
                 {...field}
               />
             </FormControl>
+            <FormDescription className="flex justify-between items-center">
+              <span>Опишите свой опыт преподавания, достижения и подход к обучению</span>
+              <span className="text-xs text-gray-500">
+                {field.value?.length || 0}/2000
+              </span>
+            </FormDescription>
             <FormMessage />
           </FormItem>
         )}

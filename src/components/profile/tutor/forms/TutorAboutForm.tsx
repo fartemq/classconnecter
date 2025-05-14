@@ -5,18 +5,31 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter, CardSeparator } from "@/components/ui/card";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { PersonalInfoForm } from "./PersonalInfoForm";
 import { EducationForm } from "./EducationForm";
 import { toast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
+import { Separator } from "@/components/ui/separator";
+import { Save } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 // Схема валидации для основной информации
 const personalSchema = z.object({
   firstName: z.string().min(2, { message: "Имя должно содержать минимум 2 символа" }),
   lastName: z.string().min(2, { message: "Фамилия должна содержать минимум 2 символа" }),
-  bio: z.string().min(20, { message: "Опишите ваш опыт преподавания (минимум 20 символов)" }),
+  bio: z.string().min(20, { message: "Опишите ваш опыт преподавания (минимум 20 символов)" })
+    .max(2000, { message: "Описание не должно превышать 2000 символов" }),
   city: z.string().min(2, { message: "Укажите город" }),
 });
 
@@ -33,7 +46,7 @@ const educationSchema = z.object({
 // Объединенная схема с необязательными полями
 const formSchema = personalSchema.merge(educationSchema).extend({
   experience: z.coerce.number().optional(),
-  achievements: z.string().optional(),
+  achievements: z.string().max(1000, { message: "Текст не должен превышать 1000 символов" }).optional(),
   videoUrl: z.string().url({ message: "Введите корректный URL видео" }).optional().or(z.literal('')),
 });
 
@@ -51,10 +64,13 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(initialData.avatarUrl || null);
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
+  const [formValues, setFormValues] = useState<TutorFormValues | null>(null);
 
   const form = useForm<TutorFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialData,
+    mode: "onChange", // Enable real-time validation
   });
 
   const handleAvatarChange = (file: File | null, url: string | null) => {
@@ -65,17 +81,8 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
 
   const handleSubmit = async (values: TutorFormValues) => {
     try {
-      setIsLoading(true);
-      console.log("Submitting form with values:", values);
-      console.log("Avatar file:", avatarFile);
-      console.log("Avatar URL:", avatarUrl);
-      
-      await onSubmit(values, avatarFile, avatarUrl);
-      
-      // Очищаем файл аватара после успешного сохранения,
-      // чтобы не загружать его повторно при следующем сохранении
-      setAvatarFile(null);
-      
+      setFormValues(values);
+      setShowSaveDialog(true);
     } catch (error) {
       console.error("Error in form submission:", error);
       toast({
@@ -83,44 +90,97 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
         description: error instanceof Error ? error.message : "Произошла ошибка при сохранении профиля",
         variant: "destructive",
       });
+    }
+  };
+  
+  const confirmSave = async () => {
+    if (!formValues) return;
+    
+    try {
+      setIsLoading(true);
+      await onSubmit(formValues, avatarFile, avatarUrl);
+      setAvatarFile(null);
+      toast({
+        title: "Профиль обновлен",
+        description: "Данные успешно сохранены",
+      });
+    } catch (error) {
+      console.error("Error saving form:", error);
+      toast({
+        title: "Ошибка сохранения",
+        description: error instanceof Error ? error.message : "Произошла ошибка при сохранении профиля",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
+      setShowSaveDialog(false);
     }
+  };
+  
+  const cancelSave = () => {
+    setShowSaveDialog(false);
+    setFormValues(null);
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        {/* Личная информация */}
         <Card>
           <CardHeader>
-            <CardTitle>Основная информация и образование</CardTitle>
+            <CardTitle>Личная информация</CardTitle>
             <CardDescription>
-              Расскажите о себе, своем опыте преподавания и образовании
+              Заполните основные сведения о себе, которые будут видны ученикам
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Personal Info */}
+          <CardContent>
             <PersonalInfoForm 
               control={form.control} 
               avatarUrl={avatarUrl} 
               onAvatarChange={handleAvatarChange} 
             />
-            
-            {/* Education */}
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-medium mb-4">Образование</h3>
-              <EducationForm control={form.control} tutorProfile={tutorProfile} />
-            </div>
           </CardContent>
         </Card>
         
-        <div className="flex justify-end mt-6">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? <Loader size="sm" className="mr-2" /> : null}
+        {/* Образование */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Образование</CardTitle>
+            <CardDescription>
+              Укажите информацию о вашем образовании
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <EducationForm control={form.control} tutorProfile={tutorProfile} />
+          </CardContent>
+        </Card>
+        
+        <div className="sticky bottom-4 flex justify-end mt-6 bg-white p-4 border rounded-lg shadow-md z-10">
+          <Button type="submit" disabled={isLoading} className="min-w-[150px]">
+            {isLoading ? <Loader size="sm" className="mr-2" /> : <Save className="h-4 w-4 mr-2" />}
             {isLoading ? "Сохранение..." : "Сохранить изменения"}
           </Button>
         </div>
       </form>
+      
+      {/* Диалог подтверждения сохранения */}
+      <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Сохранить изменения?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Вы уверены, что хотите сохранить внесенные изменения в профиле?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={cancelSave}>Отмена</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSave} disabled={isLoading}>
+              {isLoading && <Loader size="sm" className="mr-2" />}
+              Сохранить
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Form>
   );
 };

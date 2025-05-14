@@ -6,6 +6,14 @@ import { useTutorPublishStatus } from "@/hooks/useTutorPublishStatus";
 import { ValidationAlert } from "./publish/ValidationAlert";
 import { ProfileStatusIndicator } from "./publish/ProfileStatusIndicator";
 import { useTutorSubjectsCheck } from "@/hooks/useTutorSubjectsCheck";
+import { Eye } from "lucide-react";
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from "@/components/ui/tooltip";
+import { RecommendationAlert } from "./publish/RecommendationAlert";
 
 interface TutorPublishControllerProps {
   tutorId: string;
@@ -51,6 +59,8 @@ export const TutorPublishController: React.FC<TutorPublishControllerProps> = ({
     }
   };
   
+  const showRecommendation = !isPublished && profileStatus.missingFields.length < 3 && profileStatus.missingFields.length > 0;
+  
   return (
     <div className="space-y-4 mb-6 bg-white p-6 rounded-lg border shadow-sm">
       <h2 className="text-xl font-bold mb-4">Статус публикации профиля</h2>
@@ -73,8 +83,16 @@ export const TutorPublishController: React.FC<TutorPublishControllerProps> = ({
         />
       )}
       
-      {/* Action button */}
-      <div className="mt-4">
+      {/* Recommendation for profile improvement */}
+      {showRecommendation && (
+        <RecommendationAlert
+          title="Рекомендации по улучшению профиля"
+          message="Заполните все обязательные поля, добавьте фото профиля и как минимум один предмет для преподавания, чтобы увеличить шансы привлечения учеников."
+        />
+      )}
+      
+      {/* Action buttons */}
+      <div className="mt-6 flex flex-wrap gap-3">
         <Button
           onClick={handleTogglePublish}
           disabled={
@@ -83,14 +101,28 @@ export const TutorPublishController: React.FC<TutorPublishControllerProps> = ({
             (!isPublished && (!profileStatus.isValid || hasSubjects === false))
           }
           variant={isPublished ? "destructive" : "default"}
-          className="w-full sm:w-auto"
+          className="flex-grow sm:flex-grow-0"
         >
           {isLoading && <Loader size="sm" className="mr-2" />}
-          {isPublished ? "Снять с публикации" : "Опубликовать профиль"}
+          {isPublished ? "Сделать профиль невидимым" : "Опубликовать профиль"}
         </Button>
         
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="outline" className="flex-grow sm:flex-grow-0">
+                <Eye className="h-4 w-4 mr-2" />
+                Предварительный просмотр
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              Посмотрите, как ваш профиль будет выглядеть для учеников
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        
         {!isPublished && (!profileStatus.isValid || hasSubjects === false) && (
-          <p className="text-sm text-gray-500 mt-2">
+          <p className="text-sm text-gray-500 mt-2 w-full">
             Для публикации профиля необходимо заполнить все обязательные поля
           </p>
         )}
