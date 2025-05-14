@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 
 interface MethodologyTabProps {
   profile: TutorProfile;
@@ -25,11 +25,21 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
   const [videoUrl, setVideoUrl] = useState(profile.videoUrl || "");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Set initial values from profile when component mounts or profile changes
+  useEffect(() => {
+    setMethodology(profile.methodology || "");
+    setExperience(profile.experience || 0);
+    setAchievements(profile.achievements || "");
+    setVideoUrl(profile.videoUrl || "");
+  }, [profile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
+    setIsSaved(false);
 
     if (!user?.id) {
       setError("Необходимо авторизоваться");
@@ -45,7 +55,7 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
         videoUrl,
       });
 
-      // Check if tutor_profiles exists
+      // First, check if tutor_profiles exists for this user
       const { data: existingProfile, error: checkError } = await supabase
         .from("tutor_profiles")
         .select("id")
@@ -93,6 +103,7 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
         }
       }
 
+      setIsSaved(true);
       toast({
         title: "Информация обновлена",
         description: "Ваша методология преподавания успешно сохранена",
@@ -139,6 +150,12 @@ export const MethodologyTab = ({ profile }: MethodologyTabProps) => {
         <Alert variant="destructive" className="mb-4">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+      
+      {isSaved && (
+        <Alert variant="default" className="mb-4 bg-green-50 border-green-200">
+          <AlertDescription className="text-green-700">Данные успешно сохранены</AlertDescription>
         </Alert>
       )}
 

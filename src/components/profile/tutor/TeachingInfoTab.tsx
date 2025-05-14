@@ -6,9 +6,10 @@ import { TutorAboutTab } from "./TutorAboutTab";
 import { MethodologyTab } from "./MethodologyTab";
 import { MaterialsTab } from "./MaterialsTab";
 import { Profile } from "@/hooks/profiles/types";
-import { fetchTutorProfile } from "@/services/tutorService";
+import { fetchTutorProfile } from "@/services/tutorProfileService";
 import { TutorProfile } from "@/types/tutor";
 import { Loader } from "@/components/ui/loader";
+import { useAuth } from "@/hooks/auth";
 
 interface TeachingInfoTabProps {
   profile: Profile;
@@ -18,9 +19,12 @@ export const TeachingInfoTab = ({ profile }: TeachingInfoTabProps) => {
   const [activeTab, setActiveTab] = useState("about");
   const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const { user } = useAuth();
 
   useEffect(() => {
     const loadTutorProfile = async () => {
+      if (!user) return;
+      
       try {
         setIsLoading(true);
         const data = await fetchTutorProfile(profile.id);
@@ -33,7 +37,17 @@ export const TeachingInfoTab = ({ profile }: TeachingInfoTabProps) => {
     };
     
     loadTutorProfile();
-  }, [profile.id]);
+  }, [profile.id, user]);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    // Reload tutor profile data when switching to methodology tab
+    if (value === "methodology" && user) {
+      fetchTutorProfile(profile.id).then(data => {
+        if (data) setTutorProfile(data);
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -47,7 +61,7 @@ export const TeachingInfoTab = ({ profile }: TeachingInfoTabProps) => {
     <div className="space-y-6">
       <h2 className="text-2xl font-semibold">Информация о преподавании</h2>
       
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="mb-6 w-full justify-start">
           <TabsTrigger value="about">О себе</TabsTrigger>
           <TabsTrigger value="methodology">Методология</TabsTrigger>

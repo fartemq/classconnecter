@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
@@ -13,9 +13,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [userRole, setUserRole] = useState<string | null>(null);
   const navigate = useNavigate();
+  const authInitialized = useRef(false);
 
   useEffect(() => {
     const initAuth = async () => {
+      if (authInitialized.current) return;
+      authInitialized.current = true;
+      
       try {
         // First set up auth listener to avoid race conditions
         const { data: { subscription } } = supabase.auth.onAuthStateChange(

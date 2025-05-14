@@ -3,51 +3,35 @@ import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Fetches the user role from the profiles table
- * With fallback to user metadata if not found in profiles
+ * Fetches the user's role from the profiles table
  */
-export const fetchUserRole = async (user: User): Promise<string | null> => {
+export async function fetchUserRole(user: User): Promise<string | null> {
+  if (!user?.id) {
+    return null;
+  }
+
   try {
-    // Try to get the role from the profiles table first
-    const { data: profileData, error: profileError } = await supabase
+    console.log("Fetching role for user:", user.id);
+    
+    const { data: profileData, error } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", user.id)
       .maybeSingle();
-    
-    if (profileError) {
-      console.error("Error fetching user profile:", profileError);
+
+    if (error) {
+      console.error("Error fetching user role:", error);
+      return null;
     }
-    
-    // If we found a role in profiles, return it
+
     if (profileData?.role) {
       console.log("Found role in profiles:", profileData.role);
       return profileData.role;
     }
-    
-    // Fall back to metadata if role not in profiles
-    const metadataRole = user.user_metadata?.role;
-    if (metadataRole) {
-      console.log("Using role from metadata:", metadataRole);
-      
-      // Update the profile with the metadata role
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ role: metadataRole })
-        .eq("id", user.id);
-      
-      if (updateError) {
-        console.error("Error updating profile role:", updateError);
-      }
-      
-      return metadataRole;
-    }
-    
-    // Default role if nothing found
-    console.log("No role found, using default 'student'");
-    return 'student';
-  } catch (error) {
-    console.error("Error in fetchUserRole:", error);
-    return 'student'; // Default fallback
+
+    return null;
+  } catch (err) {
+    console.error("Error in fetchUserRole:", err);
+    return null;
   }
-};
+}

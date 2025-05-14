@@ -53,7 +53,7 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
       return;
     }
     
-    // Create URL for preview
+    // Create URL for preview and trigger the onChange callback immediately
     const imageUrl = URL.createObjectURL(file);
     onChange(file, imageUrl);
   };

@@ -13,6 +13,12 @@ export const uploadAvatar = async (avatarFile: File, userId: string): Promise<st
     const fileName = `${userId}-${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`;
     
+    // Check if storage bucket exists, create it if it doesn't
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (!buckets?.find(bucket => bucket.name === 'avatars')) {
+      await supabase.storage.createBucket('avatars', { public: true });
+    }
+    
     // Upload the file
     const { error: uploadError, data: uploadData } = await supabase.storage
       .from('avatars')
@@ -46,6 +52,12 @@ export const uploadMaterial = async (file: File, tutorId: string, materialType: 
     const fileExt = file.name.split('.').pop();
     const fileName = `${tutorId}-${Math.random().toString(36).substring(2)}.${fileExt}`;
     const filePath = `${materialType}/${fileName}`;
+    
+    // Check if storage bucket exists, create it if it doesn't
+    const { data: buckets } = await supabase.storage.listBuckets();
+    if (!buckets?.find(bucket => bucket.name === 'materials')) {
+      await supabase.storage.createBucket('materials', { public: true });
+    }
     
     // Upload the file
     const { error: uploadError } = await supabase.storage

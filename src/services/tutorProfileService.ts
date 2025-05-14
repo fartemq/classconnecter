@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "./tutorStorageService";
@@ -37,7 +36,7 @@ export const saveTutorProfile = async (
       last_name: values.lastName,
       bio: values.bio,
       city: values.city,
-      avatar_url: finalAvatarUrl, // Используем URL загруженного аватара
+      avatar_url: finalAvatarUrl, // Use the URL of uploaded avatar
       updated_at: new Date().toISOString(),
     }).eq("id", userId);
     
@@ -63,7 +62,7 @@ export const saveTutorProfile = async (
       degree: values.degree || null,
       graduation_year: values.graduationYear || null,
       methodology: values.methodology || null,
-      experience: values.experience || null,
+      experience: values.experience || 0,
       achievements: values.achievements || null,
       video_url: values.videoUrl || null
     };
@@ -102,59 +101,6 @@ export const saveTutorProfile = async (
   } catch (error) {
     console.error("Error saving tutor profile:", error);
     return { success: false, avatarUrl: null, error };
-  }
-};
-
-/**
- * Publish or unpublish a tutor's profile
- */
-export const publishTutorProfile = async (tutorId: string, isPublished: boolean): Promise<boolean> => {
-  try {
-    console.log("Publishing tutor profile for:", tutorId, "Status:", isPublished);
-    
-    // Check if tutor_profiles exists
-    const { data: existingProfile, error: checkError } = await supabase
-      .from("tutor_profiles")
-      .select("id")
-      .eq("id", tutorId)
-      .maybeSingle();
-    
-    if (!existingProfile) {
-      // Create profile if it doesn't exist
-      const { error: insertError } = await supabase
-        .from("tutor_profiles")
-        .insert({
-          id: tutorId,
-          is_published: isPublished,
-          education_verified: false,
-          updated_at: new Date().toISOString()
-        });
-      
-      if (insertError) {
-        console.error("Error creating tutor profile for publishing:", insertError);
-        return false;
-      }
-    } else {
-      // Update existing profile
-      const { error } = await supabase
-        .from("tutor_profiles")
-        .update({
-          is_published: isPublished,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", tutorId);
-        
-      if (error) {
-        console.error("Error publishing tutor profile:", error);
-        return false;
-      }
-    }
-    
-    console.log("Profile publish status updated successfully");
-    return true;
-  } catch (error) {
-    console.error("Error publishing tutor profile:", error);
-    return false;
   }
 };
 
@@ -222,13 +168,12 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
       
     if (subjectsError) {
       console.error("Error fetching tutor subjects:", subjectsError);
-      return null;
     }
     
-    console.log("Tutor subjects fetched:", subjectsData);
+    console.log("Tutor subjects fetched:", subjectsData || []);
     
     // Transform subjects data to match TutorSubject type
-    const subjects = subjectsData?.map(item => {
+    const subjects = (subjectsData || []).map(item => {
       // Fix the type issue by properly checking and accessing the subjects property
       let subjectName = "";
       if (item.subjects && typeof item.subjects === 'object' && 'name' in item.subjects) {
@@ -242,7 +187,12 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
         experienceYears: item.experience_years || undefined,
         description: item.description || undefined
       };
-    }) || [];
+    });
+    
+    // Add a cache-busting parameter to the avatar URL
+    const avatarUrl = profileData.avatar_url 
+      ? `${profileData.avatar_url}?t=${Date.now()}`
+      : undefined;
     
     // Combine data and map to TutorProfile type
     return {
@@ -251,7 +201,7 @@ export const fetchTutorProfile = async (tutorId: string): Promise<TutorProfile |
       lastName: profileData.last_name || "",
       bio: profileData.bio || "",
       city: profileData.city || "",
-      avatarUrl: profileData.avatar_url || undefined,
+      avatarUrl: avatarUrl,
       educationInstitution: tutorProfile.education_institution || "",
       degree: tutorProfile.degree || "",
       graduationYear: tutorProfile.graduation_year || new Date().getFullYear(),
@@ -330,5 +280,58 @@ export const checkProfileCompleteness = async (tutorId: string): Promise<{
       isComplete: false,
       missingFields: ["Ошибка проверки профиля"],
     };
+  }
+};
+
+/**
+ * Publish or unpublish a tutor's profile
+ */
+export const publishTutorProfile = async (tutorId: string, isPublished: boolean): Promise<boolean> => {
+  try {
+    console.log("Publishing tutor profile for:", tutorId, "Status:", isPublished);
+    
+    // Check if tutor_profiles exists
+    const { data: existingProfile, error: checkError } = await supabase
+      .from("tutor_profiles")
+      .select("id")
+      .eq("id", tutorId)
+      .maybeSingle();
+      
+    if (!existingProfile) {
+      // Create profile if it doesn't exist
+      const { error: insertError } = await supabase
+        .from("tutor_profiles")
+        .insert({
+          id: tutorId,
+          is_published: isPublished,
+          education_verified: false,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (insertError) {
+        console.error("Error creating tutor profile for publishing:", insertError);
+        return false;
+      }
+    } else {
+      // Update existing profile
+      const { error } = await supabase
+        .from("tutor_profiles")
+        .update({
+          is_published: isPublished,
+          updated_at: new Date().toISOString()
+        })
+        .eq("id", tutorId);
+        
+      if (error) {
+        console.error("Error publishing tutor profile:", error);
+        return false;
+      }
+    }
+    
+    console.log("Profile publish status updated successfully");
+    return true;
+  } catch (error) {
+    console.error("Error publishing tutor profile:", error);
+    return false;
   }
 };
