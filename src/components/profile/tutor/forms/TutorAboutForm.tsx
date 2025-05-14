@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter, CardSeparator } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { PersonalInfoForm } from "./PersonalInfoForm";
 import { EducationForm } from "./EducationForm";
