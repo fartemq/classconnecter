@@ -48,8 +48,13 @@ const TutorProfilePage = () => {
   // Handle tab change - update URL without page reload
   const handleTabChange = (tabId: string) => {
     setActiveTab(tabId);
-    // Use replace to avoid building up history stack
-    navigate({ pathname: "/profile/tutor", search: tabId === "dashboard" ? "" : `?tab=${tabId}` }, { replace: true });
+    // Use navigate with replace to avoid building up history stack
+    navigate({ 
+      pathname: "/profile/tutor", 
+      search: tabId === "dashboard" ? "" : `?tab=${tabId}` 
+    }, { 
+      replace: true 
+    });
   };
 
   // Show error state if there's an error loading the profile
