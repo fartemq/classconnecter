@@ -66,18 +66,22 @@ const convertTutorProfileToProfile = (tutorProfile: TutorProfile): Profile => {
 };
 
 const TutorProfilePage = () => {
-  const { profile, isLoading } = useProfile("tutor");
+  const { profile, isLoading, error } = useProfile("tutor");
   const location = useLocation();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [tutorProfile, setTutorProfile] = useState<TutorProfile | null>(null);
+  const [hadFirstLoad, setHadFirstLoad] = useState(false);
 
   // Convert profile to tutorProfile
   useEffect(() => {
     if (profile) {
       setTutorProfile(convertProfileToTutorProfile(profile));
+      if (!hadFirstLoad) {
+        setHadFirstLoad(true);
+      }
     }
-  }, [profile]);
+  }, [profile, hadFirstLoad]);
 
   // Get tab from URL query parameter
   useEffect(() => {
@@ -86,13 +90,38 @@ const TutorProfilePage = () => {
     if (tab && ["dashboard", "profile", "schedule", "students", "chats", "stats", "settings", "materials"].includes(tab)) {
       setActiveTab(tab);
     } else if (!tab) {
-      // If no tab is specified, set to dashboard
-      setActiveTab("dashboard");
-      navigate({ search: "?tab=dashboard" }, { replace: true });
+      // If no tab is specified, set to dashboard but avoid navigation loop
+      if (activeTab !== "dashboard") {
+        setActiveTab("dashboard");
+        navigate({ search: "?tab=dashboard" }, { replace: true });
+      }
     }
-  }, [location.search, navigate]);
+  }, [location.search, navigate, activeTab]);
 
-  if (isLoading || !tutorProfile) {
+  // Show error state if there's an error loading the profile
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center p-8">
+            <h2 className="text-xl font-semibold text-red-600">Ошибка загрузки профиля</h2>
+            <p className="text-gray-600 mt-2">{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            >
+              Обновить страницу
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show loading state on initial load only
+  if (isLoading && !hadFirstLoad) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -104,11 +133,49 @@ const TutorProfilePage = () => {
     );
   }
 
+  // If we don't have a profile yet but we've had at least one load, show a skeleton
+  if (!tutorProfile && hadFirstLoad) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow bg-gray-50 py-8">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col lg:flex-row gap-6">
+              {/* Skeleton sidebar */}
+              <div className="w-full lg:w-64 mb-4 lg:mb-0">
+                <Card className="p-4 h-full animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                </Card>
+              </div>
+              
+              {/* Skeleton content */}
+              <div className="flex-1">
+                <Card className="p-6 shadow-md border-none animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-32 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-16 bg-gray-200 rounded"></div>
+                </Card>
+              </div>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   // Create a Profile version of the tutorProfile for components that expect Profile type
-  const profileForComponents = convertTutorProfileToProfile(tutorProfile);
+  const profileForComponents = tutorProfile ? convertTutorProfileToProfile(tutorProfile) : null;
 
   // Function to render the active tab content
   const renderTabContent = () => {
+    if (!tutorProfile || !profileForComponents) {
+      return <div className="p-4 text-center">Загрузка данных...</div>;
+    }
+
     switch (activeTab) {
       case "dashboard":
         return <TutorDashboard profile={tutorProfile} />;

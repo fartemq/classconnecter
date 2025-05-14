@@ -1,14 +1,16 @@
 
-// Re-export all auth-related services from the new modular files
-export * from './types';
-export * from './registrationService';
-export * from './loginService';
-export * from './logoutService';
+// Re-export auth service components
+import { loginUser, loginWithEmailAndPassword } from './loginService';
+import { logoutUser } from './logoutService';
+import { getUserProfile, updateUserProfile } from './userService';
 
-// Import and re-export userService but exclude fetchUserRole to avoid conflict
-import { updateUserProfile, getUserProfile } from './userService';
-export { updateUserProfile, getUserProfile };
+export { 
+  loginUser, 
+  loginWithEmailAndPassword,
+  logoutUser,
+  getUserProfile,
+  updateUserProfile
+};
 
-// Import and re-export authUtils but exclude fetchUserRole to avoid conflict
-import { hasRole } from './authUtils';
-export { hasRole };
+// Re-export the fetchUserRole from authUtils to prevent naming conflicts
+export { fetchUserRole } from './authUtils';

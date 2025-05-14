@@ -1,137 +1,132 @@
 
 import React, { useState, useEffect } from "react";
-import { AuthContext } from "./AuthContext";
-import { User } from "@supabase/supabase-js";
+import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { logoutUser } from "@/services/auth/logoutService";
-import { loginWithEmailAndPassword } from "@/services/auth/loginService";
-import { fetchUserRole } from "@/services/auth/userService";
+import { AuthContext, AuthProviderProps } from "./AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { fetchUserRole } from "@/services/auth/userService";
+import { loginUser } from "@/services/auth/loginService";
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isInitialized, setIsInitialized] = useState<boolean>(false);
-  const [session, setSession] = useState<any | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<Session | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
-  // Initialize by checking for an existing session
+  // Handle auth state change
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        // Get session from supabase
-        const { data: { session } } = await supabase.auth.getSession();
+        setIsLoading(true);
         
-        // If user exists in session, set the user
+        // Check current session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error("Error fetching session:", sessionError);
+          throw sessionError;
+        }
+        
         if (session?.user) {
+          console.log("Session found, user is logged in:", session.user.id);
           setUser(session.user);
           setSession(session);
-          console.log("Session user found:", session.user.id);
           
-          // Fetch user role
           try {
+            // Fetch user role
             const role = await fetchUserRole(session.user.id);
-            if (role) {
-              setUserRole(role);
-              console.log("User role found:", role);
-            }
+            console.log("User role fetched:", role);
+            setUserRole(role);
           } catch (roleError) {
-            console.error("Error fetching role during initialization:", roleError);
+            console.error("Error fetching user role:", roleError);
+            // Continue with session but without role
           }
         } else {
-          // No session, clear user state
+          console.log("No active session found");
           setUser(null);
           setUserRole(null);
           setSession(null);
         }
       } catch (error) {
-        console.error("Error checking authentication session:", error);
+        console.error("Auth initialization error:", error);
+        // In case of error, clear auth state
         setUser(null);
         setUserRole(null);
         setSession(null);
       } finally {
-        // Mark auth as initialized and not loading
         setIsLoading(false);
-        setIsInitialized(true);
+        setAuthChecked(true);
       }
     };
 
-    initializeAuth();
-  }, []);
-
-  // Set up auth state change listener
-  useEffect(() => {
-    if (!isInitialized) return;
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log("Auth state change:", event);
+    // Setup auth state change listener
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        console.log("Auth state changed:", event);
         
-        // Handle auth events
         if (event === "SIGNED_IN" && session?.user) {
-          console.log("User signed in (from AuthProvider):", session.user.id);
+          console.log("User signed in:", session.user.id);
           setUser(session.user);
           setSession(session);
           
-          // Fetch user role
-          try {
-            const role = await fetchUserRole(session.user.id);
-            setUserRole(role);
-            console.log("User role set after sign in:", role);
-          } catch (roleError) {
-            console.error("Error fetching role after sign in:", roleError);
-          }
-          
+          // To prevent issues with multiple Supabase calls in the callback,
+          // we'll wrap the role fetch in a setTimeout(0)
+          setTimeout(async () => {
+            try {
+              // Fetch user role
+              const role = await fetchUserRole(session.user.id);
+              console.log("User role fetched after sign in:", role);
+              setUserRole(role);
+            } catch (roleError) {
+              console.error("Error fetching user role after sign in:", roleError);
+            }
+          }, 0);
         } else if (event === "SIGNED_OUT") {
           console.log("User signed out");
           setUser(null);
           setUserRole(null);
           setSession(null);
-        } else if (event === "TOKEN_REFRESHED" && session?.user) {
-          console.log("Token refreshed for user:", session.user.id);
-          setUser(session.user);
-          setSession(session);
         }
       }
     );
 
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [isInitialized]);
+    // Initialize auth state when component mounts
+    initializeAuth();
 
-  // Provide a login function
+    // Cleanup auth listener when component unmounts
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  // Login function 
   const login = async (email: string, password: string) => {
-    console.log("Login called with email:", email);
     try {
-      const response = await loginWithEmailAndPassword({ email, password });
+      setIsLoading(true);
+      const response = await loginUser(email, password);
       
-      if (response.success && response.user) {
-        console.log("Login successful, user role:", response.role);
-        setUser(response.user);
-        setUserRole(response.role || null);
-        return response;
+      if (!response.success) {
+        throw new Error(response.error || "Failed to login");
       }
       
-      return response;
-    } catch (error) {
-      console.error("Login error in AuthProvider:", error);
-      return { 
-        success: false, 
-        error: error instanceof Error ? error.message : "Произошла ошибка при входе" 
+      return { success: true };
+    } catch (error: any) {
+      console.error("Login error:", error);
+      
+      return {
+        success: false,
+        error: error.message || "Failed to login"
       };
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Provide a logout function
+  // Logout function
   const logout = async () => {
     try {
-      await logoutUser();
-      setUser(null);
-      setUserRole(null);
-      setSession(null);
-      
+      await signOut();
       return true;
     } catch (error) {
       console.error("Logout error:", error);
@@ -139,28 +134,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Provide a signOut function (alias to logout for backward compatibility)
+  // Sign out function
   const signOut = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error("Error during sign out:", error);
+    setIsLoading(true);
+    const { error } = await supabase.auth.signOut();
+    
+    if (error) {
+      toast({
+        title: "Ошибка выхода",
+        description: error.message,
+        variant: "destructive",
+      });
       throw error;
     }
+    
+    // Reset auth state
+    setUser(null);
+    setUserRole(null);
+    setSession(null);
+    setIsLoading(false);
   };
 
-  const contextValue = {
-    user,
-    setUser,
-    isLoading,
-    setIsLoading,
-    userRole, 
-    setUserRole,
-    session,
-    signOut,
-    login,
-    logout
-  };
-
-  return <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        userRole,
+        isLoading,
+        session,
+        signOut,
+        setUser,
+        setUserRole,
+        setIsLoading,
+        login,
+        logout
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 };

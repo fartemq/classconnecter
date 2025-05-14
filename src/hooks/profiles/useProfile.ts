@@ -16,6 +16,7 @@ import {
 export const useProfile = (requiredRole?: string) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user, userRole } = useAuth();
   const navigate = useNavigate();
 
@@ -103,6 +104,8 @@ export const useProfile = (requiredRole?: string) => {
 
   useEffect(() => {
     let isMounted = true;
+    let attempts = 0;
+    const maxAttempts = 3;
     
     const fetchProfile = async () => {
       try {
@@ -112,6 +115,7 @@ export const useProfile = (requiredRole?: string) => {
         if (!user) {
           console.log("No active session found, redirecting to login");
           if (isMounted) {
+            setError("Требуется авторизация");
             // Добавим небольшую задержку перед редиректом,
             // чтобы избежать проблем с быстрыми переходами
             setTimeout(() => {
@@ -147,6 +151,7 @@ export const useProfile = (requiredRole?: string) => {
             if (isMounted) {
               setProfile(newProfile as Profile);
               setIsLoading(false);
+              setError(null);
             }
             return;
           }
@@ -157,7 +162,16 @@ export const useProfile = (requiredRole?: string) => {
         
         if (profileError) {
           console.error("Profile error:", profileError);
+          attempts++;
+          
+          if (attempts < maxAttempts) {
+            // Try again after a short delay
+            setTimeout(fetchProfile, 1000);
+            return;
+          }
+          
           if (isMounted) {
+            setError("Не удалось загрузить данные профиля");
             toast({
               title: "Ошибка профиля",
               description: "Не удалось загрузить данные профиля",
@@ -175,6 +189,7 @@ export const useProfile = (requiredRole?: string) => {
         
         // Check role match
         if (!checkRoleMatch(profileData, requiredRole, navigate, isMounted)) {
+          setError("Неправильный тип профиля");
           return;
         }
         
@@ -237,10 +252,12 @@ export const useProfile = (requiredRole?: string) => {
             created_at: profileData.created_at || null,
             updated_at: profileData.updated_at || null
           } as Profile);
+          setError(null);
         }
       } catch (error) {
         console.error("Error in useProfile hook:", error);
         if (isMounted) {
+          setError("Произошла ошибка при загрузке профиля");
           toast({
             title: "Ошибка",
             description: "Произошла ошибка при загрузке профиля.",
@@ -266,5 +283,5 @@ export const useProfile = (requiredRole?: string) => {
     };
   }, [navigate, requiredRole, user, userRole]);
 
-  return { profile, isLoading, updateProfile };
+  return { profile, isLoading, updateProfile, error };
 };
