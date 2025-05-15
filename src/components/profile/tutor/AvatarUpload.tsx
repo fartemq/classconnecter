@@ -4,6 +4,8 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { uploadProfileAvatar } from "@/services/avatarService";
+import { useAuth } from "@/hooks/auth";
 
 interface AvatarUploadProps {
   avatarUrl: string | null;
@@ -17,7 +19,10 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
   onChange,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user } = useAuth();
 
   const getInitials = (name: string) => {
     return name ? name.charAt(0).toUpperCase() : "?";
@@ -38,38 +43,64 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     }
   };
   
-  const handleSelectedFile = (file: File | undefined) => {
-    if (!file) return;
+  const handleSelectedFile = async (file: File | undefined) => {
+    if (!file || !user) return;
     
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
-    if (!validTypes.includes(file.type)) {
+    try {
+      setIsUploading(true);
+      
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif'];
+      if (!validTypes.includes(file.type)) {
+        toast({
+          title: "Ошибка формата файла",
+          description: "Пожалуйста, выберите файл изображения (JPEG, PNG или GIF)",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validate file size (2MB max)
+      if (file.size > 2 * 1024 * 1024) {
+        toast({
+          title: "Файл слишком большой",
+          description: "Размер файла не должен превышать 2 МБ",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Create local preview immediately
+      const objectUrl = URL.createObjectURL(file);
+      setPreviewUrl(objectUrl);
+      
+      // Use the shared service to upload the avatar
+      const newAvatarUrl = await uploadProfileAvatar(file, user.id);
+      
+      if (newAvatarUrl) {
+        // Trigger the onChange callback with the new URL
+        onChange(file, newAvatarUrl);
+        
+        toast({
+          title: "Фото загружено",
+          description: "Аватар успешно обновлен",
+        });
+      } else {
+        // Revert preview if upload failed
+        setPreviewUrl(avatarUrl);
+      }
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      // Revert preview if upload failed
+      setPreviewUrl(avatarUrl);
       toast({
-        title: "Ошибка формата файла",
-        description: "Пожалуйста, выберите файл изображения (JPEG, PNG или GIF)",
+        title: "Ошибка загрузки",
+        description: "Не удалось загрузить аватар",
         variant: "destructive"
       });
-      return;
+    } finally {
+      setIsUploading(false);
     }
-    
-    // Validate file size (2MB max)
-    if (file.size > 2 * 1024 * 1024) {
-      toast({
-        title: "Файл слишком большой",
-        description: "Размер файла не должен превышать 2 МБ",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Create URL for preview and trigger the onChange callback immediately
-    const imageUrl = URL.createObjectURL(file);
-    onChange(file, imageUrl);
-    
-    toast({
-      title: "Фото загружено",
-      description: "Не забудьте сохранить изменения",
-    });
   };
 
   const handleClick = () => {
@@ -86,9 +117,6 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     setIsDragging(false);
   };
 
-  // Add random query parameter to bypass browser caching
-  const cacheBustedAvatarUrl = avatarUrl ? `${avatarUrl}${avatarUrl.includes('?') ? '&' : '?'}cb=${new Date().getTime()}` : null;
-
   return (
     <div
       className={`relative flex flex-col items-center ${
@@ -100,8 +128,8 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
     >
       <div className="relative group">
         <Avatar className="h-24 w-24 cursor-pointer border-2 border-gray-200">
-          {cacheBustedAvatarUrl ? (
-            <AvatarImage src={cacheBustedAvatarUrl} alt={`${firstName} avatar`} />
+          {previewUrl ? (
+            <AvatarImage src={previewUrl} alt={`${firstName} avatar`} />
           ) : (
             <AvatarFallback className="bg-primary/20 text-primary text-xl">
               {getInitials(firstName)}
@@ -132,9 +160,10 @@ export const AvatarUpload: React.FC<AvatarUploadProps> = ({
         size="sm"
         className="mt-3"
         onClick={handleClick}
+        disabled={isUploading}
       >
         <Upload className="h-4 w-4 mr-1" />
-        Загрузить фото
+        {isUploading ? "Загрузка..." : "Загрузить фото"}
       </Button>
       <p className="text-xs text-muted-foreground mt-1">
         Рекомендуемый формат: JPEG, PNG до 2 МБ

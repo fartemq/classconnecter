@@ -2,27 +2,30 @@
 import React, { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 import { Camera } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "@/hooks/use-toast";
+import { uploadProfileAvatar } from "@/services/avatarService";
 
 interface ProfileAvatarProps {
   avatarUrl: string | null;
   firstName: string;
   lastName: string | null;
   verified?: boolean;
+  onAvatarUpdate?: (newUrl: string) => void;
 }
 
 export const ProfileAvatar = ({ 
   avatarUrl, 
   firstName, 
   lastName, 
-  verified = false 
+  verified = false,
+  onAvatarUpdate
 }: ProfileAvatarProps) => {
   const { user } = useAuth();
   const [isUploading, setIsUploading] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl);
 
   const handleAvatarClick = () => {
     const fileInput = document.createElement('input');
@@ -36,38 +39,43 @@ export const ProfileAvatar = ({
         try {
           setIsUploading(true);
           
-          // Upload file to Supabase Storage
-          const fileExt = file.name.split('.').pop();
-          const filePath = `${user.id}.${fileExt}`;
+          // Validate file size (2MB max)
+          if (file.size > 2 * 1024 * 1024) {
+            toast({
+              title: "Слишком большой файл",
+              description: "Размер файла не должен превышать 2 МБ",
+              variant: "destructive",
+            });
+            setIsUploading(false);
+            return;
+          }
           
-          const { error: uploadError } = await supabase.storage
-            .from('avatars')
-            .upload(filePath, file, { upsert: true });
+          // Create preview URL
+          const objectUrl = URL.createObjectURL(file);
+          setPreviewUrl(objectUrl);
+          
+          // Upload avatar using the shared service
+          const newAvatarUrl = await uploadProfileAvatar(file, user.id);
+          
+          if (newAvatarUrl) {
+            toast({
+              title: "Аватар обновлен",
+              description: "Ваша фотография профиля была успешно обновлена",
+            });
             
-          if (uploadError) throw uploadError;
+            // Call the callback if provided
+            if (onAvatarUpdate) {
+              onAvatarUpdate(newAvatarUrl);
+            }
+          } else {
+            // Revert preview if upload failed
+            setPreviewUrl(avatarUrl);
+          }
           
-          // Get public URL
-          const { data: urlData } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(filePath);
-            
-          // Update user profile with avatar URL
-          const { error: updateError } = await supabase
-            .from("profiles")
-            .update({ avatar_url: urlData.publicUrl })
-            .eq("id", user.id);
-            
-          if (updateError) throw updateError;
-          
-          toast({
-            title: "Аватар обновлен",
-            description: "Ваша фотография профиля была успешно обновлена",
-          });
-          
-          // Force reload to see changes
-          window.location.reload();
         } catch (error) {
-          console.error("Error uploading avatar:", error);
+          console.error("Error handling avatar upload:", error);
+          // Revert preview if upload failed
+          setPreviewUrl(avatarUrl);
           toast({
             title: "Ошибка загрузки",
             description: "Не удалось загрузить аватар",
@@ -84,8 +92,8 @@ export const ProfileAvatar = ({
   return (
     <div className="relative mx-auto w-24 h-24 mb-3 group cursor-pointer" onClick={handleAvatarClick}>
       <Avatar className="w-24 h-24 border-2 border-primary">
-        {avatarUrl ? (
-          <AvatarImage src={avatarUrl} alt={`${firstName} ${lastName || ""}`} />
+        {previewUrl ? (
+          <AvatarImage src={previewUrl} alt={`${firstName} ${lastName || ""}`} />
         ) : (
           <AvatarFallback className="text-lg bg-gray-200 text-gray-500">
             {getInitials(firstName, lastName)}
