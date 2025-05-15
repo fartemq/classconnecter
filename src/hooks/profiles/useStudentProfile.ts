@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { ProfileUpdateParams, Profile } from "./types";
 import { useBaseProfile } from "./useBaseProfile";
-import { createRoleSpecificProfile, updateStudentProfile } from "./profileUtils";
+import { createRoleSpecificProfile } from "./profileUtils";
 
 export const useStudentProfile = () => {
   const { profile, setProfile, isLoading, error } = useBaseProfile("student");
@@ -56,8 +56,8 @@ export const useStudentProfile = () => {
 
       console.log("Updating student profile with data:", params);
 
-      // Update the main profile data
-      const { error: profileError } = await supabase
+      // Step 1: Update the main profile data with proper error handling
+      const { data: profileUpdateData, error: profileError } = await supabase
         .from("profiles")
         .update({
           first_name: params.first_name,
@@ -68,57 +68,62 @@ export const useStudentProfile = () => {
           avatar_url: params.avatar_url,
           updated_at: new Date().toISOString()
         })
-        .eq("id", profile.id);
+        .eq("id", profile.id)
+        .select();
 
       if (profileError) {
         console.error("Error updating profile:", profileError);
         throw profileError;
       }
 
-      console.log("Main profile updated successfully");
+      console.log("Main profile updated successfully:", profileUpdateData);
 
-      // Update student-specific profile
+      // Step 2: Update student-specific profile with proper error handling
       const studentProfileData = {
-        educational_level: params.educational_level,
+        educational_level: params.educational_level || 'school',
         subjects: params.subjects || [],
-        learning_goals: params.learning_goals,
+        learning_goals: params.learning_goals || '',
         preferred_format: params.preferred_format || [],
-        school: params.school,
-        grade: params.grade,
-        budget: params.budget
+        school: params.school || '',
+        grade: params.grade || '',
+        budget: params.budget || null
       };
 
       // Check if student profile exists
-      const { data: existingProfile } = await supabase
+      const { data: existingProfile, error: checkError } = await supabase
         .from("student_profiles")
         .select("id")
         .eq("id", profile.id)
         .maybeSingle();
         
+      if (checkError) {
+        console.error("Error checking student profile existence:", checkError);
+        throw checkError;
+      }
+        
+      let studentUpdateResult;
+      
       if (existingProfile) {
         // Update existing record
-        const { error } = await supabase
+        studentUpdateResult = await supabase
           .from("student_profiles")
           .update(studentProfileData)
-          .eq("id", profile.id);
-          
-        if (error) {
-          console.error("Error updating student profile:", error);
-          throw error;
-        }
+          .eq("id", profile.id)
+          .select();
       } else {
         // Create new record
-        const { error } = await supabase
+        studentUpdateResult = await supabase
           .from("student_profiles")
-          .insert({ ...studentProfileData, id: profile.id });
-          
-        if (error) {
-          console.error("Error creating student profile:", error);
-          throw error;
-        }
+          .insert({ ...studentProfileData, id: profile.id })
+          .select();
+      }
+      
+      if (studentUpdateResult.error) {
+        console.error("Error updating student profile:", studentUpdateResult.error);
+        throw studentUpdateResult.error;
       }
 
-      console.log("Student profile specific data updated successfully");
+      console.log("Student profile specific data updated successfully:", studentUpdateResult.data);
 
       // Update local state
       setProfile(prev => {

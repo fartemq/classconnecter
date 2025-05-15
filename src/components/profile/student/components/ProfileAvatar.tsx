@@ -28,6 +28,15 @@ export const ProfileAvatar = ({
   const [previewUrl, setPreviewUrl] = useState<string | null>(avatarUrl);
 
   const handleAvatarClick = () => {
+    if (!user) {
+      toast({
+        title: "Ошибка",
+        description: "Необходимо авторизоваться для загрузки фото",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';

@@ -17,14 +17,8 @@ export const uploadProfileAvatar = async (
     const fileName = `${userId}-${Date.now()}.${fileExt}`;
     const filePath = `${fileName}`;
     
-    // Check if storage bucket exists, create it if it doesn't
-    const { data: buckets } = await supabase.storage.listBuckets();
-    if (!buckets?.find(bucket => bucket.name === 'avatars')) {
-      await supabase.storage.createBucket('avatars', { public: true });
-    }
-    
     // Upload the file
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError, data } = await supabase.storage
       .from('avatars')
       .upload(filePath, avatarFile, {
         cacheControl: '0', // Disable caching to always fetch fresh image
@@ -37,21 +31,12 @@ export const uploadProfileAvatar = async (
     }
     
     // Get the public URL with cache-busting parameter
-    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
-    const publicUrl = `${data.publicUrl}?t=${Date.now()}`;
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
     console.log("Avatar uploaded successfully, URL:", publicUrl);
     
-    // Update profile avatar_url in the profiles table
-    const { error: updateError } = await supabase
-      .from("profiles")
-      .update({ avatar_url: publicUrl })
-      .eq("id", userId);
-      
-    if (updateError) {
-      console.error("Error updating profile with avatar URL:", updateError);
-      throw updateError;
-    }
-    
+    // Return the URL without updating the profile
+    // Profile update will be handled by the caller
     return publicUrl;
   } catch (error) {
     console.error("Error in uploadProfileAvatar:", error);

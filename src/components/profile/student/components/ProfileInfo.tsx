@@ -57,6 +57,8 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
       ...prev,
       avatar_url: newUrl,
     }));
+    
+    console.log("Avatar URL updated:", newUrl);
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
