@@ -45,6 +45,7 @@ export const useStudentProfile = () => {
   const updateProfile = async (params: ProfileUpdateParams): Promise<boolean> => {
     try {
       if (!profile?.id) {
+        console.error("No profile ID found");
         toast({
           title: "Ошибка",
           description: "Пользователь не авторизован",
@@ -65,6 +66,7 @@ export const useStudentProfile = () => {
           city: params.city,
           phone: params.phone,
           avatar_url: params.avatar_url,
+          updated_at: new Date().toISOString()
         })
         .eq("id", profile.id);
 
@@ -73,11 +75,50 @@ export const useStudentProfile = () => {
         throw profileError;
       }
 
+      console.log("Main profile updated successfully");
+
       // Update student-specific profile
-      const success = await updateStudentProfile(profile.id, params);
-      if (!success) {
-        throw new Error("Failed to update student profile");
+      const studentProfileData = {
+        educational_level: params.educational_level,
+        subjects: params.subjects || [],
+        learning_goals: params.learning_goals,
+        preferred_format: params.preferred_format || [],
+        school: params.school,
+        grade: params.grade,
+        budget: params.budget
+      };
+
+      // Check if student profile exists
+      const { data: existingProfile } = await supabase
+        .from("student_profiles")
+        .select("id")
+        .eq("id", profile.id)
+        .maybeSingle();
+        
+      if (existingProfile) {
+        // Update existing record
+        const { error } = await supabase
+          .from("student_profiles")
+          .update(studentProfileData)
+          .eq("id", profile.id);
+          
+        if (error) {
+          console.error("Error updating student profile:", error);
+          throw error;
+        }
+      } else {
+        // Create new record
+        const { error } = await supabase
+          .from("student_profiles")
+          .insert({ ...studentProfileData, id: profile.id });
+          
+        if (error) {
+          console.error("Error creating student profile:", error);
+          throw error;
+        }
       }
+
+      console.log("Student profile specific data updated successfully");
 
       // Update local state
       setProfile(prev => {

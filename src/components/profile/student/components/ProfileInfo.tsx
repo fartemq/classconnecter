@@ -65,6 +65,9 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
     try {
       setIsSubmitting(true);
       
+      // Log the form state before submission for debugging
+      console.log("Submitting form state:", formState);
+      
       const success = await updateProfile(formState);
       
       if (success) {
@@ -72,9 +75,20 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
           title: "Профиль обновлен",
           description: "Данные профиля успешно обновлены",
         });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Ошибка сохранения",
+          description: "Не удалось обновить профиль. Пожалуйста, попробуйте ещё раз.",
+        });
       }
     } catch (error) {
       console.error("Error updating profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Ошибка сохранения",
+        description: "Не удалось обновить профиль. Пожалуйста, попробуйте ещё раз.",
+      });
     } finally {
       setIsSubmitting(false);
     }
