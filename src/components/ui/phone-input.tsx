@@ -1,9 +1,9 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-interface PhoneInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface PhoneInputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'value'> {
   value: string;
   onChange: (value: string) => void;
 }
