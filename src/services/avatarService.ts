@@ -12,15 +12,14 @@ export const uploadProfileAvatar = async (
   try {
     console.log("Uploading avatar for user:", userId);
     
-    // Create a unique file name with timestamp to avoid caching issues
+    // Create a unique file name using userId as prefix for proper RLS
     const fileExt = avatarFile.name.split('.').pop();
     const fileName = `${userId}-${Date.now()}.${fileExt}`;
-    const filePath = `${fileName}`;
     
     // Upload the file
     const { error: uploadError, data } = await supabase.storage
       .from('avatars')
-      .upload(filePath, avatarFile, {
+      .upload(fileName, avatarFile, {
         cacheControl: '0', // Disable caching to always fetch fresh image
         upsert: true
       });
@@ -31,12 +30,10 @@ export const uploadProfileAvatar = async (
     }
     
     // Get the public URL with cache-busting parameter
-    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
     const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
     console.log("Avatar uploaded successfully, URL:", publicUrl);
     
-    // Return the URL without updating the profile
-    // Profile update will be handled by the caller
     return publicUrl;
   } catch (error) {
     console.error("Error in uploadProfileAvatar:", error);

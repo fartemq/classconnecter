@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -22,20 +22,41 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formState, setFormState] = useState({
-    avatar_url: profile.avatar_url || null,
-    first_name: profile.first_name || "",
-    last_name: profile.last_name || "",
-    bio: profile.bio || "",
-    city: profile.city || "",
-    phone: profile.phone || "",
-    educational_level: profile.educational_level || "school",
-    school: profile.school || "",
-    grade: profile.grade || "",
-    subjects: profile.subjects || [],
-    learning_goals: profile.learning_goals || "",
-    preferred_format: profile.preferred_format || [],
-    budget: profile.budget || null,
+    avatar_url: profile?.avatar_url || null,
+    first_name: profile?.first_name || "",
+    last_name: profile?.last_name || "",
+    bio: profile?.bio || "",
+    city: profile?.city || "",
+    phone: profile?.phone || "",
+    educational_level: profile?.educational_level || "school",
+    school: profile?.school || "",
+    grade: profile?.grade || "",
+    subjects: profile?.subjects || [],
+    learning_goals: profile?.learning_goals || "",
+    preferred_format: profile?.preferred_format || [],
+    budget: profile?.budget || null,
   });
+  
+  // Update form state when profile changes
+  useEffect(() => {
+    if (profile) {
+      setFormState({
+        avatar_url: profile.avatar_url || null,
+        first_name: profile.first_name || "",
+        last_name: profile.last_name || "",
+        bio: profile.bio || "",
+        city: profile.city || "",
+        phone: profile.phone || "",
+        educational_level: profile.educational_level || "school",
+        school: profile.school || "",
+        grade: profile.grade || "",
+        subjects: profile.subjects || [],
+        learning_goals: profile.learning_goals || "",
+        preferred_format: profile.preferred_format || [],
+        budget: profile.budget || null,
+      });
+    }
+  }, [profile]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -153,7 +174,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
                 <PhoneInput 
                   id="phone" 
                   name="phone" 
-                  value={formState.phone} 
+                  value={formState.phone || ""} 
                   onChange={(value) => setFormState(prev => ({ ...prev, phone: value }))} 
                   placeholder="+7 (___) ___-__-__"
                 />
@@ -226,7 +247,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
             <Textarea 
               id="bio" 
               name="bio" 
-              value={formState.bio} 
+              value={formState.bio || ""} 
               onChange={handleInputChange} 
               placeholder="Расскажите немного о себе..."
               rows={4}
