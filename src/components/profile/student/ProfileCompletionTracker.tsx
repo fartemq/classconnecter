@@ -17,6 +17,8 @@ export const ProfileCompletionTracker = () => {
 
   useEffect(() => {
     if (!isLoading && profile) {
+      console.log("Checking profile completion with data:", profile);
+      
       // Update completion status for each step
       const updatedSteps = steps.map((step) => {
         switch (step.id) {
@@ -50,11 +52,13 @@ export const ProfileCompletionTracker = () => {
       const completedCount = updatedSteps.filter(step => step.isCompleted).length;
       const newPercentage = Math.round((completedCount / updatedSteps.length) * 100);
       setCompletionPercentage(newPercentage);
+      console.log("Profile completion percentage:", newPercentage);
     }
   }, [profile, isLoading]);
 
   // Check if all steps are completed or loading is still in progress
-  if (isLoading || (steps.every(step => step.isCompleted))) {
+  if (isLoading || completionPercentage === 100) {
+    console.log("ProfileCompletionTracker: Hidden due to loading or 100% completion");
     return null; // Don't show if all completed or while loading
   }
 

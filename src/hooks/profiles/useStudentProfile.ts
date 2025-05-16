@@ -40,10 +40,18 @@ export const useStudentProfile = () => {
 
       console.log("Student profile specific data updated successfully");
 
-      // Update local state
+      // Update local state with all fields from params
       setProfile(prev => {
         if (!prev) return params as Profile;
-        return { ...prev, ...params };
+        // Make sure we update all profile fields, including educational ones
+        return { 
+          ...prev, 
+          ...params, 
+          school: params.school,
+          grade: params.grade,
+          learning_goals: params.learning_goals,
+          educational_level: params.educational_level
+        };
       });
 
       toast({

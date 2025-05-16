@@ -2,61 +2,53 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Fetches tutor-specific profile data
+ * Fetches student-specific profile data
  */
-export async function fetchTutorProfileData(userId: string) {
+export const fetchStudentProfileData = async (userId: string) => {
   try {
-    const { data: tutorProfileData, error: tutorProfileError } = await supabase
-      .from("tutor_profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
+    console.log("Fetching student profile data for user:", userId);
     
-    if (tutorProfileError) {
-      console.error("Error fetching tutor profile data:", tutorProfileError);
-      return null;
-    }
-    
-    return tutorProfileData;
-  } catch (error) {
-    console.error("Error in fetchTutorProfileData:", error);
-    return null;
-  }
-}
-
-/**
- * Fetch student-specific profile data
- */
-export async function fetchStudentProfileData(userId: string) {
-  try {
-    console.log("Loading student profile data for user:", userId);
-    
-    const { data: studentData, error: studentError } = await supabase
+    const { data, error } = await supabase
       .from("student_profiles")
       .select("*")
       .eq("id", userId)
       .maybeSingle();
       
-    if (studentError && studentError.code !== 'PGRST116') {
-      console.error("Error fetching student profile:", studentError);
-      return null;
-    } else if (studentData) {
-      console.log("Found student profile data:", studentData);
-      return {
-        educational_level: studentData.educational_level,
-        subjects: studentData.subjects,
-        learning_goals: studentData.learning_goals,
-        preferred_format: studentData.preferred_format,
-        school: studentData.school,
-        grade: studentData.grade,
-        budget: studentData.budget
-      };
-    } else {
-      console.log("No student profile found");
+    if (error && error.code !== 'PGRST116') {
+      console.error("Error fetching student profile data:", error);
       return null;
     }
+    
+    console.log("Student profile data:", data);
+    return data;
   } catch (error) {
-    console.error("Error loading student data:", error);
+    console.error("Error in fetchStudentProfileData:", error);
     return null;
   }
-}
+};
+
+/**
+ * Fetches tutor-specific profile data
+ */
+export const fetchTutorProfileData = async (userId: string) => {
+  try {
+    console.log("Fetching tutor profile data for user:", userId);
+    
+    const { data, error } = await supabase
+      .from("tutor_profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+      
+    if (error && error.code !== 'PGRST116') {
+      console.error("Error fetching tutor profile data:", error);
+      return null;
+    }
+    
+    console.log("Tutor profile data:", data);
+    return data;
+  } catch (error) {
+    console.error("Error in fetchTutorProfileData:", error);
+    return null;
+  }
+};

@@ -47,6 +47,7 @@ export const ProfileAvatar = ({
       if (file && user) {
         try {
           setIsUploading(true);
+          console.log("Starting avatar upload process:", file.name, file.size);
           
           // Validate file size (2MB max)
           if (file.size > 2 * 1024 * 1024) {
@@ -64,6 +65,7 @@ export const ProfileAvatar = ({
           setPreviewUrl(objectUrl);
           
           // Upload avatar using the shared service
+          console.log("Calling uploadProfileAvatar with user ID:", user.id);
           const newAvatarUrl = await uploadProfileAvatar(file, user.id);
           
           if (newAvatarUrl) {
@@ -75,10 +77,12 @@ export const ProfileAvatar = ({
             
             // Call the callback if provided
             if (onAvatarUpdate) {
+              console.log("Calling onAvatarUpdate callback with new URL");
               onAvatarUpdate(newAvatarUrl);
             }
           } else {
             // Revert preview if upload failed
+            console.error("Avatar upload failed, reverting preview");
             setPreviewUrl(avatarUrl);
             toast({
               title: "Ошибка загрузки",

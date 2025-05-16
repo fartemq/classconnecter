@@ -11,13 +11,21 @@ export async function updateStudentProfile(
   profileData: ProfileUpdateParams
 ): Promise<boolean> {
   try {
+    console.log("Updating student profile for user", userId, "with data:", profileData);
+    
     // First check if the student profile already exists
-    const { data: existingProfile } = await supabase
+    const { data: existingProfile, error: checkError } = await supabase
       .from("student_profiles")
       .select("id")
       .eq("id", userId)
       .maybeSingle();
       
+    if (checkError) {
+      console.error("Error checking if student profile exists:", checkError);
+      return false;
+    }
+
+    // Prepare student data with all educational fields
     const studentData = {
       educational_level: profileData.educational_level,
       subjects: profileData.subjects || [],
@@ -28,7 +36,10 @@ export async function updateStudentProfile(
       budget: profileData.budget
     };
     
+    console.log("Student profile data to save:", studentData);
+    
     if (existingProfile) {
+      console.log("Updating existing student profile for user:", userId);
       // Update existing record
       const { error } = await supabase
         .from("student_profiles")
@@ -40,6 +51,7 @@ export async function updateStudentProfile(
         return false;
       }
     } else {
+      console.log("Creating new student profile for user:", userId);
       // Create new record
       const { error } = await supabase
         .from("student_profiles")
@@ -51,6 +63,7 @@ export async function updateStudentProfile(
       }
     }
     
+    console.log("Student profile updated successfully");
     return true;
   } catch (error) {
     console.error("Error in updateStudentProfile:", error);
@@ -101,6 +114,8 @@ export async function updateBaseProfile(
   profileData: ProfileUpdateParams
 ): Promise<boolean> {
   try {
+    console.log("Updating base profile for user", userId, "with data:", profileData);
+    
     const baseProfileData = {
       first_name: profileData.first_name,
       last_name: profileData.last_name,
@@ -121,6 +136,7 @@ export async function updateBaseProfile(
       return false;
     }
 
+    console.log("Base profile updated successfully");
     return true;
   } catch (error) {
     console.error("Error in updateBaseProfile:", error);
