@@ -67,6 +67,7 @@ export const ProfileAvatar = ({
           const newAvatarUrl = await uploadProfileAvatar(file, user.id);
           
           if (newAvatarUrl) {
+            console.log("Avatar updated successfully:", newAvatarUrl);
             toast({
               title: "Аватар обновлен",
               description: "Ваша фотография профиля была успешно обновлена",
@@ -79,6 +80,11 @@ export const ProfileAvatar = ({
           } else {
             // Revert preview if upload failed
             setPreviewUrl(avatarUrl);
+            toast({
+              title: "Ошибка загрузки",
+              description: "Не удалось загрузить фото. Пожалуйста, попробуйте снова.",
+              variant: "destructive",
+            });
           }
           
         } catch (error) {

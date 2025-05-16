@@ -53,8 +53,9 @@ export const ProfileCompletionTracker = () => {
     }
   }, [profile, isLoading]);
 
-  if (isLoading) {
-    return null; // Don't show while loading
+  // Check if all steps are completed or loading is still in progress
+  if (isLoading || (steps.every(step => step.isCompleted))) {
+    return null; // Don't show if all completed or while loading
   }
 
   return (

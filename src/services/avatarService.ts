@@ -16,6 +16,22 @@ export const uploadProfileAvatar = async (
     const fileExt = avatarFile.name.split('.').pop();
     const fileName = `${userId}-${Date.now()}.${fileExt}`;
     
+    // Check if the bucket exists first
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const avatarBucketExists = buckets?.some(bucket => bucket.name === 'avatars');
+    
+    if (!avatarBucketExists) {
+      console.log("Avatars bucket doesn't exist, creating it");
+      const { data: newBucket, error: bucketError } = await supabase.storage.createBucket('avatars', { 
+        public: true 
+      });
+      
+      if (bucketError) {
+        console.error("Error creating avatars bucket:", bucketError);
+        throw new Error("Failed to create storage bucket");
+      }
+    }
+    
     // Upload the file
     const { error: uploadError, data } = await supabase.storage
       .from('avatars')
