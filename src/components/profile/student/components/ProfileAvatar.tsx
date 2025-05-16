@@ -64,7 +64,7 @@ export const ProfileAvatar = ({
           const objectUrl = URL.createObjectURL(file);
           setPreviewUrl(objectUrl);
           
-          // Upload avatar using the shared service
+          // Upload avatar using the updated service
           console.log("Calling uploadProfileAvatar with user ID:", user.id);
           const newAvatarUrl = await uploadProfileAvatar(file, user.id);
           
