@@ -6,12 +6,12 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/auth";
 import { Profile, ProfileUpdateParams } from "./types";
 import { 
-  createBasicProfile, 
-  createRoleSpecificProfile, 
+  createBasicProfile,
+  createRoleSpecificProfile,
   fetchTutorProfileData,
   updateStudentProfile,
   checkRoleMatch 
-} from "./profileUtils";
+} from "./utils";
 import { useStudentProfile } from "./useStudentProfile";
 import { useTutorProfile } from "./useTutorProfile";
 
@@ -66,7 +66,7 @@ export const useProfile = (requiredRole?: string) => {
 
       // If this is a student, update student-specific profile data
       if (userRole === 'student') {
-        const success = await updateStudentProfile(user.id, updatedProfile);
+        const success = await updateStudentProfile(user.id, updatedProfile as ProfileUpdateParams);
         if (!success) {
           throw new Error("Failed to update student profile");
         }

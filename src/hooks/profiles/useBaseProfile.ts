@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/auth";
 import { Profile } from "./types";
-import { checkRoleMatch, createBasicProfile } from "./profileUtils";
+import { checkRoleMatch, createBasicProfile } from "./utils";
 
 export const useBaseProfile = (requiredRole?: string) => {
   const [profile, setProfile] = useState<Profile | null>(null);
