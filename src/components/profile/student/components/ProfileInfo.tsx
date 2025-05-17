@@ -40,6 +40,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
   // Update form state when profile changes
   useEffect(() => {
     if (profile) {
+      console.log("Updating form state with profile data:", profile);
       setFormState({
         avatar_url: profile.avatar_url || null,
         first_name: profile.first_name || "",

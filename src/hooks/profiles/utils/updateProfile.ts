@@ -29,10 +29,10 @@ export async function updateStudentProfile(
     const studentData = {
       educational_level: profileData.educational_level,
       subjects: profileData.subjects || [],
-      learning_goals: profileData.learning_goals,
+      learning_goals: profileData.learning_goals || "",
       preferred_format: profileData.preferred_format || [],
-      school: profileData.school,
-      grade: profileData.grade,
+      school: profileData.school || "",
+      grade: profileData.grade || "",
       budget: profileData.budget
     };
     

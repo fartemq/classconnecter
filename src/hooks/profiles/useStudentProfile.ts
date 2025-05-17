@@ -47,10 +47,13 @@ export const useStudentProfile = () => {
         return { 
           ...prev, 
           ...params, 
+          // Explicitly update educational fields to ensure they're properly stored in state
           school: params.school,
           grade: params.grade,
           learning_goals: params.learning_goals,
-          educational_level: params.educational_level
+          educational_level: params.educational_level,
+          subjects: params.subjects || [],
+          preferred_format: params.preferred_format || []
         };
       });
 
