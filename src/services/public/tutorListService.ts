@@ -45,7 +45,7 @@ export const fetchTutorsList = async (limit: number = 10): Promise<PublicTutorPr
       .in("tutor_id", tutorIds)
       .eq("is_active", true);
     
-    // Map subjects to their respective tutors
+    // Map subjects to their respective tutors with improved error handling
     const tutorSubjectsMap: Record<string, any[]> = {};
     
     allSubjects?.forEach(subjectEntry => {
@@ -55,33 +55,42 @@ export const fetchTutorsList = async (limit: number = 10): Promise<PublicTutorPr
         tutorSubjectsMap[tutorId] = [];
       }
       
-      // Use type assertion to handle the object properly
-      // The error occurs because subjects might be an array when we expect a single object
-      const subjectData = subjectEntry.subjects;
-      
-      // Handle potential null or unexpected format
-      if (subjectData) {
-        // Make sure we extract a single object properly regardless of how it's structured
-        let subjectInfo: { id: string, name: string } | null = null;
+      // Handle subject information with improved error handling
+      try {
+        // Use type assertion to handle the object properly
+        const subjectData = subjectEntry.subjects;
         
-        // Handle both array and single object formats
-        if (Array.isArray(subjectData)) {
-          // If it's an array, take the first item if available
-          subjectInfo = subjectData.length > 0 
-            ? { id: subjectData[0].id, name: subjectData[0].name } 
-            : null;
-        } else if (typeof subjectData === 'object') {
-          // If it's an object, use it directly
-          subjectInfo = subjectData as { id: string, name: string };
+        // Handle potential null or unexpected format
+        if (subjectData) {
+          // Make sure we extract a single object properly regardless of how it's structured
+          let subjectInfo: { id: string, name: string } | null = null;
+          
+          // Handle both array and single object formats
+          if (Array.isArray(subjectData)) {
+            // If it's an array, take the first item if available
+            subjectInfo = subjectData.length > 0 
+              ? { id: subjectData[0].id, name: subjectData[0].name } 
+              : null;
+          } else if (typeof subjectData === 'object') {
+            // If it's an object, use it directly
+            subjectInfo = subjectData as { id: string, name: string };
+          }
+          
+          if (subjectInfo) {
+            // ИСПРАВЛЕНО: Улучшена обработка hourly_rate
+            const hourlyRate = typeof subjectEntry.hourly_rate === 'number' && !isNaN(subjectEntry.hourly_rate) && subjectEntry.hourly_rate > 0
+              ? subjectEntry.hourly_rate
+              : 0;
+              
+            tutorSubjectsMap[tutorId].push({
+              id: subjectInfo.id,
+              name: subjectInfo.name,
+              hourlyRate: hourlyRate
+            });
+          }
         }
-        
-        if (subjectInfo) {
-          tutorSubjectsMap[tutorId].push({
-            id: subjectInfo.id,
-            name: subjectInfo.name,
-            hourlyRate: subjectEntry.hourly_rate || 0
-          });
-        }
+      } catch (error) {
+        console.error("Error processing subject data:", error);
       }
     });
     
@@ -96,9 +105,9 @@ export const fetchTutorsList = async (limit: number = 10): Promise<PublicTutorPr
         ? tutorProfileData[0]
         : { experience: null, education_verified: false };
       
-      // Add a parameter to the avatar URL to avoid caching
+      // ИСПРАВЛЕНО: Добавляем timestamp для предотвращения кеширования
       const avatarUrlWithParam = profile.avatar_url 
-        ? `${profile.avatar_url}?${Math.random().toString(36).substring(7)}`
+        ? `${profile.avatar_url}?t=${Date.now()}`
         : null;
       
       return {
@@ -109,7 +118,8 @@ export const fetchTutorsList = async (limit: number = 10): Promise<PublicTutorPr
         city: profile.city || '',
         bio: profile.bio || null,
         rating: rating < 5 ? rating : 5,
-        experience: tutorProfile.experience || null,
+        // ИСПРАВЛЕНО: Корректная обработка опыта работы
+        experience: typeof tutorProfile.experience === 'number' ? tutorProfile.experience : null,
         isVerified: tutorProfile.education_verified || false,
         education_institution: null,
         degree: null,

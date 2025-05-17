@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
@@ -107,7 +108,7 @@ export const searchTutors = async (
 
     // Process tutor results
     const tutorPromises = tutorsData.map(async (tutor) => {
-      // Get subjects
+      // Get subjects with proper error handling
       const { data: subjectsData, error: subjectsError } = await supabase
         .from("tutor_subjects")
         .select(`
@@ -146,13 +147,15 @@ export const searchTutors = async (
         (filters.priceMin !== undefined || filters.priceMax !== undefined) &&
         filteredSubjects.length > 0
       ) {
+        // ИСПРАВЛЕНО: Добавлена дополнительная проверка на корректность hourly_rate
         filteredSubjects = filteredSubjects.filter((s) => {
-          const price = s.hourly_rate || 0;
+          const price = typeof s.hourly_rate === 'number' && s.hourly_rate > 0 ? s.hourly_rate : 0;
           return (
             (filters.priceMin === undefined || price >= filters.priceMin) &&
             (filters.priceMax === undefined || price <= filters.priceMax)
           );
         });
+        
         if (filteredSubjects.length === 0) return null; // Skip if no subjects in price range
       }
 
@@ -176,28 +179,47 @@ export const searchTutors = async (
         return null;
       }
 
-      // Format the subject data
+      // Format the subject data with proper error handling
       const formattedSubjects = filteredSubjects.map((item) => {
-        const subject = ensureSingleObject(item.subjects);
-        return {
-          id: subject.id,
-          name: subject.name,
-          hourlyRate: item.hourly_rate,
-        };
+        try {
+          const subject = ensureSingleObject(item.subjects);
+          return {
+            id: subject.id || 'unknown',
+            name: subject.name || 'Неизвестный предмет',
+            hourlyRate: typeof item.hourly_rate === 'number' && item.hourly_rate > 0 
+              ? item.hourly_rate 
+              : 0,
+          };
+        } catch (error) {
+          console.error("Error formatting subject:", error);
+          return {
+            id: 'unknown',
+            name: 'Ошибка загрузки',
+            hourlyRate: 0
+          };
+        }
       });
 
+      // Get tutor profile data
       const tutorProfile = ensureSingleObject(tutor.tutor_profiles);
+      
+      // Generate avatar URL with cache-busting
+      const avatarUrl = tutor.avatar_url 
+        ? `${tutor.avatar_url}?t=${Date.now()}`
+        : null;
 
       return {
         id: tutor.id,
-        firstName: tutor.first_name,
-        lastName: tutor.last_name,
-        avatarUrl: tutor.avatar_url,
-        city: tutor.city,
+        firstName: tutor.first_name || '',
+        lastName: tutor.last_name || '',
+        // ИСПРАВЛЕНО: Корректная обработка аватаров
+        avatarUrl: avatarUrl,
+        city: tutor.city || '',
         rating: averageRating,
         subjects: formattedSubjects,
         isVerified: tutorProfile.education_verified || false,
-        experience: tutorProfile.experience || 0,
+        // ИСПРАВЛЕНО: Корректная обработка опыта работы
+        experience: typeof tutorProfile.experience === 'number' ? tutorProfile.experience : 0,
       };
     });
 

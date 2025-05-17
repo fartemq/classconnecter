@@ -126,9 +126,10 @@ export const FindTutorsTab = () => {
     fetchTutors();
   };
 
+  // ИСПРАВЛЕНО: Изменен маршрут перехода на страницу репетитора
   const handleViewTutorProfile = (id: string) => {
     // Изменяем путь, чтобы оставаться в интерфейсе ученика
-    navigate(`/profile/student/chats/${id}`);
+    navigate(`/tutors/${id}`);
   };
 
   const handleContactTutor = (id: string) => {
@@ -144,7 +145,7 @@ export const FindTutorsTab = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <h1 className="text-2xl font-bold">Найти репетитора</h1>
         
@@ -495,7 +496,7 @@ export const FindTutorsTab = () => {
                           </div>
                         )}
                         
-                        {tutor.experience !== null && (
+                        {tutor.experience !== null && tutor.experience !== undefined && (
                           <div className="text-sm text-gray-600">
                             Опыт: {tutor.experience} {getExperienceYears(tutor.experience)}
                           </div>
@@ -503,9 +504,9 @@ export const FindTutorsTab = () => {
                       </div>
                       
                       <div className="text-right">
-                        <div className="text-xl font-bold">
-                          от {Math.min(...tutor.subjects.map(s => s.hourlyRate))} ₽
-                        </div>
+                        {tutor.subjects.length > 0 && tutor.subjects.some(s => s.hourlyRate > 0) 
+                          ? `от ${Math.min(...tutor.subjects.filter(s => s.hourlyRate > 0).map(s => s.hourlyRate))} ₽`
+                          : "Цена не указана"}
                         <div className="text-sm text-gray-500">за занятие</div>
                       </div>
                     </div>
@@ -516,7 +517,11 @@ export const FindTutorsTab = () => {
                         {tutor.subjects.map((subject) => (
                           <li key={subject.id} className="flex justify-between">
                             <span>{subject.name}</span>
-                            <span className="font-medium">{subject.hourlyRate} ₽/час</span>
+                            <span className="font-medium">
+                              {subject.hourlyRate && subject.hourlyRate > 0 
+                                ? `${subject.hourlyRate} ₽/час` 
+                                : "Цена по запросу"}
+                            </span>
                           </li>
                         ))}
                       </ul>

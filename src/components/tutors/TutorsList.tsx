@@ -26,9 +26,10 @@ interface TutorCardProps {
 }
 
 const TutorCard = ({ tutor }: TutorCardProps) => {
-  // Get minimum hourly rate
-  const minRate = tutor.subjects.length > 0
-    ? Math.min(...tutor.subjects.map(s => s.hourlyRate || 0))
+  // ИСПРАВЛЕНО: Корректное определение минимальной стоимости
+  const validSubjects = tutor.subjects.filter(s => typeof s.hourlyRate === 'number' && s.hourlyRate > 0);
+  const minRate = validSubjects.length > 0
+    ? Math.min(...validSubjects.map(s => s.hourlyRate))
     : null;
   
   // Create a display name
@@ -41,10 +42,14 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
           {/* Avatar section */}
           <div className="flex-shrink-0 flex md:block justify-center">
             <Avatar className="h-20 w-20 border-2 border-white shadow">
-              <AvatarImage src={tutor.avatar_url || ''} alt={displayName} />
-              <AvatarFallback className="text-xl">
-                {(tutor.first_name?.charAt(0) || '') + (tutor.last_name?.charAt(0) || '')}
-              </AvatarFallback>
+              {/* ИСПРАВЛЕНО: используем более надежный способ отображения аватара */}
+              {tutor.avatar_url ? (
+                <AvatarImage src={tutor.avatar_url} alt={displayName} />
+              ) : (
+                <AvatarFallback className="text-xl">
+                  {(tutor.first_name?.charAt(0) || '') + (tutor.last_name?.charAt(0) || '')}
+                </AvatarFallback>
+              )}
             </Avatar>
           </div>
           
@@ -82,7 +87,8 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
             
             {/* Experience and rating */}
             <div className="flex flex-wrap gap-3 mb-3">
-              {tutor.experience && (
+              {/* ИСПРАВЛЕНО: Корректная обработка опыта работы */}
+              {tutor.experience !== null && tutor.experience !== undefined && tutor.experience > 0 && (
                 <span className="text-sm text-gray-600">
                   Опыт: {tutor.experience} {getPluralYears(tutor.experience)}
                 </span>
@@ -106,6 +112,7 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
             
             {/* Action buttons */}
             <div className="flex flex-wrap gap-3 mt-auto">
+              {/* ИСПРАВЛЕНО: Ссылка ведет на профиль репетитора, а не на чат */}
               <Button asChild variant="outline" size="sm">
                 <Link to={`/tutors/${tutor.id}`}>
                   <MessageSquare className="mr-2 h-4 w-4" />
@@ -114,20 +121,26 @@ const TutorCard = ({ tutor }: TutorCardProps) => {
               </Button>
               
               <Button asChild size="sm">
-                <Link to={`/tutors/${tutor.id}?action=book`}>
+                <Link to={`/profile/student/chats/${tutor.id}`}>
                   <Calendar className="mr-2 h-4 w-4" />
-                  Забронировать
+                  Связаться
                 </Link>
               </Button>
             </div>
           </div>
           
-          {/* Price section */}
-          {minRate !== null && (
+          {/* Price section - ИСПРАВЛЕНО */}
+          {minRate !== null && minRate > 0 ? (
             <div className="flex-shrink-0 flex flex-col items-center md:items-end">
               <div className="bg-gray-50 rounded-lg px-3 py-2 text-center">
                 <p className="text-xs text-gray-600">от</p>
                 <p className="text-lg font-bold text-primary">{minRate} ₽/час</p>
+              </div>
+            </div>
+          ) : (
+            <div className="flex-shrink-0 flex flex-col items-center md:items-end">
+              <div className="bg-gray-50 rounded-lg px-3 py-2 text-center">
+                <p className="text-lg font-bold text-primary">По запросу</p>
               </div>
             </div>
           )}

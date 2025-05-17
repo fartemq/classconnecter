@@ -42,23 +42,26 @@ export const TutorCard: React.FC<TutorCardProps> = ({
   const firstName = nameParts[0] || "";
   const lastName = nameParts.slice(1).join(" ") || "";
   
-  // Format the lowest price from subjects
-  const lowestPrice = subjects.length > 0
-    ? Math.min(...subjects.map(s => s.hourlyRate))
+  // ИСПРАВЛЕНО: Корректное определение минимальной цены
+  const validSubjects = subjects.filter(s => typeof s.hourlyRate === 'number' && s.hourlyRate > 0);
+  const lowestPrice = validSubjects.length > 0
+    ? Math.min(...validSubjects.map(s => s.hourlyRate))
     : 0;
   
-  const formattedPrice = new Intl.NumberFormat("ru-RU", {
-    style: "currency",
-    currency: "RUB",
-    maximumFractionDigits: 0,
-  }).format(lowestPrice);
+  // ИСПРАВЛЕНО: Корректное форматирование цены
+  const formattedPrice = lowestPrice > 0
+    ? new Intl.NumberFormat("ru-RU", {
+        style: "currency",
+        currency: "RUB",
+        maximumFractionDigits: 0,
+      }).format(lowestPrice)
+    : "По запросу";
   
-  // Handle view profile click - navigate to tutor's public profile
+  // ИСПРАВЛЕНО: Изменен путь перехода на страницу с профилем репетитора
   const handleViewProfile = () => {
     navigate(`/tutors/${id}`);
   };
   
-  // Handle contact click - navigate to chat with tutor
   const handleContact = () => {
     navigate(`/profile/student/chats/${id}`);
   };
@@ -71,7 +74,7 @@ export const TutorCard: React.FC<TutorCardProps> = ({
           <div className="col-span-3 sm:col-span-2 p-4 flex items-center justify-center">
             <Avatar className="h-16 w-16 sm:h-20 sm:w-20">
               {avatar ? (
-                <AvatarImage src={avatar} alt={name} />
+                <AvatarImage src={`${avatar}?t=${Date.now()}`} alt={name} />
               ) : (
                 <AvatarFallback>
                   {getInitials(firstName, lastName)}
@@ -108,7 +111,8 @@ export const TutorCard: React.FC<TutorCardProps> = ({
                 </div>
               )}
               
-              {experience !== null && experience > 0 && (
+              {/* ИСПРАВЛЕНО: Корректное отображение опыта */}
+              {experience !== null && experience !== undefined && experience > 0 && (
                 <div className="flex items-center">
                   <BookOpen className="h-4 w-4 text-blue-500 mr-1" />
                   <span className="text-sm">
@@ -121,13 +125,18 @@ export const TutorCard: React.FC<TutorCardProps> = ({
             <div className="mt-2">
               <div className="text-sm font-medium">Предметы и стоимость:</div>
               <div className="flex flex-wrap gap-2 mt-1">
+                {/* ИСПРАВЛЕНО: Корректное отображение стоимости предметов */}
                 {subjects.slice(0, 3).map((subject) => (
                   <Badge key={subject.id} variant="secondary" className="font-normal">
-                    {subject.name}: от {new Intl.NumberFormat("ru-RU", {
-                      style: "currency",
-                      currency: "RUB",
-                      maximumFractionDigits: 0,
-                    }).format(subject.hourlyRate)}/ч
+                    {subject.name}: {
+                      subject.hourlyRate > 0 
+                        ? `от ${new Intl.NumberFormat("ru-RU", {
+                            style: "currency",
+                            currency: "RUB",
+                            maximumFractionDigits: 0,
+                          }).format(subject.hourlyRate)}/ч` 
+                        : "по запросу"
+                    }
                   </Badge>
                 ))}
                 {subjects.length > 3 && (
