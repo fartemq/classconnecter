@@ -98,7 +98,27 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
     
     try {
       setIsLoading(true);
-      await onSubmit(formValues, avatarFile, avatarUrl);
+      
+      // Map form values to API expected format
+      const apiValues = {
+        ...formValues,
+        // Explicitly map education fields to the format expected by the API
+        education_institution: formValues.educationInstitution,
+        degree: formValues.degree,
+        graduation_year: formValues.graduationYear,
+        // Include other fields needed by the API
+        first_name: formValues.firstName,
+        last_name: formValues.lastName,
+        bio: formValues.bio,
+        city: formValues.city,
+        experience: formValues.experience,
+        achievements: formValues.achievements,
+        video_url: formValues.videoUrl
+      };
+      
+      console.log("Mapped form values for API:", apiValues);
+      
+      await onSubmit(apiValues as TutorFormValues, avatarFile, avatarUrl);
       setAvatarFile(null);
       toast({
         title: "Профиль обновлен",

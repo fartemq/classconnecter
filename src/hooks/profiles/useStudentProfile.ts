@@ -40,7 +40,7 @@ export const useStudentProfile = () => {
 
       console.log("Student profile specific data updated successfully");
 
-      // Update local state with all fields from params
+      // Update local state with ALL fields from params
       setProfile(prev => {
         if (!prev) return params as Profile;
         // Make sure we update all profile fields, including educational ones

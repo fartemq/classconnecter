@@ -39,7 +39,7 @@ export const EducationForm: React.FC<EducationFormProps> = ({ control, tutorProf
           <FormItem>
             <FormLabel>Учебное заведение *</FormLabel>
             <FormControl>
-              <Input placeholder="МГУ им. Ломоносова" {...field} />
+              <Input placeholder="МГУ им. Ломоносова" {...field} value={field.value || ""} />
             </FormControl>
             <FormDescription>
               Укажите полное название учебного заведения, которое вы окончили
@@ -57,7 +57,7 @@ export const EducationForm: React.FC<EducationFormProps> = ({ control, tutorProf
           <FormItem>
             <FormLabel>Степень/специальность *</FormLabel>
             <FormControl>
-              <Input placeholder="Магистр физико-математических наук" {...field} />
+              <Input placeholder="Магистр физико-математических наук" {...field} value={field.value || ""} />
             </FormControl>
             <FormDescription>
               Укажите вашу ученую степень, квалификацию или специальность

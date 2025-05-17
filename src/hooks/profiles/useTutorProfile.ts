@@ -39,10 +39,17 @@ export const useTutorProfile = () => {
 
       console.log("Tutor profile specific data updated successfully");
 
-      // Update local state
+      // Update local state with ALL fields from params
       setProfile(prev => {
         if (!prev) return params as Profile;
-        return { ...prev, ...params };
+        return { 
+          ...prev, 
+          ...params,
+          // Explicitly update education fields to ensure they're properly stored in state
+          education_institution: params.education_institution,
+          degree: params.degree,
+          graduation_year: params.graduation_year
+        };
       });
 
       toast({

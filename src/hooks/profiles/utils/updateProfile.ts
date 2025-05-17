@@ -79,26 +79,64 @@ export async function updateTutorProfile(
   profileData: ProfileUpdateParams
 ): Promise<boolean> {
   try {
-    const tutorProfileData = {
-      education_institution: profileData.education_institution,
-      degree: profileData.degree,
-      graduation_year: profileData.graduation_year,
-      experience: profileData.experience,
-      methodology: profileData.methodology,
-      achievements: profileData.achievements,
-      video_url: profileData.video_url
-    };
-
-    const { error } = await supabase
+    console.log("Updating tutor profile for user", userId, "with data:", profileData);
+    
+    // First check if the tutor profile already exists
+    const { data: existingProfile, error: checkError } = await supabase
       .from("tutor_profiles")
-      .update(tutorProfileData)
-      .eq("id", userId);
-
-    if (error) {
-      console.error("Error updating tutor profile:", error);
+      .select("id")
+      .eq("id", userId)
+      .maybeSingle();
+      
+    if (checkError) {
+      console.error("Error checking if tutor profile exists:", checkError);
       return false;
     }
 
+    // Prepare tutor profile data with education fields
+    const tutorProfileData = {
+      education_institution: profileData.education_institution || "",
+      degree: profileData.degree || "",
+      graduation_year: profileData.graduation_year || null,
+      experience: profileData.experience || 0,
+      methodology: profileData.methodology || "",
+      achievements: profileData.achievements || "",
+      video_url: profileData.video_url || ""
+    };
+    
+    console.log("Tutor profile data to save:", tutorProfileData);
+    
+    if (existingProfile) {
+      console.log("Updating existing tutor profile for user:", userId);
+      // Update existing record
+      const { error } = await supabase
+        .from("tutor_profiles")
+        .update(tutorProfileData)
+        .eq("id", userId);
+
+      if (error) {
+        console.error("Error updating tutor profile:", error);
+        return false;
+      }
+    } else {
+      console.log("Creating new tutor profile for user:", userId);
+      // Create new record with default values for required fields
+      const { error } = await supabase
+        .from("tutor_profiles")
+        .insert({ 
+          ...tutorProfileData, 
+          id: userId, 
+          is_published: false,
+          education_verified: false
+        });
+      
+      if (error) {
+        console.error("Error creating tutor profile:", error);
+        return false;
+      }
+    }
+
+    console.log("Tutor profile updated successfully");
     return true;
   } catch (error) {
     console.error("Error in updateTutorProfile:", error);

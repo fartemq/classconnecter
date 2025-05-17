@@ -3,12 +3,12 @@ import React, { useState, useEffect } from "react";
 import { TutorAboutForm } from "./forms/TutorAboutForm";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { Profile } from "@/hooks/profiles/types";
-import { saveTutorProfile } from "@/services/tutorProfileService";
+import { saveTutorProfile } from "@/services/tutor/profileService";
 import { toast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 
 interface TutorAboutTabProps {
   profile: Profile;
@@ -55,13 +55,13 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
       degree: profile.degree || "",
       graduationYear: profile.graduation_year || new Date().getFullYear(),
       subjects: [],
-      educationVerified: false,
+      educationVerified: profile.education_verified || false,
       methodology: profile.methodology || "",
       experience: profile.experience || 0,
       // Access these properties safely with type assertion
       achievements: (profile as any).achievements || "",
       videoUrl: (profile as any).video_url || "",
-      isPublished: false
+      isPublished: (profile as any).is_published || false
     });
     setIsLoading(false);
   }, [profile]);
@@ -78,6 +78,19 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
     try {
       console.log("Submitting form with values:", values);
       console.log("User ID:", user.id);
+      
+      // Convert form values to the format expected by the API
+      const apiValues = {
+        ...values,
+        // Explicitly map fields to ensure they're correctly passed to the API
+        education_institution: values.educationInstitution,
+        degree: values.degree,
+        graduation_year: values.graduationYear,
+        first_name: values.firstName,
+        last_name: values.lastName
+      };
+      
+      console.log("API values for saving:", apiValues);
       
       const result = await saveTutorProfile(values, user.id, avatarFile, avatarUrl);
       
