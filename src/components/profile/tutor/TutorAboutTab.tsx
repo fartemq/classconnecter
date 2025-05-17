@@ -79,19 +79,6 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
       console.log("Submitting form with values:", values);
       console.log("User ID:", user.id);
       
-      // Convert form values to the format expected by the API
-      const apiValues = {
-        ...values,
-        // Explicitly map fields to ensure they're correctly passed to the API
-        education_institution: values.educationInstitution,
-        degree: values.degree,
-        graduation_year: values.graduationYear,
-        first_name: values.firstName,
-        last_name: values.lastName
-      };
-      
-      console.log("API values for saving:", apiValues);
-      
       const result = await saveTutorProfile(values, user.id, avatarFile, avatarUrl);
       
       if (!result.success) {
