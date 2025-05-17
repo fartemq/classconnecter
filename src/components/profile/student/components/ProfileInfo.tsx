@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -84,7 +83,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+    e.preventDefault(); // Предотвращаем перезагрузку страницы
     
     try {
       setIsSubmitting(true);
@@ -111,7 +110,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
       toast({
         variant: "destructive",
         title: "Ошибка сохранения",
-        description: "Не удалось обновить профиль. Пожалуйста, попробуйте ещё раз.",
+        description: "Не удалось обновить профиль. Пожалуйста, попробуйте ��щё раз.",
       });
     } finally {
       setIsSubmitting(false);

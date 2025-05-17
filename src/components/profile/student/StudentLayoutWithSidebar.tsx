@@ -25,7 +25,9 @@ export const StudentLayoutWithSidebar: React.FC<StudentLayoutWithSidebarProps> =
               {profile && <StudentProfileCard profile={profile} />}
               
               {/* Navigation sidebar */}
-              <StudentSidebar />
+              <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
+                <StudentSidebar />
+              </div>
             </div>
             
             {/* Main content */}

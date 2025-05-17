@@ -11,7 +11,7 @@ import {
   MessageSquare,
   Book
 } from "lucide-react";
-import { useNavigate, useLocation, NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { getInitials } from "@/lib/utils";
@@ -19,7 +19,6 @@ import { useProfile } from "@/hooks/useProfile";
 
 export const StudentSidebar = () => {
   const { profile } = useProfile("student");
-  const navigate = useNavigate();
   const location = useLocation();
   
   const navItems = [
@@ -76,11 +75,11 @@ export const StudentSidebar = () => {
   }
 
   return (
-    <aside className="w-full h-full flex flex-col border-r bg-white">
+    <aside className="w-full h-full flex flex-col bg-white">
       {/* Profile section */}
-      <div 
-        className="p-4 border-b cursor-pointer" 
-        onClick={() => navigate("/profile/student/edit", { replace: false })}
+      <NavLink 
+        to="/profile/student/edit" 
+        className="p-4 border-b cursor-pointer"
       >
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10">
@@ -99,7 +98,7 @@ export const StudentSidebar = () => {
             <Badge variant="outline" className="mt-1">Ученик</Badge>
           </div>
         </div>
-      </div>
+      </NavLink>
       
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-4">

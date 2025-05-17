@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { 
   LayoutDashboard, 
   User, 
@@ -50,7 +50,10 @@ export const TutorSidebar = () => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center mb-6 px-2 py-4">
+      <NavLink 
+        to="/profile/tutor/profile" 
+        className="flex items-center mb-6 px-2 py-4 hover:bg-gray-50"
+      >
         <Avatar className="h-10 w-10 mr-3">
           {profile?.avatar_url ? (
             <AvatarImage src={profile.avatar_url} alt="Аватар преподавателя" />
@@ -67,28 +70,26 @@ export const TutorSidebar = () => {
           </div>
           <div className="text-xs text-gray-500">Преподаватель</div>
         </div>
-      </div>
+      </NavLink>
       
       <nav className="space-y-1 flex-grow">
         {navItems.map(item => (
-          <Link 
+          <NavLink 
             key={item.path} 
             to={item.path}
-            className="block"
-          >
-            <Button
-              variant={isActive(item.path) ? "default" : "ghost"}
-              className={cn(
-                "w-full justify-start text-left font-normal",
-                isActive(item.path) 
+            className={({ isActive }) => 
+              cn(
+                "flex items-center px-3 py-2 rounded-md text-sm font-medium",
+                isActive 
                   ? "bg-primary text-primary-foreground" 
-                  : "hover:bg-muted"
-              )}
-            >
-              <span className="mr-2">{item.icon}</span>
-              {item.label}
-            </Button>
-          </Link>
+                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              )
+            }
+            end
+          >
+            <span className="mr-2">{item.icon}</span>
+            {item.label}
+          </NavLink>
         ))}
       </nav>
     </div>

@@ -50,6 +50,7 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
 
   const handleSubmit = async (values: TutorFormValues) => {
     try {
+      // Предотвращаем стандартное поведение отправки формы
       setFormValues(values);
       setShowSaveDialog(true);
     } catch (error) {
@@ -92,9 +93,13 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
     setFormValues(null);
   };
 
+  // Обрабатываем перенаправление внутри формы, используя e.preventDefault() для всех отправлений формы
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit(handleSubmit)(e);
+      }} className="space-y-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="personal">Основная информация</TabsTrigger>
