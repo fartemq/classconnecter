@@ -1,54 +1,17 @@
 
 import React, { useState } from "react";
-import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
-import { Card, CardHeader, CardContent, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { PersonalInfoForm } from "./PersonalInfoForm";
 import { EducationForm } from "./EducationForm";
 import { toast } from "@/hooks/use-toast";
-import { Loader } from "@/components/ui/loader";
-import { Separator } from "@/components/ui/separator";
-import { Save } from "lucide-react";
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-
-// Схема валидации для основной информации
-const personalSchema = z.object({
-  firstName: z.string().min(2, { message: "Имя должно содержать минимум 2 символа" }),
-  lastName: z.string().min(2, { message: "Фамилия должна содержать минимум 2 символа" }),
-  bio: z.string().min(20, { message: "Опишите ваш опыт преподавания (минимум 20 символов)" })
-    .max(2000, { message: "Описание не должно превышать 2000 символов" }),
-  city: z.string().min(2, { message: "Укажите город" }),
-});
-
-// Схема валидации для образования
-const educationSchema = z.object({
-  educationInstitution: z.string().min(2, { message: "Укажите название учебного заведения" }),
-  degree: z.string().min(2, { message: "Укажите специальность/степень" }),
-  graduationYear: z.coerce
-    .number()
-    .min(1950, { message: "Год должен быть не ранее 1950" })
-    .max(new Date().getFullYear(), { message: `Год не может быть позже ${new Date().getFullYear()}` }),
-});
-
-// Объединенная схема с необязательными полями
-const formSchema = personalSchema.merge(educationSchema).extend({
-  experience: z.coerce.number().optional(),
-  achievements: z.string().max(1000, { message: "Текст не должен превышать 1000 символов" }).optional(),
-  videoUrl: z.string().url({ message: "Введите корректный URL видео" }).optional().or(z.literal('')),
-});
+import { formSchema } from "./validation/tutorFormSchema";
+import { SaveButton } from "./components/SaveButton";
+import { SaveConfirmationDialog } from "./components/SaveConfirmationDialog";
 
 interface TutorAboutFormProps {
   initialData: TutorFormValues;
@@ -102,18 +65,6 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
       // Map form values to API expected format
       const apiValues = {
         ...formValues,
-        // Explicitly map education fields to the format expected by the API
-        education_institution: formValues.educationInstitution,
-        degree: formValues.degree,
-        graduation_year: formValues.graduationYear,
-        // Include other fields needed by the API
-        first_name: formValues.firstName,
-        last_name: formValues.lastName,
-        bio: formValues.bio,
-        city: formValues.city,
-        experience: formValues.experience,
-        achievements: formValues.achievements,
-        video_url: formValues.videoUrl
       };
       
       console.log("Mapped form values for API:", apiValues);
@@ -175,32 +126,16 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
           </CardContent>
         </Card>
         
-        <div className="sticky bottom-4 flex justify-end mt-6 bg-white p-4 border rounded-lg shadow-md z-10">
-          <Button type="submit" disabled={isLoading} className="min-w-[150px]">
-            {isLoading ? <Loader size="sm" className="mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-            {isLoading ? "Сохранение..." : "Сохранить изменения"}
-          </Button>
-        </div>
+        <SaveButton isLoading={isLoading} />
       </form>
       
-      {/* Диалог подтверждения сохранения */}
-      <AlertDialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Сохранить изменения?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Вы уверены, что хотите сохранить внесенные изменения в профиле?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={cancelSave}>Отмена</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmSave} disabled={isLoading}>
-              {isLoading && <Loader size="sm" className="mr-2" />}
-              Сохранить
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <SaveConfirmationDialog 
+        open={showSaveDialog}
+        onOpenChange={setShowSaveDialog}
+        onConfirm={confirmSave}
+        onCancel={cancelSave}
+        isLoading={isLoading}
+      />
     </Form>
   );
 };

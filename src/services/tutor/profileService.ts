@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { uploadAvatar } from "../tutorStorageService";
