@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useProfile } from "@/hooks/profiles/useProfile";
 import { useLocation } from "react-router-dom";
@@ -18,7 +19,8 @@ const TutorProfilePage = () => {
   // Convert profile to tutorProfile
   useEffect(() => {
     if (profile) {
-      setTutorProfile(convertProfileToTutorProfile(profile));
+      const converted = convertProfileToTutorProfile(profile);
+      setTutorProfile(converted);
       if (!hadFirstLoad) {
         setHadFirstLoad(true);
       }

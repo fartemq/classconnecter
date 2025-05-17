@@ -10,6 +10,10 @@ import { Loader } from "@/components/ui/loader";
 import { TutorPublishController } from "./TutorPublishController";
 import { useAuth } from "@/hooks/auth";
 import { Profile } from "@/hooks/profiles/types";
+import { Button } from "@/components/ui/button";
+import { TutorProfilePreviewModal } from "./preview/TutorProfilePreviewModal";
+import { Eye } from "lucide-react";
+import { convertProfileToTutorProfile } from "@/utils/tutorProfileConverters";
 
 interface TutorProfileSettingsTabProps {
   profile: Profile;
@@ -21,6 +25,7 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isPublished, setIsPublished] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Load tutor profile data
   useEffect(() => {
@@ -48,6 +53,16 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
     return true;
   };
 
+  const handlePreviewClick = () => {
+    // If we don't have tutorProfile yet, try to create one from profile data
+    if (!tutorProfile && profile) {
+      const convertedProfile = convertProfileToTutorProfile(profile);
+      setTutorProfile(convertedProfile);
+    }
+    
+    setPreviewOpen(true);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -69,7 +84,22 @@ export const TutorProfileSettingsTab = ({ profile }: TutorProfileSettingsTabProp
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Настройки профиля</h1>
+        <Button 
+          variant="outline" 
+          onClick={handlePreviewClick}
+          className="flex items-center gap-1"
+        >
+          <Eye className="h-4 w-4 mr-1" />
+          Предпросмотр
+        </Button>
       </div>
+
+      {/* Preview Modal */}
+      <TutorProfilePreviewModal 
+        tutorProfile={tutorProfile}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+      />
 
       {/* Publication status section */}
       <TutorPublishController 

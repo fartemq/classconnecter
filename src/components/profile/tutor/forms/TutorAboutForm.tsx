@@ -44,6 +44,7 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
 
   const handleSubmit = async (values: TutorFormValues) => {
     try {
+      // Prevent default form submission behavior
       setFormValues(values);
       setShowSaveDialog(true);
     } catch (error) {
@@ -62,14 +63,17 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
     try {
       setIsLoading(true);
       
-      // Map form values to API expected format
+      // Map form values to API expected format and make sure education fields are explicitly included
       const apiValues = {
         ...formValues,
+        educationInstitution: formValues.educationInstitution,
+        degree: formValues.degree,
+        graduationYear: formValues.graduationYear,
       };
       
       console.log("Mapped form values for API:", apiValues);
       
-      await onSubmit(apiValues as TutorFormValues, avatarFile, avatarUrl);
+      await onSubmit(apiValues, avatarFile, avatarUrl);
       setAvatarFile(null);
       toast({
         title: "Профиль обновлен",
@@ -95,8 +99,11 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-        {/* Личная информация */}
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        form.handleSubmit(handleSubmit)(e);
+      }} className="space-y-6">
+        {/* Personal Information */}
         <Card>
           <CardHeader>
             <CardTitle>Личная информация</CardTitle>
@@ -113,7 +120,7 @@ export const TutorAboutForm: React.FC<TutorAboutFormProps> = ({
           </CardContent>
         </Card>
         
-        {/* Образование */}
+        {/* Education */}
         <Card>
           <CardHeader>
             <CardTitle>Образование</CardTitle>

@@ -93,7 +93,7 @@ export async function updateTutorProfile(
       return false;
     }
 
-    // Prepare tutor profile data with education fields
+    // Prepare tutor profile data with education fields - ensure all education fields are handled
     const tutorProfileData = {
       education_institution: profileData.education_institution || "",
       degree: profileData.degree || "",
