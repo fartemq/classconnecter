@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from "react";
 import { TutorAboutForm } from "./forms/TutorAboutForm";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { Profile } from "@/hooks/profiles/types";
-import { saveTutorProfile } from "@/services/tutor/profileService";
+import { saveTutorProfile } from "@/services/tutor/profile/saveProfile";
 import { toast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";

@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { TutorAboutTab } from "./TutorAboutTab";
 import { SubjectsTab } from "./SubjectsTab";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { fetchTutorProfile } from "@/services/tutorProfileService"; 
+import { fetchTutorProfile } from "@/services/tutor/profile/fetchProfile"; 
 import { TutorProfile } from "@/types/tutor";
 import { Loader } from "@/components/ui/loader";
 import { TutorPublishController } from "./TutorPublishController";

@@ -1,5 +1,5 @@
 
 // Export all tutor service modules
-export * from './profileService';
+export * from './profile';
 export * from './validationService';
 export * from './publishService';
