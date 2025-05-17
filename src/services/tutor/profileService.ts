@@ -33,8 +33,8 @@ export const saveTutorProfile = async (
     // Update basic profile information in the profiles table
     console.log("Updating basic profile");
     const { error: profileError } = await supabase.from("profiles").update({
-      first_name: values.firstName || values.first_name,
-      last_name: values.lastName || values.last_name,
+      first_name: values.firstName,
+      last_name: values.lastName,
       bio: values.bio,
       city: values.city,
       avatar_url: finalAvatarUrl, // Use the URL of uploaded avatar
@@ -59,13 +59,13 @@ export const saveTutorProfile = async (
     // Prepare tutor profile data with mapped education fields
     const tutorProfileData: any = {
       updated_at: new Date().toISOString(),
-      education_institution: values.educationInstitution || values.education_institution || null,
-      degree: values.degree || values.degree || null,
-      graduation_year: values.graduationYear || values.graduation_year || null,
+      education_institution: values.educationInstitution || null,
+      degree: values.degree || null,
+      graduation_year: values.graduationYear || null,
       methodology: values.methodology || null,
       experience: values.experience || 0,
       achievements: values.achievements || null,
-      video_url: values.videoUrl || values.video_url || null
+      video_url: values.videoUrl || null
     };
     
     console.log("Tutor profile data for saving:", tutorProfileData);
