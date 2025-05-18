@@ -34,12 +34,17 @@ export const ProfileCompletionTracker = () => {
           case "education":
             return { 
               ...step, 
-              isCompleted: Boolean(profile.school) // Check directly for school property
+              // Check both directly from profile and from nested properties
+              isCompleted: Boolean(
+                profile.school || 
+                (profile.educational_level && profile.educational_level !== '')
+              )
             };
           case "grade":
             return { 
               ...step, 
-              isCompleted: Boolean(profile.grade) // Check directly for grade property
+              // Check both directly from profile and from nested properties
+              isCompleted: Boolean(profile.grade)
             };
           default:
             return step;
@@ -57,14 +62,8 @@ export const ProfileCompletionTracker = () => {
   }, [profile, isLoading]);
 
   // Hide if all steps are completed or loading is still in progress
-  if (isLoading) {
-    console.log("ProfileCompletionTracker: Hidden due to loading");
-    return null;
-  }
-  
-  // Only hide when 100% completed
-  if (completionPercentage === 100) {
-    console.log("ProfileCompletionTracker: Hidden due to 100% completion");
+  if (isLoading || completionPercentage === 100) {
+    console.log("ProfileCompletionTracker: Hidden due to loading or 100% completion");
     return null;
   }
 

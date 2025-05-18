@@ -27,13 +27,13 @@ export async function updateStudentProfile(
 
     // Prepare student data with all educational fields
     const studentData = {
-      educational_level: profileData.educational_level || "",
+      educational_level: profileData.educational_level || null,
       subjects: profileData.subjects || [],
-      learning_goals: profileData.learning_goals || "",
+      learning_goals: profileData.learning_goals || null,
       preferred_format: profileData.preferred_format || [],
-      school: profileData.school || "",
-      grade: profileData.grade || "",
-      budget: profileData.budget
+      school: profileData.school || null,
+      grade: profileData.grade || null,
+      budget: profileData.budget || null
     };
     
     console.log("Student profile data to save:", studentData);
@@ -95,13 +95,13 @@ export async function updateTutorProfile(
 
     // Extract education-specific fields, ensuring they're never undefined
     const tutorProfileData = {
-      education_institution: profileData.education_institution || "",
-      degree: profileData.degree || "",
+      education_institution: profileData.education_institution || null,
+      degree: profileData.degree || null,
       graduation_year: profileData.graduation_year || null,
       experience: profileData.experience || 0,
-      methodology: profileData.methodology || "",
-      achievements: profileData.achievements || "",
-      video_url: profileData.video_url || ""
+      methodology: profileData.methodology || null,
+      achievements: profileData.achievements || null,
+      video_url: profileData.video_url || null
     };
     
     console.log("Tutor profile data to save:", tutorProfileData);
@@ -155,12 +155,12 @@ export async function updateBaseProfile(
     console.log("Updating base profile for user", userId, "with data:", profileData);
     
     const baseProfileData = {
-      first_name: profileData.first_name,
-      last_name: profileData.last_name,
-      bio: profileData.bio,
-      city: profileData.city,
-      phone: profileData.phone,
-      avatar_url: profileData.avatar_url,
+      first_name: profileData.first_name || null,
+      last_name: profileData.last_name || null,
+      bio: profileData.bio || null,
+      city: profileData.city || null,
+      phone: profileData.phone || null,
+      avatar_url: profileData.avatar_url || null,
       updated_at: new Date().toISOString()
     };
 

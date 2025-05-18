@@ -77,9 +77,11 @@ export const useStudentProfile = () => {
   // Load student-specific data
   const loadStudentData = async (userId: string) => {
     try {
+      console.log("Loading student data for user:", userId);
       const studentData = await fetchStudentProfileData(userId);
       
       if (studentData) {
+        console.log("Student data loaded successfully:", studentData);
         return studentData;
       } else {
         console.log("No student profile found, creating one");
