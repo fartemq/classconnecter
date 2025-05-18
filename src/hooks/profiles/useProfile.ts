@@ -8,8 +8,11 @@ import { Profile, ProfileUpdateParams } from "./types";
 import { 
   createBasicProfile,
   createRoleSpecificProfile,
+  fetchStudentProfileData,
   fetchTutorProfileData,
   updateStudentProfile,
+  updateBaseProfile,
+  updateTutorProfile,
   checkRoleMatch 
 } from "./utils";
 import { useStudentProfile } from "./useStudentProfile";
@@ -74,29 +77,40 @@ export const useProfile = (requiredRole?: string) => {
       
       // If this is a tutor, update tutor-specific profile data
       else if (userRole === 'tutor') {
-        const { error: tutorError } = await supabase
-          .from("tutor_profiles")
-          .update({
-            education_institution: updatedProfile.education_institution,
-            degree: updatedProfile.degree,
-            graduation_year: updatedProfile.graduation_year,
-            experience: updatedProfile.experience,
-            methodology: updatedProfile.methodology,
-            achievements: updatedProfile.achievements,
-            video_url: updatedProfile.video_url
-          })
-          .eq("id", user.id);
-
-        if (tutorError) {
-          console.error("Error updating tutor profile:", tutorError);
-          throw tutorError;
+        const success = await updateTutorProfile(user.id, updatedProfile as ProfileUpdateParams);
+        if (!success) {
+          throw new Error("Failed to update tutor profile");
         }
       }
 
       // Update local state
       setProfile(prev => {
         if (!prev) return updatedProfile as Profile;
-        return { ...prev, ...updatedProfile };
+        // Make sure we include any specific education fields
+        const newProfile = { ...prev, ...updatedProfile };
+        
+        // For student profiles
+        if (userRole === 'student') {
+          newProfile.school = updatedProfile.school || prev.school;
+          newProfile.grade = updatedProfile.grade || prev.grade;
+          newProfile.subjects = updatedProfile.subjects || prev.subjects;
+          newProfile.learning_goals = updatedProfile.learning_goals || prev.learning_goals;
+          newProfile.educational_level = updatedProfile.educational_level || prev.educational_level;
+          newProfile.preferred_format = updatedProfile.preferred_format || prev.preferred_format;
+          newProfile.budget = updatedProfile.budget || prev.budget;
+        }
+        // For tutor profiles
+        else if (userRole === 'tutor') {
+          newProfile.education_institution = updatedProfile.education_institution || prev.education_institution;
+          newProfile.degree = updatedProfile.degree || prev.degree;
+          newProfile.graduation_year = updatedProfile.graduation_year || prev.graduation_year;
+          newProfile.experience = updatedProfile.experience || prev.experience;
+          newProfile.methodology = updatedProfile.methodology || prev.methodology;
+          newProfile.achievements = updatedProfile.achievements || prev.achievements;
+          newProfile.video_url = updatedProfile.video_url || prev.video_url;
+        }
+        
+        return newProfile;
       });
 
       toast({
@@ -219,15 +233,9 @@ export const useProfile = (requiredRole?: string) => {
         } 
         // If this is a student, fetch student profile data
         else if (profileData?.role === 'student') {
-          const { data: studentData, error: studentError } = await supabase
-            .from("student_profiles")
-            .select("*")
-            .eq("id", user.id)
-            .maybeSingle();
+          const studentData = await fetchStudentProfileData(user.id);
             
-          if (studentError && studentError.code !== 'PGRST116') {
-            console.error("Error fetching student profile:", studentError);
-          } else if (studentData) {
+          if (studentData) {
             additionalData = {
               educational_level: studentData.educational_level,
               subjects: studentData.subjects,

@@ -27,7 +27,7 @@ export async function updateStudentProfile(
 
     // Prepare student data with all educational fields
     const studentData = {
-      educational_level: profileData.educational_level,
+      educational_level: profileData.educational_level || "",
       subjects: profileData.subjects || [],
       learning_goals: profileData.learning_goals || "",
       preferred_format: profileData.preferred_format || [],

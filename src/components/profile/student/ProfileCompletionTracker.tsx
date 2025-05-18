@@ -32,16 +32,14 @@ export const ProfileCompletionTracker = () => {
               ) 
             };
           case "education":
-            // Use actual profile.school value directly, not the nested one
             return { 
               ...step, 
-              isCompleted: Boolean(profile.school) 
+              isCompleted: Boolean(profile.school) // Check directly for school property
             };
           case "grade":
-            // Use actual profile.grade value directly, not the nested one
             return { 
               ...step, 
-              isCompleted: Boolean(profile.grade) 
+              isCompleted: Boolean(profile.grade) // Check directly for grade property
             };
           default:
             return step;

@@ -48,12 +48,12 @@ export const useStudentProfile = () => {
           ...prev, 
           ...params, 
           // Explicitly update educational fields to ensure they're properly stored in state
-          school: params.school,
-          grade: params.grade,
-          learning_goals: params.learning_goals,
-          educational_level: params.educational_level,
-          subjects: params.subjects || [],
-          preferred_format: params.preferred_format || []
+          school: params.school || prev.school,
+          grade: params.grade || prev.grade,
+          learning_goals: params.learning_goals || prev.learning_goals,
+          educational_level: params.educational_level || prev.educational_level,
+          subjects: params.subjects || prev.subjects || [],
+          preferred_format: params.preferred_format || prev.preferred_format || []
         };
       });
 
