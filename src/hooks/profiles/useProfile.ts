@@ -150,7 +150,11 @@ export const useProfile = (requiredRole?: string) => {
         
         // If profile doesn't exist yet, create a basic one
         if (!profileData && !profileError) {
-          const defaultRole = requiredRole || "student";
+          // Fix: Cast defaultRole to either "student" or "tutor"
+          const defaultRole = requiredRole === "student" || requiredRole === "tutor" 
+            ? requiredRole as "student" | "tutor"
+            : "student";  // Default to student if role is invalid
+            
           const newProfile = await createBasicProfile(user, defaultRole);
             
           if (newProfile) {

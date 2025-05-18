@@ -1,26 +1,33 @@
 
+import { useNavigate } from "react-router-dom";
+import { Profile } from "../types";
+
 /**
- * Checks if a user's role matches the required role
+ * Checks if the profile has the required role
  */
 export function checkRoleMatch(
-  profileData: any,
+  profile: Profile,
   requiredRole: string | undefined,
-  navigate: Function,
-  isMounted: boolean
+  navigate: ReturnType<typeof useNavigate>,
+  isMounted: boolean = true
 ): boolean {
-  if (requiredRole && profileData && profileData.role !== requiredRole) {
-    console.log(`User role (${profileData.role}) doesn't match required role (${requiredRole})`);
+  if (!requiredRole) return true;
+  
+  if (profile.role !== requiredRole) {
+    console.warn(`Profile role mismatch. Required: ${requiredRole}, Found: ${profile.role}`);
+    
     if (isMounted) {
-      // Import toast inline to avoid circular dependencies
-      const { toast } = require("@/hooks/use-toast");
-      toast({
-        title: "Доступ запрещен",
-        description: `Эта страница доступна только для ${requiredRole === "student" ? "студентов" : "репетиторов"}.`,
-        variant: "destructive",
-      });
-      navigate("/");
+      // Redirect to the appropriate profile page
+      const redirectPath = profile.role === "tutor" ? "/profile/tutor" : "/profile/student";
+      setTimeout(() => {
+        if (isMounted) {
+          navigate(redirectPath);
+        }
+      }, 100);
     }
+    
     return false;
   }
+  
   return true;
 }

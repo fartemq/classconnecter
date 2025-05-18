@@ -1,59 +1,65 @@
 
+import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
+import { Profile } from "../types";
 
 /**
- * Create a role-specific profile for a user
+ * Creates a basic profile for a new user
  */
-export const createRoleSpecificProfile = async (
-  userId: string,
+export async function createBasicProfile(
+  user: User,
   role: "student" | "tutor"
-): Promise<boolean> => {
+): Promise<Profile | null> {
   try {
-    console.log(`Creating new ${role} profile for user:`, userId);
+    console.log(`Creating new basic profile for user ${user.id} with role ${role}`);
     
-    if (role === "student") {
-      // Create default student profile
-      const { error } = await supabase
-        .from("student_profiles")
-        .insert({
-          id: userId,
-          educational_level: "school",
-          subjects: [],
-          preferred_format: [],
-        });
-      
-      if (error) {
-        console.error("Error creating student profile:", error);
-        return false;
-      }
-      
-      console.log("Student profile created successfully");
-      return true;
-      
-    } else if (role === "tutor") {
-      // Create default tutor profile
-      const { error } = await supabase
-        .from("tutor_profiles")
-        .insert({
-          id: userId,
-          is_published: false,
-          education_verified: false,
-          experience: 0
-        });
-      
-      if (error) {
-        console.error("Error creating tutor profile:", error);
-        return false;
-      }
-      
-      console.log("Tutor profile created successfully");
-      return true;
+    // Extract user name from metadata or email
+    let firstName = "";
+    let lastName = "";
+    
+    if (user.user_metadata?.first_name) {
+      firstName = user.user_metadata.first_name;
     }
     
-    console.error("Invalid role specified:", role);
-    return false;
+    if (user.user_metadata?.last_name) {
+      lastName = user.user_metadata.last_name;
+    }
+    
+    // If no name in metadata, try to extract from email
+    if (!firstName && user.email) {
+      const emailName = user.email.split('@')[0];
+      firstName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+    }
+    
+    // Create the profile
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .insert({
+        id: user.id,
+        first_name: firstName,
+        last_name: lastName,
+        role: role,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error("Error creating basic profile:", error);
+      toast({
+        title: "Ошибка создания профиля",
+        description: "Не удалось создать профиль пользователя",
+        variant: "destructive",
+      });
+      return null;
+    }
+    
+    console.log("Basic profile created successfully:", profile);
+    return profile as Profile;
   } catch (error) {
-    console.error(`Error creating ${role} profile:`, error);
-    return false;
+    console.error("Error in createBasicProfile:", error);
+    return null;
   }
-};
+}
