@@ -37,10 +37,15 @@ export const useTutorProfile = () => {
 
       // Update local state with ALL fields from params
       setProfile(prev => {
-        if (!prev) return params;
+        if (!prev) return prev;
         return { 
           ...prev, 
           ...params,
+          // Explicitly maintain required Profile fields
+          id: prev.id,
+          role: prev.role,
+          created_at: prev.created_at,
+          updated_at: prev.updated_at,
           // Explicitly update education fields to ensure they're properly stored in state
           education_institution: params.education_institution || prev.education_institution,
           degree: params.degree || prev.degree,

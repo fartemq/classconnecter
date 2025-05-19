@@ -37,10 +37,15 @@ export const useStudentProfile = () => {
 
       // Update local state with ALL fields from params
       setProfile(prev => {
-        if (!prev) return params;
+        if (!prev) return prev;
         return { 
           ...prev, 
           ...params, 
+          // Explicitly maintain required Profile fields
+          id: prev.id,
+          role: prev.role,
+          created_at: prev.created_at,
+          updated_at: prev.updated_at,
           // Explicitly update educational fields to ensure they're properly stored in state
           school: params.school || prev.school,
           grade: params.grade || prev.grade,
