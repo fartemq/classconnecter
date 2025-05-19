@@ -1,23 +1,12 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/auth";
-import { Profile, ProfileUpdateParams } from "./types";
-import { 
-  createBasicProfile,
-  createRoleSpecificProfile,
-  fetchStudentProfileData,
-  fetchTutorProfileData,
-  updateStudentProfile,
-  updateBaseProfile,
-  updateTutorProfile,
-  checkRoleMatch 
-} from "./utils";
+import { ProfileUpdateParams } from "./types";
 import { useStudentProfile } from "./useStudentProfile";
 import { useTutorProfile } from "./useTutorProfile";
+import { useProfileCommon } from "./useProfileCommon";
 
+/**
+ * Main profile hook that uses the appropriate specialized hook based on role
+ */
 export const useProfile = (requiredRole?: string) => {
   // Use the appropriate specialized hook based on the required role
   if (requiredRole === 'student') {
@@ -28,248 +17,27 @@ export const useProfile = (requiredRole?: string) => {
     return useTutorProfile();
   }
 
-  // For general use or when role is unknown, use the full implementation
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { user, userRole } = useAuth();
-  const navigate = useNavigate();
-
-  // Function to update profile data
-  const updateProfile = async (updatedProfile: Partial<Profile>): Promise<boolean> => {
-    try {
-      if (!user) {
-        toast({
-          title: "Ошибка",
-          description: "Пользователь не авторизован",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      console.log("Updating profile with data:", updatedProfile);
-
-      // Update the main profile data
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          first_name: updatedProfile.first_name,
-          last_name: updatedProfile.last_name,
-          bio: updatedProfile.bio,
-          city: updatedProfile.city,
-          phone: updatedProfile.phone,
-          avatar_url: updatedProfile.avatar_url,
-        })
-        .eq("id", user.id);
-
-      if (profileError) {
-        console.error("Error updating profile:", profileError);
-        throw profileError;
-      }
-
-      // If this is a student, update student-specific profile data
-      if (userRole === 'student') {
-        const success = await updateStudentProfile(user.id, updatedProfile as ProfileUpdateParams);
-        if (!success) {
-          throw new Error("Failed to update student profile");
-        }
-      }
-      
-      // If this is a tutor, update tutor-specific profile data
-      else if (userRole === 'tutor') {
-        const success = await updateTutorProfile(user.id, updatedProfile as ProfileUpdateParams);
-        if (!success) {
-          throw new Error("Failed to update tutor profile");
-        }
-      }
-
-      // Update local state
-      setProfile(prev => {
-        if (!prev) return updatedProfile as Profile;
-        // Make sure we include any specific education fields
-        const newProfile = { ...prev, ...updatedProfile };
-        
-        // For student profiles
-        if (userRole === 'student') {
-          newProfile.school = updatedProfile.school || prev.school;
-          newProfile.grade = updatedProfile.grade || prev.grade;
-          newProfile.subjects = updatedProfile.subjects || prev.subjects;
-          newProfile.learning_goals = updatedProfile.learning_goals || prev.learning_goals;
-          newProfile.educational_level = updatedProfile.educational_level || prev.educational_level;
-          newProfile.preferred_format = updatedProfile.preferred_format || prev.preferred_format;
-          newProfile.budget = updatedProfile.budget || prev.budget;
-        }
-        // For tutor profiles
-        else if (userRole === 'tutor') {
-          newProfile.education_institution = updatedProfile.education_institution || prev.education_institution;
-          newProfile.degree = updatedProfile.degree || prev.degree;
-          newProfile.graduation_year = updatedProfile.graduation_year || prev.graduation_year;
-          newProfile.experience = updatedProfile.experience || prev.experience;
-          newProfile.methodology = updatedProfile.methodology || prev.methodology;
-          newProfile.achievements = updatedProfile.achievements || prev.achievements;
-          newProfile.video_url = updatedProfile.video_url || prev.video_url;
-        }
-        
-        return newProfile;
-      });
-
-      toast({
-        title: "Успешно",
-        description: "Профиль успешно обновлен",
-      });
-
-      return true;
-    } catch (error) {
-      console.error("Error in updateProfile:", error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось обновить профиль. Пожалуйста, попробуйте ещё раз.",
-        variant: "destructive",
-      });
+  // For general use or when role is unknown, use the common hook
+  const { profile, setProfile, isLoading, error, user, userRole } = useProfileCommon();
+  
+  // General update profile function that dispatches to the appropriate specialized function
+  const updateProfile = async (params: ProfileUpdateParams) => {
+    if (userRole === 'student') {
+      const studentProfile = useStudentProfile();
+      return studentProfile.updateProfile(params);
+    } else if (userRole === 'tutor') {
+      const tutorProfile = useTutorProfile();
+      return tutorProfile.updateProfile(params);
+    } else {
+      console.error("Unknown user role:", userRole);
       return false;
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
-    
-    const fetchProfile = async () => {
-      try {
-        if (isMounted) setIsLoading(true);
-        
-        // Check if user is authenticated
-        if (!user) {
-          if (isMounted) {
-            setError("Требуется авторизация");
-            setTimeout(() => {
-              if (isMounted) {
-                toast({
-                  title: "Требуется авторизация",
-                  description: "Пожалуйста, войдите в систему для продолжения.",
-                  variant: "destructive",
-                });
-                navigate("/login");
-              }
-            }, 100);
-          }
-          return;
-        }
-        
-        // Get user profile
-        const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", user.id)
-          .maybeSingle();
-        
-        // If profile doesn't exist yet, create a basic one
-        if (!profileData && !profileError) {
-          // Fix: Cast defaultRole to either "student" or "tutor"
-          const defaultRole = requiredRole === "student" || requiredRole === "tutor" 
-            ? requiredRole as "student" | "tutor"
-            : "student";  // Default to student if role is invalid
-            
-          const newProfile = await createBasicProfile(user, defaultRole);
-            
-          if (newProfile) {
-            await createRoleSpecificProfile(user.id, defaultRole);
-            
-            if (isMounted) {
-              setProfile(newProfile as Profile);
-              setIsLoading(false);
-              setError(null);
-            }
-            return;
-          }
-          return;
-        }
-        
-        if (profileError) {
-          console.error("Profile error:", profileError);
-          
-          if (isMounted) {
-            setError("Не удалось загрузить данные профиля");
-            toast({
-              title: "Ошибка профиля",
-              description: "Не удалось загрузить данные профиля",
-              variant: "destructive",
-            });
-            
-            if (profileError.code === 'PGRST116') {
-              navigate("/login");
-            }
-          }
-          return;
-        }
-        
-        // Check role match
-        if (!checkRoleMatch(profileData, requiredRole, navigate, isMounted)) {
-          setError("Неправильный тип профиля");
-          return;
-        }
-        
-        // Additional profile data based on role
-        let additionalData = {};
-        
-        // If this is a tutor, fetch additional tutor profile data
-        if (profileData?.role === 'tutor') {
-          const tutorData = await fetchTutorProfileData(user.id);
-          
-          if (tutorData) {
-            additionalData = {
-              education_institution: tutorData.education_institution,
-              degree: tutorData.degree,
-              graduation_year: tutorData.graduation_year,
-              experience: tutorData.experience,
-              methodology: tutorData.methodology,
-              achievements: tutorData.achievements,
-              video_url: tutorData.video_url,
-              is_published: tutorData.is_published,
-              education_verified: tutorData.education_verified
-            };
-          } else {
-            await createRoleSpecificProfile(user.id, 'tutor');
-          }
-        } 
-        // If this is a student, fetch student profile data
-        else if (profileData?.role === 'student') {
-          const studentData = await fetchStudentProfileData(user.id);
-            
-          if (studentData) {
-            additionalData = {
-              educational_level: studentData.educational_level,
-              subjects: studentData.subjects,
-              learning_goals: studentData.learning_goals,
-              preferred_format: studentData.preferred_format,
-              school: studentData.school,
-              grade: studentData.grade,
-              budget: studentData.budget
-            };
-          } else {
-            await createRoleSpecificProfile(user.id, 'student');
-          }
-        }
-        
-        if (isMounted && profileData) {
-          setProfile({
-            ...profileData,
-            ...additionalData,
-            created_at: profileData.created_at || null,
-            updated_at: profileData.updated_at || null
-          } as Profile);
-          setError(null);
-        }
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-    
-    fetchProfile();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [navigate, requiredRole, user, userRole]);
-
-  return { profile, isLoading, updateProfile, error };
+  return {
+    profile,
+    isLoading,
+    updateProfile,
+    error
+  };
 };
