@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { SearchIcon, CheckCircle, Filter, MapPin, X, BookOpen, Star, ChevronDown, ChevronUp } from 'lucide-react';
+import { SearchIcon, CheckCircle, Filter, MapPin, X, BookOpen, Star, ChevronDown, ChevronUp, UserPlus, Heart } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
@@ -13,10 +14,33 @@ import { Loader } from '@/components/ui/loader';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfile } from '@/hooks/useProfile';
+import { requestTutor, addTutorToFavorites } from '@/services/studentTutorService';
 
 // For pagination
 import { Button as PaginationButton } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const priceRanges = [
   { min: 0, max: 1000, label: "До 1000 ₽" },
@@ -43,16 +67,19 @@ export const FindTutorsTab = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [filters, setFilters] = useState<TutorSearchFilters>({});
-  const [priceRange, setPriceRange] = useState<number[]>([0, 5000]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
   const [subjectFilter, setSubjectFilter] = useState<string | undefined>(undefined);
   const [cityFilter, setCityFilter] = useState("");
   const [ratingFilter, setRatingFilter] = useState<number | undefined>(undefined);
   const [verifiedFilter, setVerifiedFilter] = useState(false);
   const [experienceFilter, setExperienceFilter] = useState<number | undefined>(undefined);
+  const [showExistingTutors, setShowExistingTutors] = useState(false);
+  const [selectedTutorId, setSelectedTutorId] = useState<string | null>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { profile } = useProfile("student");
   const itemsPerPage = 5;
 
   useEffect(() => {
@@ -71,6 +98,8 @@ export const FindTutorsTab = () => {
   }, [currentPage, user, navigate]);
 
   const fetchTutors = async () => {
+    if (!user) return;
+    
     setIsLoading(true);
     try {
       const response = await searchTutors(
@@ -82,6 +111,7 @@ export const FindTutorsTab = () => {
           rating: ratingFilter,
           verified: verifiedFilter || undefined,
           experienceMin: experienceFilter,
+          showExisting: showExistingTutors,
         }, 
         currentPage, 
         itemsPerPage
@@ -119,6 +149,7 @@ export const FindTutorsTab = () => {
     setRatingFilter(undefined);
     setVerifiedFilter(false);
     setExperienceFilter(undefined);
+    setShowExistingTutors(false);
     setCurrentPage(1);
     
     // Reset filters and search again
@@ -126,14 +157,57 @@ export const FindTutorsTab = () => {
     fetchTutors();
   };
 
-  // ИСПРАВЛЕНО: Изменен маршрут перехода на страницу репетитора
+  // Handle view tutor profile
   const handleViewTutorProfile = (id: string) => {
-    // Изменяем путь, чтобы оставаться в интерфейсе ученика
     navigate(`/tutors/${id}`);
   };
 
-  const handleContactTutor = (id: string) => {
-    navigate(`/profile/student/chats/${id}`);
+  // Handle request tutor
+  const handleRequestTutor = async (tutorId: string) => {
+    if (!profile?.id) {
+      toast({
+        title: "Ошибка",
+        description: "Вы должны войти в систему, чтобы отправить запрос репетитору",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const success = await requestTutor(profile.id, tutorId);
+    if (success) {
+      // Update the tutor's status in the UI
+      setTutors(prevTutors => 
+        prevTutors.map(tutor => 
+          tutor.id === tutorId 
+            ? { ...tutor, relationshipStatus: 'pending' } 
+            : tutor
+        )
+      );
+    }
+  };
+
+  // Handle add to favorites
+  const handleAddToFavorites = async (tutorId: string) => {
+    if (!profile?.id) {
+      toast({
+        title: "Ошибка",
+        description: "Вы должны войти в систему, чтобы добавить репетитора в избранное",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const success = await addTutorToFavorites(profile.id, tutorId);
+    if (success) {
+      // Update the tutor's favorite status in the UI
+      setTutors(prevTutors => 
+        prevTutors.map(tutor => 
+          tutor.id === tutorId 
+            ? { ...tutor, isFavorite: true } 
+            : tutor
+        )
+      );
+    }
   };
 
   const handlePageChange = (page: number) => {
@@ -144,8 +218,76 @@ export const FindTutorsTab = () => {
     return Math.ceil(totalTutors / itemsPerPage);
   };
 
+  // Function to render the appropriate action buttons based on relationship status
+  const renderActionButtons = (tutor: TutorSearchResult) => {
+    if (tutor.relationshipStatus === 'accepted') {
+      return (
+        <>
+          <Button 
+            onClick={() => handleViewTutorProfile(tutor.id)}
+            variant="secondary" 
+            className="flex-1"
+          >
+            Посмотреть профиль
+          </Button>
+          <Button 
+            onClick={() => navigate(`/profile/student/chats/${tutor.id}`)}
+            className="flex-1"
+          >
+            Написать сообщение
+          </Button>
+        </>
+      );
+    } else if (tutor.relationshipStatus === 'pending') {
+      return (
+        <>
+          <Button 
+            onClick={() => handleViewTutorProfile(tutor.id)}
+            variant="secondary" 
+            className="flex-1"
+          >
+            Посмотреть профиль
+          </Button>
+          <Button 
+            variant="outline" 
+            className="flex-1"
+            disabled
+          >
+            Запрос отправлен
+          </Button>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <Button 
+            onClick={() => handleViewTutorProfile(tutor.id)}
+            variant="secondary" 
+            className="flex-1"
+          >
+            Посмотреть профиль
+          </Button>
+          <Button 
+            onClick={() => handleRequestTutor(tutor.id)}
+            className="flex-1"
+          >
+            Отправить запрос
+          </Button>
+          <Button
+            onClick={() => handleAddToFavorites(tutor.id)}
+            variant="outline"
+            className={`flex-shrink-0 ${tutor.isFavorite ? 'text-red-500' : ''}`}
+            disabled={tutor.isFavorite}
+          >
+            <Heart className={`h-4 w-4 ${tutor.isFavorite ? 'fill-current' : ''}`} />
+          </Button>
+        </>
+      );
+    }
+  };
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
         <h1 className="text-2xl font-bold">Найти репетитора</h1>
         
@@ -282,6 +424,21 @@ export const FindTutorsTab = () => {
               {/* More filters */}
               <div className="md:col-span-2 lg:col-span-3">
                 <div className="flex flex-wrap gap-4">
+                  {/* Show existing tutors filter */}
+                  <div className="flex items-center space-x-2">
+                    <Checkbox 
+                      id="showExisting" 
+                      checked={showExistingTutors}
+                      onCheckedChange={(checked) => setShowExistingTutors(checked as boolean)}
+                    />
+                    <Label 
+                      htmlFor="showExisting"
+                      className="text-sm font-normal"
+                    >
+                      Показывать моих репетиторов
+                    </Label>
+                  </div>
+                  
                   {/* Verified filter */}
                   <div className="flex items-center space-x-2">
                     <Checkbox 
@@ -329,7 +486,7 @@ export const FindTutorsTab = () => {
       )}
       
       {/* Applied filters */}
-      {(subjectFilter || cityFilter || verifiedFilter || ratingFilter || experienceFilter || priceRange[0] > 0 || priceRange[1] < 5000) && (
+      {(subjectFilter || cityFilter || verifiedFilter || ratingFilter || experienceFilter || priceRange[0] > 0 || priceRange[1] < 5000 || showExistingTutors) && (
         <div className="flex flex-wrap gap-2 mb-4">
           {subjectFilter && (
             <Badge variant="outline" className="flex items-center gap-1 bg-slate-100">
@@ -416,6 +573,20 @@ export const FindTutorsTab = () => {
             </Badge>
           )}
           
+          {showExistingTutors && (
+            <Badge variant="outline" className="flex items-center gap-1 bg-slate-100">
+              Мои репетиторы включены
+              <X 
+                size={14} 
+                className="cursor-pointer" 
+                onClick={() => {
+                  setShowExistingTutors(false);
+                  applyFilters();
+                }}
+              />
+            </Badge>
+          )}
+          
           <Badge 
             variant="outline" 
             className="flex items-center gap-1 bg-slate-100 cursor-pointer"
@@ -443,21 +614,41 @@ export const FindTutorsTab = () => {
       ) : (
         <div className="space-y-4">
           {tutors.map((tutor) => (
-            <Card key={tutor.id} className="overflow-hidden">
+            <Card 
+              key={tutor.id} 
+              className={`overflow-hidden ${tutor.relationshipStatus === 'accepted' ? 'border-primary border-2' : ''}`}
+            >
               <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
                   {/* Left side - Tutor photo */}
                   <div className="w-full md:w-1/4 bg-slate-50 p-6 flex flex-col items-center justify-center">
-                    <Avatar className="h-28 w-28">
-                      {tutor.avatarUrl ? (
-                        <AvatarImage src={tutor.avatarUrl} alt={`${tutor.firstName} ${tutor.lastName}`} />
-                      ) : (
-                        <AvatarFallback className="text-xl">
-                          {tutor.firstName.charAt(0)}
-                          {tutor.lastName ? tutor.lastName.charAt(0) : ''}
-                        </AvatarFallback>
+                    <div className="relative">
+                      <Avatar className="h-28 w-28">
+                        {tutor.avatarUrl ? (
+                          <AvatarImage src={tutor.avatarUrl} alt={`${tutor.firstName} ${tutor.lastName}`} />
+                        ) : (
+                          <AvatarFallback className="text-xl">
+                            {tutor.firstName.charAt(0)}
+                            {tutor.lastName ? tutor.lastName.charAt(0) : ''}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      
+                      {/* Show status badge if applicable */}
+                      {tutor.relationshipStatus && (
+                        <Badge 
+                          className={
+                            tutor.relationshipStatus === 'accepted' 
+                              ? "bg-green-500 absolute -bottom-2 left-1/2 transform -translate-x-1/2" 
+                              : tutor.relationshipStatus === 'pending' 
+                                ? "bg-amber-500 absolute -bottom-2 left-1/2 transform -translate-x-1/2"
+                                : "hidden"
+                          }
+                        >
+                          {tutor.relationshipStatus === 'accepted' ? 'Мой репетитор' : 'Запрос отправлен'}
+                        </Badge>
                       )}
-                    </Avatar>
+                    </div>
                     
                     <h3 className="font-medium text-lg mt-3 text-center">{tutor.firstName} {tutor.lastName}</h3>
                     
@@ -498,7 +689,7 @@ export const FindTutorsTab = () => {
                         
                         {tutor.experience !== null && tutor.experience !== undefined && (
                           <div className="text-sm text-gray-600">
-                            Опыт: {tutor.experience} {getExperienceYears(tutor.experience)}
+                            Опыт: {tutor.experience} {getPluralYears(tutor.experience)}
                           </div>
                         )}
                       </div>
@@ -528,19 +719,7 @@ export const FindTutorsTab = () => {
                     </div>
                     
                     <div className="mt-6 flex flex-col sm:flex-row gap-3">
-                      <Button 
-                        onClick={() => handleViewTutorProfile(tutor.id)}
-                        variant="secondary" 
-                        className="flex-1"
-                      >
-                        Посмотреть профиль
-                      </Button>
-                      <Button 
-                        onClick={() => handleContactTutor(tutor.id)}
-                        className="flex-1"
-                      >
-                        Связаться
-                      </Button>
+                      {renderActionButtons(tutor)}
                     </div>
                   </div>
                 </div>
@@ -636,7 +815,7 @@ export const FindTutorsTab = () => {
   }
   
   // Helper function to get the correct ending for years in Russian
-  function getExperienceYears(years: number) {
+  function getPluralYears(years: number) {
     if (years % 10 === 1 && years % 100 !== 11) {
       return 'год';
     } else if ([2, 3, 4].includes(years % 10) && ![12, 13, 14].includes(years % 100)) {

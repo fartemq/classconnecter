@@ -16,6 +16,8 @@ export interface TutorSearchResult {
   }[];
   isVerified: boolean;
   experience: number | null;
+  relationshipStatus?: string | null;
+  isFavorite?: boolean;
 }
 
 export interface TutorSearchFilters {
@@ -26,6 +28,7 @@ export interface TutorSearchFilters {
   rating?: number;
   verified?: boolean;
   experienceMin?: number;
+  showExisting?: boolean; // New filter to control showing tutors already in relationships
 }
 
 /**
@@ -59,6 +62,10 @@ export const searchTutors = async (
   pageSize: number = 10
 ): Promise<{ tutors: TutorSearchResult[]; total: number }> => {
   try {
+    // Get the current user ID for relationship and favorites checks
+    const { data: { user } } = await supabase.auth.getUser();
+    const currentUserId = user?.id;
+    
     // Basic query to fetch published tutors
     let query = supabase
       .from("profiles")
@@ -78,8 +85,7 @@ export const searchTutors = async (
         { count: "exact" }
       )
       .eq("role", "tutor")
-      .eq("tutor_profiles.is_published", true)
-      .range((page - 1) * pageSize, page * pageSize - 1);
+      .eq("tutor_profiles.is_published", true);
 
     // Apply filters
     if (filters.city) {
@@ -106,8 +112,44 @@ export const searchTutors = async (
       return { tutors: [], total: 0 };
     }
 
+    // Get student-tutor relationships if a user is logged in
+    let relationships: Record<string, string> = {};
+    let favorites: Record<string, boolean> = {};
+    
+    if (currentUserId) {
+      const { data: relationshipsData } = await supabase
+        .from('student_tutor_relationships')
+        .select('tutor_id, status')
+        .eq('student_id', currentUserId);
+      
+      if (relationshipsData) {
+        relationships = relationshipsData.reduce((acc, rel) => {
+          acc[rel.tutor_id] = rel.status;
+          return acc;
+        }, {} as Record<string, string>);
+      }
+      
+      const { data: favoritesData } = await supabase
+        .from('favorite_tutors')
+        .select('tutor_id')
+        .eq('student_id', currentUserId);
+      
+      if (favoritesData) {
+        favorites = favoritesData.reduce((acc, fav) => {
+          acc[fav.tutor_id] = true;
+          return acc;
+        }, {} as Record<string, boolean>);
+      }
+    }
+
     // Process tutor results
     const tutorPromises = tutorsData.map(async (tutor) => {
+      // Skip tutors that are already in a relationship with the student,
+      // unless specifically showing existing relationships
+      if (currentUserId && relationships[tutor.id] === 'accepted' && !filters.showExisting) {
+        return null;
+      }
+      
       // Get subjects with proper error handling
       const { data: subjectsData, error: subjectsError } = await supabase
         .from("tutor_subjects")
@@ -147,7 +189,6 @@ export const searchTutors = async (
         (filters.priceMin !== undefined || filters.priceMax !== undefined) &&
         filteredSubjects.length > 0
       ) {
-        // ИСПРАВЛЕНО: Добавлена дополнительная проверка на корректность hourly_rate
         filteredSubjects = filteredSubjects.filter((s) => {
           const price = typeof s.hourly_rate === 'number' && s.hourly_rate > 0 ? s.hourly_rate : 0;
           return (
@@ -212,24 +253,28 @@ export const searchTutors = async (
         id: tutor.id,
         firstName: tutor.first_name || '',
         lastName: tutor.last_name || '',
-        // ИСПРАВЛЕНО: Корректная обработка аватаров
         avatarUrl: avatarUrl,
         city: tutor.city || '',
         rating: averageRating,
         subjects: formattedSubjects,
         isVerified: tutorProfile.education_verified || false,
-        // ИСПРАВЛЕНО: Корректная обработка опыта работы
         experience: typeof tutorProfile.experience === 'number' ? tutorProfile.experience : 0,
+        // Add relationship status and favorite status if applicable
+        relationshipStatus: currentUserId ? relationships[tutor.id] : undefined,
+        isFavorite: currentUserId ? !!favorites[tutor.id] : undefined
       };
     });
 
-    const results = (await Promise.all(tutorPromises)).filter(
+    let results = (await Promise.all(tutorPromises)).filter(
       (t): t is TutorSearchResult => t !== null
     );
+    
+    // Apply pagination after all filters
+    const paginatedResults = results.slice((page - 1) * pageSize, page * pageSize);
 
     return { 
-      tutors: results, 
-      total: count || results.length 
+      tutors: paginatedResults, 
+      total: results.length 
     };
   } catch (error) {
     console.error("Error in searchTutors:", error);

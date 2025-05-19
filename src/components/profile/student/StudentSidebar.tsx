@@ -42,11 +42,13 @@ export const StudentSidebar = () => {
       icon: <Search className="h-5 w-5" />,
       label: "Поиск репетиторов",
       href: "/profile/student/find-tutors",
+      description: "Найти новых репетиторов"
     },
     {
       icon: <Users className="h-5 w-5" />,
       label: "Мои репетиторы",
       href: "/profile/student/my-tutors",
+      description: "Управление репетиторами"
     },
     {
       icon: <MessageSquare className="h-5 w-5" />,
@@ -117,6 +119,7 @@ export const StudentSidebar = () => {
                   : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"}
               `}
               end={item.exact}
+              title={item.description}
             >
               <span className="mr-3">{item.icon}</span>
               {item.label}
