@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -68,6 +67,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
   };
 
   const handleSelectChange = (name: string, value: string) => {
+    console.log(`Changing ${name} to ${value}`);
     setFormState((prev) => ({
       ...prev,
       [name]: value,
