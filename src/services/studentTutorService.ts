@@ -64,10 +64,17 @@ export const getStudentTutorRelationships = async (studentId: string): Promise<S
     }
 
     // Format the response with proper typing
-    return data.map(item => ({
-      ...item,
-      tutor: item.tutor ? ensureObject(item.tutor) : undefined
-    })) as StudentTutorRelationship[];
+    const relationships = data.map(item => {
+      // Ensure tutor is handled correctly - it should be an object not an array
+      const formattedTutor = item.tutor ? ensureObject(item.tutor) : undefined;
+      
+      return {
+        ...item,
+        tutor: formattedTutor
+      };
+    });
+
+    return relationships as StudentTutorRelationship[];
 
   } catch (error) {
     console.error('Exception in getStudentTutorRelationships:', error);
@@ -102,10 +109,17 @@ export const getStudentFavoriteTutors = async (studentId: string): Promise<Favor
     }
 
     // Format the response with proper typing
-    return data.map(item => ({
-      ...item,
-      tutor: item.tutor ? ensureObject(item.tutor) : undefined
-    })) as FavoriteTutor[];
+    const favoriteTutors = data.map(item => {
+      // Ensure tutor is handled correctly - it should be an object not an array
+      const formattedTutor = item.tutor ? ensureObject(item.tutor) : undefined;
+      
+      return {
+        ...item,
+        tutor: formattedTutor
+      };
+    });
+
+    return favoriteTutors as FavoriteTutor[];
 
   } catch (error) {
     console.error('Exception in getStudentFavoriteTutors:', error);
