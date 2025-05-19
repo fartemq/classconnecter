@@ -1,13 +1,16 @@
 
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ProfileUpdateParams, Profile } from "./types";
+import { ProfileUpdateParams } from "./types";
 import { useBaseProfile } from "./useBaseProfile";
 import { createRoleSpecificProfile } from "./utils";
-import { fetchStudentProfileData, updateBaseProfile, updateStudentProfile } from "./utils";
+import { fetchStudentProfileData } from "./utils/fetchProfile";
+import { updateStudentProfile } from "./utils/updateProfile";
 
+/**
+ * Hook for managing student profile data
+ */
 export const useStudentProfile = () => {
-  const { profile, setProfile, isLoading, error } = useBaseProfile("student");
+  const { profile, setProfile, isLoading, error, user } = useBaseProfile("student");
 
   // Update profile function
   const updateProfile = async (params: ProfileUpdateParams): Promise<boolean> => {
@@ -24,15 +27,7 @@ export const useStudentProfile = () => {
 
       console.log("Updating student profile with data:", params);
 
-      // Step 1: Update the main profile data
-      const baseUpdated = await updateBaseProfile(profile.id, params);
-      if (!baseUpdated) {
-        throw new Error("Failed to update base profile");
-      }
-      
-      console.log("Main profile updated successfully");
-
-      // Step 2: Update student-specific profile
+      // Update student-specific profile
       const studentUpdated = await updateStudentProfile(profile.id, params);
       if (!studentUpdated) {
         throw new Error("Failed to update student profile");
@@ -42,8 +37,7 @@ export const useStudentProfile = () => {
 
       // Update local state with ALL fields from params
       setProfile(prev => {
-        if (!prev) return params as Profile;
-        // Make sure we update all profile fields, including educational ones
+        if (!prev) return params;
         return { 
           ...prev, 
           ...params, 

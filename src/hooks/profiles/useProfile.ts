@@ -18,10 +18,10 @@ export const useProfile = (requiredRole?: string) => {
   }
 
   // For general use or when role is unknown, use the common hook
-  const { profile, setProfile, isLoading, error, user, userRole } = useProfileCommon();
+  const { profile, isLoading, error, userRole } = useProfileCommon();
   
   // General update profile function that dispatches to the appropriate specialized function
-  const updateProfile = async (params: ProfileUpdateParams) => {
+  const updateProfile = async (params: ProfileUpdateParams): Promise<boolean> => {
     if (userRole === 'student') {
       const studentProfile = useStudentProfile();
       return studentProfile.updateProfile(params);

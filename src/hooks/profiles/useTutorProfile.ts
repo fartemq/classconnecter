@@ -1,12 +1,16 @@
 
-import { ProfileUpdateParams, Profile } from "./types";
-import { useBaseProfile } from "./useBaseProfile";
-import { updateBaseProfile, updateTutorProfile, fetchTutorProfileData } from "./utils";
 import { toast } from "@/hooks/use-toast";
+import { ProfileUpdateParams } from "./types";
+import { useBaseProfile } from "./useBaseProfile";
 import { createRoleSpecificProfile } from "./utils";
+import { fetchTutorProfileData } from "./utils/fetchProfile";
+import { updateTutorProfile } from "./utils/updateProfile";
 
+/**
+ * Hook for managing tutor profile data
+ */
 export const useTutorProfile = () => {
-  const { profile, setProfile, isLoading, error } = useBaseProfile("tutor");
+  const { profile, setProfile, isLoading, error, user } = useBaseProfile("tutor");
 
   // Update profile function for tutors
   const updateProfile = async (params: ProfileUpdateParams): Promise<boolean> => {
@@ -23,15 +27,7 @@ export const useTutorProfile = () => {
 
       console.log("Updating tutor profile with data:", params);
 
-      // Step 1: Update the main profile data
-      const baseUpdated = await updateBaseProfile(profile.id, params);
-      if (!baseUpdated) {
-        throw new Error("Failed to update base profile");
-      }
-      
-      console.log("Main profile updated successfully");
-
-      // Step 2: Update tutor-specific profile
+      // Update tutor-specific profile
       const tutorUpdated = await updateTutorProfile(profile.id, params);
       if (!tutorUpdated) {
         throw new Error("Failed to update tutor profile");
@@ -41,14 +37,18 @@ export const useTutorProfile = () => {
 
       // Update local state with ALL fields from params
       setProfile(prev => {
-        if (!prev) return params as Profile;
+        if (!prev) return params;
         return { 
           ...prev, 
           ...params,
           // Explicitly update education fields to ensure they're properly stored in state
-          education_institution: params.education_institution,
-          degree: params.degree,
-          graduation_year: params.graduation_year
+          education_institution: params.education_institution || prev.education_institution,
+          degree: params.degree || prev.degree,
+          graduation_year: params.graduation_year || prev.graduation_year,
+          experience: params.experience || prev.experience,
+          methodology: params.methodology || prev.methodology,
+          achievements: params.achievements || prev.achievements,
+          video_url: params.video_url || prev.video_url
         };
       });
 

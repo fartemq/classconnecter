@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 import { ProfileUpdateParams } from "../types";
 
 /**
@@ -35,9 +34,32 @@ export async function updateStudentProfile(
       grade: profileData.grade || null,
       budget: profileData.budget || null
     };
+
+    // Also update the base profile data
+    const baseProfileData = {
+      first_name: profileData.first_name || null,
+      last_name: profileData.last_name || null,
+      bio: profileData.bio || null,
+      city: profileData.city || null,
+      phone: profileData.phone || null,
+      avatar_url: profileData.avatar_url || null,
+      updated_at: new Date().toISOString()
+    };
     
     console.log("Student profile data to save:", studentData);
     
+    // Update the base profile first
+    const { error: baseProfileError } = await supabase
+      .from("profiles")
+      .update(baseProfileData)
+      .eq("id", userId);
+
+    if (baseProfileError) {
+      console.error("Error updating base profile:", baseProfileError);
+      return false;
+    }
+    
+    // Then update the student-specific profile
     if (existingProfile) {
       console.log("Updating existing student profile for user:", userId);
       // Update existing record
@@ -90,6 +112,27 @@ export async function updateTutorProfile(
       
     if (checkError) {
       console.error("Error checking if tutor profile exists:", checkError);
+      return false;
+    }
+
+    // Update the base profile first
+    const baseProfileData = {
+      first_name: profileData.first_name || null,
+      last_name: profileData.last_name || null,
+      bio: profileData.bio || null,
+      city: profileData.city || null,
+      phone: profileData.phone || null,
+      avatar_url: profileData.avatar_url || null,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error: baseProfileError } = await supabase
+      .from("profiles")
+      .update(baseProfileData)
+      .eq("id", userId);
+
+    if (baseProfileError) {
+      console.error("Error updating base profile:", baseProfileError);
       return false;
     }
 
@@ -146,6 +189,8 @@ export async function updateTutorProfile(
 
 /**
  * Updates the base profile information
+ * Note: This function is kept for backward compatibility,
+ * But the preferred approach is to use updateStudentProfile or updateTutorProfile
  */
 export async function updateBaseProfile(
   userId: string,
