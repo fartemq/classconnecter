@@ -14,7 +14,7 @@ export interface StudentTutorRelationship {
   end_date: string | null;
   tutor?: {
     first_name: string;
-    last_name: string;
+    last_name: string | null;
     avatar_url: string | null;
     city: string | null;
   };
@@ -27,7 +27,7 @@ export interface FavoriteTutor {
   created_at: string;
   tutor?: {
     first_name: string;
-    last_name: string;
+    last_name: string | null;
     avatar_url: string | null;
     city: string | null;
   };
@@ -63,11 +63,11 @@ export const getStudentTutorRelationships = async (studentId: string): Promise<S
       return [];
     }
 
-    // Format the response
+    // Format the response with proper typing
     return data.map(item => ({
       ...item,
-      tutor: ensureObject(item.tutor)
-    }));
+      tutor: item.tutor ? ensureObject(item.tutor) : undefined
+    })) as StudentTutorRelationship[];
 
   } catch (error) {
     console.error('Exception in getStudentTutorRelationships:', error);
@@ -101,11 +101,11 @@ export const getStudentFavoriteTutors = async (studentId: string): Promise<Favor
       return [];
     }
 
-    // Format the response
+    // Format the response with proper typing
     return data.map(item => ({
       ...item,
-      tutor: ensureObject(item.tutor)
-    }));
+      tutor: item.tutor ? ensureObject(item.tutor) : undefined
+    })) as FavoriteTutor[];
 
   } catch (error) {
     console.error('Exception in getStudentFavoriteTutors:', error);

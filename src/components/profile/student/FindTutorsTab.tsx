@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
@@ -364,7 +363,7 @@ export const FindTutorsTab = () => {
                     min={0} 
                     max={5000} 
                     step={100}
-                    onValueChange={setPriceRange}
+                    onValueChange={(value) => setPriceRange(value as [number, number])}
                     className="my-4"
                   />
                   <div className="flex justify-between">

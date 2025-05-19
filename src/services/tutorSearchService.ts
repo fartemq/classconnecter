@@ -262,12 +262,10 @@ export const searchTutors = async (
         // Add relationship status and favorite status if applicable
         relationshipStatus: currentUserId ? relationships[tutor.id] : undefined,
         isFavorite: currentUserId ? !!favorites[tutor.id] : undefined
-      };
+      } as TutorSearchResult;
     });
 
-    let results = (await Promise.all(tutorPromises)).filter(
-      (t): t is TutorSearchResult => t !== null
-    );
+    let results = (await Promise.all(tutorPromises)).filter(Boolean) as TutorSearchResult[];
     
     // Apply pagination after all filters
     const paginatedResults = results.slice((page - 1) * pageSize, page * pageSize);
