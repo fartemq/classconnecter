@@ -53,8 +53,8 @@ export const validateTutorProfile = async (tutorId: string) => {
         avatar_url,
         city,
         tutor_profiles (
-          education,
-          teaching_methodology,
+          education_institution,
+          methodology,
           experience
         )
       `)
@@ -82,16 +82,26 @@ export const validateTutorProfile = async (tutorId: string) => {
     if (!profileData.city) missingFields.push("Город");
     
     // Validate tutor-specific fields
-    const tutorProfile = profileData.tutor_profiles;
-    if (!tutorProfile || typeof tutorProfile !== 'object') {
+    const tutorProfileData = profileData.tutor_profiles;
+    
+    // Handle the tutor profile data properly, whether it's an array or a single object
+    let tutorProfile: any = null;
+    
+    if (tutorProfileData) {
+      // Handle both array and object formats
+      if (Array.isArray(tutorProfileData)) {
+        tutorProfile = tutorProfileData.length > 0 ? tutorProfileData[0] : null;
+      } else {
+        tutorProfile = tutorProfileData;
+      }
+    }
+    
+    if (!tutorProfile) {
       missingFields.push("Профиль репетитора не создан");
     } else {
-      // Convert array to object if necessary
-      const tutorData = Array.isArray(tutorProfile) ? tutorProfile[0] : tutorProfile;
-      
-      if (!tutorData.education) missingFields.push("Образование");
-      if (!tutorData.teaching_methodology) missingFields.push("Методика преподавания");
-      if (tutorData.experience === null || tutorData.experience === undefined) {
+      if (!tutorProfile.education_institution) missingFields.push("Образование");
+      if (!tutorProfile.methodology) missingFields.push("Методика преподавания");
+      if (tutorProfile.experience === null || tutorProfile.experience === undefined) {
         missingFields.push("Опыт преподавания");
       }
     }

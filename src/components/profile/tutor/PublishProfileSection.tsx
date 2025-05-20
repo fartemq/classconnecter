@@ -4,14 +4,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { Upload } from "lucide-react";
 import { 
-  validateTutorProfile, 
-  hasTutorAddedSubjects, 
-  hasTutorAddedSchedule 
+  validateTutorProfile
 } from "@/services/tutor/validationService";
 import { ValidationAlert } from "./publish/ValidationAlert";
 import { RecommendationAlert } from "./publish/RecommendationAlert";
 import { ProfileStatusIndicator } from "./publish/ProfileStatusIndicator";
 import { ProfileStatusBadge } from "./publish/ProfileStatusBadge";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PublishProfileSectionProps {
   tutorId: string;
@@ -35,14 +34,25 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
   useEffect(() => {
     const checkProfileCompleteness = async () => {
       try {
-        const hasAddedSubjects = await hasTutorAddedSubjects(tutorId);
-        setHasSubjects(hasAddedSubjects);
-        
-        const hasAddedSchedule = await hasTutorAddedSchedule(tutorId);
-        setHasSchedule(hasAddedSchedule);
-        
+        // Check if the tutor profile is complete
         const result = await validateTutorProfile(tutorId);
         setValidationResult(result);
+        
+        // Check if tutor has added subjects
+        const { data: subjectsData } = await supabase
+          .from('tutor_subjects')
+          .select('id')
+          .eq('tutor_id', tutorId)
+          .limit(1);
+        setHasSubjects(!!subjectsData && subjectsData.length > 0);
+        
+        // Check if tutor has added schedule
+        const { data: scheduleData } = await supabase
+          .from('tutor_schedule')
+          .select('id')
+          .eq('tutor_id', tutorId)
+          .limit(1);
+        setHasSchedule(!!scheduleData && scheduleData.length > 0);
         
         // Show validation only if profile is incomplete
         setShowValidation(!result.isValid);

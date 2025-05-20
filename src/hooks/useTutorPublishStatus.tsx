@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -17,15 +18,19 @@ export const useTutorPublishStatus = (tutorId?: string) => {
   const [isValid, setIsValid] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Changed 'loading' to 'isLoading' for consistency
 
   // Validate profile and check publish status
   useEffect(() => {
     const checkStatus = async () => {
+      if (!tutorId && user?.id) {
+        tutorId = user.id;
+      }
+      
       if (!tutorId) return;
       
       try {
-        setLoading(true);
+        setIsLoading(true);
         const validation = await validateTutorProfile(tutorId);
         
         setIsValid(validation.isValid);
@@ -48,16 +53,22 @@ export const useTutorPublishStatus = (tutorId?: string) => {
           variant: 'destructive',
         });
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
     
     checkStatus();
-  }, [tutorId]);
+  }, [tutorId, user?.id, toast]);
 
   // Function to toggle publish status
   const togglePublishStatus = async () => {
-    if (!tutorId) {
+    let id = tutorId;
+    
+    if (!id && user?.id) {
+      id = user.id;
+    }
+    
+    if (!id) {
       toast({
         title: 'Ошибка',
         description: 'ID профиля не найден',
@@ -67,7 +78,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
     }
     
     try {
-      setLoading(true);
+      setIsLoading(true);
       
       // If trying to publish, check if valid first
       if (!isPublished && !isValid) {
@@ -80,7 +91,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
       }
       
       // Toggle publish status
-      const success = await publishTutorProfile(tutorId, !isPublished);
+      const success = await publishTutorProfile(id, !isPublished);
       
       if (success) {
         setIsPublished(!isPublished);
@@ -105,7 +116,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
       });
       return false;
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -114,7 +125,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
     isValid,
     missingFields,
     warnings,
-    loading,
+    isLoading, // Changed from 'loading' to 'isLoading' for consistency
     togglePublishStatus,
   };
 };

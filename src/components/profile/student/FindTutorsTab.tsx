@@ -1,260 +1,238 @@
-
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Search } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { TutorsList } from './find-tutors/TutorsList';
+import { TutorFilterForm } from './find-tutors/TutorFilterForm';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useProfile } from '@/hooks/useProfile';
-
-// Services
-import { TutorSearchFilters } from '@/services/tutor/types';
 import { searchTutors } from '@/services/tutor/searchService';
-import { requestTutor, addTutorToFavorites } from '@/services/student';
-
-// Components
-import { 
-  FilterPanel, 
-  ActiveFilters, 
-  Pagination,
-  SearchBar,
-  TutorsList 
-} from './find-tutors';
-
-// Define list of available subjects
-const subjects = ["Математика", "Физика", "История", "Английский язык", "Информатика"];
+import { TutorSearchFilters, TutorSearchResult } from '@/services/tutor/types';
+import { supabase } from "@/integrations/supabase/client";
 
 export const FindTutorsTab = () => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [tutors, setTutors] = useState<any[]>([]);
-  const [totalTutors, setTotalTutors] = useState(0);
-  const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
-  const [subjectFilter, setSubjectFilter] = useState<string | undefined>(undefined);
-  const [cityFilter, setCityFilter] = useState("");
-  const [ratingFilter, setRatingFilter] = useState<number | undefined>(undefined);
-  const [verifiedFilter, setVerifiedFilter] = useState(false);
-  const [experienceFilter, setExperienceFilter] = useState<number | undefined>(undefined);
-  const [showExistingTutors, setShowExistingTutors] = useState(false);
-  
-  const navigate = useNavigate();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { profile } = useProfile("student");
-  const itemsPerPage = 5;
+  const [isLoading, setIsLoading] = useState(false);
+  const [tutors, setTutors] = useState<TutorSearchResult[]>([]);
+  const [totalTutors, setTotalTutors] = useState(0);
+  const [searchText, setSearchText] = useState('');
+  const [filters, setFilters] = useState<TutorSearchFilters>({});
+  const [currentPage, setCurrentPage] = useState(1);
 
-  useEffect(() => {
-    // Redirect to login if not authenticated
-    if (!user) {
-      navigate('/login');
-      toast({
-        title: "Требуется авторизация",
-        description: "Для поиска репетиторов необходимо войти в систему",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    fetchTutors();
-  }, [currentPage, user, navigate]);
+  // Load tutors with current filters
+  const loadTutors = async () => {
+    if (!user?.id) return;
 
-  const fetchTutors = async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
     try {
-      const response = await searchTutors(
-        {
-          subject: subjectFilter,
-          priceMin: priceRange[0],
-          priceMax: priceRange[1],
-          city: cityFilter || undefined,
-          rating: ratingFilter,
-          verified: verifiedFilter || undefined,
-          experienceMin: experienceFilter,
-          showExisting: showExistingTutors,
-        }, 
-        currentPage, 
-        itemsPerPage
-      );
+      setIsLoading(true);
       
-      setTutors(response.tutors);
-      setTotalTutors(response.total);
-      
-      if (response.tutors.length === 0 && currentPage > 1) {
-        // If we're on a page with no results, go back to page 1
-        setCurrentPage(1);
+      // Combine search text with filters
+      const searchFilters: TutorSearchFilters = { ...filters };
+      if (searchText) {
+        if (searchText.includes('@')) {
+          // Looks like an email
+          searchFilters.email = searchText;
+        } else if (!isNaN(Number(searchText))) {
+          // Looks like a price
+          searchFilters.priceMax = Number(searchText);
+        } else {
+          // Try as subject or city
+          searchFilters.subject = searchText;
+        }
       }
+      
+      // Perform search
+      const result = await searchTutors(searchFilters, currentPage);
+      setTutors(result.tutors);
+      setTotalTutors(result.total);
     } catch (error) {
-      console.error("Error fetching tutors:", error);
+      console.error('Error searching tutors:', error);
       toast({
-        title: "Ошибка",
-        description: "Не удалось загрузить список репетиторов",
-        variant: "destructive"
+        title: 'Ошибка поиска',
+        description: 'Не удалось загрузить список репетиторов',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const applyFilters = () => {
+  // Initial load and when filters change
+  useEffect(() => {
+    loadTutors();
+  }, [filters, currentPage, user?.id]);
+
+  const handleSearch = () => {
     setCurrentPage(1); // Reset to first page
-    fetchTutors();
-    setShowFilters(false);
+    loadTutors();
   };
 
-  const resetFilters = () => {
-    setSubjectFilter(undefined);
-    setPriceRange([0, 5000]);
-    setCityFilter("");
-    setRatingFilter(undefined);
-    setVerifiedFilter(false);
-    setExperienceFilter(undefined);
-    setShowExistingTutors(false);
-    setCurrentPage(1);
-    
-    // Reset filters and search again
-    fetchTutors();
-  };
-
-  // Handle request tutor
   const handleRequestTutor = async (tutorId: string) => {
-    if (!profile?.id) {
+    if (!user?.id) {
       toast({
-        title: "Ошибка",
-        description: "Вы должны войти в систему, чтобы отправить запрос репетитору",
-        variant: "destructive"
+        title: 'Требуется авторизация',
+        description: 'Войдите или зарегистрируйтесь, чтобы отправить запрос репетитору',
+        variant: 'destructive',
       });
       return;
     }
-
-    const success = await requestTutor(profile.id, tutorId);
-    if (success) {
-      // Update the tutor's status in the UI
-      setTutors(prevTutors => 
-        prevTutors.map(tutor => 
-          tutor.id === tutorId 
-            ? { ...tutor, relationshipStatus: 'pending' } 
-            : tutor
-        )
-      );
+    
+    try {
+      // Create a relationship request
+      const { error } = await supabase
+        .from('student_tutor_relationships')
+        .insert({
+          student_id: user.id,
+          tutor_id: tutorId,
+          status: 'pending',
+          start_date: new Date().toISOString(),
+        });
+        
+      if (error) throw error;
+      
+      toast({
+        title: 'Запрос отправлен',
+        description: 'Репетитор получил ваш запрос. Вы получите уведомление, когда он примет решение.',
+      });
+      
+      // Refresh the list to update relationship status
+      loadTutors();
+    } catch (error) {
+      console.error('Error sending request to tutor:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось отправить запрос репетитору',
+        variant: 'destructive',
+      });
     }
   };
 
-  // Handle add to favorites
   const handleAddToFavorites = async (tutorId: string) => {
-    if (!profile?.id) {
+    if (!user?.id) {
       toast({
-        title: "Ошибка",
-        description: "Вы должны войти в систему, чтобы добавить репетитора в избранное",
-        variant: "destructive"
+        title: 'Требуется авторизация',
+        description: 'Войдите или зарегистрируйтесь, чтобы добавить репетитора в избранное',
+        variant: 'destructive',
       });
       return;
     }
-
-    const success = await addTutorToFavorites(profile.id, tutorId);
-    if (success) {
-      // Update the tutor's favorite status in the UI
-      setTutors(prevTutors => 
-        prevTutors.map(tutor => 
-          tutor.id === tutorId 
-            ? { ...tutor, isFavorite: true } 
-            : tutor
-        )
-      );
+    
+    try {
+      // Check if already in favorites
+      const { data: existingFavorite } = await supabase
+        .from('favorite_tutors')
+        .select()
+        .eq('student_id', user.id)
+        .eq('tutor_id', tutorId)
+        .single();
+      
+      if (existingFavorite) {
+        // Remove from favorites
+        const { error } = await supabase
+          .from('favorite_tutors')
+          .delete()
+          .eq('student_id', user.id)
+          .eq('tutor_id', tutorId);
+          
+        if (error) throw error;
+        
+        toast({
+          title: 'Удалено из избранного',
+          description: 'Репетитор удален из списка избранного',
+        });
+      } else {
+        // Add to favorites
+        const { error } = await supabase
+          .from('favorite_tutors')
+          .insert({
+            student_id: user.id,
+            tutor_id: tutorId,
+          });
+          
+        if (error) throw error;
+        
+        toast({
+          title: 'Добавлено в избранное',
+          description: 'Репетитор добавлен в список избранного',
+        });
+      }
+      
+      // Refresh the list to update favorite status
+      loadTutors();
+    } catch (error) {
+      console.error('Error updating favorites:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось обновить список избранного',
+        variant: 'destructive',
+      });
     }
   };
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+  const handleFiltersChange = (newFilters: TutorSearchFilters) => {
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
-  const getTotalPages = () => {
-    return Math.ceil(totalTutors / itemsPerPage);
+  const handleResetFilters = () => {
+    setFilters({});
+    setSearchText('');
+    setCurrentPage(1);
   };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
-        <h1 className="text-2xl font-bold">Найти репетитора</h1>
+      {/* Search bar */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-2">
+            <div className="relative flex-grow">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Поиск по предмету, городу..."
+                className="pl-8"
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              />
+            </div>
+            <Button onClick={handleSearch}>Найти</Button>
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Filters sidebar */}
+        <div className="lg:col-span-1">
+          <TutorFilterForm 
+            filters={filters} 
+            onChange={handleFiltersChange}
+            onReset={handleResetFilters}
+          />
+        </div>
         
-        <SearchBar
-          searchText={cityFilter}
-          onSearchChange={setCityFilter}
-          onSearch={applyFilters}
-          onToggleFilters={() => setShowFilters(!showFilters)}
-          showFilters={showFilters}
-        />
+        {/* Tutors list */}
+        <div className="lg:col-span-3">
+          <TutorsList 
+            tutors={tutors}
+            isLoading={isLoading}
+            onRequestTutor={handleRequestTutor}
+            onAddToFavorites={handleAddToFavorites}
+            onResetFilters={handleResetFilters}
+          />
+          
+          {tutors.length > 0 && (
+            <div className="mt-4 flex justify-between items-center">
+              <p className="text-sm text-gray-500">
+                Показано {tutors.length} из {totalTutors} репетиторов
+              </p>
+              {/* Pagination goes here if needed */}
+            </div>
+          )}
+        </div>
       </div>
-      
-      {/* Filters section */}
-      {showFilters && (
-        <FilterPanel
-          filters={{
-            subject: subjectFilter,
-            priceMin: priceRange[0],
-            priceMax: priceRange[1],
-            city: cityFilter || undefined,
-            rating: ratingFilter,
-            verified: verifiedFilter || undefined,
-            experienceMin: experienceFilter,
-            showExisting: showExistingTutors,
-          }}
-          subjects={subjects}
-          priceRange={priceRange}
-          cityFilter={cityFilter}
-          ratingFilter={ratingFilter}
-          verifiedFilter={verifiedFilter}
-          experienceFilter={experienceFilter}
-          showExistingTutors={showExistingTutors}
-          setPriceRange={setPriceRange}
-          setSubjectFilter={setSubjectFilter}
-          setCityFilter={setCityFilter}
-          setRatingFilter={setRatingFilter}
-          setVerifiedFilter={setVerifiedFilter}
-          setExperienceFilter={setExperienceFilter}
-          setShowExistingTutors={setShowExistingTutors}
-          onApplyFilters={applyFilters}
-          onResetFilters={resetFilters}
-          onClose={() => setShowFilters(false)}
-        />
-      )}
-      
-      {/* Applied filters */}
-      <ActiveFilters
-        subjectFilter={subjectFilter}
-        cityFilter={cityFilter}
-        priceRange={priceRange}
-        verifiedFilter={verifiedFilter}
-        ratingFilter={ratingFilter}
-        experienceFilter={experienceFilter}
-        showExistingTutors={showExistingTutors}
-        onClearSubject={() => { setSubjectFilter(undefined); applyFilters(); }}
-        onClearCity={() => { setCityFilter(""); applyFilters(); }}
-        onClearVerified={() => { setVerifiedFilter(false); applyFilters(); }}
-        onClearRating={() => { setRatingFilter(undefined); applyFilters(); }}
-        onClearExperience={() => { setExperienceFilter(undefined); applyFilters(); }}
-        onClearPrice={() => { setPriceRange([0, 5000]); applyFilters(); }}
-        onClearExisting={() => { setShowExistingTutors(false); applyFilters(); }}
-        onResetAll={resetFilters}
-      />
-      
-      {/* Tutors List */}
-      <TutorsList
-        tutors={tutors}
-        isLoading={isLoading}
-        onRequestTutor={handleRequestTutor}
-        onAddToFavorites={handleAddToFavorites}
-        onResetFilters={resetFilters}
-      />
-      
-      {/* Pagination */}
-      {tutors.length > 0 && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={getTotalPages()}
-          onPageChange={handlePageChange}
-        />
-      )}
     </div>
   );
 };
