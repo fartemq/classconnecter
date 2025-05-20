@@ -6,7 +6,8 @@ import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 
 // Services
-import { TutorSearchFilters, searchTutors } from '@/services/tutor/types';
+import { TutorSearchFilters } from '@/services/tutor/types';
+import { searchTutors } from '@/services/tutor/searchService';
 import { requestTutor, addTutorToFavorites } from '@/services/student';
 
 // Components

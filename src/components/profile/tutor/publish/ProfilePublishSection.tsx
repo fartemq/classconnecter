@@ -4,7 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle, X, Info, AlertTriangle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { validateTutorProfile, publishTutorProfile } from "@/services/tutor";
+import { 
+  validateTutorProfile, 
+  publishTutorProfile 
+} from "@/services/tutor";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";

@@ -4,7 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle, X } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { validateTutorProfile, publishTutorProfile, getTutorPublicationStatus } from "@/services/tutor";
+import { 
+  validateTutorProfile, 
+  publishTutorProfile, 
+  getTutorPublicationStatus 
+} from "@/services/tutor";
 import { ProfilePublishSection } from "./publish/ProfilePublishSection";
 
 interface TutorPublishControllerProps {

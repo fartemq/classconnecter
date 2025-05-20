@@ -1,173 +1,120 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { 
+  validateTutorProfile, 
+  publishTutorProfile 
+} from '@/services/tutor';
 
-import { useState, useEffect, useCallback } from "react";
-import { useAuth } from "@/hooks/useAuth";
-import { publishTutorProfile } from "@/services/tutorProfileService";
-import { validateTutorProfile } from "@/services/tutorProfileValidation";
-import { toast } from "@/hooks/use-toast";
-
-export const useTutorPublishStatus = () => {
+/**
+ * Hook for managing tutor profile publication status
+ */
+export const useTutorPublishStatus = (tutorId?: string) => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [isPublished, setIsPublished] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [profileStatus, setProfileStatus] = useState<{
-    isValid: boolean;
-    missingFields: string[];
-    warnings: string[];
-  }>({
-    isValid: false,
-    missingFields: [],
-    warnings: []
-  });
-  const [alertDismissed, setAlertDismissed] = useState(false);
+  const [isValid, setIsValid] = useState(false);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [warnings, setWarnings] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Check if profile is published
+  // Validate profile and check publish status
   useEffect(() => {
-    const checkPublishStatus = async () => {
-      if (!user?.id) return;
-
+    const checkStatus = async () => {
+      if (!tutorId) return;
+      
       try {
-        setIsLoading(true);
-        console.log("Checking publish status for user:", user.id);
-
-        // Fetch tutor profile
-        const { data, error } = await supabaseClient
-          .from("tutor_profiles")
-          .select("is_published")
-          .eq("id", user.id)
-          .maybeSingle();
-
-        console.log("Publish status data:", data);
-
-        if (error) {
-          console.error("Error fetching publish status:", error);
-          return;
-        }
-
-        // Check if profile exists and is published
+        setLoading(true);
+        const validation = await validateTutorProfile(tutorId);
+        
+        setIsValid(validation.isValid);
+        setMissingFields(validation.missingFields);
+        setWarnings(validation.warnings);
+        
+        // Get current publish status
+        const { data } = await supabase
+          .from('tutor_profiles')
+          .select('is_published')
+          .eq('id', tutorId)
+          .single();
+          
         setIsPublished(!!data?.is_published);
-
-        // Validate profile completeness
-        const validationResult = await validateTutorProfile(user.id);
-        console.log("Validation result:", validationResult);
-        setProfileStatus(validationResult);
-
       } catch (error) {
-        console.error("Error checking publish status:", error);
+        console.error('Error checking publish status:', error);
+        toast({
+          title: 'Ошибка',
+          description: 'Не удалось проверить статус публикации профиля',
+          variant: 'destructive',
+        });
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
-
-    checkPublishStatus();
-  }, [user?.id]);
+    
+    checkStatus();
+  }, [tutorId]);
 
   // Function to toggle publish status
-  const togglePublishStatus = useCallback(async () => {
-    if (!user?.id) {
+  const togglePublishStatus = async () => {
+    if (!tutorId) {
       toast({
-        title: "Ошибка",
-        description: "Необходимо авторизоваться",
-        variant: "destructive",
+        title: 'Ошибка',
+        description: 'ID профиля не найден',
+        variant: 'destructive',
       });
       return false;
     }
-
+    
     try {
-      setIsLoading(true);
-
-      // If trying to publish, validate first
-      if (!isPublished) {
-        const validationResult = await validateTutorProfile(user.id);
-        
-        if (!validationResult.isValid) {
-          toast({
-            title: "Профиль не готов к публикации",
-            description: "Заполните все необходимые поля профиля",
-            variant: "destructive",
-          });
-          setProfileStatus(validationResult);
-          return false;
-        }
+      setLoading(true);
+      
+      // If trying to publish, check if valid first
+      if (!isPublished && !isValid) {
+        toast({
+          title: 'Профиль не готов к публикации',
+          description: 'Заполните все необходимые поля профиля',
+          variant: 'destructive',
+        });
+        return false;
       }
-
-      // Update publish status in database
-      const success = await publishTutorProfile(user.id, !isPublished);
+      
+      // Toggle publish status
+      const success = await publishTutorProfile(tutorId, !isPublished);
       
       if (success) {
         setIsPublished(!isPublished);
         
         toast({
-          title: isPublished ? "Профиль снят с публикации" : "Профиль опубликован",
+          title: isPublished ? 'Профиль снят с публикации' : 'Профиль опубликован',
           description: isPublished 
-            ? "Ваш профиль больше не виден студентам" 
-            : "Теперь студенты могут находить вас в поиске",
+            ? 'Ваш профиль больше не виден студентам'
+            : 'Теперь студенты могут находить вас в поиске',
         });
         
         return true;
       } else {
-        throw new Error("Не удалось изменить статус публикации");
+        throw new Error('Failed to update publish status');
       }
     } catch (error) {
-      console.error("Error toggling publish status:", error);
-      
+      console.error('Error toggling publish status:', error);
       toast({
-        title: "Ошибка",
-        description: "Не удалось изменить статус публикации",
-        variant: "destructive",
+        title: 'Ошибка',
+        description: 'Не удалось изменить статус публикации',
+        variant: 'destructive',
       });
-      
       return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
-  }, [isPublished, user?.id]);
-
-  const dismissAlert = useCallback(() => {
-    setAlertDismissed(true);
-  }, []);
+  };
 
   return {
     isPublished,
-    isLoading,
+    isValid,
+    missingFields,
+    warnings,
+    loading,
     togglePublishStatus,
-    profileStatus,
-    alertDismissed,
-    dismissAlert
   };
 };
-
-// Utility function to get profile publication status without the full hook
-export const getTutorPublicationStatus = async (tutorId: string): Promise<{
-  isPublished: boolean;
-  isValid: boolean;
-  missingFields: string[];
-  warnings: string[];
-}> => {
-  try {
-    const { data } = await supabaseClient
-      .from("tutor_profiles")
-      .select("is_published")
-      .eq("id", tutorId)
-      .maybeSingle();
-      
-    const validationResult = await validateTutorProfile(tutorId);
-    
-    return {
-      isPublished: !!data?.is_published,
-      isValid: validationResult.isValid,
-      missingFields: validationResult.missingFields,
-      warnings: validationResult.warnings
-    };
-  } catch (error) {
-    console.error("Error getting publication status:", error);
-    return {
-      isPublished: false,
-      isValid: false,
-      missingFields: ["Ошибка проверки профиля"],
-      warnings: []
-    };
-  }
-};
-
-// Fix: Import supabase client
-import { supabase as supabaseClient } from "@/integrations/supabase/client";
