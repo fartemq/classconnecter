@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
+import { X, Filter } from 'lucide-react';
 import { TutorSearchFilters } from '@/services/tutor/types';
 import { ActiveFilters } from './ActiveFilters';
 import {
@@ -95,81 +95,63 @@ export const TutorFilterForm: React.FC<TutorFilterFormProps> = ({ filters, onCha
     setPriceRange([500, 5000]);
     onReset();
   };
-  
-  // Remove single filter
-  const handleRemoveFilter = (key: string) => {
-    const updatedFilters = { ...filters };
-    delete updatedFilters[key];
-    onChange(updatedFilters);
-  };
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Фильтры поиска</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Input filters */}
-          <FilterInputs
-            city={localFilters.city || ''}
-            subject={localFilters.subject || ''}
-            onCityChange={handleCityChange}
-            onSubjectChange={handleSubjectChange}
-          />
-          
-          {/* Price range filter */}
-          <PriceRangeSlider
-            priceRange={priceRange}
-            onPriceChange={handlePriceChange}
-          />
-          
-          {/* Rating filter */}
-          <RatingSlider
-            rating={localFilters.rating || 0}
-            onRatingChange={handleRatingChange}
-          />
-          
-          {/* Experience filter */}
-          <ExperienceSlider
-            experience={localFilters.experienceMin || 0}
-            onExperienceChange={handleExperienceChange}
-          />
-          
-          {/* Checkbox filters */}
-          <FilterCheckboxes
-            verified={localFilters.verified || false}
-            showExisting={localFilters.showExisting || false}
-            onVerifiedChange={handleVerifiedChange}
-            onShowExistingChange={handleShowExistingChange}
-          />
-          
-          {/* Action buttons */}
-          <div className="flex justify-between pt-4">
-            <Button 
-              variant="outline" 
-              onClick={handleReset}
-              className="flex items-center"
-              disabled={Object.keys(filters).length === 0}
-            >
-              <X className="mr-1 h-4 w-4" />
-              Сбросить
-            </Button>
-            <Button onClick={applyFilters}>
-              Применить
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+    <Card className="overflow-hidden border border-gray-200 shadow-sm">
+      <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 pb-4">
+        <CardTitle className="flex justify-between items-center">
+          <span className="text-lg font-medium">Фильтры поиска</span>
+          <Button variant="ghost" size="sm" onClick={handleReset} className="h-8 px-2 text-gray-500 hover:text-red-500">
+            <X className="h-4 w-4 mr-1" />
+            Сбросить
+          </Button>
+        </CardTitle>
+      </CardHeader>
       
-      {/* Show active filters */}
-      {Object.keys(filters).length > 0 && (
-        <ActiveFilters 
-          filters={filters} 
-          onRemove={handleRemoveFilter} 
-          onReset={onReset}
+      <CardContent className="space-y-6 p-5">
+        {/* Input filters */}
+        <FilterInputs
+          city={localFilters.city || ''}
+          subject={localFilters.subject || ''}
+          onCityChange={handleCityChange}
+          onSubjectChange={handleSubjectChange}
         />
-      )}
-    </div>
+        
+        {/* Price range filter */}
+        <PriceRangeSlider
+          priceRange={priceRange}
+          onPriceChange={handlePriceChange}
+        />
+        
+        {/* Rating filter */}
+        <RatingSlider
+          rating={localFilters.rating || 0}
+          onRatingChange={handleRatingChange}
+        />
+        
+        {/* Experience filter */}
+        <ExperienceSlider
+          experience={localFilters.experienceMin || 0}
+          onExperienceChange={handleExperienceChange}
+        />
+        
+        {/* Checkbox filters */}
+        <FilterCheckboxes
+          verified={localFilters.verified || false}
+          showExisting={localFilters.showExisting || false}
+          onVerifiedChange={handleVerifiedChange}
+          onShowExistingChange={handleShowExistingChange}
+        />
+        
+        {/* Action buttons */}
+        <Button 
+          onClick={applyFilters} 
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+        >
+          <Filter className="h-4 w-4 mr-2" />
+          Применить фильтры
+        </Button>
+      </CardContent>
+    </Card>
   );
 };

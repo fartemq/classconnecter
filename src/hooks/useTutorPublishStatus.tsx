@@ -5,7 +5,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { 
   validateTutorProfile, 
-  publishTutorProfile 
+  publishTutorProfile,
+  getTutorPublicationStatus 
 } from '@/services/tutor';
 
 /**
@@ -23,28 +24,31 @@ export const useTutorPublishStatus = (tutorId?: string) => {
   // Validate profile and check publish status
   useEffect(() => {
     const checkStatus = async () => {
-      if (!tutorId && user?.id) {
-        tutorId = user.id;
+      let profileId = tutorId;
+      
+      if (!profileId && user?.id) {
+        profileId = user.id;
       }
       
-      if (!tutorId) return;
+      if (!profileId) {
+        console.log("No profile ID available to check");
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
-        const validation = await validateTutorProfile(tutorId);
+        console.log("Checking publication status for profile ID:", profileId);
         
-        setIsValid(validation.isValid);
-        setMissingFields(validation.missingFields);
-        setWarnings(validation.warnings);
+        // Get the comprehensive status
+        const status = await getTutorPublicationStatus(profileId);
         
-        // Get current publish status
-        const { data } = await supabase
-          .from('tutor_profiles')
-          .select('is_published')
-          .eq('id', tutorId)
-          .single();
-          
-        setIsPublished(!!data?.is_published);
+        console.log("Publication status result:", status);
+        
+        setIsValid(status.isValid);
+        setMissingFields(status.missingFields);
+        setWarnings(status.warnings);
+        setIsPublished(status.isPublished);
       } catch (error) {
         console.error('Error checking publish status:', error);
         toast({
@@ -62,13 +66,13 @@ export const useTutorPublishStatus = (tutorId?: string) => {
 
   // Function to toggle publish status
   const togglePublishStatus = async () => {
-    let id = tutorId;
+    let profileId = tutorId;
     
-    if (!id && user?.id) {
-      id = user.id;
+    if (!profileId && user?.id) {
+      profileId = user.id;
     }
     
-    if (!id) {
+    if (!profileId) {
       toast({
         title: 'Ошибка',
         description: 'ID профиля не найден',
@@ -79,19 +83,20 @@ export const useTutorPublishStatus = (tutorId?: string) => {
     
     try {
       setLoading(true);
+      console.log(`Attempting to ${isPublished ? 'unpublish' : 'publish'} profile ID:`, profileId);
       
       // If trying to publish, check if valid first
       if (!isPublished && !isValid) {
         toast({
           title: 'Профиль не готов к публикации',
-          description: 'Заполните все необходимые поля профиля',
+          description: `Заполните все необходимые поля профиля: ${missingFields.join(', ')}`,
           variant: 'destructive',
         });
         return false;
       }
       
       // Toggle publish status
-      const success = await publishTutorProfile(id, !isPublished);
+      const success = await publishTutorProfile(profileId, !isPublished);
       
       if (success) {
         setIsPublished(!isPublished);

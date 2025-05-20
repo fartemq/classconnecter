@@ -27,6 +27,7 @@ export const FindTutorsTab = () => {
     if (!user?.id) return;
     try {
       setIsLoading(true);
+      console.log("Loading tutors with filters:", filters, "and search text:", searchText);
       
       // Combine search text with filters
       const searchFilters: TutorSearchFilters = { ...filters };
@@ -44,11 +45,18 @@ export const FindTutorsTab = () => {
       }
       
       // Perform search
-      console.log("Searching tutors with filters:", searchFilters);
+      console.log("Executing search with filters:", searchFilters);
       const result = await searchTutors(searchFilters, currentPage);
       console.log("Search results:", result);
-      setTutors(result.tutors);
-      setTotalTutors(result.total);
+      
+      if (result) {
+        setTutors(result.tutors || []);
+        setTotalTutors(result.total || 0);
+      } else {
+        console.warn("Search returned no results or undefined");
+        setTutors([]);
+        setTotalTutors(0);
+      }
     } catch (error) {
       console.error('Error searching tutors:', error);
       toast({
@@ -56,6 +64,10 @@ export const FindTutorsTab = () => {
         description: 'Не удалось загрузить список репетиторов',
         variant: 'destructive'
       });
+      
+      // Clear tutors on error
+      setTutors([]);
+      setTotalTutors(0);
     } finally {
       setIsLoading(false);
     }
@@ -63,10 +75,16 @@ export const FindTutorsTab = () => {
 
   // Initial load and when filters change
   useEffect(() => {
-    loadTutors();
+    if (user?.id) {
+      console.log("User is authenticated, loading tutors");
+      loadTutors();
+    } else {
+      console.log("User is not authenticated, skipping tutor load");
+    }
   }, [filters, currentPage, user?.id]);
 
   const handleSearch = () => {
+    console.log("Search button clicked with text:", searchText);
     setCurrentPage(1); // Reset to first page
     loadTutors();
   };
@@ -82,7 +100,33 @@ export const FindTutorsTab = () => {
     }
 
     try {
-      // Create a relationship request
+      console.log("Requesting tutor with ID:", tutorId);
+      
+      // Check if a relationship already exists
+      const { data: existingRel } = await supabase
+        .from('student_tutor_relationships')
+        .select()
+        .eq('student_id', user.id)
+        .eq('tutor_id', tutorId)
+        .maybeSingle();
+        
+      if (existingRel && existingRel.status === 'pending') {
+        toast({
+          title: 'Запрос уже отправлен',
+          description: 'Вы уже отправили запрос этому репетитору'
+        });
+        return;
+      }
+      
+      if (existingRel && existingRel.status === 'accepted') {
+        toast({
+          title: 'Связь уже установлена',
+          description: 'Вы уже работаете с этим репетитором'
+        });
+        return;
+      }
+
+      // Create a new relationship request
       const { error } = await supabase
         .from('student_tutor_relationships')
         .insert({
@@ -122,13 +166,15 @@ export const FindTutorsTab = () => {
     }
 
     try {
+      console.log("Toggling favorite status for tutor ID:", tutorId);
+      
       // Check if already in favorites
       const { data: existingFavorite } = await supabase
         .from('favorite_tutors')
         .select()
         .eq('student_id', user.id)
         .eq('tutor_id', tutorId)
-        .single();
+        .maybeSingle();
 
       if (existingFavorite) {
         // Remove from favorites
@@ -174,11 +220,13 @@ export const FindTutorsTab = () => {
   };
 
   const handleFiltersChange = (newFilters) => {
+    console.log("Filters changed:", newFilters);
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
   };
 
   const handleResetFilters = () => {
+    console.log("Resetting all filters");
     setFilters({});
     setSearchText('');
     setCurrentPage(1);
@@ -199,7 +247,9 @@ export const FindTutorsTab = () => {
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
             </div>
-            <Button onClick={handleSearch}>Найти</Button>
+            <Button onClick={handleSearch} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+              Найти
+            </Button>
           </div>
         </CardContent>
       </Card>

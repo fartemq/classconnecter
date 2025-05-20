@@ -7,11 +7,13 @@ import { validateTutorProfile } from "./validationService";
  */
 export const publishTutorProfile = async (tutorId: string, publishStatus: boolean): Promise<boolean> => {
   try {
+    console.log(`Attempting to ${publishStatus ? 'publish' : 'unpublish'} tutor profile for ID:`, tutorId);
+    
     // If trying to publish, check if the profile is valid
     if (publishStatus) {
       const validation = await validateTutorProfile(tutorId);
       if (!validation.isValid) {
-        console.error("Cannot publish invalid profile:", validation.missingFields);
+        console.error("Cannot publish invalid profile. Missing fields:", validation.missingFields);
         return false;
       }
     }
@@ -27,6 +29,7 @@ export const publishTutorProfile = async (tutorId: string, publishStatus: boolea
       return false;
     }
     
+    console.log(`Tutor profile successfully ${publishStatus ? 'published' : 'unpublished'}`);
     return true;
   } catch (error) {
     console.error("Exception in publishTutorProfile:", error);

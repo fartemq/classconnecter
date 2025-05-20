@@ -44,18 +44,23 @@ export const hasTutorAddedSchedule = async (tutorId: string): Promise<boolean> =
  */
 export const validateTutorProfile = async (tutorId: string) => {
   try {
+    console.log("Validating tutor profile for ID:", tutorId);
+    
     // Get tutor profile data
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select(`
+        id,
         first_name,
         last_name,
         avatar_url,
         city,
+        bio,
         tutor_profiles (
           education_institution,
           methodology,
-          experience
+          experience,
+          is_published
         )
       `)
       .eq("id", tutorId)
@@ -70,16 +75,21 @@ export const validateTutorProfile = async (tutorId: string) => {
       };
     }
 
+    console.log("Profile data for validation:", profileData);
+
     // Check if tutor has added subjects
     const hasSubjects = await hasTutorAddedSubjects(tutorId);
+    console.log("Has subjects:", hasSubjects);
 
     // List of missing required fields
     const missingFields = [];
     
     // Validate basic profile fields
     if (!profileData.first_name) missingFields.push("Имя");
+    if (!profileData.last_name) missingFields.push("Фамилия");
     if (!profileData.avatar_url) missingFields.push("Фотография профиля");
     if (!profileData.city) missingFields.push("Город");
+    if (!profileData.bio) missingFields.push("О себе");
     
     // Validate tutor-specific fields
     const tutorProfileData = profileData.tutor_profiles;
@@ -113,6 +123,9 @@ export const validateTutorProfile = async (tutorId: string) => {
     const warnings = [];
     if (!profileData.last_name) warnings.push("Рекомендуется указать фамилию");
     
+    console.log("Missing fields:", missingFields);
+    console.log("Warnings:", warnings);
+    
     // Profile is valid if there are no missing required fields
     const isValid = missingFields.length === 0;
 
@@ -136,6 +149,8 @@ export const validateTutorProfile = async (tutorId: string) => {
  */
 export const getTutorPublicationStatus = async (tutorId: string) => {
   try {
+    console.log("Getting publication status for tutor ID:", tutorId);
+    
     // Get the current published status
     const { data: profileData } = await supabase
       .from("tutor_profiles")
@@ -144,6 +159,7 @@ export const getTutorPublicationStatus = async (tutorId: string) => {
       .maybeSingle();
     
     const isPublished = !!profileData?.is_published;
+    console.log("Is published:", isPublished);
     
     // Validate the profile
     const validation = await validateTutorProfile(tutorId);
