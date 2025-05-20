@@ -40,19 +40,31 @@ export const useStudentProfile = () => {
         if (!prev) return prev;
         return { 
           ...prev, 
-          ...params, 
+          ...params,
           // Explicitly maintain required Profile fields
           id: prev.id,
           role: prev.role,
           created_at: prev.created_at,
           updated_at: prev.updated_at,
-          // Explicitly update educational fields to ensure they're properly stored in state
+          // Explicitly update student profile fields to ensure they're properly stored in state
           school: params.school || prev.school,
           grade: params.grade || prev.grade,
           learning_goals: params.learning_goals || prev.learning_goals,
           educational_level: params.educational_level || prev.educational_level,
           subjects: params.subjects || prev.subjects || [],
-          preferred_format: params.preferred_format || prev.preferred_format || []
+          preferred_format: params.preferred_format || prev.preferred_format || [],
+          // Make sure these fields are properly assigned to the profile object 
+          // (not nested under student_profiles)
+          student_profiles: {
+            ...(prev.student_profiles || {}),
+            educational_level: params.educational_level || prev.educational_level || null,
+            subjects: params.subjects || prev.subjects || [],
+            learning_goals: params.learning_goals || prev.learning_goals || null,
+            preferred_format: params.preferred_format || prev.preferred_format || [],
+            school: params.school || prev.school || null,
+            grade: params.grade || prev.grade || null,
+            budget: params.budget || prev.budget || null
+          }
         };
       });
 

@@ -1,38 +1,29 @@
 
-export interface TutorBasicInfo {
-  first_name: string;
-  last_name: string | null;
-  avatar_url: string | null;
-  city: string | null;
-}
-
-export interface TutorSubject {
-  id: string;
-  name: string;
-  hourlyRate: number;
-}
-
-export interface TutorSearchResult {
-  id: string;
-  firstName: string;
-  lastName: string | null;
-  avatarUrl: string | null;
-  city: string | null;
-  rating: number | null;
-  subjects: TutorSubject[];
-  isVerified: boolean;
-  experience: number | null;
-  relationshipStatus?: string | null;
-  isFavorite?: boolean;
-}
-
+// Define types for tutor search filters
 export interface TutorSearchFilters {
   subject?: string;
+  city?: string;
   priceMin?: number;
   priceMax?: number;
-  city?: string;
   rating?: number;
   verified?: boolean;
   experienceMin?: number;
-  showExisting?: boolean; 
+  email?: string;
+  showExisting?: boolean;
+  [key: string]: any; // Allow additional properties
+}
+
+// Define the result structure for tutor search
+export interface TutorSearchResult {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  city: string | null;
+  rating: number | null;
+  subjects: Array<{ id: string; name: string; hourlyRate: number }>;
+  isVerified: boolean;
+  experience: number;
+  relationshipStatus?: string;
+  isFavorite?: boolean;
 }

@@ -9,30 +9,31 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { searchTutors } from '@/services/tutor/searchService';
-import { TutorSearchFilters, TutorSearchResult } from '@/services/tutor/types';
 import { supabase } from "@/integrations/supabase/client";
 
 export const FindTutorsTab = () => {
   const { toast } = useToast();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-  const [tutors, setTutors] = useState<TutorSearchResult[]>([]);
+  const [tutors, setTutors] = useState([]);
   const [totalTutors, setTotalTutors] = useState(0);
   const [searchText, setSearchText] = useState('');
-  const [filters, setFilters] = useState<TutorSearchFilters>({});
+  const [filters, setFilters] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
 
   // Load tutors with current filters
   const loadTutors = async () => {
     if (!user?.id) return;
-
     try {
       setIsLoading(true);
       
       // Combine search text with filters
-      const searchFilters: TutorSearchFilters = { ...filters };
+      const searchFilters = { ...filters };
       if (searchText) {
-        if (!isNaN(Number(searchText))) {
+        if (searchText.includes('@')) {
+          // Looks like an email
+          searchFilters.email = searchText;
+        } else if (!isNaN(Number(searchText))) {
           // Looks like a price
           searchFilters.priceMax = Number(searchText);
         } else {
@@ -42,7 +43,9 @@ export const FindTutorsTab = () => {
       }
       
       // Perform search
+      console.log("Searching tutors with filters:", searchFilters);
       const result = await searchTutors(searchFilters, currentPage);
+      console.log("Search results:", result);
       setTutors(result.tutors);
       setTotalTutors(result.total);
     } catch (error) {
@@ -50,7 +53,7 @@ export const FindTutorsTab = () => {
       toast({
         title: 'Ошибка поиска',
         description: 'Не удалось загрузить список репетиторов',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     } finally {
       setIsLoading(false);
@@ -67,16 +70,16 @@ export const FindTutorsTab = () => {
     loadTutors();
   };
 
-  const handleRequestTutor = async (tutorId: string) => {
+  const handleRequestTutor = async (tutorId) => {
     if (!user?.id) {
       toast({
         title: 'Требуется авторизация',
         description: 'Войдите или зарегистрируйтесь, чтобы отправить запрос репетитору',
-        variant: 'destructive',
+        variant: 'destructive'
       });
       return;
     }
-    
+
     try {
       // Create a relationship request
       const { error } = await supabase
@@ -85,16 +88,16 @@ export const FindTutorsTab = () => {
           student_id: user.id,
           tutor_id: tutorId,
           status: 'pending',
-          start_date: new Date().toISOString(),
+          start_date: new Date().toISOString()
         });
-        
+
       if (error) throw error;
-      
+
       toast({
         title: 'Запрос отправлен',
-        description: 'Репетитор получил ваш запрос. Вы получите уведомление, когда он примет решение.',
+        description: 'Репетитор получил ваш запрос. Вы получите уведомление, когда он примет решение.'
       });
-      
+
       // Refresh the list to update relationship status
       loadTutors();
     } catch (error) {
@@ -102,21 +105,21 @@ export const FindTutorsTab = () => {
       toast({
         title: 'Ошибка',
         description: 'Не удалось отправить запрос репетитору',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
 
-  const handleAddToFavorites = async (tutorId: string) => {
+  const handleAddToFavorites = async (tutorId) => {
     if (!user?.id) {
       toast({
         title: 'Требуется авторизация',
         description: 'Войдите или зарегистрируйтесь, чтобы добавить репетитора в избранное',
-        variant: 'destructive',
+        variant: 'destructive'
       });
       return;
     }
-    
+
     try {
       // Check if already in favorites
       const { data: existingFavorite } = await supabase
@@ -125,7 +128,7 @@ export const FindTutorsTab = () => {
         .eq('student_id', user.id)
         .eq('tutor_id', tutorId)
         .single();
-      
+
       if (existingFavorite) {
         // Remove from favorites
         const { error } = await supabase
@@ -133,12 +136,12 @@ export const FindTutorsTab = () => {
           .delete()
           .eq('student_id', user.id)
           .eq('tutor_id', tutorId);
-          
+
         if (error) throw error;
-        
+
         toast({
           title: 'Удалено из избранного',
-          description: 'Репетитор удален из списка избранного',
+          description: 'Репетитор удален из списка избранного'
         });
       } else {
         // Add to favorites
@@ -146,17 +149,17 @@ export const FindTutorsTab = () => {
           .from('favorite_tutors')
           .insert({
             student_id: user.id,
-            tutor_id: tutorId,
+            tutor_id: tutorId
           });
-          
+
         if (error) throw error;
-        
+
         toast({
           title: 'Добавлено в избранное',
-          description: 'Репетитор добавлен в список избранного',
+          description: 'Репетитор добавлен в список избранного'
         });
       }
-      
+
       // Refresh the list to update favorite status
       loadTutors();
     } catch (error) {
@@ -164,12 +167,12 @@ export const FindTutorsTab = () => {
       toast({
         title: 'Ошибка',
         description: 'Не удалось обновить список избранного',
-        variant: 'destructive',
+        variant: 'destructive'
       });
     }
   };
 
-  const handleFiltersChange = (newFilters: TutorSearchFilters) => {
+  const handleFiltersChange = (newFilters) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page when filters change
   };
@@ -182,14 +185,13 @@ export const FindTutorsTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Search bar */}
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative flex-grow">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Поиск по предмету, городу..."
+              <Input 
+                placeholder="Поиск по предмету, городу..." 
                 className="pl-8"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
@@ -200,9 +202,8 @@ export const FindTutorsTab = () => {
           </div>
         </CardContent>
       </Card>
-      
+
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Filters sidebar */}
         <div className="lg:col-span-1">
           <TutorFilterForm 
             filters={filters} 
@@ -211,24 +212,14 @@ export const FindTutorsTab = () => {
           />
         </div>
         
-        {/* Tutors list */}
         <div className="lg:col-span-3">
           <TutorsList 
-            tutors={tutors}
+            tutors={tutors} 
             isLoading={isLoading}
             onRequestTutor={handleRequestTutor}
             onAddToFavorites={handleAddToFavorites}
             onResetFilters={handleResetFilters}
           />
-          
-          {tutors.length > 0 && (
-            <div className="mt-4 flex justify-between items-center">
-              <p className="text-sm text-gray-500">
-                Показано {tutors.length} из {totalTutors} репетиторов
-              </p>
-              {/* Pagination goes here if needed */}
-            </div>
-          )}
         </div>
       </div>
     </div>

@@ -19,6 +19,10 @@ export const ProfileCompletionTracker = () => {
     if (!isLoading && profile) {
       console.log("Checking profile completion with data:", profile);
       
+      // Get student-specific profile data
+      const studentProfile = profile.student_profiles || {};
+      console.log("Student profile data:", studentProfile);
+      
       // Update completion status for each step
       const updatedSteps = steps.map((step) => {
         switch (step.id) {
@@ -34,17 +38,22 @@ export const ProfileCompletionTracker = () => {
           case "education":
             return { 
               ...step, 
-              // Check both directly from profile and from nested properties
+              // Check both directly from profile and from nested student_profiles
               isCompleted: Boolean(
-                profile.school || 
-                (profile.educational_level && profile.educational_level !== '')
+                studentProfile.educational_level || 
+                profile.educational_level || 
+                studentProfile.school ||
+                profile.school
               )
             };
           case "grade":
             return { 
               ...step, 
-              // Check both directly from profile and from nested properties
-              isCompleted: Boolean(profile.grade)
+              // Check both directly from profile and from nested student_profiles
+              isCompleted: Boolean(
+                studentProfile.grade || 
+                profile.grade
+              )
             };
           default:
             return step;
@@ -57,7 +66,7 @@ export const ProfileCompletionTracker = () => {
       const completedCount = updatedSteps.filter(step => step.isCompleted).length;
       const newPercentage = Math.round((completedCount / updatedSteps.length) * 100);
       setCompletionPercentage(newPercentage);
-      console.log("Profile completion percentage:", newPercentage);
+      console.log("Profile completion percentage:", newPercentage, "Completed steps:", completedCount);
     }
   }, [profile, isLoading]);
 
@@ -76,12 +85,7 @@ export const ProfileCompletionTracker = () => {
         <p className="text-sm font-medium">{completionPercentage}%</p>
       </div>
       
-      <Progress value={completionPercentage} className="h-2 mb-6 bg-gray-100">
-        <div 
-          className="h-full bg-gradient-to-r from-blue-500 to-purple-500 transition-all" 
-          style={{ width: `${completionPercentage}%` }}
-        />
-      </Progress>
+      <Progress value={completionPercentage} className="h-2 mb-6 bg-gray-100" />
       
       <div className="space-y-2">
         {steps.map((step) => (
