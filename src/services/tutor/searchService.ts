@@ -1,30 +1,8 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ensureSingleObject } from "@/utils/supabaseUtils";
 import { TutorSearchFilters, TutorSearchResult } from "./types";
-
-/**
- * Check if tutor has added any subjects
- */
-export const hasTutorAddedSubjects = async (tutorId: string): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase
-      .from('tutor_subjects')
-      .select('id')
-      .eq('tutor_id', tutorId)
-      .limit(1);
-    
-    if (error) {
-      console.error("Error checking tutor subjects:", error);
-      return false;
-    }
-    
-    return data && data.length > 0;
-  } catch (err) {
-    console.error("Exception checking tutor subjects:", err);
-    return false;
-  }
-};
+// Import instead of redefining
+import { hasTutorAddedSubjects } from "./validationService";
 
 /**
  * Get user relationships and favorites for filtering search results
