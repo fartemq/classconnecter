@@ -12,6 +12,7 @@ import { AdvancedStatsTab } from "@/components/profile/tutor/AdvancedStatsTab";
 import { TutorSettingsTab } from "@/components/profile/tutor/TutorSettingsTab";
 import { MaterialsTab } from "@/components/profile/tutor/MaterialsTab";
 import { convertTutorProfileToProfile } from "@/utils/tutorProfileConverters";
+import { TutorEducationForm } from "./education/EducationForm";
 
 interface TutorProfileContentProps {
   activeTab: string;
@@ -33,6 +34,13 @@ export const TutorProfileContent: React.FC<TutorProfileContentProps> = ({
     case "profile":
       // Pass the converted profile to components expecting Profile type
       return <TutorProfileSettingsTab profile={profileForComponents} />;
+    case "education":
+      return (
+        <div className="max-w-3xl mx-auto">
+          <h2 className="text-2xl font-bold mb-6">Образование</h2>
+          <TutorEducationForm />
+        </div>
+      );
     case "teaching":
       return <TeachingInfoTab profile={profileForComponents} />;
     case "schedule":
