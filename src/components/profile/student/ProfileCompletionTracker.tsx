@@ -20,8 +20,8 @@ export const ProfileCompletionTracker = () => {
       console.log("Checking profile completion with data:", profile);
       
       // Get student-specific profile data safely
-      const studentProfile = profile.student_profiles || {};
-      console.log("Student profile data:", studentProfile);
+      const studentProfiles = profile.student_profiles || {};
+      console.log("Student profile data:", studentProfiles);
       
       // Update completion status for each step
       const updatedSteps = steps.map((step) => {
@@ -41,8 +41,8 @@ export const ProfileCompletionTracker = () => {
               isCompleted: Boolean(
                 profile.educational_level || 
                 profile.school || 
-                (studentProfile && studentProfile.educational_level) || 
-                (studentProfile && studentProfile.school)
+                (studentProfiles && 'educational_level' in studentProfiles && studentProfiles.educational_level) || 
+                (studentProfiles && 'school' in studentProfiles && studentProfiles.school)
               )
             };
           case "grade":
@@ -50,7 +50,7 @@ export const ProfileCompletionTracker = () => {
               ...step, 
               isCompleted: Boolean(
                 profile.grade || 
-                (studentProfile && studentProfile.grade)
+                (studentProfiles && 'grade' in studentProfiles && studentProfiles.grade)
               )
             };
           default:

@@ -1,6 +1,6 @@
 
 import { toast } from "@/hooks/use-toast";
-import { ProfileUpdateParams, StudentProfileData } from "./types";
+import { Profile, ProfileUpdateParams, StudentProfileData } from "./types";
 import { useBaseProfile } from "./useBaseProfile";
 import { createRoleSpecificProfile } from "./utils";
 import { fetchStudentProfileData } from "./utils/fetchProfile";
