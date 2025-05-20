@@ -1,6 +1,6 @@
 
 import { toast } from "@/hooks/use-toast";
-import { ProfileUpdateParams } from "./types";
+import { ProfileUpdateParams, StudentProfileData } from "./types";
 import { useBaseProfile } from "./useBaseProfile";
 import { createRoleSpecificProfile } from "./utils";
 import { fetchStudentProfileData } from "./utils/fetchProfile";
@@ -40,7 +40,7 @@ export const useStudentProfile = () => {
         if (!prev) return prev;
         
         // Ensure student_profiles exists in the profile object
-        const studentProfiles = prev.student_profiles || {};
+        const studentProfiles = prev.student_profiles || {} as StudentProfileData;
         
         return { 
           ...prev, 
@@ -60,21 +60,13 @@ export const useStudentProfile = () => {
           // Make sure these fields are properly assigned to the profile object 
           // (not nested under student_profiles)
           student_profiles: {
-            ...studentProfiles,
-            educational_level: params.educational_level || 
-              (studentProfiles && 'educational_level' in studentProfiles ? studentProfiles.educational_level : null),
-            subjects: params.subjects || 
-              (studentProfiles && 'subjects' in studentProfiles ? studentProfiles.subjects : null) || [],
-            learning_goals: params.learning_goals || 
-              (studentProfiles && 'learning_goals' in studentProfiles ? studentProfiles.learning_goals : null),
-            preferred_format: params.preferred_format || 
-              (studentProfiles && 'preferred_format' in studentProfiles ? studentProfiles.preferred_format : null) || [],
-            school: params.school || 
-              (studentProfiles && 'school' in studentProfiles ? studentProfiles.school : null),
-            grade: params.grade || 
-              (studentProfiles && 'grade' in studentProfiles ? studentProfiles.grade : null),
-            budget: params.budget || 
-              (studentProfiles && 'budget' in studentProfiles ? studentProfiles.budget : null)
+            educational_level: params.educational_level || studentProfiles.educational_level || null,
+            subjects: params.subjects || studentProfiles.subjects || [],
+            learning_goals: params.learning_goals || studentProfiles.learning_goals || null,
+            preferred_format: params.preferred_format || studentProfiles.preferred_format || [],
+            school: params.school || studentProfiles.school || null,
+            grade: params.grade || studentProfiles.grade || null,
+            budget: params.budget || studentProfiles.budget || null
           }
         };
       });
@@ -88,9 +80,9 @@ export const useStudentProfile = () => {
     } catch (error) {
       console.error("Error in updateProfile:", error);
       toast({
-        title: "Ошибка",
-        description: "Не удалось обновить профиль. Пожалуйста, попробуйте ещё раз.",
         variant: "destructive",
+        title: "Ошибка сохранения",
+        description: "Не удалось обновить профиль. Пожалуйста, попробуйте ещё раз.",
       });
       return false;
     }

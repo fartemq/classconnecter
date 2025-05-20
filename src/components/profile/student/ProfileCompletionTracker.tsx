@@ -38,21 +38,19 @@ export const ProfileCompletionTracker = () => {
           case "education":
             return { 
               ...step, 
-              // Check both directly from profile and from nested student_profiles
               isCompleted: Boolean(
-                (studentProfile && 'educational_level' in studentProfile ? studentProfile.educational_level : null) || 
                 profile.educational_level || 
-                (studentProfile && 'school' in studentProfile ? studentProfile.school : null) ||
-                profile.school
+                profile.school || 
+                (studentProfile && studentProfile.educational_level) || 
+                (studentProfile && studentProfile.school)
               )
             };
           case "grade":
             return { 
               ...step, 
-              // Check both directly from profile and from nested student_profiles
               isCompleted: Boolean(
-                (studentProfile && 'grade' in studentProfile ? studentProfile.grade : null) || 
-                profile.grade
+                profile.grade || 
+                (studentProfile && studentProfile.grade)
               )
             };
           default:
