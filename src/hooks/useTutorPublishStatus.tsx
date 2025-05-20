@@ -18,7 +18,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
   const [isValid, setIsValid] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
 
   // Validate profile and check publish status
   useEffect(() => {
@@ -30,7 +30,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
       if (!tutorId) return;
       
       try {
-        setIsLoading(true);
+        setLoading(true);
         const validation = await validateTutorProfile(tutorId);
         
         setIsValid(validation.isValid);
@@ -53,7 +53,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
           variant: 'destructive',
         });
       } finally {
-        setIsLoading(false);
+        setLoading(false);
       }
     };
     
@@ -78,7 +78,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
     }
     
     try {
-      setIsLoading(true);
+      setLoading(true);
       
       // If trying to publish, check if valid first
       if (!isPublished && !isValid) {
@@ -116,7 +116,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
       });
       return false;
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
@@ -125,7 +125,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
     isValid,
     missingFields,
     warnings,
-    isLoading,
+    loading,
     togglePublishStatus,
   };
 };
