@@ -20,7 +20,7 @@ export const ExperienceSlider: React.FC<ExperienceSliderProps> = ({
         <span className="text-xs font-medium text-gray-500">от {experience}</span>
       </div>
       
-      <div className="pb-2 relative">
+      <div className="pb-2">
         <Slider
           value={[experience]}
           min={0}
@@ -29,7 +29,7 @@ export const ExperienceSlider: React.FC<ExperienceSliderProps> = ({
           onValueChange={onExperienceChange}
           className="py-4"
         />
-        <div className="h-1 w-full bg-gradient-to-r from-green-300 to-teal-400 rounded-full -mt-5 -z-10 absolute bottom-2 left-0" />
+        <div className="h-1 w-full bg-gradient-to-r from-green-300 to-teal-400 rounded-full -mt-5 -z-10 relative" />
       </div>
     </div>
   );

@@ -22,7 +22,7 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
         </span>
       </div>
       
-      <div className="pb-2 relative">
+      <div className="pb-2">
         <Slider
           value={priceRange}
           min={500}
@@ -31,7 +31,7 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
           onValueChange={onPriceChange}
           className="py-4"
         />
-        <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-purple-400 rounded-full -mt-5 -z-10 absolute bottom-2 left-0" />
+        <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-purple-400 rounded-full -mt-5 -z-10 relative" />
       </div>
     </div>
   );

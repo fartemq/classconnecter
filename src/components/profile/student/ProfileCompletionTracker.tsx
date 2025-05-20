@@ -5,43 +5,23 @@ import { useProfile } from "@/hooks/profiles";
 import { Progress } from "@/components/ui/progress";
 import { Check, Pencil } from "lucide-react";
 import { ProfileCompletionStep } from "@/hooks/profiles/types";
-import { supabase } from "@/integrations/supabase/client";
 
 export const ProfileCompletionTracker = () => {
   const { profile, isLoading } = useProfile();
   const [completionPercentage, setCompletionPercentage] = useState(0);
-  const [hasEducation, setHasEducation] = useState(false);
   const [steps, setSteps] = useState<ProfileCompletionStep[]>([
     { id: "about", title: "О себе", isCompleted: false, route: "/profile/student/edit" },
-    { id: "education", title: "Образование", isCompleted: false, route: "/profile/student/education" },
+    { id: "education", title: "Учебное заведение", isCompleted: false, route: "/profile/student/edit?tab=education" },
+    { id: "grade", title: "Класс/Курс", isCompleted: false, route: "/profile/student/edit?tab=education" },
   ]);
-
-  // Check if the student has education data
-  useEffect(() => {
-    const checkEducationData = async () => {
-      if (!profile?.id) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('student_education')
-          .select('id')
-          .eq('student_id', profile.id)
-          .single();
-          
-        if (!error && data) {
-          setHasEducation(true);
-        }
-      } catch (error) {
-        console.error("Error checking education data:", error);
-      }
-    };
-    
-    checkEducationData();
-  }, [profile?.id]);
 
   useEffect(() => {
     if (!isLoading && profile) {
       console.log("Checking profile completion with data:", profile);
+      
+      // Get student-specific profile data safely
+      const studentProfiles = profile.student_profiles || {};
+      console.log("Student profile data:", studentProfiles);
       
       // Update completion status for each step
       const updatedSteps = steps.map((step) => {
@@ -58,7 +38,20 @@ export const ProfileCompletionTracker = () => {
           case "education":
             return { 
               ...step, 
-              isCompleted: hasEducation 
+              isCompleted: Boolean(
+                profile.educational_level || 
+                profile.school || 
+                (studentProfiles && 'educational_level' in studentProfiles && studentProfiles.educational_level) || 
+                (studentProfiles && 'school' in studentProfiles && studentProfiles.school)
+              )
+            };
+          case "grade":
+            return { 
+              ...step, 
+              isCompleted: Boolean(
+                profile.grade || 
+                (studentProfiles && 'grade' in studentProfiles && studentProfiles.grade)
+              )
             };
           default:
             return step;
@@ -73,7 +66,7 @@ export const ProfileCompletionTracker = () => {
       setCompletionPercentage(newPercentage);
       console.log("Profile completion percentage:", newPercentage, "Completed steps:", completedCount);
     }
-  }, [profile, isLoading, hasEducation]);
+  }, [profile, isLoading]);
 
   // Hide if all steps are completed or loading is still in progress
   if (isLoading || completionPercentage === 100) {
