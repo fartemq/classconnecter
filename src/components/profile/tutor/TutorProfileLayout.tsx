@@ -2,7 +2,7 @@
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
-  LayoutDashboard, 
+  Dashboard, 
   User, 
   BookOpen, 
   Calendar, 
@@ -38,7 +38,7 @@ export const TutorProfileLayout: React.FC<TutorProfileLayoutProps> = ({
     {
       id: "dashboard",
       label: "Главная",
-      icon: LayoutDashboard,
+      icon: Dashboard,
       path: "/profile/tutor",
     },
     {
@@ -103,7 +103,7 @@ export const TutorProfileLayout: React.FC<TutorProfileLayoutProps> = ({
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <SidebarProvider>
+      <SidebarProvider collapsedWidth={56} defaultCollapsed={collapsed} onCollapsedChange={setCollapsed}>
         <div className="flex-grow flex w-full">
           <Sidebar
             className={cn(
@@ -111,8 +111,6 @@ export const TutorProfileLayout: React.FC<TutorProfileLayoutProps> = ({
               collapsed ? "w-14" : "w-64"
             )}
           >
-            <SidebarTrigger onClick={() => setCollapsed(!collapsed)} />
-            
             <SidebarContent>
               <SidebarGroup>
                 <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>

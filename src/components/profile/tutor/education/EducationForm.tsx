@@ -154,13 +154,7 @@ export const TutorEducationForm: React.FC = () => {
       
       // Update local state to reflect that we now have education data
       if (!existingEducation) {
-        setExistingEducation({
-          level: values.level,
-          institution: values.institution,
-          specialization: values.specialization,
-          degree: values.degree,
-          yearCompleted: values.yearCompleted,
-        });
+        setExistingEducation(values);
       }
       
     } catch (error) {

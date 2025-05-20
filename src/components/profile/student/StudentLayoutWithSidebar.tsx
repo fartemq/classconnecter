@@ -108,7 +108,7 @@ export const StudentLayoutWithSidebar: React.FC<StudentLayoutWithSidebarProps> =
         </Button>
       </div>
       
-      <SidebarProvider>
+      <SidebarProvider collapsedWidth={56} defaultCollapsed={collapsed} onCollapsedChange={setCollapsed}>
         <div className="flex-grow flex w-full">
           <Sidebar
             className={cn(
@@ -117,8 +117,6 @@ export const StudentLayoutWithSidebar: React.FC<StudentLayoutWithSidebarProps> =
               mobileOpen ? "fixed inset-y-0 left-0 z-40" : "hidden lg:block"
             )}
           >
-            <SidebarTrigger onClick={() => setCollapsed(!collapsed)} />
-            
             <SidebarContent>
               <SidebarGroup>
                 <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
