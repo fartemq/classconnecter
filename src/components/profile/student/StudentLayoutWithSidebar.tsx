@@ -108,7 +108,7 @@ export const StudentLayoutWithSidebar: React.FC<StudentLayoutWithSidebarProps> =
         </Button>
       </div>
       
-      <SidebarProvider defaultCollapsed={collapsed} onCollapsedChange={setCollapsed}>
+      <SidebarProvider>
         <div className="flex-grow flex w-full">
           <Sidebar
             className={cn(
@@ -116,6 +116,8 @@ export const StudentLayoutWithSidebar: React.FC<StudentLayoutWithSidebarProps> =
               collapsed ? "w-14" : "w-64",
               mobileOpen ? "fixed inset-y-0 left-0 z-40" : "hidden lg:block"
             )}
+            defaultCollapsed={collapsed}
+            onCollapsedChange={setCollapsed}
           >
             <SidebarContent>
               <SidebarGroup>

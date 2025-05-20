@@ -103,13 +103,15 @@ export const TutorProfileLayout: React.FC<TutorProfileLayoutProps> = ({
     <div className="min-h-screen flex flex-col">
       <Header />
       
-      <SidebarProvider defaultCollapsed={collapsed} onCollapsedChange={setCollapsed}>
+      <SidebarProvider>
         <div className="flex-grow flex w-full">
           <Sidebar
             className={cn(
               "h-screen border-r bg-white transition-all duration-300 sticky top-0", 
               collapsed ? "w-14" : "w-64"
             )}
+            defaultCollapsed={collapsed}
+            onCollapsedChange={setCollapsed}
           >
             <SidebarContent>
               <SidebarGroup>
