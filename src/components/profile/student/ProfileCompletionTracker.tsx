@@ -40,9 +40,9 @@ export const ProfileCompletionTracker = () => {
               ...step, 
               // Check both directly from profile and from nested student_profiles
               isCompleted: Boolean(
-                studentProfile.educational_level || 
+                (studentProfile && studentProfile.educational_level) || 
                 profile.educational_level || 
-                studentProfile.school ||
+                (studentProfile && studentProfile.school) ||
                 profile.school
               )
             };
@@ -51,7 +51,7 @@ export const ProfileCompletionTracker = () => {
               ...step, 
               // Check both directly from profile and from nested student_profiles
               isCompleted: Boolean(
-                studentProfile.grade || 
+                (studentProfile && studentProfile.grade) || 
                 profile.grade
               )
             };
