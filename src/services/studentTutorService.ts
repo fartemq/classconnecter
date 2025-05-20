@@ -1,7 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import { ensureObject } from "@/utils/supabaseUtils";
+import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
 export interface StudentTutorRelationship {
   id: string;
@@ -66,7 +65,7 @@ export const getStudentTutorRelationships = async (studentId: string): Promise<S
     // Format the response with proper typing
     const relationships = data.map(item => {
       // Ensure tutor is handled correctly - it should be an object not an array
-      const formattedTutor = item.tutor ? ensureObject(item.tutor) : undefined;
+      const formattedTutor = item.tutor ? ensureSingleObject(item.tutor) : undefined;
       
       return {
         ...item,
@@ -111,7 +110,7 @@ export const getStudentFavoriteTutors = async (studentId: string): Promise<Favor
     // Format the response with proper typing
     const favoriteTutors = data.map(item => {
       // Ensure tutor is handled correctly - it should be an object not an array
-      const formattedTutor = item.tutor ? ensureObject(item.tutor) : undefined;
+      const formattedTutor = item.tutor ? ensureSingleObject(item.tutor) : undefined;
       
       return {
         ...item,
