@@ -1,156 +1,148 @@
 
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, Filter } from 'lucide-react';
-import { TutorSearchFilters } from '@/services/tutor/types';
-import { ActiveFilters } from './ActiveFilters';
-import {
-  PriceRangeSlider,
-  RatingSlider,
-  ExperienceSlider,
-  FilterCheckboxes,
-  FilterInputs
-} from './components';
+import { Search, RefreshCw } from 'lucide-react';
+import { FilterInputs } from './components/FilterInputs';
+import { FilterCheckboxes } from './components/FilterCheckboxes';
+import { PriceRangeSlider } from './components/PriceRangeSlider';
+import { RatingSlider } from './components/RatingSlider';
+import { ExperienceSlider } from './components/ExperienceSlider';
+import { BudgetSlider } from './components/BudgetSlider';
+import { TutorFilters } from '@/services/tutor/types';
 
 interface TutorFilterFormProps {
-  filters: TutorSearchFilters;
-  onChange: (filters: TutorSearchFilters) => void;
+  initialFilters: TutorFilters;
+  onFilterChange: (filters: TutorFilters) => void;
   onReset: () => void;
+  loading?: boolean;
 }
 
-export const TutorFilterForm: React.FC<TutorFilterFormProps> = ({ filters, onChange, onReset }) => {
-  const [localFilters, setLocalFilters] = useState<TutorSearchFilters>(filters);
-  const [priceRange, setPriceRange] = useState<[number, number]>([
-    filters.priceMin || 500, 
-    filters.priceMax || 5000
-  ]);
+export const TutorFilterForm: React.FC<TutorFilterFormProps> = ({
+  initialFilters,
+  onFilterChange,
+  onReset,
+  loading = false
+}) => {
+  const [filters, setFilters] = useState<TutorFilters>(initialFilters);
 
-  // Update local state when props change
-  useEffect(() => {
-    setLocalFilters(filters);
-    setPriceRange([
-      filters.priceMin || 500, 
-      filters.priceMax || 5000
-    ]);
-  }, [filters]);
-
-  // Handle city input change
-  const handleCityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalFilters({ ...localFilters, city: e.target.value });
+  const handleInputChange = (name: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  // Handle subject input change
-  const handleSubjectChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalFilters({ ...localFilters, subject: e.target.value });
+  const handleCheckboxChange = (name: string, checked: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      [name]: checked
+    }));
   };
-  
-  // Handle price range change
+
   const handlePriceChange = (value: number[]) => {
-    setPriceRange([value[0], value[1]]);
-    // Don't update filters immediately to avoid too many re-renders
-  };
-  
-  // Handle rating change
-  const handleRatingChange = (value: number[]) => {
-    setLocalFilters({ ...localFilters, rating: value[0] });
-  };
-  
-  // Handle experience change
-  const handleExperienceChange = (value: number[]) => {
-    setLocalFilters({ ...localFilters, experienceMin: value[0] });
-  };
-  
-  // Handle verified checkbox change
-  const handleVerifiedChange = (checked: boolean) => {
-    setLocalFilters({ ...localFilters, verified: checked || undefined });
+    setFilters(prev => ({
+      ...prev,
+      minPrice: value[0],
+      maxPrice: value[1]
+    }));
   };
 
-  // Handle "Show my tutors" switch change
-  const handleShowExistingChange = (checked: boolean) => {
-    setLocalFilters({ ...localFilters, showExisting: checked || undefined });
+  const handleRatingChange = (value: number[]) => {
+    setFilters(prev => ({
+      ...prev,
+      minRating: value[0]
+    }));
+  };
+
+  const handleExperienceChange = (value: number[]) => {
+    setFilters(prev => ({
+      ...prev,
+      minExperience: value[0]
+    }));
   };
   
-  // Apply filters
-  const applyFilters = () => {
-    const updatedFilters = {
-      ...localFilters,
-      priceMin: priceRange[0],
-      priceMax: priceRange[1]
-    };
-    
-    // Remove empty filters
-    Object.keys(updatedFilters).forEach(key => {
-      if (updatedFilters[key] === '' || updatedFilters[key] === undefined) {
-        delete updatedFilters[key];
-      }
-    });
-    
-    onChange(updatedFilters);
+  const handleBudgetChange = (value: number[]) => {
+    setFilters(prev => ({
+      ...prev,
+      budget: value[0]
+    }));
   };
-  
-  // Reset filters
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onFilterChange(filters);
+  };
+
   const handleReset = () => {
-    setLocalFilters({});
-    setPriceRange([500, 5000]);
     onReset();
   };
 
   return (
-    <Card className="overflow-hidden border border-gray-200 shadow-sm">
-      <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50 pb-4">
-        <CardTitle className="flex justify-between items-center">
-          <span className="text-lg font-medium">Фильтры поиска</span>
-          <Button variant="ghost" size="sm" onClick={handleReset} className="h-8 px-2 text-gray-500 hover:text-red-500">
-            <X className="h-4 w-4 mr-1" />
-            Сбросить
-          </Button>
-        </CardTitle>
-      </CardHeader>
-      
-      <CardContent className="space-y-6 p-5">
-        {/* Input filters */}
-        <FilterInputs
-          city={localFilters.city || ''}
-          subject={localFilters.subject || ''}
-          onCityChange={handleCityChange}
-          onSubjectChange={handleSubjectChange}
-        />
-        
-        {/* Price range filter */}
-        <PriceRangeSlider
-          priceRange={priceRange}
-          onPriceChange={handlePriceChange}
-        />
-        
-        {/* Rating filter */}
-        <RatingSlider
-          rating={localFilters.rating || 0}
-          onRatingChange={handleRatingChange}
-        />
-        
-        {/* Experience filter */}
-        <ExperienceSlider
-          experience={localFilters.experienceMin || 0}
-          onExperienceChange={handleExperienceChange}
-        />
-        
-        {/* Checkbox filters */}
-        <FilterCheckboxes
-          verified={localFilters.verified || false}
-          showExisting={localFilters.showExisting || false}
-          onVerifiedChange={handleVerifiedChange}
-          onShowExistingChange={handleShowExistingChange}
-        />
-        
-        {/* Action buttons */}
-        <Button 
-          onClick={applyFilters} 
-          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-        >
-          <Filter className="h-4 w-4 mr-2" />
-          Применить фильтры
-        </Button>
+    <Card className="h-fit">
+      <CardContent className="p-6">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <FilterInputs
+            subject={filters.subject || ''}
+            city={filters.city || ''}
+            onInputChange={handleInputChange}
+          />
+          
+          <FilterCheckboxes
+            online={filters.online || false}
+            offline={filters.offline || false}
+            hasVideo={filters.hasVideo || false}
+            verified={filters.verified || false}
+            onCheckboxChange={handleCheckboxChange}
+          />
+
+          <PriceRangeSlider
+            priceRange={[filters.minPrice || 500, filters.maxPrice || 5000]}
+            onPriceChange={handlePriceChange}
+          />
+
+          <RatingSlider
+            rating={filters.minRating || 0}
+            onRatingChange={handleRatingChange}
+          />
+
+          <ExperienceSlider
+            experience={filters.minExperience || 0}
+            onExperienceChange={handleExperienceChange}
+          />
+          
+          <BudgetSlider
+            budget={filters.budget || null}
+            onBudgetChange={handleBudgetChange}
+          />
+
+          <div className="flex gap-2">
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={loading}
+            >
+              {loading ? (
+                <>Поиск...</>
+              ) : (
+                <>
+                  <Search className="mr-2 h-4 w-4" />
+                  Найти репетиторов
+                </>
+              )}
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="icon" 
+              onClick={handleReset}
+              disabled={loading}
+              title="Сбросить фильтры"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          </div>
+        </form>
       </CardContent>
     </Card>
   );

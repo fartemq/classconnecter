@@ -58,6 +58,7 @@ export const useStudentProfile = () => {
           educational_level: params.educational_level || prev.educational_level,
           subjects: params.subjects || prev.subjects || [],
           preferred_format: params.preferred_format || prev.preferred_format || [],
+          budget: params.budget || prev.budget || null,
           // Make sure these fields are properly assigned to the profile object 
           // (not nested under student_profiles)
           student_profiles: {

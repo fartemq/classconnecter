@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -11,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
 import { ProfileAvatar } from "./ProfileAvatar";
 import { Profile, ProfileUpdateParams } from "@/hooks/profiles";
+import { Slider } from "@/components/ui/slider";
 
 interface ProfileInfoProps {
   profile: Profile;
@@ -33,7 +35,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
     subjects: profile?.subjects || [],
     learning_goals: profile?.learning_goals || "",
     preferred_format: profile?.preferred_format || [],
-    budget: profile?.budget || null,
+    budget: profile?.budget || 1000,
   });
   
   // Update form state when profile changes
@@ -53,7 +55,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
         subjects: profile.subjects || [],
         learning_goals: profile.learning_goals || "",
         preferred_format: profile.preferred_format || [],
-        budget: profile.budget || null,
+        budget: profile.budget || 1000,
       });
     }
   }, [profile]);
@@ -72,6 +74,15 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
       ...prev,
       [name]: value,
     }));
+  };
+  
+  const handleBudgetChange = (value: number[]) => {
+    if (value && value.length > 0) {
+      setFormState((prev) => ({
+        ...prev,
+        budget: value[0],
+      }));
+    }
   };
   
   const handleAvatarUpdate = (newUrl: string) => {
@@ -239,6 +250,26 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
                   placeholder="Опишите ваши цели обучения"
                   rows={3}
                 />
+              </div>
+              
+              <div className="space-y-3">
+                <Label htmlFor="budget">Бюджет (₽ в час)</Label>
+                <div className="pb-2">
+                  <Slider
+                    id="budget"
+                    value={[formState.budget || 1000]}
+                    min={500}
+                    max={5000}
+                    step={100}
+                    onValueChange={handleBudgetChange}
+                    className="py-4"
+                  />
+                  <div className="flex justify-between mt-1">
+                    <span className="text-xs text-gray-500">500₽</span>
+                    <span className="text-xs font-medium">{formState.budget || 1000}₽</span>
+                    <span className="text-xs text-gray-500">5000₽</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
