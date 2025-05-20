@@ -38,6 +38,10 @@ export const useStudentProfile = () => {
       // Update local state with ALL fields from params
       setProfile(prev => {
         if (!prev) return prev;
+        
+        // Ensure student_profiles exists in the profile object
+        const studentProfiles = prev.student_profiles || {};
+        
         return { 
           ...prev, 
           ...params,
@@ -56,14 +60,14 @@ export const useStudentProfile = () => {
           // Make sure these fields are properly assigned to the profile object 
           // (not nested under student_profiles)
           student_profiles: {
-            ...(prev.student_profiles || {}),
-            educational_level: params.educational_level || prev.educational_level || null,
-            subjects: params.subjects || prev.subjects || [],
-            learning_goals: params.learning_goals || prev.learning_goals || null,
-            preferred_format: params.preferred_format || prev.preferred_format || [],
-            school: params.school || prev.school || null,
-            grade: params.grade || prev.grade || null,
-            budget: params.budget || prev.budget || null
+            ...studentProfiles,
+            educational_level: params.educational_level || studentProfiles.educational_level || null,
+            subjects: params.subjects || studentProfiles.subjects || [],
+            learning_goals: params.learning_goals || studentProfiles.learning_goals || null,
+            preferred_format: params.preferred_format || studentProfiles.preferred_format || [],
+            school: params.school || studentProfiles.school || null,
+            grade: params.grade || studentProfiles.grade || null,
+            budget: params.budget || studentProfiles.budget || null
           }
         };
       });

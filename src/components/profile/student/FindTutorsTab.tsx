@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { searchTutors } from '@/services/tutor/searchService';
 import { supabase } from "@/integrations/supabase/client";
+import { TutorSearchFilters } from '@/services/tutor/types';
 
 export const FindTutorsTab = () => {
   const { toast } = useToast();
@@ -18,7 +19,7 @@ export const FindTutorsTab = () => {
   const [tutors, setTutors] = useState([]);
   const [totalTutors, setTotalTutors] = useState(0);
   const [searchText, setSearchText] = useState('');
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState<TutorSearchFilters>({});
   const [currentPage, setCurrentPage] = useState(1);
 
   // Load tutors with current filters
@@ -28,7 +29,7 @@ export const FindTutorsTab = () => {
       setIsLoading(true);
       
       // Combine search text with filters
-      const searchFilters = { ...filters };
+      const searchFilters: TutorSearchFilters = { ...filters };
       if (searchText) {
         if (searchText.includes('@')) {
           // Looks like an email

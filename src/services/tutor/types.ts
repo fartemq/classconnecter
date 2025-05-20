@@ -27,3 +27,13 @@ export interface TutorSearchResult {
   relationshipStatus?: string;
   isFavorite?: boolean;
 }
+
+// Add the missing TutorBasicInfo type needed for student types
+export interface TutorBasicInfo {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+  avatar_url: string | null;
+  city: string | null;
+  role: string;
+}

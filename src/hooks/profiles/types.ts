@@ -1,4 +1,3 @@
-
 // Basic profile interface
 export interface Profile {
   id: string;
@@ -31,6 +30,17 @@ export interface Profile {
   video_url?: string;
   education_verified?: boolean;
   is_published?: boolean;
+  
+  // Student profiles nested object from database
+  student_profiles?: {
+    educational_level: string | null;
+    subjects: string[] | null;
+    learning_goals: string | null;
+    preferred_format: string[] | null;
+    school: string | null;
+    grade: string | null;
+    budget: number | null;
+  } | null;
 }
 
 export interface ProfileUpdateParams {

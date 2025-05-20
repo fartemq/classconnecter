@@ -19,7 +19,7 @@ export const ProfileCompletionTracker = () => {
     if (!isLoading && profile) {
       console.log("Checking profile completion with data:", profile);
       
-      // Get student-specific profile data
+      // Get student-specific profile data safely
       const studentProfile = profile.student_profiles || {};
       console.log("Student profile data:", studentProfile);
       
