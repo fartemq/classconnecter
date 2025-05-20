@@ -116,9 +116,9 @@ export const StudentLayoutWithSidebar: React.FC<StudentLayoutWithSidebarProps> =
               collapsed ? "w-14" : "w-64",
               mobileOpen ? "fixed inset-y-0 left-0 z-40" : "hidden lg:block"
             )}
-            defaultCollapsed={collapsed}
-            onCollapsedChange={setCollapsed}
           >
+            <SidebarTrigger onClick={() => setCollapsed(!collapsed)} />
+            
             <SidebarContent>
               <SidebarGroup>
                 <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>

@@ -110,9 +110,9 @@ export const TutorProfileLayout: React.FC<TutorProfileLayoutProps> = ({
               "h-screen border-r bg-white transition-all duration-300 sticky top-0", 
               collapsed ? "w-14" : "w-64"
             )}
-            defaultCollapsed={collapsed}
-            onCollapsedChange={setCollapsed}
           >
+            <SidebarTrigger onClick={() => setCollapsed(!collapsed)} />
+            
             <SidebarContent>
               <SidebarGroup>
                 <SidebarGroupLabel className={collapsed ? "sr-only" : ""}>
