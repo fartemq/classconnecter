@@ -1,142 +1,77 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { X, MapPin } from 'lucide-react';
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TutorSearchFilters } from '@/services/tutor/types';
 
 interface ActiveFiltersProps {
-  subjectFilter: string | undefined;
-  cityFilter: string;
-  verifiedFilter: boolean;
-  ratingFilter: number | undefined;
-  experienceFilter: number | undefined;
-  priceRange: [number, number];
-  showExistingTutors: boolean;
-  onClearSubject: () => void;
-  onClearCity: () => void;
-  onClearVerified: () => void;
-  onClearRating: () => void;
-  onClearExperience: () => void;
-  onClearPrice: () => void;
-  onClearExisting: () => void;
-  onResetAll: () => void;
+  filters: TutorSearchFilters;
+  onRemove: (key: string) => void;
+  onReset: () => void;
 }
 
 export const ActiveFilters: React.FC<ActiveFiltersProps> = ({
-  subjectFilter,
-  cityFilter,
-  verifiedFilter,
-  ratingFilter,
-  experienceFilter,
-  priceRange,
-  showExistingTutors,
-  onClearSubject,
-  onClearCity,
-  onClearVerified,
-  onClearRating,
-  onClearExperience,
-  onClearPrice,
-  onClearExisting,
-  onResetAll
+  filters,
+  onRemove,
+  onReset
 }) => {
-  const hasActiveFilters = subjectFilter || 
-    cityFilter || 
-    verifiedFilter || 
-    ratingFilter || 
-    experienceFilter || 
-    priceRange[0] > 0 || 
-    priceRange[1] < 5000 || 
-    showExistingTutors;
-    
-  if (!hasActiveFilters) return null;
+  // If no filters are active, don't render anything
+  if (Object.keys(filters).length === 0) {
+    return null;
+  }
+
+  const getFilterLabel = (key: string, value: any): string => {
+    switch (key) {
+      case 'subject':
+        return `Предмет: ${value}`;
+      case 'priceMin':
+        return `От ${value} ₽`;
+      case 'priceMax':
+        return `До ${value} ₽`;
+      case 'city':
+        return `Город: ${value}`;
+      case 'rating':
+        return `Рейтинг: ${value}+`;
+      case 'verified':
+        return 'Проверенные';
+      case 'experienceMin':
+        return `Опыт: от ${value} лет`;
+      case 'showExisting':
+        return 'Мои репетиторы';
+      default:
+        return `${key}: ${value}`;
+    }
+  };
 
   return (
-    <div className="flex flex-wrap gap-2 mb-4">
-      {subjectFilter && (
-        <Badge variant="outline" className="flex items-center gap-1 bg-slate-100">
-          {subjectFilter}
-          <X 
-            size={14} 
-            className="cursor-pointer" 
-            onClick={onClearSubject}
-          />
-        </Badge>
-      )}
-      
-      {cityFilter && (
-        <Badge variant="outline" className="flex items-center gap-1 bg-slate-100">
-          <MapPin size={14} />
-          {cityFilter}
-          <X 
-            size={14} 
-            className="cursor-pointer" 
-            onClick={onClearCity}
-          />
-        </Badge>
-      )}
-      
-      {(priceRange[0] > 0 || priceRange[1] < 5000) && (
-        <Badge variant="outline" className="flex items-center gap-1 bg-slate-100">
-          {priceRange[0]} ₽ — {priceRange[1]} ₽
-          <X 
-            size={14} 
-            className="cursor-pointer" 
-            onClick={onClearPrice}
-          />
-        </Badge>
-      )}
-      
-      {verifiedFilter && (
-        <Badge variant="outline" className="flex items-center gap-1 bg-slate-100">
-          Проверенные
-          <X 
-            size={14} 
-            className="cursor-pointer" 
-            onClick={onClearVerified}
-          />
-        </Badge>
-      )}
-      
-      {ratingFilter && (
-        <Badge variant="outline" className="flex items-center gap-1 bg-slate-100">
-          Рейтинг {ratingFilter}+
-          <X 
-            size={14} 
-            className="cursor-pointer" 
-            onClick={onClearRating}
-          />
-        </Badge>
-      )}
-      
-      {experienceFilter !== undefined && (
-        <Badge variant="outline" className="flex items-center gap-1 bg-slate-100">
-          Опыт от {experienceFilter} лет
-          <X 
-            size={14} 
-            className="cursor-pointer" 
-            onClick={onClearExperience}
-          />
-        </Badge>
-      )}
-      
-      {showExistingTutors && (
-        <Badge variant="outline" className="flex items-center gap-1 bg-slate-100">
-          Мои репетиторы включены
-          <X 
-            size={14} 
-            className="cursor-pointer" 
-            onClick={onClearExisting}
-          />
-        </Badge>
-      )}
-      
-      <Badge 
-        variant="outline" 
-        className="flex items-center gap-1 bg-slate-100 cursor-pointer"
-        onClick={onResetAll}
-      >
-        Сбросить все
-        <X size={14} />
-      </Badge>
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        {Object.entries(filters).map(([key, value]) => {
+          if (value === undefined || value === null) return null;
+          
+          return (
+            <Badge key={key} variant="secondary" className="flex items-center gap-1">
+              {getFilterLabel(key, value)}
+              <X 
+                className="h-3 w-3 cursor-pointer" 
+                onClick={() => onRemove(key)} 
+              />
+            </Badge>
+          );
+        })}
+        
+        {Object.keys(filters).length > 1 && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onReset}
+            className="h-6 px-2 text-xs"
+          >
+            Сбросить все
+          </Button>
+        )}
+      </div>
     </div>
   );
 };

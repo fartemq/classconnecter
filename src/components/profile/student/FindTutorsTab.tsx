@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -31,10 +32,7 @@ export const FindTutorsTab = () => {
       // Combine search text with filters
       const searchFilters: TutorSearchFilters = { ...filters };
       if (searchText) {
-        if (searchText.includes('@')) {
-          // Looks like an email
-          searchFilters.email = searchText;
-        } else if (!isNaN(Number(searchText))) {
+        if (!isNaN(Number(searchText))) {
           // Looks like a price
           searchFilters.priceMax = Number(searchText);
         } else {

@@ -18,7 +18,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
   const [isValid, setIsValid] = useState(false);
   const [missingFields, setMissingFields] = useState<string[]>([]);
   const [warnings, setWarnings] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(true); // Changed 'loading' to 'isLoading' for consistency
+  const [isLoading, setIsLoading] = useState(true);
 
   // Validate profile and check publish status
   useEffect(() => {
@@ -125,7 +125,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
     isValid,
     missingFields,
     warnings,
-    isLoading, // Changed from 'loading' to 'isLoading' for consistency
+    isLoading,
     togglePublishStatus,
   };
 };

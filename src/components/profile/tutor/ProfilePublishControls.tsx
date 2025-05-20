@@ -10,9 +10,10 @@ interface ProfilePublishControlsProps {
 }
 
 export const ProfilePublishControls: React.FC<ProfilePublishControlsProps> = ({ tutorId }) => {
-  const { isPublished, isLoading, togglePublishStatus } = useTutorPublishStatus(tutorId); // Changed 'loading' to 'isLoading'
+  // The hook now uses 'isLoading' instead of 'loading'
+  const { isPublished, isValid, missingFields, warnings, isLoading, togglePublishStatus } = useTutorPublishStatus(tutorId);
 
-  if (isLoading) { // Changed 'loading' to 'isLoading'
+  if (isLoading) {
     return (
       <Card className="border-none">
         <CardContent className="p-6">
