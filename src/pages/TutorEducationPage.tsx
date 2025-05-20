@@ -22,7 +22,7 @@ const TutorEducationPage = () => {
     return (
       <div className="p-8 text-center">
         {isLoading && <p>Загрузка...</p>}
-        {error && <p>Ошибка: {error.message}</p>}
+        {error && <p>Ошибка при загрузке данных</p>}
       </div>
     );
   }

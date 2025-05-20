@@ -129,7 +129,12 @@ export const StudentEducationForm: React.FC = () => {
       
       // Update local state to reflect that we now have education data
       if (!existingEducation) {
-        setExistingEducation(values);
+        setExistingEducation({
+          level: values.level,
+          schoolName: values.schoolName,
+          grade: values.grade,
+          goals: values.goals || '',
+        });
       }
       
     } catch (error) {
