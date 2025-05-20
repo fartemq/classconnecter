@@ -4,7 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 
 interface BudgetSliderProps {
-  budget: number | null;
+  budget: number;
   onBudgetChange: (value: number[]) => void;
 }
 

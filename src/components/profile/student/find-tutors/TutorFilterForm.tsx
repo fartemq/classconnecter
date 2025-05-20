@@ -9,11 +9,11 @@ import { PriceRangeSlider } from './components/PriceRangeSlider';
 import { RatingSlider } from './components/RatingSlider';
 import { ExperienceSlider } from './components/ExperienceSlider';
 import { BudgetSlider } from './components/BudgetSlider';
-import { TutorFilters } from '@/services/tutor/types';
+import { TutorSearchFilters } from '@/services/tutor/types';
 
 interface TutorFilterFormProps {
-  initialFilters: TutorFilters;
-  onFilterChange: (filters: TutorFilters) => void;
+  initialFilters: TutorSearchFilters;
+  onFilterChange: (filters: TutorSearchFilters) => void;
   onReset: () => void;
   loading?: boolean;
 }
@@ -24,7 +24,7 @@ export const TutorFilterForm: React.FC<TutorFilterFormProps> = ({
   onReset,
   loading = false
 }) => {
-  const [filters, setFilters] = useState<TutorFilters>(initialFilters);
+  const [filters, setFilters] = useState<TutorSearchFilters>(initialFilters);
 
   const handleInputChange = (name: string, value: string) => {
     setFilters(prev => ({
@@ -43,22 +43,22 @@ export const TutorFilterForm: React.FC<TutorFilterFormProps> = ({
   const handlePriceChange = (value: number[]) => {
     setFilters(prev => ({
       ...prev,
-      minPrice: value[0],
-      maxPrice: value[1]
+      priceMin: value[0],
+      priceMax: value[1]
     }));
   };
 
   const handleRatingChange = (value: number[]) => {
     setFilters(prev => ({
       ...prev,
-      minRating: value[0]
+      rating: value[0]
     }));
   };
 
   const handleExperienceChange = (value: number[]) => {
     setFilters(prev => ({
       ...prev,
-      minExperience: value[0]
+      experienceMin: value[0]
     }));
   };
   
@@ -85,34 +85,34 @@ export const TutorFilterForm: React.FC<TutorFilterFormProps> = ({
           <FilterInputs
             subject={filters.subject || ''}
             city={filters.city || ''}
-            onInputChange={handleInputChange}
+            onCityChange={(e) => handleInputChange('city', e.target.value)}
+            onSubjectChange={(e) => handleInputChange('subject', e.target.value)}
           />
           
           <FilterCheckboxes
-            online={filters.online || false}
-            offline={filters.offline || false}
-            hasVideo={filters.hasVideo || false}
             verified={filters.verified || false}
-            onCheckboxChange={handleCheckboxChange}
+            showExisting={filters.showExisting || false}
+            onVerifiedChange={(checked) => handleCheckboxChange('verified', checked)}
+            onShowExistingChange={(checked) => handleCheckboxChange('showExisting', checked)}
           />
 
           <PriceRangeSlider
-            priceRange={[filters.minPrice || 500, filters.maxPrice || 5000]}
+            priceRange={[filters.priceMin || 500, filters.priceMax || 5000]}
             onPriceChange={handlePriceChange}
           />
 
           <RatingSlider
-            rating={filters.minRating || 0}
+            rating={filters.rating || 0}
             onRatingChange={handleRatingChange}
           />
 
           <ExperienceSlider
-            experience={filters.minExperience || 0}
+            experience={filters.experienceMin || 0}
             onExperienceChange={handleExperienceChange}
           />
           
           <BudgetSlider
-            budget={filters.budget || null}
+            budget={filters.budget || 1000}
             onBudgetChange={handleBudgetChange}
           />
 

@@ -257,9 +257,10 @@ export const FindTutorsTab = () => {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-1">
           <TutorFilterForm 
-            filters={filters} 
-            onChange={handleFiltersChange}
+            initialFilters={filters} 
+            onFilterChange={handleFiltersChange}
             onReset={handleResetFilters}
+            loading={isLoading}
           />
         </div>
         
