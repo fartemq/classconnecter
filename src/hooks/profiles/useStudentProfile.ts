@@ -61,13 +61,20 @@ export const useStudentProfile = () => {
           // (not nested under student_profiles)
           student_profiles: {
             ...studentProfiles,
-            educational_level: params.educational_level || (studentProfiles && studentProfiles.educational_level) || null,
-            subjects: params.subjects || (studentProfiles && studentProfiles.subjects) || [],
-            learning_goals: params.learning_goals || (studentProfiles && studentProfiles.learning_goals) || null,
-            preferred_format: params.preferred_format || (studentProfiles && studentProfiles.preferred_format) || [],
-            school: params.school || (studentProfiles && studentProfiles.school) || null,
-            grade: params.grade || (studentProfiles && studentProfiles.grade) || null,
-            budget: params.budget || (studentProfiles && studentProfiles.budget) || null
+            educational_level: params.educational_level || 
+              (studentProfiles && 'educational_level' in studentProfiles ? studentProfiles.educational_level : null),
+            subjects: params.subjects || 
+              (studentProfiles && 'subjects' in studentProfiles ? studentProfiles.subjects : null) || [],
+            learning_goals: params.learning_goals || 
+              (studentProfiles && 'learning_goals' in studentProfiles ? studentProfiles.learning_goals : null),
+            preferred_format: params.preferred_format || 
+              (studentProfiles && 'preferred_format' in studentProfiles ? studentProfiles.preferred_format : null) || [],
+            school: params.school || 
+              (studentProfiles && 'school' in studentProfiles ? studentProfiles.school : null),
+            grade: params.grade || 
+              (studentProfiles && 'grade' in studentProfiles ? studentProfiles.grade : null),
+            budget: params.budget || 
+              (studentProfiles && 'budget' in studentProfiles ? studentProfiles.budget : null)
           }
         };
       });
