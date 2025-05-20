@@ -36,7 +36,7 @@ export interface Profile {
   student_profiles?: StudentProfileData | null;
 }
 
-// Define the type for the student_profiles property
+// Define the type for the student_profiles property - properly exported
 export interface StudentProfileData {
   educational_level: string | null;
   subjects: string[] | null;
