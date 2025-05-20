@@ -1,6 +1,43 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { hasTutorAddedSubjects } from "./searchService";
+
+/**
+ * Check if a tutor has added any subjects
+ */
+export const hasTutorAddedSubjects = async (tutorId: string): Promise<boolean> => {
+  try {
+    const { count, error } = await supabase
+      .from("tutor_subjects")
+      .select("*", { count: 'exact', head: true })
+      .eq("tutor_id", tutorId)
+      .eq("is_active", true);
+      
+    if (error) throw error;
+    return count !== null && count > 0;
+  } catch (error) {
+    console.error("Error checking if tutor has added subjects:", error);
+    return false;
+  }
+};
+
+/**
+ * Check if a tutor has added schedule slots
+ */
+export const hasTutorAddedSchedule = async (tutorId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase
+      .from("tutor_schedule")
+      .select("id")
+      .eq("tutor_id", tutorId)
+      .limit(1);
+      
+    if (error) throw error;
+    return data && data.length > 0;
+  } catch (error) {
+    console.error("Error checking if tutor has added schedule:", error);
+    return false;
+  }
+};
 
 /**
  * Validate the completeness of a tutor profile for publishing
@@ -49,9 +86,12 @@ export const validateTutorProfile = async (tutorId: string) => {
     if (!tutorProfile || typeof tutorProfile !== 'object') {
       missingFields.push("Профиль репетитора не создан");
     } else {
-      if (!tutorProfile.education) missingFields.push("Образование");
-      if (!tutorProfile.teaching_methodology) missingFields.push("Методика преподавания");
-      if (tutorProfile.experience === null || tutorProfile.experience === undefined) {
+      // Convert array to object if necessary
+      const tutorData = Array.isArray(tutorProfile) ? tutorProfile[0] : tutorProfile;
+      
+      if (!tutorData.education) missingFields.push("Образование");
+      if (!tutorData.teaching_methodology) missingFields.push("Методика преподавания");
+      if (tutorData.experience === null || tutorData.experience === undefined) {
         missingFields.push("Опыт преподавания");
       }
     }

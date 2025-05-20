@@ -1,10 +1,13 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Upload } from "lucide-react";
-import { validateTutorProfile, hasTutorAddedSubjects, hasTutorAddedSchedule } from "@/services/tutor/validationService";
+import { 
+  validateTutorProfile, 
+  hasTutorAddedSubjects, 
+  hasTutorAddedSchedule 
+} from "@/services/tutor/validationService";
 import { ValidationAlert } from "./publish/ValidationAlert";
 import { RecommendationAlert } from "./publish/RecommendationAlert";
 import { ProfileStatusIndicator } from "./publish/ProfileStatusIndicator";
