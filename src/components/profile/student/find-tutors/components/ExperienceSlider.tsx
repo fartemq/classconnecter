@@ -2,6 +2,7 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { cn } from '@/lib/utils';
 
 interface ExperienceSliderProps {
   experience: number;
@@ -19,16 +20,17 @@ export const ExperienceSlider: React.FC<ExperienceSliderProps> = ({
         <span className="text-xs font-medium text-gray-500">от {experience}</span>
       </div>
       
-      <Slider
-        value={[experience]}
-        min={0}
-        max={20}
-        step={1}
-        onValueChange={onExperienceChange}
-        className="py-4"
-        thumbClassName="h-4 w-4 bg-gradient-to-r from-green-400 to-teal-500"
-        trackClassName="bg-gradient-to-r from-green-300 to-teal-400"
-      />
+      <div className="pb-2">
+        <Slider
+          value={[experience]}
+          min={0}
+          max={20}
+          step={1}
+          onValueChange={onExperienceChange}
+          className="py-4"
+        />
+        <div className="h-1 w-full bg-gradient-to-r from-green-300 to-teal-400 rounded-full -mt-5 -z-10 relative" />
+      </div>
     </div>
   );
 };

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { cn } from '@/lib/utils';
 
 interface PriceRangeSliderProps {
   priceRange: [number, number];
@@ -21,16 +22,17 @@ export const PriceRangeSlider: React.FC<PriceRangeSliderProps> = ({
         </span>
       </div>
       
-      <Slider
-        value={priceRange}
-        min={500}
-        max={5000}
-        step={100}
-        onValueChange={onPriceChange}
-        className="py-4" 
-        thumbClassName="h-4 w-4 bg-gradient-to-r from-blue-500 to-purple-500"
-        trackClassName="bg-gradient-to-r from-blue-400 to-purple-400"
-      />
+      <div className="pb-2">
+        <Slider
+          value={priceRange}
+          min={500}
+          max={5000}
+          step={100}
+          onValueChange={onPriceChange}
+          className="py-4"
+        />
+        <div className="h-1 w-full bg-gradient-to-r from-blue-400 to-purple-400 rounded-full -mt-5 -z-10 relative" />
+      </div>
     </div>
   );
 };
