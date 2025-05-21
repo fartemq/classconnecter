@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Loader } from "@/components/ui/loader";
 import { useLocation } from "react-router-dom";
 import { ChatConversation } from "@/components/profile/student/ChatConversation";
-import { StudentProfileCard } from "@/components/profile/student/StudentProfileCard";
+import { ProfileCompletionTracker } from "@/components/profile/student/ProfileCompletionTracker";
 import { StudentLayoutWithSidebar } from "@/components/profile/student/StudentLayoutWithSidebar";
 
 const StudentProfilePage = () => {
@@ -56,6 +56,9 @@ const StudentProfilePage = () => {
     <StudentLayoutWithSidebar>
       {isMainDashboard ? (
         <div className="space-y-6">
+          {/* Profile completion tracker */}
+          <ProfileCompletionTracker />
+          {/* Main dashboard content */}
           {profile && <StudentDashboard profile={profile} />}
         </div>
       ) : (
