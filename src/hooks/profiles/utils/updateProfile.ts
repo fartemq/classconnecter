@@ -32,7 +32,7 @@ export async function updateStudentProfile(
       preferred_format: profileData.preferred_format || [],
       school: profileData.school || null,
       grade: profileData.grade || null,
-      budget: profileData.budget || null
+      budget: profileData.budget || 1000
     };
 
     // Also update the base profile data
@@ -47,6 +47,7 @@ export async function updateStudentProfile(
     };
     
     console.log("Student profile data to save:", studentData);
+    console.log("Budget value being saved:", profileData.budget);
     
     // Update the base profile first
     const { error: baseProfileError } = await supabase

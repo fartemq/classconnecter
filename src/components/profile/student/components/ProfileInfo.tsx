@@ -78,6 +78,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
   
   const handleBudgetChange = (value: number[]) => {
     if (value && value.length > 0) {
+      console.log("Budget changed to:", value[0]);
       setFormState((prev) => ({
         ...prev,
         budget: value[0],
@@ -102,6 +103,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
       
       // Log the form state before submission for debugging
       console.log("Submitting form state:", formState);
+      console.log("Budget being submitted:", formState.budget);
       
       const success = await updateProfile(formState);
       

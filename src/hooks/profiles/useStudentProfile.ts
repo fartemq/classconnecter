@@ -27,6 +27,7 @@ export const useStudentProfile = () => {
       }
 
       console.log("Updating student profile with data:", params);
+      console.log("Budget value:", params.budget);
 
       // Update student-specific profile
       const studentUpdated = await updateStudentProfile(profile.id, params);
@@ -58,9 +59,8 @@ export const useStudentProfile = () => {
           educational_level: params.educational_level || prev.educational_level,
           subjects: params.subjects || prev.subjects || [],
           preferred_format: params.preferred_format || prev.preferred_format || [],
-          budget: params.budget || prev.budget || null,
-          // Make sure these fields are properly assigned to the profile object 
-          // (not nested under student_profiles)
+          budget: params.budget || prev.budget || 1000,
+          // Make sure these fields are properly assigned to the student_profiles object
           student_profiles: {
             educational_level: params.educational_level || studentProfiles.educational_level || null,
             subjects: params.subjects || studentProfiles.subjects || [],
@@ -68,7 +68,7 @@ export const useStudentProfile = () => {
             preferred_format: params.preferred_format || studentProfiles.preferred_format || [],
             school: params.school || studentProfiles.school || null,
             grade: params.grade || studentProfiles.grade || null,
-            budget: params.budget || studentProfiles.budget || null
+            budget: params.budget || studentProfiles.budget || 1000
           }
         };
       });
