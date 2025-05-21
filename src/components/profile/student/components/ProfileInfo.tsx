@@ -1,18 +1,13 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { PhoneInput } from "@/components/ui/phone-input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Check, Save, X } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
-import { Loader } from "@/components/ui/loader";
-import { ProfileAvatar } from "./ProfileAvatar";
+import { toast } from "@/hooks/use-toast";
 import { Profile, ProfileUpdateParams } from "@/hooks/profiles";
-import { Slider } from "@/components/ui/slider";
+import { ProfileAvatar } from "./ProfileAvatar";
+import { PersonalInfoForm } from "./PersonalInfoForm";
+import { EducationForm } from "./EducationForm";
+import { BioForm } from "./BioForm";
+import { FormActions } from "./FormActions";
 
 interface ProfileInfoProps {
   profile: Profile;
@@ -20,7 +15,6 @@ interface ProfileInfoProps {
 }
 
 export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile }) => {
-  const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formState, setFormState] = useState({
     avatar_url: profile?.avatar_url || null,
@@ -86,6 +80,13 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
     }
   };
   
+  const handlePhoneChange = (value: string) => {
+    setFormState((prev) => ({
+      ...prev,
+      phone: value,
+    }));
+  };
+  
   const handleAvatarUpdate = (newUrl: string) => {
     setFormState((prev) => ({
       ...prev,
@@ -131,6 +132,32 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
     }
   };
 
+  const handleCancel = () => {
+    // Reset form to original profile data
+    if (profile) {
+      setFormState({
+        avatar_url: profile.avatar_url || null,
+        first_name: profile.first_name || "",
+        last_name: profile.last_name || "",
+        bio: profile.bio || "",
+        city: profile.city || "",
+        phone: profile.phone || "",
+        educational_level: profile.educational_level || "school",
+        school: profile.school || "",
+        grade: profile.grade || "",
+        subjects: profile.subjects || [],
+        learning_goals: profile.learning_goals || "",
+        preferred_format: profile.preferred_format || [],
+        budget: profile.budget || 1000,
+      });
+    }
+    
+    toast({
+      title: "Изменения отменены",
+      description: "Форма возвращена к исходному состоянию",
+    });
+  };
+
   return (
     <Card>
       <CardContent className="p-6">
@@ -147,166 +174,39 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Personal Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Личные данные</h3>
-              
-              <div className="space-y-2">
-                <Label htmlFor="first_name">Имя</Label>
-                <Input 
-                  id="first_name" 
-                  name="first_name" 
-                  value={formState.first_name} 
-                  onChange={handleInputChange} 
-                  placeholder="Введите имя"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="last_name">Фамилия</Label>
-                <Input 
-                  id="last_name" 
-                  name="last_name" 
-                  value={formState.last_name} 
-                  onChange={handleInputChange} 
-                  placeholder="Введите фамилию"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="city">Город</Label>
-                <Input 
-                  id="city" 
-                  name="city" 
-                  value={formState.city} 
-                  onChange={handleInputChange} 
-                  placeholder="Введите город"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="phone">Телефон</Label>
-                <PhoneInput 
-                  id="phone" 
-                  name="phone" 
-                  value={formState.phone || ""} 
-                  onChange={(value) => setFormState(prev => ({ ...prev, phone: value }))} 
-                  placeholder="+7 (___) ___-__-__"
-                />
-              </div>
-            </div>
+            <PersonalInfoForm 
+              firstName={formState.first_name}
+              lastName={formState.last_name}
+              city={formState.city}
+              phone={formState.phone}
+              onInputChange={handleInputChange}
+              onPhoneChange={handlePhoneChange}
+            />
             
             {/* Education Information */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium">Образование</h3>
-              
-              <div className="space-y-2">
-                <Label htmlFor="educational_level">Уровень образования</Label>
-                <Select 
-                  value={formState.educational_level} 
-                  onValueChange={(value) => handleSelectChange("educational_level", value)}
-                >
-                  <SelectTrigger id="educational_level">
-                    <SelectValue placeholder="Выберите уровень образования" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="school">Школьник</SelectItem>
-                    <SelectItem value="university">Студент</SelectItem>
-                    <SelectItem value="adult">Взрослый</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              {formState.educational_level === "school" && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="school">Школа</Label>
-                    <Input 
-                      id="school" 
-                      name="school" 
-                      value={formState.school} 
-                      onChange={handleInputChange} 
-                      placeholder="Укажите школу"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="grade">Класс</Label>
-                    <Input 
-                      id="grade" 
-                      name="grade" 
-                      value={formState.grade} 
-                      onChange={handleInputChange} 
-                      placeholder="Укажите класс"
-                    />
-                  </div>
-                </>
-              )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="learning_goals">Цели обучения</Label>
-                <Textarea 
-                  id="learning_goals" 
-                  name="learning_goals" 
-                  value={formState.learning_goals} 
-                  onChange={handleInputChange} 
-                  placeholder="Опишите ваши цели обучения"
-                  rows={3}
-                />
-              </div>
-              
-              <div className="space-y-3">
-                <Label htmlFor="budget">Бюджет (₽ в час)</Label>
-                <div className="pb-2">
-                  <Slider
-                    id="budget"
-                    value={[formState.budget || 1000]}
-                    min={500}
-                    max={5000}
-                    step={100}
-                    onValueChange={handleBudgetChange}
-                    className="py-4"
-                  />
-                  <div className="flex justify-between mt-1">
-                    <span className="text-xs text-gray-500">500₽</span>
-                    <span className="text-xs font-medium">{formState.budget || 1000}₽</span>
-                    <span className="text-xs text-gray-500">5000₽</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">О себе</h3>
-            <Textarea 
-              id="bio" 
-              name="bio" 
-              value={formState.bio || ""} 
-              onChange={handleInputChange} 
-              placeholder="Расскажите немного о себе..."
-              rows={4}
+            <EducationForm 
+              educationalLevel={formState.educational_level}
+              school={formState.school}
+              grade={formState.grade}
+              learningGoals={formState.learning_goals}
+              budget={formState.budget}
+              onInputChange={handleInputChange}
+              onSelectChange={handleSelectChange}
+              onBudgetChange={handleBudgetChange}
             />
           </div>
           
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline">
-              <X className="mr-2 h-4 w-4" />
-              Отменить
-            </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader className="mr-2 h-4 w-4" />
-                  Сохранение...
-                </>
-              ) : (
-                <>
-                  <Save className="mr-2 h-4 w-4" />
-                  Сохранить
-                </>
-              )}
-            </Button>
-          </div>
+          {/* Bio */}
+          <BioForm 
+            bio={formState.bio}
+            onInputChange={handleInputChange}
+          />
+          
+          {/* Form Actions */}
+          <FormActions 
+            isSubmitting={isSubmitting}
+            onCancel={handleCancel}
+          />
         </form>
       </CardContent>
     </Card>
