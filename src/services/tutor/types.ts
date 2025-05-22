@@ -9,6 +9,7 @@ export interface TutorSearchFilters {
   verified?: boolean;
   email?: string; // For admin searches
   showExisting?: boolean; // Whether to show tutors the student already has a relationship with
+  budget?: number; // Student's budget for filtering tutors
 }
 
 export interface TutorSearchResult {
@@ -34,4 +35,17 @@ export interface TutorPublicationStatus {
   isValid: boolean;
   missingFields: string[];
   warnings: string[];
+}
+
+// Add this type for use in student relationships
+export interface TutorBasicInfo {
+  id: string;
+  first_name: string;
+  last_name: string;
+  avatar_url?: string;
+  city?: string;
+  tutor_profiles?: {
+    experience?: number;
+    education_verified?: boolean;
+  };
 }
