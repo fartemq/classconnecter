@@ -50,6 +50,7 @@ export async function updateStudentProfile(
     console.log("Base profile data to save:", baseProfileData);
     console.log("School value being saved:", profileData.school);
     console.log("Grade value being saved:", profileData.grade);
+    console.log("Learning goals being saved:", profileData.learning_goals);
     console.log("Educational level being saved:", profileData.educational_level);
     
     // Update the base profile first

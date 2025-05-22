@@ -29,6 +29,7 @@ export const useStudentProfile = () => {
       console.log("Updating student profile with data:", params);
       console.log("School value:", params.school);
       console.log("Grade value:", params.grade);
+      console.log("Learning goals:", params.learning_goals);
       console.log("Educational level:", params.educational_level);
 
       // Update student-specific profile
@@ -64,6 +65,7 @@ export const useStudentProfile = () => {
           budget: params.budget || prev.budget || 1000,
           // Make sure these fields are properly assigned to the student_profiles object
           student_profiles: {
+            ...studentProfiles,
             educational_level: params.educational_level || studentProfiles.educational_level || null,
             subjects: params.subjects || studentProfiles.subjects || [],
             learning_goals: params.learning_goals || studentProfiles.learning_goals || null,
