@@ -1,6 +1,6 @@
 
 import { ProfileUpdateParams } from "./types";
-import { useStudentProfile } from "./useStudentProfile";
+import { useStudentProfile } from "./student";
 import { useTutorProfile } from "./useTutorProfile";
 import { useProfileCommon } from "./useProfileCommon";
 
