@@ -1,16 +1,17 @@
 
 import { toast } from "@/hooks/use-toast";
-import { Profile, ProfileUpdateParams } from "./types";
-import { StudentProfileData } from "./types/profileTypes";
-import { useBaseProfile } from "./useBaseProfile";
-import { createRoleSpecificProfile } from "./utils";
-import { fetchStudentProfileData } from "./utils/fetchProfile";
-import { updateStudentProfile } from "./utils/updateProfile";
+import { Profile, ProfileUpdateParams } from "../types";
+import { StudentProfileData } from "../types/profileTypes";
+import { useBaseProfile } from "../useBaseProfile";
+import { createRoleSpecificProfile } from "../utils";
+import { fetchStudentProfileData } from "../utils/fetchProfile";
+import { updateStudentProfileData } from "./updateStudentProfile";
+import { UseStudentProfileResult } from "./types";
 
 /**
  * Hook for managing student profile data
  */
-export const useStudentProfile = () => {
+export const useStudentProfile = (): UseStudentProfileResult => {
   const { profile, setProfile, isLoading, error, user } = useBaseProfile("student");
 
   // Update profile function
@@ -33,7 +34,7 @@ export const useStudentProfile = () => {
       console.log("Educational level:", params.educational_level);
 
       // Update student-specific profile
-      const studentUpdated = await updateStudentProfile(profile.id, params);
+      const studentUpdated = await updateStudentProfileData(profile.id, params);
       if (!studentUpdated) {
         throw new Error("Failed to update student profile");
       }
