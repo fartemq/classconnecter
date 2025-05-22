@@ -4,119 +4,26 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle, CheckCircle, X, Info, AlertTriangle } from "lucide-react";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { 
-  validateTutorProfile, 
-  publishTutorProfile 
-} from "@/services/tutor";
-import { useAuth } from "@/hooks/useAuth";
-import { toast } from "@/hooks/use-toast";
+import { useTutorPublishStatus } from "@/hooks/useTutorPublishStatus";
 import { Loader } from "@/components/ui/loader";
-import { supabase } from "@/integrations/supabase/client";
 
 interface ProfilePublishSectionProps {
   tutorId: string;
 }
 
 export const ProfilePublishSection: React.FC<ProfilePublishSectionProps> = ({ tutorId }) => {
-  const { user } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
-  const [isPublished, setIsPublished] = useState(false);
-  const [validationResult, setValidationResult] = useState<{ 
-    isValid: boolean; 
-    missingFields: string[]; 
-    warnings: string[];
-  }>({
-    isValid: false,
-    missingFields: [],
-    warnings: []
-  });
+  const { 
+    isPublished, 
+    isValid, 
+    missingFields, 
+    warnings, 
+    loading, 
+    togglePublishStatus 
+  } = useTutorPublishStatus(tutorId);
+  
   const [dismissedAlert, setDismissedAlert] = useState(false);
 
-  // Fetch publication status and validate profile
-  useEffect(() => {
-    const checkProfileStatus = async () => {
-      if (!tutorId) return;
-      
-      try {
-        setIsLoading(true);
-        
-        // Check if profile is published
-        const { data: profileData } = await supabase
-          .from("tutor_profiles")
-          .select("is_published")
-          .eq("id", tutorId)
-          .maybeSingle();
-        
-        setIsPublished(!!profileData?.is_published);
-        
-        // Validate profile completeness
-        const validation = await validateTutorProfile(tutorId);
-        setValidationResult(validation);
-        
-      } catch (error) {
-        console.error("Error checking profile status:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    checkProfileStatus();
-  }, [tutorId]);
-
-  const handleTogglePublish = async () => {
-    if (!user?.id) {
-      toast({
-        title: "Ошибка",
-        description: "Необходимо авторизоваться",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    try {
-      setIsLoading(true);
-      
-      // If trying to publish, validate profile first
-      if (!isPublished) {
-        if (!validationResult.isValid) {
-          toast({
-            title: "Профиль не готов к публикации",
-            description: "Заполните все необходимые поля профиля",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-      
-      // Update publication status
-      const success = await publishTutorProfile(user.id, !isPublished);
-      
-      if (success) {
-        setIsPublished(!isPublished);
-        
-        toast({
-          title: isPublished ? "Профиль снят с публикации" : "Профиль опубликован",
-          description: isPublished 
-            ? "Ваш профиль больше не виден студентам" 
-            : "Теперь студенты могут находить вас в поиске",
-        });
-      } else {
-        throw new Error("Не удалось изменить статус публикации");
-      }
-      
-    } catch (error) {
-      console.error("Error toggling publish status:", error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось изменить статус публикации",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
       <Card>
         <CardContent className="pt-6">
@@ -147,14 +54,14 @@ export const ProfilePublishSection: React.FC<ProfilePublishSectionProps> = ({ tu
       
       <CardContent className="space-y-4">
         {/* Publication Alert */}
-        {!validationResult.isValid && !dismissedAlert && (
+        {!isValid && !dismissedAlert && (
           <Alert variant="destructive" className="relative">
             <AlertCircle className="h-4 w-4" />
             <AlertTitle>Профиль не готов к публикации</AlertTitle>
             <AlertDescription>
               <p>Для публикации профиля необходимо заполнить следующую информацию:</p>
               <ul className="list-disc pl-5 mt-2">
-                {validationResult.missingFields.map((field, index) => (
+                {missingFields.map((field, index) => (
                   <li key={index} className="mt-1">{field}</li>
                 ))}
               </ul>
@@ -171,14 +78,14 @@ export const ProfilePublishSection: React.FC<ProfilePublishSectionProps> = ({ tu
           </Alert>
         )}
         
-        {validationResult.isValid && validationResult.warnings.length > 0 && (
+        {isValid && warnings.length > 0 && (
           <Alert className="bg-amber-50 border-amber-200">
             <AlertTriangle className="h-4 w-4 text-amber-500" />
             <AlertTitle className="text-amber-800">Рекомендации по улучшению профиля</AlertTitle>
             <AlertDescription className="text-amber-700">
               <p>Рекомендуем заполнить дополнительную информацию для повышения привлекательности профиля:</p>
               <ul className="list-disc pl-5 mt-2">
-                {validationResult.warnings.map((warning, index) => (
+                {warnings.map((warning, index) => (
                   <li key={index} className="mt-1">{warning}</li>
                 ))}
               </ul>
@@ -214,16 +121,16 @@ export const ProfilePublishSection: React.FC<ProfilePublishSectionProps> = ({ tu
         {/* Publish/Unpublish button */}
         <div className="pt-2">
           <Button 
-            onClick={handleTogglePublish}
-            disabled={isLoading || (!isPublished && !validationResult.isValid)}
+            onClick={togglePublishStatus}
+            disabled={loading || (!isPublished && !isValid)}
             variant={isPublished ? "destructive" : "default"}
             className="w-full md:w-auto"
           >
-            {isLoading && <Loader size="sm" className="mr-2" />}
+            {loading && <Loader size="sm" className="mr-2" />}
             {isPublished ? "Снять с публикации" : "Опубликовать профиль"}
           </Button>
           
-          {!validationResult.isValid && !isPublished && (
+          {!isValid && !isPublished && (
             <p className="text-sm text-gray-500 mt-2">
               Для публикации необходимо заполнить все обязательные поля профиля
             </p>

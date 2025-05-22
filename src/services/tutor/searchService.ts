@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { ensureSingleObject } from "@/utils/supabaseUtils";
 import { TutorSearchFilters, TutorSearchResult } from "./types";
@@ -58,7 +59,8 @@ const processSubjects = async (
         id, name
       )
     `)
-    .eq("tutor_id", tutor.id);
+    .eq("tutor_id", tutor.id)
+    .eq("is_active", true);
 
   if (subjectsError) {
     console.error(`Error fetching subjects for tutor ${tutor.id}:`, subjectsError);
@@ -68,11 +70,12 @@ const processSubjects = async (
   // Filter subjects based on subject filter
   let filteredSubjects = subjectsData;
   if (filters.subject) {
+    // Try to find subject ID from name
     const { data: subjectInfo } = await supabase
       .from("subjects")
       .select("id")
-      .eq("name", filters.subject)
-      .single();
+      .ilike("name", `%${filters.subject}%`)
+      .maybeSingle();
 
     if (subjectInfo) {
       filteredSubjects = subjectsData.filter(
@@ -146,6 +149,8 @@ export const searchTutors = async (
   pageSize: number = 10
 ): Promise<{ tutors: TutorSearchResult[]; total: number }> => {
   try {
+    console.log("Searching tutors with filters:", filters);
+    
     // Get the current user ID for relationship and favorites checks
     const { data: { user } } = await supabase.auth.getUser();
     const currentUserId = user?.id;
@@ -186,6 +191,8 @@ export const searchTutors = async (
 
     // Execute the query
     const { data: tutorsData, error, count } = await query;
+    
+    console.log("Search query result:", { tutorsData, error, count });
 
     if (error) {
       console.error("Error searching tutors:", error);
@@ -193,6 +200,7 @@ export const searchTutors = async (
     }
 
     if (!tutorsData || tutorsData.length === 0) {
+      console.log("No tutors found matching filters");
       return { tutors: [], total: 0 };
     }
 
@@ -246,6 +254,8 @@ export const searchTutors = async (
     });
 
     let results = (await Promise.all(tutorPromises)).filter(Boolean) as TutorSearchResult[];
+    
+    console.log(`Found ${results.length} tutors after filtering`);
     
     // Apply pagination after all filters
     const paginatedResults = results.slice((page - 1) * pageSize, page * pageSize);

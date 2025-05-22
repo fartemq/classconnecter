@@ -1,7 +1,6 @@
 
-// Re-export all tutor-related services
-export * from './types';
+// Export all tutor-related services for easier access
 export * from './validationService';
 export * from './publishService';
-// Export searchService last to avoid ambiguity
 export * from './searchService';
+// Add any other tutor service exports here

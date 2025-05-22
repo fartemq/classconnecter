@@ -62,7 +62,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
     };
     
     checkStatus();
-  }, [tutorId, user?.id, toast]);
+  }, [tutorId, user?.id]);
 
   // Function to toggle publish status
   const togglePublishStatus = async () => {
