@@ -27,7 +27,9 @@ export const useStudentProfile = () => {
       }
 
       console.log("Updating student profile with data:", params);
-      console.log("Budget value:", params.budget);
+      console.log("School value:", params.school);
+      console.log("Grade value:", params.grade);
+      console.log("Educational level:", params.educational_level);
 
       // Update student-specific profile
       const studentUpdated = await updateStudentProfile(profile.id, params);

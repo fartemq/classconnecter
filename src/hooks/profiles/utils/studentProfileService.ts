@@ -47,7 +47,10 @@ export async function updateStudentProfile(
     };
     
     console.log("Student profile data to save:", studentData);
-    console.log("Budget value being saved:", profileData.budget);
+    console.log("Base profile data to save:", baseProfileData);
+    console.log("School value being saved:", profileData.school);
+    console.log("Grade value being saved:", profileData.grade);
+    console.log("Educational level being saved:", profileData.educational_level);
     
     // Update the base profile first
     const { error: baseProfileError } = await supabase
