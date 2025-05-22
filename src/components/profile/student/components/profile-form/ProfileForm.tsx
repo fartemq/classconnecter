@@ -3,101 +3,31 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "@/hooks/use-toast";
 import { Profile, ProfileUpdateParams } from "@/hooks/profiles";
-import { ProfileAvatar } from "./ProfileAvatar";
-import { PersonalInfoForm } from "./PersonalInfoForm";
-import { EducationForm } from "./EducationForm";
-import { BioForm } from "./BioForm";
-import { FormActions } from "./FormActions";
+import { ProfileAvatar } from "../ProfileAvatar";
+import { PersonalInfoForm } from "../PersonalInfoForm";
+import { EducationForm } from "../EducationForm";
+import { BioForm } from "../BioForm";
+import { FormActions } from "../FormActions";
+import { useProfileFormState } from "./useProfileFormState";
 
-interface ProfileInfoProps {
+interface ProfileFormProps {
   profile: Profile;
   updateProfile: (data: ProfileUpdateParams) => Promise<boolean>;
 }
 
-export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile }) => {
+export const ProfileForm: React.FC<ProfileFormProps> = ({ profile, updateProfile }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formState, setFormState] = useState({
-    avatar_url: profile?.avatar_url || null,
-    first_name: profile?.first_name || "",
-    last_name: profile?.last_name || "",
-    bio: profile?.bio || "",
-    city: profile?.city || "",
-    phone: profile?.phone || "",
-    educational_level: profile?.educational_level || "school",
-    school: profile?.school || "",
-    grade: profile?.grade || "",
-    subjects: profile?.subjects || [],
-    learning_goals: profile?.learning_goals || "",
-    preferred_format: profile?.preferred_format || [],
-    budget: profile?.budget || 1000,
-  });
+  const { formState, setFormState, handleInputChange, handleSelectChange, handleBudgetChange, handlePhoneChange, handleAvatarUpdate, resetForm } = useProfileFormState(profile);
   
   // Update form state when profile changes
   useEffect(() => {
     if (profile) {
-      console.log("Updating form state with profile data:", profile);
-      setFormState({
-        avatar_url: profile.avatar_url || null,
-        first_name: profile.first_name || "",
-        last_name: profile.last_name || "",
-        bio: profile.bio || "",
-        city: profile.city || "",
-        phone: profile.phone || "",
-        educational_level: profile.educational_level || "school",
-        school: profile.school || "",
-        grade: profile.grade || "",
-        subjects: profile.subjects || [],
-        learning_goals: profile.learning_goals || "",
-        preferred_format: profile.preferred_format || [],
-        budget: profile.budget || 1000,
-      });
+      resetForm(profile);
     }
-  }, [profile]);
+  }, [profile, resetForm]);
   
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormState((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSelectChange = (name: string, value: string) => {
-    console.log(`Changing ${name} to ${value}`);
-    setFormState((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-  
-  const handleBudgetChange = (value: number[]) => {
-    if (value && value.length > 0) {
-      console.log("Budget changed to:", value[0]);
-      setFormState((prev) => ({
-        ...prev,
-        budget: value[0],
-      }));
-    }
-  };
-  
-  const handlePhoneChange = (value: string) => {
-    setFormState((prev) => ({
-      ...prev,
-      phone: value,
-    }));
-  };
-  
-  const handleAvatarUpdate = (newUrl: string) => {
-    setFormState((prev) => ({
-      ...prev,
-      avatar_url: newUrl,
-    }));
-    
-    console.log("Avatar URL updated:", newUrl);
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); // Предотвращаем перезагрузку страницы
+    e.preventDefault();
     
     try {
       setIsSubmitting(true);
@@ -133,24 +63,7 @@ export const ProfileInfo: React.FC<ProfileInfoProps> = ({ profile, updateProfile
   };
 
   const handleCancel = () => {
-    // Reset form to original profile data
-    if (profile) {
-      setFormState({
-        avatar_url: profile.avatar_url || null,
-        first_name: profile.first_name || "",
-        last_name: profile.last_name || "",
-        bio: profile.bio || "",
-        city: profile.city || "",
-        phone: profile.phone || "",
-        educational_level: profile.educational_level || "school",
-        school: profile.school || "",
-        grade: profile.grade || "",
-        subjects: profile.subjects || [],
-        learning_goals: profile.learning_goals || "",
-        preferred_format: profile.preferred_format || [],
-        budget: profile.budget || 1000,
-      });
-    }
+    resetForm(profile);
     
     toast({
       title: "Изменения отменены",
