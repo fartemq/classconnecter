@@ -24,7 +24,7 @@ export const WizardEducationStep: React.FC<WizardEducationStepProps> = ({
 
   useEffect(() => {
     onDataChange(localData);
-  }, [localData]);
+  }, [localData, onDataChange]);
 
   const handleInputChange = (field: string, value: string | number) => {
     const newData = { ...localData, [field]: value };

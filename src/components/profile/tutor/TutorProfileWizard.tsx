@@ -47,13 +47,28 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
   const [isStepLoading, setIsStepLoading] = useState(false);
   const { toast } = useToast();
 
+  const validateStep = (stepIndex: number, data: Partial<TutorFormValues>): boolean => {
+    switch (stepIndex) {
+      case 0: // Personal info
+        return !!(data.firstName && data.lastName && data.city && data.bio);
+      case 1: // Education  
+        return !!(data.educationInstitution && data.degree);
+      case 2: // Teaching
+        return !!(data.methodology && data.experience !== undefined);
+      case 3: // Subjects
+        return !!(data.subjects && data.subjects.length > 0 && data.hourlyRate);
+      default:
+        return true;
+    }
+  };
+
   const steps: Step[] = [
     {
       id: "personal",
       title: "Личная информация",
       description: "Расскажите о себе",
       icon: User,
-      isCompleted: !!(formData.firstName && formData.lastName && formData.city && formData.bio),
+      isCompleted: validateStep(0, formData),
       isRequired: true
     },
     {
@@ -61,7 +76,7 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
       title: "Образование",
       description: "Ваш образовательный фон",
       icon: GraduationCap,
-      isCompleted: !!(formData.educationInstitution && formData.degree),
+      isCompleted: validateStep(1, formData),
       isRequired: true
     },
     {
@@ -69,7 +84,7 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
       title: "Методика преподавания",
       description: "Ваш подход к обучению",
       icon: BookOpen,
-      isCompleted: !!(formData.methodology && formData.experience !== undefined),
+      isCompleted: validateStep(2, formData),
       isRequired: true
     },
     {
@@ -77,7 +92,7 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
       title: "Предметы и цены",
       description: "Что и за сколько вы преподаете",
       icon: DollarSign,
-      isCompleted: !!(formData.subjects && formData.subjects.length > 0 && formData.hourlyRate),
+      isCompleted: validateStep(3, formData),
       isRequired: true
     },
     {
@@ -102,7 +117,7 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
 
   const handleNext = async () => {
     // Validate current step
-    if (!validateCurrentStep()) {
+    if (!validateStep(currentStep, formData)) {
       toast({
         title: "Заполните обязательные поля",
         description: "Пожалуйста, заполните все необходимые поля перед переходом к следующему шагу",
@@ -171,11 +186,6 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
     } finally {
       setIsStepLoading(false);
     }
-  };
-
-  const validateCurrentStep = (): boolean => {
-    const step = steps[currentStep];
-    return step.isCompleted || !step.isRequired;
   };
 
   const renderStepContent = () => {
@@ -323,7 +333,7 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
           ) : (
             <Button
               onClick={handleNext}
-              disabled={isStepLoading || !validateCurrentStep()}
+              disabled={isStepLoading || !validateStep(currentStep, formData)}
               className="flex items-center space-x-2"
             >
               {isStepLoading && <Loader size="sm" className="mr-2" />}
