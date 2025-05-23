@@ -5,13 +5,6 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { TutorFormValues } from "@/types/tutor";
 import { fetchSubjectsAndCategories } from "@/services/tutorSubjectsService";
 import { saveTutorProfile } from "@/services/tutorProfileService";
@@ -19,18 +12,16 @@ import { saveTutorSubjects } from "@/services/tutorSubjectsService";
 import { Loader } from "@/components/ui/loader";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
-import { ProfileCompletionForm } from "@/components/profile/tutor/ProfileCompletionForm";
+import { TutorProfileWizard } from "@/components/profile/tutor/TutorProfileWizard";
 
 const TutorCompletePage = () => {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [subjects, setSubjects] = useState<any[]>([]);
-  const [categories, setCategories] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [initialValues, setInitialValues] = useState<Partial<TutorFormValues>>({});
   const [isLoadingData, setIsLoadingData] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [savedValues, setSavedValues] = useState<Partial<TutorFormValues>>({});
 
   // Load data: user info and subjects
   const loadData = useCallback(async () => {
@@ -78,7 +69,6 @@ const TutorCompletePage = () => {
       } catch (error) {
         console.error("Error loading subjects:", error);
         setSubjects([]);
-        // Continue execution - subjects can be loaded later
       }
       
       // Load tutor profile if exists
@@ -112,8 +102,8 @@ const TutorCompletePage = () => {
             achievements: tutorData?.achievements || "",
             videoUrl: tutorData?.video_url || "",
             subjects: subjectsData ? subjectsData.map(item => item.subject_id) : [],
-            teachingLevels: ["школьник", "студент", "взрослый"], // Default values
-            hourlyRate: 0, // Default, will be overridden if any subject has rate
+            teachingLevels: ["школьник", "студент", "взрослый"],
+            hourlyRate: 1000,
           };
           
           // If there are subjects, try to get hourly rate from the first one
@@ -127,19 +117,16 @@ const TutorCompletePage = () => {
                 .single();
                 
               if (rateData) {
-                values.hourlyRate = rateData.hourly_rate || 0;
+                values.hourlyRate = rateData.hourly_rate || 1000;
               }
             } catch (rateError) {
               console.error("Error fetching hourly rate:", rateError);
-              // Continue with default hourly rate
             }
           }
           
           setInitialValues(values);
-          setSavedValues(values);
         } catch (profileDataError) {
           console.error("Error loading profile data:", profileDataError);
-          // Continue with default values
           const defaultValues = {
             firstName: profileData.first_name || "",
             lastName: profileData.last_name || "",
@@ -148,11 +135,10 @@ const TutorCompletePage = () => {
             avatarUrl: profileData.avatar_url || null,
             subjects: [],
             teachingLevels: ["школьник", "студент", "взрослый"],
-            hourlyRate: 0
+            hourlyRate: 1000
           };
           
           setInitialValues(defaultValues);
-          setSavedValues(defaultValues);
         }
       }
     } catch (error) {
@@ -183,38 +169,15 @@ const TutorCompletePage = () => {
       console.log("Submitting form values:", values);
       
       // Save profile data
-      const result = await saveTutorProfile(values, user.id, avatarFile, savedValues.avatarUrl);
+      const result = await saveTutorProfile(values, user.id, avatarFile, initialValues.avatarUrl);
       
       if (!result.success) {
         throw new Error(result.error || "Ошибка сохранения профиля");
       }
 
-      // Update saved avatar URL if it was updated
-      if (result.avatarUrl) {
-        setSavedValues(prev => ({
-          ...prev,
-          avatarUrl: result.avatarUrl
-        }));
-      }
-      
-      // Save subjects if this is the final submission
-      const isFinal = !!values.methodology || !!values.achievements || !!values.videoUrl;
-      
-      if (isFinal) {
+      // Save subjects if they are provided
+      if (values.subjects && values.subjects.length > 0) {
         await saveTutorSubjects(user.id, values.subjects, values.hourlyRate);
-        
-        toast({
-          title: "Профиль успешно создан!",
-          description: "Теперь вы можете начать работу с учениками",
-        });
-        
-        navigate("/profile/tutor?tab=dashboard");
-      } else {
-        // Save current form values to state
-        setSavedValues(prevValues => ({
-          ...prevValues,
-          ...values
-        }));
       }
       
       return result;
@@ -254,22 +217,12 @@ const TutorCompletePage = () => {
     }
     
     return (
-      <Card className="max-w-3xl mx-auto">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold">Заполните профиль репетитора</CardTitle>
-          <CardDescription>
-            Для начала работы на платформе необходимо заполнить все обязательные поля
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ProfileCompletionForm
-            initialValues={{...initialValues, ...savedValues}}
-            onSubmit={handleSubmit}
-            subjects={subjects || []}
-            isLoading={isLoading}
-          />
-        </CardContent>
-      </Card>
+      <TutorProfileWizard
+        initialValues={initialValues}
+        onSubmit={handleSubmit}
+        subjects={subjects || []}
+        isLoading={isLoading}
+      />
     );
   };
 
