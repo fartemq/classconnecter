@@ -147,6 +147,62 @@ export type Database = {
           },
         ]
       }
+      lesson_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          requested_date: string
+          requested_end_time: string
+          requested_start_time: string
+          responded_at: string | null
+          status: string
+          student_id: string
+          subject_id: string | null
+          tutor_id: string
+          tutor_response: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          requested_date: string
+          requested_end_time: string
+          requested_start_time: string
+          responded_at?: string | null
+          status?: string
+          student_id: string
+          subject_id?: string | null
+          tutor_id: string
+          tutor_response?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          requested_date?: string
+          requested_end_time?: string
+          requested_start_time?: string
+          responded_at?: string | null
+          status?: string
+          student_id?: string
+          subject_id?: string | null
+          tutor_id?: string
+          tutor_response?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_requests_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           created_at: string | null
@@ -249,6 +305,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          read_at: string | null
+          related_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          read_at?: string | null
+          related_id?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          read_at?: string | null
+          related_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

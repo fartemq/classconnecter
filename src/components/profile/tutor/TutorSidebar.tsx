@@ -1,96 +1,138 @@
-
 import React from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 import { 
-  LayoutDashboard, 
   User, 
   BookOpen, 
   Calendar, 
-  Users, 
   MessageSquare, 
-  BarChart, 
-  Settings,
-  FileText 
+  BarChart3, 
+  Settings, 
+  Clock,
+  Bell,
+  Users
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useProfile } from "@/hooks/profiles/useProfile";
+import { Badge } from "@/components/ui/badge";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useLessonRequests } from "@/hooks/useLessonRequests";
+import { useAuth } from "@/hooks/useAuth";
 
-export const TutorSidebar = () => {
-  const location = useLocation();
-  const { profile } = useProfile("tutor");
+interface TutorSidebarProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+}
+
+export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab, onTabChange }) => {
+  const { user } = useAuth();
+  const { unreadCount } = useNotifications(user?.id);
+  const { lessonRequests } = useLessonRequests(user?.id, 'tutor');
   
-  // Функция для получения инициалов из имени и фамилии
-  const getInitials = () => {
-    if (!profile) return "ТР";
-    
-    const firstInitial = profile.first_name?.[0] || "";
-    const lastInitial = profile.last_name?.[0] || "";
-    
-    return `${firstInitial}${lastInitial}`.toUpperCase() || "ТР";
-  };
+  const pendingRequestsCount = lessonRequests.filter(req => req.status === 'pending').length;
 
-  // Проверка активной вкладки
-  const isActive = (path: string) => {
-    return location.pathname.endsWith(path);
-  };
-
-  const navItems = [
-    { path: "/profile/tutor", label: "Дашборд", icon: <LayoutDashboard size={18} /> },
-    { path: "/profile/tutor/profile", label: "Профиль", icon: <User size={18} /> },
-    { path: "/profile/tutor/teaching", label: "Преподавание", icon: <BookOpen size={18} /> },
-    { path: "/profile/tutor/schedule", label: "Расписание", icon: <Calendar size={18} /> },
-    { path: "/profile/tutor/students", label: "Ученики", icon: <Users size={18} /> },
-    { path: "/profile/tutor/chats", label: "Чаты", icon: <MessageSquare size={18} /> },
-    { path: "/profile/tutor/stats", label: "Аналитика", icon: <BarChart size={18} /> },
-    { path: "/profile/tutor/materials", label: "Материалы", icon: <FileText size={18} /> },
-    { path: "/profile/tutor/settings", label: "Настройки", icon: <Settings size={18} /> },
+  const sidebarItems = [
+    {
+      id: "dashboard",
+      label: "Обзор",
+      icon: BarChart3,
+      description: "Общая статистика и активность"
+    },
+    {
+      id: "profile",
+      label: "Профиль",
+      icon: User,
+      description: "Личная информация и настройки профиля"
+    },
+    {
+      id: "lesson-requests",
+      label: "Запросы на занятия",
+      icon: Clock,
+      description: "Входящие запросы от студентов",
+      badge: pendingRequestsCount > 0 ? pendingRequestsCount : undefined,
+      badgeVariant: "destructive" as const
+    },
+    {
+      id: "notifications",
+      label: "Уведомления",
+      icon: Bell,
+      description: "Системные уведомления",
+      badge: unreadCount > 0 ? unreadCount : undefined
+    },
+    {
+      id: "students",
+      label: "Ученики",
+      icon: Users,
+      description: "Управление учениками и занятиями"
+    },
+    {
+      id: "schedule",
+      label: "Расписание",
+      icon: Calendar,
+      description: "Управление расписанием и доступностью"
+    },
+    {
+      id: "subjects",
+      label: "Предметы",
+      icon: BookOpen,
+      description: "Преподаваемые предметы и цены"
+    },
+    {
+      id: "chats",
+      label: "Сообщения",
+      icon: MessageSquare,
+      description: "Переписка со студентами"
+    },
+    {
+      id: "settings",
+      label: "Настройки",
+      icon: Settings,
+      description: "Настройки аккаунта и уведомлений"
+    }
   ];
 
   return (
-    <div className="flex flex-col h-full">
-      <NavLink 
-        to="/profile/tutor/profile" 
-        className="flex items-center mb-6 px-2 py-4 hover:bg-gray-50"
-      >
-        <Avatar className="h-10 w-10 mr-3">
-          {profile?.avatar_url ? (
-            <AvatarImage src={profile.avatar_url} alt="Аватар преподавателя" />
-          ) : (
-            <AvatarFallback>{getInitials()}</AvatarFallback>
-          )}
-        </Avatar>
-        <div>
-          <div className="font-semibold">
-            {profile?.first_name 
-              ? `${profile.first_name} ${profile.last_name || ''}`
-              : "Преподаватель"
-            }
-          </div>
-          <div className="text-xs text-gray-500">Преподаватель</div>
-        </div>
-      </NavLink>
+    <div className="w-64 bg-white border-r border-gray-200 min-h-screen">
+      <div className="p-6">
+        <h2 className="text-lg font-semibold text-gray-900">Профиль репетитора</h2>
+        <p className="text-sm text-gray-500 mt-1">Управление профилем и занятиями</p>
+      </div>
       
-      <nav className="space-y-1 flex-grow">
-        {navItems.map(item => (
-          <NavLink 
-            key={item.path} 
-            to={item.path}
-            className={({ isActive }) => 
-              cn(
-                "flex items-center px-3 py-2 rounded-md text-sm font-medium",
-                isActive 
-                  ? "bg-primary text-primary-foreground" 
-                  : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-              )
-            }
-            end
-          >
-            <span className="mr-2">{item.icon}</span>
-            {item.label}
-          </NavLink>
-        ))}
+      <nav className="px-3 pb-6">
+        <ul className="space-y-1">
+          {sidebarItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            
+            return (
+              <li key={item.id}>
+                <button
+                  onClick={() => onTabChange(item.id)}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                    "hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500",
+                    isActive
+                      ? "bg-blue-100 text-blue-700 border-r-2 border-blue-700"
+                      : "text-gray-700 hover:text-gray-900"
+                  )}
+                  title={item.description}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Icon className="h-4 w-4 mr-3" />
+                      <span>{item.label}</span>
+                    </div>
+                    {item.badge && (
+                      <Badge 
+                        variant={item.badgeVariant || "default"} 
+                        className="text-xs px-1.5 py-0.5"
+                      >
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
     </div>
   );

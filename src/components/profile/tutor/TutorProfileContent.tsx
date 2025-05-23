@@ -1,54 +1,51 @@
+import React, { useState } from "react";
+import { TutorSidebar } from "./TutorSidebar";
+import { TutorDashboard } from "./TutorDashboard";
+import { TutorAboutTab } from "./TutorAboutTab";
+import { StudentsTab } from "./StudentsTab";
+import { ScheduleTab } from "./ScheduleTab";
+import { SubjectsTab } from "./SubjectsTab";
+import { ChatsTab } from "./ChatsTab";
+import { TutorSettingsTab } from "./TutorSettingsTab";
+import { LessonRequestsTab } from "./LessonRequestsTab";
+import { NotificationsTab } from "./NotificationsTab";
 
-import React from "react";
-import { TutorProfile } from "@/types/tutor";
-import { Profile } from "@/hooks/profiles/types";
-import { TutorDashboard } from "@/components/profile/tutor/TutorDashboard";
-import { TutorProfileSettingsTab } from "@/components/profile/tutor/TutorProfileSettingsTab";
-import { TeachingInfoTab } from "@/components/profile/tutor/TeachingInfoTab";
-import { AdvancedScheduleTab } from "@/components/profile/tutor/AdvancedScheduleTab";
-import { StudentsTab } from "@/components/profile/tutor/StudentsTab";
-import { ChatsTab } from "@/components/profile/tutor/ChatsTab";
-import { AdvancedStatsTab } from "@/components/profile/tutor/AdvancedStatsTab";
-import { TutorSettingsTab } from "@/components/profile/tutor/TutorSettingsTab";
-import { MaterialsTab } from "@/components/profile/tutor/MaterialsTab";
-import { convertTutorProfileToProfile } from "@/utils/tutorProfileConverters";
+export const TutorProfileContent = () => {
+  const [activeTab, setActiveTab] = useState("dashboard");
 
-interface TutorProfileContentProps {
-  activeTab: string;
-  tutorProfile: TutorProfile;
-}
+  const renderContent = () => {
+    switch (activeTab) {
+      case "dashboard":
+        return <TutorDashboard />;
+      case "profile":
+        return <TutorAboutTab />;
+      case "lesson-requests":
+        return <LessonRequestsTab />;
+      case "notifications":
+        return <NotificationsTab />;
+      case "students":
+        return <StudentsTab />;
+      case "schedule":
+        return <ScheduleTab />;
+      case "subjects":
+        return <SubjectsTab />;
+      case "chats":
+        return <ChatsTab />;
+      case "settings":
+        return <TutorSettingsTab />;
+      default:
+        return <TutorDashboard />;
+    }
+  };
 
-export const TutorProfileContent: React.FC<TutorProfileContentProps> = ({ 
-  activeTab, 
-  tutorProfile 
-}) => {
-  // Create a Profile version of the tutorProfile for components that expect Profile type
-  const profileForComponents = convertTutorProfileToProfile(tutorProfile);
-
-  // No skeleton needed here as we always have the tutorProfile
-
-  switch (activeTab) {
-    case "dashboard":
-      return <TutorDashboard profile={tutorProfile} />;
-    case "profile":
-      // Pass the converted profile to components expecting Profile type
-      return <TutorProfileSettingsTab profile={profileForComponents} />;
-    case "teaching":
-      return <TeachingInfoTab profile={profileForComponents} />;
-    case "schedule":
-      return <AdvancedScheduleTab tutorId={tutorProfile.id} />;
-    case "students":
-      return <StudentsTab />;
-    case "chats":
-      return <ChatsTab />;
-    case "stats":
-      return <AdvancedStatsTab tutorId={tutorProfile.id} />;
-    case "settings":
-      // Pass the converted profile to components expecting Profile type
-      return <TutorSettingsTab profile={profileForComponents} />;
-    case "materials":
-      return <MaterialsTab tutorId={tutorProfile.id} />;
-    default:
-      return <TutorDashboard profile={tutorProfile} />;
-  }
+  return (
+    <div className="flex min-h-screen bg-gray-50">
+      <TutorSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <div className="flex-1">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          {renderContent()}
+        </div>
+      </div>
+    </div>
+  );
 };
