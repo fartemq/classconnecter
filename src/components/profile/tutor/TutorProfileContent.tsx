@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { TutorSidebar } from "./TutorSidebar";
 import { TutorDashboard } from "./TutorDashboard";
@@ -9,16 +10,29 @@ import { ChatsTab } from "./ChatsTab";
 import { TutorSettingsTab } from "./TutorSettingsTab";
 import { LessonRequestsTab } from "./LessonRequestsTab";
 import { NotificationsTab } from "./NotificationsTab";
+import { useAuth } from "@/hooks/useAuth";
+import { useProfile } from "@/hooks/useProfile";
+import { Loader } from "@/components/ui/loader";
 
 export const TutorProfileContent = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const { user } = useAuth();
+  const { profile, isLoading } = useProfile("tutor");
+
+  if (isLoading || !profile || !user) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader size="lg" />
+      </div>
+    );
+  }
 
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <TutorDashboard />;
+        return <TutorDashboard profile={profile} />;
       case "profile":
-        return <TutorAboutTab />;
+        return <TutorAboutTab profile={profile} />;
       case "lesson-requests":
         return <LessonRequestsTab />;
       case "notifications":
@@ -28,13 +42,13 @@ export const TutorProfileContent = () => {
       case "schedule":
         return <ScheduleTab />;
       case "subjects":
-        return <SubjectsTab />;
+        return <SubjectsTab tutorId={user.id} />;
       case "chats":
         return <ChatsTab />;
       case "settings":
-        return <TutorSettingsTab />;
+        return <TutorSettingsTab profile={profile} />;
       default:
-        return <TutorDashboard />;
+        return <TutorDashboard profile={profile} />;
     }
   };
 

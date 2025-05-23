@@ -1,6 +1,5 @@
 
 import React from "react";
-import { TutorProfile } from "@/types/tutor";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { StatisticsCard } from "./StatisticsCard";
@@ -14,21 +13,23 @@ import { Button } from "@/components/ui/button";
 import { Loader } from "@/components/ui/loader";
 import { ReviewsTab } from "./dashboard/ReviewsTab";
 import { MaterialsTab } from "./dashboard/MaterialsTab";
-import { ScheduleTab } from "./dashboard/ScheduleTab";
+import { ScheduleTab as DashboardScheduleTab } from "./dashboard/ScheduleTab";
+import { Profile } from "@/hooks/profiles/types";
 
 interface TutorDashboardProps {
-  profile: TutorProfile;
+  profile: Profile;
 }
 
 export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
   const { statistics, isLoading } = useTutorStatistics(profile.id);
+  const isPublished = profile.is_published || false;
 
   return (
     <div className="space-y-8">
       <h1 className="text-2xl font-bold mb-6">Личный кабинет репетитора</h1>
       
       {/* Уведомление о публикации */}
-      {!profile.isPublished && <NotPublishedAlert />}
+      {!isPublished && <NotPublishedAlert />}
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Профиль репетитора */}
@@ -60,7 +61,7 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
             />
             <StatisticsCard 
               title="Средняя оценка" 
-              value={isLoading ? "..." : `${statistics?.averageRating.toFixed(1) || 0}`}
+              value={isLoading ? "..." : `${statistics?.averageRating?.toFixed(1) || 0}`}
               loading={isLoading}
             />
           </div>
@@ -81,7 +82,7 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
                 <EmptyState
                   title="У вас пока нет занятий"
                   description="Ученики могут записаться к вам на занятия, когда вы опубликуете свой профиль и установите расписание."
-                  action={profile.isPublished ? 
+                  action={isPublished ? 
                     <Button variant="outline" onClick={() => window.location.href="/profile/tutor?tab=schedule"}>
                       Настроить расписание
                     </Button> : 
@@ -113,7 +114,7 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
         </TabsContent>
         
         <TabsContent value="schedule">
-          <ScheduleTab tutorId={profile.id} />
+          <DashboardScheduleTab tutorId={profile.id} />
         </TabsContent>
       </Tabs>
     </div>
