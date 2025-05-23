@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { TutorSidebar } from "./TutorSidebar";
 import { TutorDashboard } from "./TutorDashboard";
-import { TutorAboutTab } from "./TutorAboutTab";
+import { TutorProfileSettingsTab } from "./TutorProfileSettingsTab";
 import { StudentsTab } from "./StudentsTab";
 import { ScheduleTab } from "./ScheduleTab";
 import { SubjectsTab } from "./SubjectsTab";
@@ -32,7 +32,7 @@ export const TutorProfileContent = () => {
       case "dashboard":
         return <TutorDashboard profile={profile} />;
       case "profile":
-        return <TutorAboutTab profile={profile} />;
+        return <TutorProfileSettingsTab profile={profile} />;
       case "lesson-requests":
         return <LessonRequestsTab />;
       case "notifications":

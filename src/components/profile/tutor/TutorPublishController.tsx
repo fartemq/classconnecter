@@ -1,7 +1,6 @@
 
 import React from "react";
 import { ProfilePublishSection } from "./publish/ProfilePublishSection";
-import { useTutorPublishStatus } from "@/hooks/useTutorPublishStatus";
 
 interface TutorPublishControllerProps {
   tutorId: string;
@@ -14,7 +13,6 @@ export const TutorPublishController = ({
   isPublished: initialStatus = false,
   onPublishStatusChange
 }: TutorPublishControllerProps) => {
-  // We simply pass through to the ProfilePublishSection now
   return (
     <ProfilePublishSection tutorId={tutorId} />
   );

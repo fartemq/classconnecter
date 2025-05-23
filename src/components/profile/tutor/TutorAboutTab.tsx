@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Profile } from "@/hooks/profiles/types";
-import { TutorAboutForm } from "./TutorAboutForm";
+import { TutorAboutForm } from "./forms/TutorAboutForm";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
 import { useTutorProfile } from "@/hooks/profiles/useTutorProfile";
 import { convertProfileToTutorProfile } from "@/utils/tutorProfileConverters";
@@ -83,7 +83,6 @@ export const TutorAboutTab = ({ profile }: TutorAboutTabProps) => {
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-semibold mb-6">Информация о профиле</h2>
       <TutorAboutForm
         initialData={initialData}
         tutorProfile={tutorProfile}
