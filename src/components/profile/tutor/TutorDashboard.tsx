@@ -15,6 +15,7 @@ import { ReviewsTab } from "./dashboard/ReviewsTab";
 import { MaterialsTab } from "./dashboard/MaterialsTab";
 import { ScheduleTab as DashboardScheduleTab } from "./dashboard/ScheduleTab";
 import { Profile } from "@/hooks/profiles/types";
+import { convertProfileToTutorProfile } from "@/utils/tutorProfileConverters";
 
 interface TutorDashboardProps {
   profile: Profile;
@@ -23,6 +24,9 @@ interface TutorDashboardProps {
 export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
   const { statistics, isLoading } = useTutorStatistics(profile.id);
   const isPublished = profile.is_published || false;
+  
+  // Convert Profile to TutorProfile for components that need it
+  const tutorProfile = convertProfileToTutorProfile(profile);
 
   return (
     <div className="space-y-8">
@@ -35,7 +39,7 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
         {/* Профиль репетитора */}
         <div>
           <ProfileInfoCard 
-            profile={profile}
+            profile={tutorProfile}
             studentsCount={statistics?.totalStudents || 0}
             averageRating={statistics?.averageRating || 0}
           />
