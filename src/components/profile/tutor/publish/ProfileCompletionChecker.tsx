@@ -123,7 +123,7 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
       // Add default values for other fields to prevent form errors
       hourlyRate: 1000,
       subjects: [],
-      teachingLevels: ["школьник", "студент", "взрослый"] as const,
+      teachingLevels: ["школьник", "студент", "взрослый"] as string[],
       educationInstitution: "",
       degree: "",
       graduationYear: new Date().getFullYear(),
