@@ -2,32 +2,20 @@
 import React from "react";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Control } from "react-hook-form";
 import { TutorFormValues, TutorProfile } from "@/types/tutor";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from "@/components/ui/tooltip";
-import { CheckCircle, HelpCircle } from "lucide-react";
 
 interface EducationFormProps {
   control: Control<TutorFormValues>;
   tutorProfile: TutorProfile | null;
 }
 
-export const EducationForm: React.FC<EducationFormProps> = ({ control, tutorProfile }) => {
+export const EducationForm: React.FC<EducationFormProps> = ({
+  control,
+  tutorProfile
+}) => {
   const currentYear = new Date().getFullYear();
-  const yearsArray = Array.from({ length: currentYear - 1949 }, (_, i) => currentYear - i);
 
   return (
     <div className="space-y-6">
@@ -39,10 +27,14 @@ export const EducationForm: React.FC<EducationFormProps> = ({ control, tutorProf
           <FormItem>
             <FormLabel>Учебное заведение *</FormLabel>
             <FormControl>
-              <Input placeholder="МГУ им. Ломоносова" {...field} value={field.value || ""} />
+              <Input 
+                placeholder="МГУ им. М.В. Ломоносова" 
+                {...field}
+                value={field.value || ""}
+              />
             </FormControl>
             <FormDescription>
-              Укажите полное название учебного заведения, которое вы окончили
+              Укажите название университета, института или другого учебного заведения
             </FormDescription>
             <FormMessage />
           </FormItem>
@@ -55,12 +47,16 @@ export const EducationForm: React.FC<EducationFormProps> = ({ control, tutorProf
         name="degree"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Степень/специальность *</FormLabel>
+            <FormLabel>Степень/Специальность *</FormLabel>
             <FormControl>
-              <Input placeholder="Магистр физико-математических наук" {...field} value={field.value || ""} />
+              <Input 
+                placeholder="Бакалавр математики" 
+                {...field}
+                value={field.value || ""}
+              />
             </FormControl>
             <FormDescription>
-              Укажите вашу ученую степень, квалификацию или специальность
+              Укажите полученную степень и специальность
             </FormDescription>
             <FormMessage />
           </FormItem>
@@ -73,24 +69,18 @@ export const EducationForm: React.FC<EducationFormProps> = ({ control, tutorProf
         name="graduationYear"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Год окончания *</FormLabel>
-            <Select
-              value={field.value?.toString() || ""}
-              onValueChange={(value) => field.onChange(parseInt(value))}
-            >
-              <FormControl>
-                <SelectTrigger className="w-full md:w-[200px]">
-                  <SelectValue placeholder="Выберите год" />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent className="max-h-[200px]">
-                {yearsArray.map((year) => (
-                  <SelectItem key={year} value={year.toString()}>
-                    {year}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <FormLabel>Год окончания</FormLabel>
+            <FormControl>
+              <Input 
+                type="number" 
+                min="1950" 
+                max={currentYear + 10}
+                placeholder={currentYear.toString()}
+                {...field}
+                value={field.value || ""}
+                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : "")}
+              />
+            </FormControl>
             <FormDescription>
               Год окончания учебного заведения
             </FormDescription>
@@ -99,47 +89,106 @@ export const EducationForm: React.FC<EducationFormProps> = ({ control, tutorProf
         )}
       />
       
-      {/* Education verification status */}
-      <TooltipProvider>
-        <div className="bg-gray-50 p-4 rounded-md border">
-          <div className="flex items-start gap-4">
-            <div className={`h-10 w-10 rounded-full flex items-center justify-center ${tutorProfile?.educationVerified ? 'bg-green-100' : 'bg-amber-100'}`}>
-              <div className={`h-3 w-3 rounded-full ${tutorProfile?.educationVerified ? 'bg-green-500' : 'bg-amber-500'}`}></div>
-            </div>
-            
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-sm font-semibold">Статус верификации</h4>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <HelpCircle className="h-4 w-4 text-gray-400" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    Верификация образования повышает доверие учеников к вашему профилю. Для верификации может потребоваться загрузка скана диплома.
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="flex items-center mt-1">
-                {tutorProfile?.educationVerified ? (
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 flex items-center gap-1">
-                    <CheckCircle className="h-3 w-3" />
-                    <span>Образование подтверждено</span>
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                    Ожидает верификации
-                  </Badge>
-                )}
-              </div>
-              <p className="text-sm text-gray-600 mt-2">
-                {tutorProfile?.educationVerified 
-                  ? 'Ваше образование было проверено и подтверждено администрацией. Это повышает доверие учеников к вашему профилю.' 
-                  : 'Для верификации образования загрузите скан диплома в разделе "Настройки". Верифицированные репетиторы получают больше заявок от учеников.'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </TooltipProvider>
+      {/* Experience */}
+      <FormField
+        control={control}
+        name="experience"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Опыт преподавания (лет) *</FormLabel>
+            <FormControl>
+              <Input 
+                type="number" 
+                min="0" 
+                max="50"
+                placeholder="5"
+                {...field}
+                value={field.value || ""}
+                onChange={(e) => field.onChange(e.target.value ? parseInt(e.target.value, 10) : "")}
+              />
+            </FormControl>
+            <FormDescription>
+              Количество лет опыта преподавания
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {/* Methodology */}
+      <FormField
+        control={control}
+        name="methodology"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Методика преподавания *</FormLabel>
+            <FormControl>
+              <Textarea
+                placeholder="Опишите свой подход к преподаванию, используемые методы и технологии..."
+                className="min-h-[120px] resize-y"
+                {...field}
+                value={field.value || ""}
+              />
+            </FormControl>
+            <FormDescription className="flex justify-between items-center">
+              <span>Расскажите о своих методах обучения и подходе к работе с учениками</span>
+              <span className="text-xs text-gray-500">
+                {(field.value?.length || 0)}/1000
+              </span>
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {/* Achievements */}
+      <FormField
+        control={control}
+        name="achievements"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Достижения и сертификаты</FormLabel>
+            <FormControl>
+              <Textarea
+                placeholder="Укажите ваши профессиональные достижения, сертификаты, награды..."
+                className="min-h-[100px] resize-y"
+                {...field}
+                value={field.value || ""}
+              />
+            </FormControl>
+            <FormDescription className="flex justify-between items-center">
+              <span>Дополнительная информация о ваших достижениях (необязательно)</span>
+              <span className="text-xs text-gray-500">
+                {(field.value?.length || 0)}/1000
+              </span>
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      {/* Video URL */}
+      <FormField
+        control={control}
+        name="videoUrl"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel>Видео-презентация</FormLabel>
+            <FormControl>
+              <Input 
+                type="url"
+                placeholder="https://youtube.com/watch?v=..." 
+                {...field}
+                value={field.value || ""}
+              />
+            </FormControl>
+            <FormDescription>
+              Ссылка на видео-презентацию (YouTube, Vimeo и т.д.)
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
     </div>
   );
 };

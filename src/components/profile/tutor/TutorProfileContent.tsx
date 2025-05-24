@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { TutorSidebar } from "./TutorSidebar";
 import { TutorDashboard } from "./TutorDashboard";
-import { TutorProfileSettingsTab } from "./TutorProfileSettingsTab";
 import { StudentsTab } from "./StudentsTab";
 import { ScheduleTab } from "./ScheduleTab";
 import { SubjectsTab } from "./SubjectsTab";
@@ -10,14 +9,32 @@ import { ChatsTab } from "./ChatsTab";
 import { TutorSettingsTab } from "./TutorSettingsTab";
 import { LessonRequestsTab } from "./LessonRequestsTab";
 import { NotificationsTab } from "./NotificationsTab";
+import { ProfileCompletionChecker } from "./publish/ProfileCompletionChecker";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Loader } from "@/components/ui/loader";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 export const TutorProfileContent = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const { user } = useAuth();
   const { profile, isLoading } = useProfile("tutor");
+
+  // Fetch subjects for the profile completion form
+  const { data: subjects = [] } = useQuery({
+    queryKey: ['subjects'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('subjects')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    }
+  });
 
   if (isLoading || !profile || !user) {
     return (
@@ -32,7 +49,7 @@ export const TutorProfileContent = () => {
       case "dashboard":
         return <TutorDashboard profile={profile} />;
       case "profile":
-        return <TutorProfileSettingsTab profile={profile} />;
+        return <ProfileCompletionChecker profile={profile} subjects={subjects} />;
       case "lesson-requests":
         return <LessonRequestsTab />;
       case "notifications":

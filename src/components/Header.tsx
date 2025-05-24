@@ -4,6 +4,7 @@ import { Link, useLocation } from "react-router-dom";
 import { GuestNavigation } from "./header/GuestNavigation";
 import { MobileNavigation } from "./header/MobileNavigation";
 import { AuthButtons } from "./header/AuthButtons";
+import { UserMenu } from "./header/UserMenu";
 import { useAuth } from "@/hooks/auth";
 
 export const Header = () => {
@@ -13,7 +14,6 @@ export const Header = () => {
   // Check if we're on a profile page
   const isStudentProfile = location.pathname.startsWith('/profile/student');
   const isTutorProfile = location.pathname.startsWith('/profile/tutor');
-  const isMainStudentPage = location.pathname === '/profile/student';
 
   // Generate navigation items based on user role and path
   const getNavigationItems = () => {
@@ -37,10 +37,8 @@ export const Header = () => {
           {getNavigationItems()}
         </nav>
         
-        {/* Only show auth buttons if not on profile pages */}
-        {!isStudentProfile && !isTutorProfile && (
-          <AuthButtons />
-        )}
+        {/* Show auth buttons for guests, user menu for authenticated users */}
+        {user ? <UserMenu /> : <AuthButtons />}
       </div>
       
       {/* Mobile navigation menu */}
