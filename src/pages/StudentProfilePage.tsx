@@ -2,7 +2,7 @@
 import React from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { useProfile } from "@/hooks/useProfile";
+import { useStudentProfile } from "@/hooks/profiles/student";
 import { StudentDashboard } from "@/components/StudentDashboard";
 import { ChatsTab } from "@/components/profile/student/ChatsTab";
 import { SettingsTab } from "@/components/profile/student/SettingsTab";
@@ -11,9 +11,12 @@ import { Loader } from "@/components/ui/loader";
 import { useLocation } from "react-router-dom";
 import { ChatConversation } from "@/components/profile/student/ChatConversation";
 import { StudentLayoutWithSidebar } from "@/components/profile/student/StudentLayoutWithSidebar";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useAuth } from "@/hooks/useAuth";
 
 const StudentProfilePage = () => {
-  const { profile, isLoading } = useProfile("student");
+  const { profile, isLoading, error } = useStudentProfile();
+  const { user } = useAuth();
   const location = useLocation();
   
   // Check if we're on the main student dashboard page
@@ -43,7 +46,58 @@ const StudentProfilePage = () => {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
-          <Loader size="lg" />
+          <div className="text-center">
+            <Loader size="lg" />
+            <p className="mt-4 text-gray-600">Загрузка профиля...</p>
+          </div>
+        </main>
+        <Footer className="py-2" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center p-4">
+          <Alert className="max-w-md">
+            <AlertDescription>
+              Произошла ошибка при загрузке профиля. Пожалуйста, перезагрузите страницу или обратитесь в поддержку.
+            </AlertDescription>
+          </Alert>
+        </main>
+        <Footer className="py-2" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center p-4">
+          <Alert className="max-w-md">
+            <AlertDescription>
+              Необходимо войти в систему для доступа к профилю.
+            </AlertDescription>
+          </Alert>
+        </main>
+        <Footer className="py-2" />
+      </div>
+    );
+  }
+
+  if (!profile) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Header />
+        <main className="flex-grow flex items-center justify-center p-4">
+          <Alert className="max-w-md">
+            <AlertDescription>
+              Профиль не найден. Возможно, он еще не создан. Обратитесь в поддержку.
+            </AlertDescription>
+          </Alert>
         </main>
         <Footer className="py-2" />
       </div>
@@ -56,7 +110,7 @@ const StudentProfilePage = () => {
       {isMainDashboard ? (
         <div className="space-y-6">
           {/* Main dashboard content */}
-          {profile && <StudentDashboard profile={profile} />}
+          <StudentDashboard profile={profile} />
         </div>
       ) : (
         <Card className="p-6 shadow-md border-none">

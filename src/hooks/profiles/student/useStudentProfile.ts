@@ -7,12 +7,32 @@ import { createRoleSpecificProfile } from "../utils";
 import { fetchStudentProfileData } from "../utils/fetchProfile";
 import { updateStudentProfileData } from "./updateStudentProfile";
 import { UseStudentProfileResult } from "./types";
+import { useEffect } from "react";
+import { useAuth } from "@/hooks/useAuth";
 
 /**
  * Hook for managing student profile data
  */
 export const useStudentProfile = (): UseStudentProfileResult => {
   const { profile, setProfile, isLoading, error, user } = useBaseProfile("student");
+  const { user: authUser } = useAuth();
+
+  // Auto-create profile if it doesn't exist but user is authenticated
+  useEffect(() => {
+    const autoCreateProfile = async () => {
+      if (authUser && !profile && !isLoading && !error) {
+        console.log("Auto-creating student profile for user:", authUser.id);
+        try {
+          await createRoleSpecificProfile(authUser.id, 'student');
+          // The profile will be refetched automatically by useBaseProfile
+        } catch (error) {
+          console.error("Error auto-creating student profile:", error);
+        }
+      }
+    };
+
+    autoCreateProfile();
+  }, [authUser, profile, isLoading, error]);
 
   // Update profile function
   const updateProfile = async (params: ProfileUpdateParams): Promise<boolean> => {
