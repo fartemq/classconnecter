@@ -16,6 +16,7 @@ import { MaterialsTab } from "./dashboard/MaterialsTab";
 import { ScheduleTab as DashboardScheduleTab } from "./dashboard/ScheduleTab";
 import { Profile } from "@/hooks/profiles/types";
 import { convertProfileToTutorProfile } from "@/utils/tutorProfileConverters";
+import { useTutorPublishStatus } from "@/hooks/useTutorPublishStatus";
 
 interface TutorDashboardProps {
   profile: Profile;
@@ -23,7 +24,7 @@ interface TutorDashboardProps {
 
 export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
   const { statistics, isLoading } = useTutorStatistics(profile.id);
-  const isPublished = profile.is_published || false;
+  const { isPublished } = useTutorPublishStatus(profile.id);
   
   // Convert Profile to TutorProfile for components that need it
   const tutorProfile = convertProfileToTutorProfile(profile);
@@ -33,7 +34,7 @@ export const TutorDashboard = ({ profile }: TutorDashboardProps) => {
       <h1 className="text-2xl font-bold mb-6">Личный кабинет репетитора</h1>
       
       {/* Уведомление о публикации */}
-      {!isPublished && <NotPublishedAlert />}
+      <NotPublishedAlert isPublished={isPublished} />
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Профиль репетитора */}

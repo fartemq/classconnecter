@@ -2,14 +2,11 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { 
-  User, 
   Calendar, 
-  BookOpen, 
   MessageSquare, 
   Settings, 
   Bell,
   Users,
-  GraduationCap,
   BarChart3,
   FileText,
   Edit3
@@ -53,9 +50,9 @@ export const TutorSidebar = ({ activeTab, onTabChange }: TutorSidebarProps) => {
       icon: Calendar,
     },
     {
-      id: "subjects",
-      label: "Предметы",
-      icon: BookOpen,
+      id: "analytics",
+      label: "Аналитика",
+      icon: BarChart3,
     },
     {
       id: "chats",

@@ -9,6 +9,7 @@ import { convertProfileToTutorProfile } from "@/utils/tutorProfileConverters";
 import { Loader } from "@/components/ui/loader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { ProfileDisplayView } from "../display/ProfileDisplayView";
 
 interface ProfileCompletionCheckerProps {
   profile: Profile;
@@ -23,7 +24,7 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
   const [isLoading, setIsLoading] = useState(false);
 
   // Check if profile is complete
-  const { data: profileCompletion, isLoading: checkingCompletion } = useQuery({
+  const { data: profileCompletion, isLoading: checkingCompletion, refetch } = useQuery({
     queryKey: ['profileCompletion', profile.id],
     queryFn: async () => {
       // Check if basic profile fields are filled
@@ -87,6 +88,11 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
 
       const success = await updateProfile(updateParams);
       
+      if (success) {
+        // Refresh the completion check
+        refetch();
+      }
+      
       return {
         success,
         avatarUrl: values.avatarUrl,
@@ -102,6 +108,10 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleUpdate = () => {
+    refetch();
   };
 
   if (checkingCompletion) {
@@ -124,13 +134,13 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
       hourlyRate: 1000,
       subjects: [],
       teachingLevels: ["школьник", "студент", "взрослый"] as string[],
-      educationInstitution: "",
-      degree: "",
-      graduationYear: new Date().getFullYear(),
-      methodology: "",
-      experience: 0,
-      achievements: "",
-      videoUrl: "",
+      educationInstitution: profile.education_institution || "",
+      degree: profile.degree || "",
+      graduationYear: profile.graduation_year || new Date().getFullYear(),
+      methodology: profile.methodology || "",
+      experience: profile.experience || 0,
+      achievements: profile.achievements || "",
+      videoUrl: profile.video_url || "",
     };
 
     return (
@@ -143,6 +153,12 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
     );
   }
 
-  // If profile is complete, show normal settings
-  return <TutorProfileSettingsTab profile={profile} />;
+  // If profile is complete, show beautiful display view
+  return (
+    <ProfileDisplayView 
+      profile={profile}
+      subjects={subjects}
+      onUpdate={handleUpdate}
+    />
+  );
 };

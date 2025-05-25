@@ -3,12 +3,12 @@ import React, { useState } from "react";
 import { TutorSidebar } from "./TutorSidebar";
 import { TutorDashboard } from "./TutorDashboard";
 import { StudentsTab } from "./StudentsTab";
-import { ScheduleTab } from "./ScheduleTab";
-import { SubjectsTab } from "./SubjectsTab";
+import { ScheduleManagement } from "./schedule/ScheduleManagement";
 import { ChatsTab } from "./ChatsTab";
 import { TutorSettingsTab } from "./TutorSettingsTab";
 import { LessonRequestsTab } from "./LessonRequestsTab";
 import { NotificationsTab } from "./NotificationsTab";
+import { TutorAnalytics } from "./analytics/TutorAnalytics";
 import { ProfileCompletionChecker } from "./publish/ProfileCompletionChecker";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
@@ -57,9 +57,9 @@ export const TutorProfileContent = () => {
       case "students":
         return <StudentsTab />;
       case "schedule":
-        return <ScheduleTab />;
-      case "subjects":
-        return <SubjectsTab tutorId={user.id} />;
+        return <ScheduleManagement />;
+      case "analytics":
+        return <TutorAnalytics tutorId={user.id} />;
       case "chats":
         return <ChatsTab />;
       case "settings":
