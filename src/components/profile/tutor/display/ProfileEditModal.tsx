@@ -17,6 +17,22 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 
+// Define a unified form data type
+interface UnifiedFormData {
+  first_name?: string;
+  last_name?: string;
+  city?: string;
+  bio?: string;
+  education_institution?: string;
+  degree?: string;
+  graduation_year?: number;
+  experience?: number;
+  methodology?: string;
+  achievements?: string;
+  video_url?: string;
+  selectedSubjects?: string[];
+}
+
 interface ProfileEditModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -37,7 +53,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
   const { updateProfile } = useTutorProfile();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState(() => {
+  
+  const getInitialFormData = (): UnifiedFormData => {
     switch (type) {
       case 'personal':
         return {
@@ -66,7 +83,9 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
       default:
         return {};
     }
-  });
+  };
+
+  const [formData, setFormData] = useState<UnifiedFormData>(getInitialFormData);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,16 +112,20 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
     }
   };
 
+  const handleInputChange = (field: keyof UnifiedFormData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
   const handleSubjectToggle = (subjectId: string) => {
     const currentSubjects = formData.selectedSubjects || [];
     const newSubjects = currentSubjects.includes(subjectId)
       ? currentSubjects.filter(id => id !== subjectId)
       : [...currentSubjects, subjectId];
     
-    setFormData(prev => ({
-      ...prev,
-      selectedSubjects: newSubjects
-    }));
+    handleInputChange('selectedSubjects', newSubjects);
   };
 
   const getTitle = () => {
@@ -125,8 +148,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 <Label htmlFor="first_name">Имя</Label>
                 <Input
                   id="first_name"
-                  value={formData.first_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, first_name: e.target.value }))}
+                  value={formData.first_name || ''}
+                  onChange={(e) => handleInputChange('first_name', e.target.value)}
                   required
                 />
               </div>
@@ -134,8 +157,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 <Label htmlFor="last_name">Фамилия</Label>
                 <Input
                   id="last_name"
-                  value={formData.last_name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, last_name: e.target.value }))}
+                  value={formData.last_name || ''}
+                  onChange={(e) => handleInputChange('last_name', e.target.value)}
                   required
                 />
               </div>
@@ -144,8 +167,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               <Label htmlFor="city">Город</Label>
               <Input
                 id="city"
-                value={formData.city}
-                onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value }))}
+                value={formData.city || ''}
+                onChange={(e) => handleInputChange('city', e.target.value)}
                 required
               />
             </div>
@@ -153,8 +176,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               <Label htmlFor="bio">О себе</Label>
               <Textarea
                 id="bio"
-                value={formData.bio}
-                onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                value={formData.bio || ''}
+                onChange={(e) => handleInputChange('bio', e.target.value)}
                 rows={4}
                 required
               />
@@ -169,8 +192,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               <Label htmlFor="education_institution">Учебное заведение</Label>
               <Input
                 id="education_institution"
-                value={formData.education_institution}
-                onChange={(e) => setFormData(prev => ({ ...prev, education_institution: e.target.value }))}
+                value={formData.education_institution || ''}
+                onChange={(e) => handleInputChange('education_institution', e.target.value)}
                 required
               />
             </div>
@@ -178,8 +201,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               <Label htmlFor="degree">Степень/Специальность</Label>
               <Input
                 id="degree"
-                value={formData.degree}
-                onChange={(e) => setFormData(prev => ({ ...prev, degree: e.target.value }))}
+                value={formData.degree || ''}
+                onChange={(e) => handleInputChange('degree', e.target.value)}
                 required
               />
             </div>
@@ -189,8 +212,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 <Input
                   id="graduation_year"
                   type="number"
-                  value={formData.graduation_year}
-                  onChange={(e) => setFormData(prev => ({ ...prev, graduation_year: parseInt(e.target.value) }))}
+                  value={formData.graduation_year || ''}
+                  onChange={(e) => handleInputChange('graduation_year', parseInt(e.target.value))}
                   required
                 />
               </div>
@@ -199,8 +222,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
                 <Input
                   id="experience"
                   type="number"
-                  value={formData.experience}
-                  onChange={(e) => setFormData(prev => ({ ...prev, experience: parseInt(e.target.value) }))}
+                  value={formData.experience || ''}
+                  onChange={(e) => handleInputChange('experience', parseInt(e.target.value))}
                   required
                 />
               </div>
@@ -215,8 +238,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               <Label htmlFor="methodology">Методика преподавания</Label>
               <Textarea
                 id="methodology"
-                value={formData.methodology}
-                onChange={(e) => setFormData(prev => ({ ...prev, methodology: e.target.value }))}
+                value={formData.methodology || ''}
+                onChange={(e) => handleInputChange('methodology', e.target.value)}
                 rows={4}
                 required
               />
@@ -225,8 +248,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               <Label htmlFor="achievements">Достижения</Label>
               <Textarea
                 id="achievements"
-                value={formData.achievements}
-                onChange={(e) => setFormData(prev => ({ ...prev, achievements: e.target.value }))}
+                value={formData.achievements || ''}
+                onChange={(e) => handleInputChange('achievements', e.target.value)}
                 rows={3}
               />
             </div>
@@ -235,8 +258,8 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
               <Input
                 id="video_url"
                 type="url"
-                value={formData.video_url}
-                onChange={(e) => setFormData(prev => ({ ...prev, video_url: e.target.value }))}
+                value={formData.video_url || ''}
+                onChange={(e) => handleInputChange('video_url', e.target.value)}
               />
             </div>
           </div>
