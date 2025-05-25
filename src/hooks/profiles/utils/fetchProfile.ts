@@ -2,6 +2,36 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
+ * Fetch general profile data for any user
+ */
+export const fetchProfileData = async (userId: string) => {
+  try {
+    console.log("Fetching general profile data for user:", userId);
+    
+    const { data, error } = await supabase
+      .from("profiles")
+      .select(`
+        *,
+        student_profiles (*),
+        tutor_profiles (*)
+      `)
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching profile:", error);
+      throw error;
+    }
+
+    console.log("Profile data fetched:", data);
+    return data;
+  } catch (error) {
+    console.error("Error in fetchProfileData:", error);
+    return null;
+  }
+};
+
+/**
  * Fetch tutor-specific profile data
  */
 export const fetchTutorProfileData = async (userId: string) => {
