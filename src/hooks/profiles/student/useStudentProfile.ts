@@ -24,7 +24,8 @@ export const useStudentProfile = (): UseStudentProfileResult => {
         console.log("Auto-creating student profile for user:", authUser.id);
         try {
           await createRoleSpecificProfile(authUser.id, 'student');
-          // The profile will be refetched automatically by useBaseProfile
+          // Force reload the profile
+          window.location.reload();
         } catch (error) {
           console.error("Error auto-creating student profile:", error);
         }
@@ -48,10 +49,6 @@ export const useStudentProfile = (): UseStudentProfileResult => {
       }
 
       console.log("Updating student profile with data:", params);
-      console.log("School value:", params.school);
-      console.log("Grade value:", params.grade);
-      console.log("Learning goals:", params.learning_goals);
-      console.log("Educational level:", params.educational_level);
 
       // Update student-specific profile
       const studentUpdated = await updateStudentProfileData(profile.id, params);
@@ -65,18 +62,15 @@ export const useStudentProfile = (): UseStudentProfileResult => {
       setProfile(prev => {
         if (!prev) return prev;
         
-        // Ensure student_profiles exists in the profile object
         const studentProfiles = prev.student_profiles || {} as StudentProfileData;
         
         return { 
           ...prev, 
           ...params,
-          // Explicitly maintain required Profile fields
           id: prev.id,
           role: prev.role,
           created_at: prev.created_at,
           updated_at: prev.updated_at,
-          // Explicitly update student profile fields to ensure they're properly stored in state
           school: params.school || prev.school,
           grade: params.grade || prev.grade,
           learning_goals: params.learning_goals || prev.learning_goals,
@@ -84,7 +78,6 @@ export const useStudentProfile = (): UseStudentProfileResult => {
           subjects: params.subjects || prev.subjects || [],
           preferred_format: params.preferred_format || prev.preferred_format || [],
           budget: params.budget || prev.budget || 1000,
-          // Make sure these fields are properly assigned to the student_profiles object
           student_profiles: {
             ...studentProfiles,
             educational_level: params.educational_level || studentProfiles.educational_level || null,
@@ -126,7 +119,6 @@ export const useStudentProfile = (): UseStudentProfileResult => {
         return studentData;
       } else {
         console.log("No student profile found, creating one");
-        // Create student profile if it doesn't exist
         await createRoleSpecificProfile(userId, 'student');
         return null;
       }
