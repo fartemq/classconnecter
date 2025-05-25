@@ -18,7 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 const StudentProfilePage = () => {
   const { profile, isLoading, error } = useStudentProfile();
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   const location = useLocation();
   
   // Check if we're on the main student dashboard page
@@ -55,7 +55,8 @@ const StudentProfilePage = () => {
     }
   };
 
-  if (isLoading) {
+  // Show loading while auth or profile is loading
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
@@ -70,14 +71,15 @@ const StudentProfilePage = () => {
     );
   }
 
-  if (error) {
+  // Show error if there's an error and no user
+  if (error && !user) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center p-4">
           <Alert className="max-w-md">
             <AlertDescription>
-              Произошла ошибка при загрузке профиля. Пожалуйста, перезагрузите страницу или обратитесь в поддержку.
+              Произошла ошибка при загрузке профиля. Пожалуйста, войдите в систему.
             </AlertDescription>
           </Alert>
         </main>
@@ -86,6 +88,7 @@ const StudentProfilePage = () => {
     );
   }
 
+  // Redirect to login if no user
   if (!user) {
     return (
       <div className="min-h-screen flex flex-col">
@@ -102,23 +105,27 @@ const StudentProfilePage = () => {
     );
   }
 
-  if (!profile) {
+  // Show creating profile message if profile doesn't exist yet
+  if (!profile && user) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center p-4">
-          <Alert className="max-w-md">
-            <AlertDescription>
-              Создаем ваш профиль. Пожалуйста, подождите...
-            </AlertDescription>
-          </Alert>
+          <div className="text-center">
+            <Loader size="lg" />
+            <Alert className="max-w-md mt-4">
+              <AlertDescription>
+                Создаем ваш профиль ученика. Пожалуйста, подождите...
+              </AlertDescription>
+            </Alert>
+          </div>
         </main>
         <Footer className="py-2" />
       </div>
     );
   }
 
-  // Show wizard if profile is incomplete
+  // Show wizard if profile is incomplete and we're on main dashboard
   if (isProfileIncomplete && isMainDashboard) {
     return (
       <div className="min-h-screen flex flex-col">

@@ -24,15 +24,25 @@ export const useStudentProfile = (): UseStudentProfileResult => {
         console.log("Auto-creating student profile for user:", authUser.id);
         try {
           await createRoleSpecificProfile(authUser.id, 'student');
-          // Force reload the profile
-          window.location.reload();
+          // Force a page reload to refresh the profile data
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
         } catch (error) {
           console.error("Error auto-creating student profile:", error);
+          toast({
+            title: "Ошибка создания профиля",
+            description: "Не удалось создать профиль ученика. Попробуйте обновить страницу.",
+            variant: "destructive",
+          });
         }
       }
     };
 
-    autoCreateProfile();
+    // Only try to create profile after auth is loaded and we're sure there's no profile
+    if (!isLoading && authUser) {
+      autoCreateProfile();
+    }
   }, [authUser, profile, isLoading, error]);
 
   // Update profile function
