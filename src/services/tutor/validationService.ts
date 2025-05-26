@@ -46,7 +46,7 @@ export const validateTutorProfile = async (tutorId: string) => {
   try {
     console.log("Validating tutor profile for ID:", tutorId);
     
-    // Get tutor profile data
+    // Get tutor profile data with proper joins
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
       .select(`
@@ -60,7 +60,9 @@ export const validateTutorProfile = async (tutorId: string) => {
           education_institution,
           methodology,
           experience,
-          is_published
+          is_published,
+          degree,
+          graduation_year
         )
       `)
       .eq("id", tutorId)
@@ -77,12 +79,17 @@ export const validateTutorProfile = async (tutorId: string) => {
 
     console.log("Profile data for validation:", profileData);
 
-    // Check if tutor has added subjects
-    const hasSubjects = await hasTutorAddedSubjects(tutorId);
-    console.log("Has subjects:", hasSubjects);
+    // Check if tutor has added subjects and schedule
+    const [hasSubjects, hasSchedule] = await Promise.all([
+      hasTutorAddedSubjects(tutorId),
+      hasTutorAddedSchedule(tutorId)
+    ]);
+
+    console.log("Has subjects:", hasSubjects, "Has schedule:", hasSchedule);
 
     // List of missing required fields
     const missingFields = [];
+    const warnings = [];
     
     // Validate basic profile fields
     if (!profileData.first_name) missingFields.push("Имя");
@@ -94,11 +101,10 @@ export const validateTutorProfile = async (tutorId: string) => {
     // Validate tutor-specific fields
     const tutorProfileData = profileData.tutor_profiles;
     
-    // Handle the tutor profile data properly, whether it's an array or a single object
+    // Handle the tutor profile data properly
     let tutorProfile: any = null;
     
     if (tutorProfileData) {
-      // Handle both array and object formats
       if (Array.isArray(tutorProfileData)) {
         tutorProfile = tutorProfileData.length > 0 ? tutorProfileData[0] : null;
       } else {
@@ -109,7 +115,9 @@ export const validateTutorProfile = async (tutorId: string) => {
     if (!tutorProfile) {
       missingFields.push("Профиль репетитора не создан");
     } else {
-      if (!tutorProfile.education_institution) missingFields.push("Образование");
+      if (!tutorProfile.education_institution) missingFields.push("Учебное заведение");
+      if (!tutorProfile.degree) missingFields.push("Степень образования");
+      if (!tutorProfile.graduation_year) missingFields.push("Год окончания");
       if (!tutorProfile.methodology) missingFields.push("Методика преподавания");
       if (tutorProfile.experience === null || tutorProfile.experience === undefined) {
         missingFields.push("Опыт преподавания");
@@ -118,10 +126,14 @@ export const validateTutorProfile = async (tutorId: string) => {
     
     // Check subjects
     if (!hasSubjects) missingFields.push("Предметы и цены");
+    
+    // Check schedule
+    if (!hasSchedule) warnings.push("Рекомендуется добавить расписание для удобства учеников");
 
-    // Optional fields that improve profile quality
-    const warnings = [];
-    if (!profileData.last_name) warnings.push("Рекомендуется указать фамилию");
+    // Additional warnings for profile quality
+    if (profileData.bio && profileData.bio.length < 50) {
+      warnings.push("Рекомендуется расширить описание о себе");
+    }
     
     console.log("Missing fields:", missingFields);
     console.log("Warnings:", warnings);

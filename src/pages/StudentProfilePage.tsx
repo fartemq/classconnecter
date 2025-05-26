@@ -14,6 +14,7 @@ import { ChatConversation } from "@/components/profile/student/ChatConversation"
 import { StudentLayoutWithSidebar } from "@/components/profile/student/StudentLayoutWithSidebar";
 import { StudentProfileWizard } from "@/components/profile/student/StudentProfileWizard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/hooks/useAuth";
 
 const StudentProfilePage = () => {
@@ -61,9 +62,12 @@ const StudentProfilePage = () => {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <Loader size="lg" />
-            <p className="mt-4 text-gray-600">Загрузка профиля...</p>
+          <div className="text-center space-y-4">
+            <LoadingSpinner size="lg" />
+            <div className="space-y-2">
+              <p className="text-lg font-medium text-gray-700">Загружаем профиль...</p>
+              <p className="text-sm text-gray-500">Настраиваем ваш аккаунт ученика</p>
+            </div>
           </div>
         </main>
         <Footer className="py-2" />
@@ -77,8 +81,8 @@ const StudentProfilePage = () => {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center p-4">
-          <Alert className="max-w-md">
-            <AlertDescription>
+          <Alert className="max-w-md border-red-200 bg-red-50">
+            <AlertDescription className="text-red-700">
               Произошла ошибка при загрузке профиля. Пожалуйста, войдите в систему.
             </AlertDescription>
           </Alert>
@@ -94,8 +98,8 @@ const StudentProfilePage = () => {
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center p-4">
-          <Alert className="max-w-md">
-            <AlertDescription>
+          <Alert className="max-w-md border-blue-200 bg-blue-50">
+            <AlertDescription className="text-blue-700">
               Необходимо войти в систему для доступа к профилю.
             </AlertDescription>
           </Alert>
@@ -105,17 +109,17 @@ const StudentProfilePage = () => {
     );
   }
 
-  // Show creating profile message if profile doesn't exist yet
-  if (!profile && user) {
+  // Show creating profile message if profile doesn't exist yet but user exists
+  if (!profile && user && !error) {
     return (
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow flex items-center justify-center p-4">
-          <div className="text-center">
-            <Loader size="lg" />
-            <Alert className="max-w-md mt-4">
-              <AlertDescription>
-                Создаем ваш профиль ученика. Пожалуйста, подождите...
+          <div className="text-center space-y-4">
+            <LoadingSpinner size="lg" />
+            <Alert className="max-w-md border-green-200 bg-green-50">
+              <AlertDescription className="text-green-700">
+                Создаем ваш профиль ученика. Это займет всего несколько секунд...
               </AlertDescription>
             </Alert>
           </div>
@@ -145,7 +149,6 @@ const StudentProfilePage = () => {
     <StudentLayoutWithSidebar>
       {isMainDashboard ? (
         <div className="space-y-6">
-          {/* Main dashboard content */}
           <StudentDashboard profile={profile} />
         </div>
       ) : (

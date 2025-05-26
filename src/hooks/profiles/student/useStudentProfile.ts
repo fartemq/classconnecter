@@ -24,10 +24,12 @@ export const useStudentProfile = (): UseStudentProfileResult => {
         console.log("Auto-creating student profile for user:", authUser.id);
         try {
           await createRoleSpecificProfile(authUser.id, 'student');
-          // Force a page reload to refresh the profile data
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
+          
+          // Refresh profile data without page reload
+          const profileData = await fetchStudentProfileData(authUser.id);
+          if (profileData) {
+            setProfile(profileData);
+          }
         } catch (error) {
           console.error("Error auto-creating student profile:", error);
           toast({
@@ -43,7 +45,7 @@ export const useStudentProfile = (): UseStudentProfileResult => {
     if (!isLoading && authUser) {
       autoCreateProfile();
     }
-  }, [authUser, profile, isLoading, error]);
+  }, [authUser, profile, isLoading, error, setProfile]);
 
   // Update profile function
   const updateProfile = async (params: ProfileUpdateParams): Promise<boolean> => {

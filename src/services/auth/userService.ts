@@ -8,27 +8,12 @@ export const fetchUserRole = async (userId: string): Promise<string | null> => {
   try {
     console.log("Fetching role for user:", userId);
     
-    // First, check if the user exists in the auth.users table
-    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(userId);
-    
-    if (authError) {
-      console.error("Error fetching user from auth:", authError);
-      // Fall back to profiles table if admin API fails
-    } else if (authUser?.user) {
-      const userMetadata = authUser.user.user_metadata;
-      if (userMetadata && userMetadata.role) {
-        console.log("Found role in user metadata:", userMetadata.role);
-        return userMetadata.role;
-      }
-    }
-    
-    // If we can't get the role from auth metadata, check the profiles table
-    console.log("Checking profiles table for role");
+    // Check the profiles table directly (no admin API calls)
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
       
     if (profileError) {
       console.error("Error fetching profile:", profileError);
