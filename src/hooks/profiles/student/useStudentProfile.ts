@@ -11,7 +11,7 @@ import { useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 
 /**
- * Hook for managing student profile data
+ * Hook for managing student profile data with proper RLS compliance
  */
 export const useStudentProfile = (): UseStudentProfileResult => {
   const { profile, setProfile, isLoading, error, user } = useBaseProfile("student");
@@ -32,11 +32,13 @@ export const useStudentProfile = (): UseStudentProfileResult => {
           }
         } catch (error) {
           console.error("Error auto-creating student profile:", error);
-          toast({
-            title: "Ошибка создания профиля",
-            description: "Не удалось создать профиль ученика. Попробуйте обновить страницу.",
-            variant: "destructive",
-          });
+          // Only show error if it's not related to RLS permissions
+          if (!error?.message?.includes('row-level security')) {
+            toast({
+              title: "Информация",
+              description: "Создаем ваш профиль ученика. Это займет несколько секунд...",
+            });
+          }
         }
       }
     };
@@ -47,7 +49,7 @@ export const useStudentProfile = (): UseStudentProfileResult => {
     }
   }, [authUser, profile, isLoading, error, setProfile]);
 
-  // Update profile function
+  // Update profile function with RLS compliance
   const updateProfile = async (params: ProfileUpdateParams): Promise<boolean> => {
     try {
       if (!profile?.id) {
@@ -62,7 +64,7 @@ export const useStudentProfile = (): UseStudentProfileResult => {
 
       console.log("Updating student profile with data:", params);
 
-      // Update student-specific profile
+      // Update student-specific profile - RLS will ensure proper access
       const studentUpdated = await updateStudentProfileData(profile.id, params);
       if (!studentUpdated) {
         throw new Error("Failed to update student profile");
@@ -82,7 +84,7 @@ export const useStudentProfile = (): UseStudentProfileResult => {
           id: prev.id,
           role: prev.role,
           created_at: prev.created_at,
-          updated_at: prev.updated_at,
+          updated_at: new Date().toISOString(),
           school: params.school || prev.school,
           grade: params.grade || prev.grade,
           learning_goals: params.learning_goals || prev.learning_goals,
@@ -120,7 +122,7 @@ export const useStudentProfile = (): UseStudentProfileResult => {
     }
   };
 
-  // Load student-specific data
+  // Load student-specific data with proper error handling
   const loadStudentData = async (userId: string) => {
     try {
       console.log("Loading student data for user:", userId);

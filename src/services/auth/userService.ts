@@ -8,7 +8,6 @@ export const fetchUserRole = async (userId: string): Promise<string | null> => {
   try {
     console.log("Fetching role for user:", userId);
     
-    // Check the profiles table directly (no admin API calls)
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("role")
@@ -40,7 +39,7 @@ export const fetchUserRole = async (userId: string): Promise<string | null> => {
 };
 
 /**
- * Update a user's profile
+ * Update a user's profile with proper RLS compliance
  */
 export const updateUserProfile = async (
   userId: string,
@@ -55,7 +54,9 @@ export const updateUserProfile = async (
   }
 ) => {
   try {
-    // First check if profile exists
+    console.log("Updating profile for user:", userId, "with data:", profileData);
+    
+    // Check if profile exists
     const { data: existingProfile, error: checkError } = await supabase
       .from("profiles")
       .select("id")
@@ -73,7 +74,7 @@ export const updateUserProfile = async (
     };
     
     if (!existingProfile) {
-      // Create new profile
+      // Create new profile - RLS will ensure user can only create their own
       const { error } = await supabase
         .from("profiles")
         .insert({
@@ -82,15 +83,25 @@ export const updateUserProfile = async (
           created_at: new Date().toISOString()
         });
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error creating profile:", error);
+        throw error;
+      }
+      
+      console.log("Profile created successfully");
     } else {
-      // Update existing profile
+      // Update existing profile - RLS will ensure user can only update their own
       const { error } = await supabase
         .from("profiles")
         .update(dataWithTimestamp)
         .eq("id", userId);
         
-      if (error) throw error;
+      if (error) {
+        console.error("Error updating profile:", error);
+        throw error;
+      }
+      
+      console.log("Profile updated successfully");
     }
     
     return { success: true };
@@ -104,17 +115,24 @@ export const updateUserProfile = async (
 };
 
 /**
- * Get a user's profile
+ * Get a user's profile with proper RLS compliance
  */
 export const getUserProfile = async (userId: string) => {
   try {
+    console.log("Getting profile for user:", userId);
+    
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", userId)
-      .single();
+      .maybeSingle();
       
-    if (error) throw error;
+    if (error) {
+      console.error("Error getting profile:", error);
+      throw error;
+    }
+    
+    console.log("Profile retrieved successfully:", data);
     return { success: true, profile: data };
   } catch (error) {
     console.error("Error getting user profile:", error);

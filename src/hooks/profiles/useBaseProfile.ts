@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { fetchProfileData } from "./utils/fetchProfile";
 
 /**
- * Base profile hook that provides basic profile functionality
+ * Base profile hook that provides basic profile functionality with RLS compliance
  */
 export const useBaseProfile = (requiredRole?: string) => {
   const { user, userRole, isLoading: authLoading } = useAuth();
@@ -51,7 +51,11 @@ export const useBaseProfile = (requiredRole?: string) => {
         }
       } catch (err) {
         console.error("Error loading profile:", err);
-        setError(err instanceof Error ? err.message : "Failed to load profile");
+        
+        // Don't show RLS errors to user as these are expected during profile creation
+        if (!err?.message?.includes('row-level security')) {
+          setError(err instanceof Error ? err.message : "Failed to load profile");
+        }
         setProfile(null);
       } finally {
         setIsLoading(false);

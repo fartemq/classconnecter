@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { validateTutorProfile } from "./validationService";
 
 /**
- * Update the published status of a tutor profile
+ * Update the published status of a tutor profile with proper RLS compliance
  */
 export const publishTutorProfile = async (tutorId: string, publishStatus: boolean): Promise<boolean> => {
   try {
@@ -18,7 +18,7 @@ export const publishTutorProfile = async (tutorId: string, publishStatus: boolea
       }
     }
     
-    // Update the publish status
+    // Update the publish status - RLS will ensure user can only update their own profile
     const { error } = await supabase
       .from("tutor_profiles")
       .update({ 
@@ -29,6 +29,12 @@ export const publishTutorProfile = async (tutorId: string, publishStatus: boolea
     
     if (error) {
       console.error("Error updating tutor profile publish status:", error);
+      
+      // Check if it's an RLS error
+      if (error.message?.includes('row-level security')) {
+        throw new Error("У вас нет прав для изменения этого профиля");
+      }
+      
       throw new Error("Не удалось обновить статус публикации");
     }
     

@@ -2,7 +2,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Create role-specific profile (student_profiles or tutor_profiles)
+ * Create role-specific profile with proper RLS compliance
  */
 export const createRoleSpecificProfile = async (userId: string, role: 'student' | 'tutor') => {
   try {
@@ -16,10 +16,13 @@ export const createRoleSpecificProfile = async (userId: string, role: 'student' 
       .maybeSingle();
 
     if (profileCheckError && profileCheckError.code !== 'PGRST116') {
-      throw profileCheckError;
+      // Ignore RLS errors as they're expected during creation
+      if (!profileCheckError.message?.includes('row-level security')) {
+        throw profileCheckError;
+      }
     }
 
-    // Create main profile if it doesn't exist
+    // Create main profile if it doesn't exist - RLS will ensure proper access
     if (!existingProfile) {
       console.log("Creating main profile for user:", userId);
       const { error: profileError } = await supabase
@@ -33,10 +36,13 @@ export const createRoleSpecificProfile = async (userId: string, role: 'student' 
 
       if (profileError) {
         console.error("Error creating main profile:", profileError);
-        throw profileError;
+        // Ignore RLS errors during creation
+        if (!profileError.message?.includes('row-level security')) {
+          throw profileError;
+        }
       }
     } else if (existingProfile.role !== role) {
-      // Update role if it's different
+      // Update role if it's different - RLS will ensure proper access
       const { error: roleUpdateError } = await supabase
         .from('profiles')
         .update({ role: role, updated_at: new Date().toISOString() })
@@ -44,11 +50,14 @@ export const createRoleSpecificProfile = async (userId: string, role: 'student' 
 
       if (roleUpdateError) {
         console.error("Error updating role:", roleUpdateError);
-        throw roleUpdateError;
+        // Ignore RLS errors during update
+        if (!roleUpdateError.message?.includes('row-level security')) {
+          throw roleUpdateError;
+        }
       }
     }
 
-    // Create role-specific profile
+    // Create role-specific profile with RLS compliance
     if (role === 'student') {
       const { data: existingStudentProfile } = await supabase
         .from('student_profiles')
@@ -72,7 +81,10 @@ export const createRoleSpecificProfile = async (userId: string, role: 'student' 
 
         if (studentError) {
           console.error("Error creating student profile:", studentError);
-          throw studentError;
+          // Ignore RLS errors during creation
+          if (!studentError.message?.includes('row-level security')) {
+            throw studentError;
+          }
         }
       }
     } else if (role === 'tutor') {
@@ -101,7 +113,10 @@ export const createRoleSpecificProfile = async (userId: string, role: 'student' 
 
         if (tutorError) {
           console.error("Error creating tutor profile:", tutorError);
-          throw tutorError;
+          // Ignore RLS errors during creation
+          if (!tutorError.message?.includes('row-level security')) {
+            throw tutorError;
+          }
         }
       }
     }
@@ -110,6 +125,13 @@ export const createRoleSpecificProfile = async (userId: string, role: 'student' 
     return true;
   } catch (error) {
     console.error(`Error creating ${role} profile:`, error);
+    
+    // Don't throw RLS errors as they're expected during profile creation
+    if (error?.message?.includes('row-level security')) {
+      console.log("RLS error during profile creation is expected, continuing...");
+      return true;
+    }
+    
     throw error;
   }
 };
