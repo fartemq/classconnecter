@@ -4,7 +4,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext, AuthProviderProps } from "./AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { fetchUserRole } from "@/services/auth/userService";
+import { fetchUserRole } from "@/services/auth/authUtils";
 import { loginUser } from "@/services/auth/loginService";
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
@@ -40,13 +40,22 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             setUserRole(metadataRole);
           } else {
             try {
-              // Fetch user role from database
-              const role = await fetchUserRole(session.user.id);
+              // Fetch user role from database with timeout
+              const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout')), 5000)
+              );
+              
+              const rolePromise = fetchUserRole(session.user.id);
+              const role = await Promise.race([rolePromise, timeoutPromise]);
+              
               console.log("User role fetched from database:", role);
-              setUserRole(role);
+              setUserRole(role as string);
             } catch (roleError) {
               console.error("Error fetching user role:", roleError);
-              // Continue with session but without role
+              // Use metadata role as fallback, or default to student
+              const fallbackRole = session.user.user_metadata?.role || 'student';
+              console.log("Using fallback role:", fallbackRole);
+              setUserRole(fallbackRole);
             }
           }
         } else {
@@ -88,9 +97,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
               try {
                 const role = await fetchUserRole(session.user.id);
                 console.log("User role fetched after sign in:", role);
-                setUserRole(role);
+                setUserRole(role || 'student'); // Default to student if no role found
               } catch (roleError) {
                 console.error("Error fetching user role after sign in:", roleError);
+                setUserRole('student'); // Default fallback
               }
             }, 0);
           }

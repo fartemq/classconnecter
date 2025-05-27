@@ -8,18 +8,29 @@ export const fetchUserRole = async (userId: string): Promise<string | null> => {
   try {
     console.log("Fetching role for user using security definer function:", userId);
     
-    // Use the security definer function to get user role
-    const { data, error } = await supabase.rpc('get_current_user_role');
+    // Add timeout to prevent hanging
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Database query timeout')), 10000)
+    );
+    
+    const queryPromise = supabase.rpc('get_current_user_role');
+    
+    const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
     
     if (error) {
       console.error("Error fetching role via RPC:", error);
       
       // Fallback to direct query if RPC fails
-      const { data: profile, error: profileError } = await supabase
+      const fallbackPromise = supabase
         .from("profiles")
         .select("role")
         .eq("id", userId)
         .maybeSingle();
+        
+      const { data: profile, error: profileError } = await Promise.race([
+        fallbackPromise, 
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Fallback timeout')), 5000))
+      ]) as any;
         
       if (profileError) {
         console.error("Error fetching profile:", profileError);
