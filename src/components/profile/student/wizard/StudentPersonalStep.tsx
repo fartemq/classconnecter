@@ -17,10 +17,12 @@ export const StudentPersonalStep: React.FC<StudentPersonalStepProps> = ({
   avatarFile
 }) => {
   const handleInputChange = (field: string, value: any) => {
+    console.log("Personal step input change:", field, value);
     onDataChange({ [field]: value });
   };
 
   const handleAvatarChange = (file: File | null, url: string | null) => {
+    console.log("Avatar change:", file, url);
     onDataChange({ avatar_url: url }, file);
   };
 
@@ -29,7 +31,7 @@ export const StudentPersonalStep: React.FC<StudentPersonalStepProps> = ({
       <div className="text-center">
         <AvatarUpload
           avatarUrl={data.avatar_url}
-          firstName={data.firstName || data.first_name || ''}
+          firstName={data.first_name || ''}
           onChange={handleAvatarChange}
         />
         <p className="text-sm text-muted-foreground mt-2">
@@ -42,7 +44,7 @@ export const StudentPersonalStep: React.FC<StudentPersonalStepProps> = ({
           <Label htmlFor="firstName">Имя *</Label>
           <Input
             id="firstName"
-            value={data.firstName || data.first_name || ''}
+            value={data.first_name || ''}
             onChange={(e) => handleInputChange('first_name', e.target.value)}
             placeholder="Введите ваше имя"
             required
@@ -53,7 +55,7 @@ export const StudentPersonalStep: React.FC<StudentPersonalStepProps> = ({
           <Label htmlFor="lastName">Фамилия *</Label>
           <Input
             id="lastName"
-            value={data.lastName || data.last_name || ''}
+            value={data.last_name || ''}
             onChange={(e) => handleInputChange('last_name', e.target.value)}
             placeholder="Введите вашу фамилию"
             required

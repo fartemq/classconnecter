@@ -11,11 +11,11 @@ import { Card } from "@/components/ui/card";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChatConversation } from "@/components/profile/student/ChatConversation";
 import { StudentLayoutWithSidebar } from "@/components/profile/student/StudentLayoutWithSidebar";
-import { StudentProfileWizard } from "@/components/profile/student/StudentProfileWizard";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { LoadingSpinner } from "@/components/ui/loading-spinner";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
+import { ProfileTab } from "@/components/profile/student/ProfileTab";
 
 const StudentProfilePage = () => {
   const { profile, isLoading, error } = useStudentProfile();
@@ -25,16 +25,6 @@ const StudentProfilePage = () => {
   
   // Check if we're on the main student dashboard page
   const isMainDashboard = location.pathname === "/profile/student";
-  
-  // Check if profile is incomplete and needs wizard
-  const isProfileIncomplete = profile && (
-    !profile.first_name || 
-    !profile.last_name || 
-    !profile.city || 
-    !profile.bio ||
-    !profile.student_profiles?.educational_level ||
-    !profile.student_profiles?.subjects?.length
-  );
 
   // Parse URL to determine the active tab and any tutor ID for chat
   const getTabContent = () => {
@@ -50,8 +40,8 @@ const StudentProfilePage = () => {
       return <SettingsTab />;
     } else if (path.includes("/schedule")) {
       return <ScheduleTab />;
-    } else if (path.includes("/edit")) {
-      return <div>Edit Profile Content</div>; // Placeholder for edit profile
+    } else if (path.includes("/profile")) {
+      return <ProfileTab />;
     } else {
       return <StudentDashboard profile={profile} />;
     }
@@ -172,21 +162,6 @@ const StudentProfilePage = () => {
                 </div>
               </AlertDescription>
             </Alert>
-          </div>
-        </main>
-        <Footer className="py-2" />
-      </div>
-    );
-  }
-
-  // Show wizard if profile is incomplete and we're on main dashboard
-  if (isProfileIncomplete && isMainDashboard) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <Header />
-        <main className="flex-grow bg-gray-50 py-8">
-          <div className="container mx-auto px-4">
-            <StudentProfileWizard />
           </div>
         </main>
         <Footer className="py-2" />

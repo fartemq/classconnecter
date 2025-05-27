@@ -16,11 +16,11 @@ import { StudentGoalsStep } from "./wizard/StudentGoalsStep";
 import { StudentPreviewStep } from "./wizard/StudentPreviewStep";
 
 interface StudentFormValues {
-  firstName?: string;
-  lastName?: string;
+  first_name?: string;
+  last_name?: string;
   city?: string;
   bio?: string;
-  avatarUrl?: string;
+  avatar_url?: string;
   educational_level?: string;
   school?: string;
   grade?: string;
@@ -47,10 +47,30 @@ export const StudentProfileWizard: React.FC = () => {
   const { toast } = useToast();
   const { updateProfile, profile } = useStudentProfile();
 
+  // Initialize form with existing profile data
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        city: profile.city || '',
+        bio: profile.bio || '',
+        avatar_url: profile.avatar_url || '',
+        educational_level: profile.student_profiles?.educational_level || '',
+        school: profile.student_profiles?.school || '',
+        grade: profile.student_profiles?.grade || '',
+        subjects: profile.student_profiles?.subjects || [],
+        preferred_format: profile.student_profiles?.preferred_format || [],
+        learning_goals: profile.student_profiles?.learning_goals || '',
+        budget: profile.student_profiles?.budget || 1000
+      });
+    }
+  }, [profile]);
+
   const validateStep = (stepIndex: number, data: StudentFormValues): boolean => {
     switch (stepIndex) {
       case 0: // Personal info
-        return !!(data.firstName && data.lastName && data.city && data.bio);
+        return !!(data.first_name && data.last_name && data.city && data.bio);
       case 1: // Education  
         return !!(data.educational_level && data.school);
       case 2: // Subjects
@@ -109,6 +129,7 @@ export const StudentProfileWizard: React.FC = () => {
   const progress = ((currentStep + 1) / steps.length) * 100;
 
   const handleStepData = (stepData: Partial<StudentFormValues>, avatar?: File | null) => {
+    console.log("Updating form data:", stepData);
     setFormData(prev => ({ ...prev, ...stepData }));
     if (avatar !== undefined) {
       setAvatarFile(avatar);
@@ -116,6 +137,9 @@ export const StudentProfileWizard: React.FC = () => {
   };
 
   const handleNext = async () => {
+    console.log("Current form data before validation:", formData);
+    console.log("Validating step:", currentStep);
+    
     if (!validateStep(currentStep, formData)) {
       toast({
         title: "Заполните обязательные поля",
@@ -127,6 +151,7 @@ export const StudentProfileWizard: React.FC = () => {
 
     setIsStepLoading(true);
     try {
+      console.log("Saving data for step:", currentStep, formData);
       const success = await updateProfile(formData);
       if (!success) {
         throw new Error("Failed to save profile data");
@@ -160,6 +185,7 @@ export const StudentProfileWizard: React.FC = () => {
   const handleFinish = async () => {
     setIsStepLoading(true);
     try {
+      console.log("Final save with data:", formData);
       const success = await updateProfile(formData);
       if (!success) {
         throw new Error("Failed to save profile data");
@@ -246,7 +272,7 @@ export const StudentProfileWizard: React.FC = () => {
 
       {/* Steps Navigation */}
       <div className="flex justify-center">
-        <div className="flex items-center space-x-4 bg-muted/30 p-4 rounded-lg">
+        <div className="flex items-center space-x-4 bg-muted/30 p-4 rounded-lg overflow-x-auto">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isActive = index === currentStep;
@@ -254,7 +280,7 @@ export const StudentProfileWizard: React.FC = () => {
             const isPast = index < currentStep;
             
             return (
-              <div key={step.id} className="flex items-center">
+              <div key={step.id} className="flex items-center flex-shrink-0">
                 <div
                   className={`
                     flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300
@@ -324,7 +350,7 @@ export const StudentProfileWizard: React.FC = () => {
           ) : (
             <Button
               onClick={handleNext}
-              disabled={isStepLoading || !validateStep(currentStep, formData)}
+              disabled={isStepLoading}
               className="flex items-center space-x-2"
             >
               {isStepLoading && <Loader size="sm" className="mr-2" />}
