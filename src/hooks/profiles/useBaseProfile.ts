@@ -39,23 +39,29 @@ export const useBaseProfile = (requiredRole?: string) => {
         setError(null);
         
         console.log("Loading profile for user:", user.id);
+        
+        // Wait a bit for database trigger to complete if user was just created
+        const userCreatedRecently = user.created_at && 
+          (Date.now() - new Date(user.created_at).getTime()) < 5000;
+        
+        if (userCreatedRecently) {
+          console.log("User created recently, waiting for trigger...");
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+        
         const profileData = await fetchProfileData(user.id);
         
         if (profileData) {
           console.log("Profile loaded successfully:", profileData);
           setProfile(profileData);
         } else {
-          // Profile not found - this is normal for new users
+          // Profile not found - this shouldn't happen with triggers but let's handle it
           console.log("Profile not found for user:", user.id);
           setProfile(null);
         }
       } catch (err) {
         console.error("Error loading profile:", err);
-        
-        // Don't show RLS errors to user as these are expected during profile creation
-        if (!err?.message?.includes('row-level security')) {
-          setError(err instanceof Error ? err.message : "Failed to load profile");
-        }
+        setError("Failed to load profile");
         setProfile(null);
       } finally {
         setIsLoading(false);

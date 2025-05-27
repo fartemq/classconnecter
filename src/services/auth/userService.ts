@@ -2,39 +2,43 @@
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Fetch the user's role from the profiles table
+ * Fetch the user's role from the profiles table using the security definer function
  */
 export const fetchUserRole = async (userId: string): Promise<string | null> => {
   try {
-    console.log("Fetching role for user:", userId);
+    console.log("Fetching role for user using security definer function:", userId);
     
-    const { data: profile, error: profileError } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", userId)
-      .maybeSingle();
+    // Use the security definer function to get user role
+    const { data, error } = await supabase.rpc('get_current_user_role');
+    
+    if (error) {
+      console.error("Error fetching role via RPC:", error);
       
-    if (profileError) {
-      console.error("Error fetching profile:", profileError);
-      
-      if (profileError.code === "PGRST116") {
-        console.log("Profile not found, user might be new");
+      // Fallback to direct query if RPC fails
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .maybeSingle();
+        
+      if (profileError) {
+        console.error("Error fetching profile:", profileError);
         return null;
       }
       
-      throw profileError;
+      if (profile && profile.role) {
+        console.log("Found role via fallback query:", profile.role);
+        return profile.role;
+      }
+      
+      return null;
     }
     
-    if (profile && profile.role) {
-      console.log("Found role in profiles table:", profile.role);
-      return profile.role;
-    }
-    
-    console.log("No role found for user");
-    return null;
+    console.log("Found role via security definer function:", data);
+    return data;
   } catch (error) {
     console.error("Error in fetchUserRole:", error);
-    throw error;
+    return null;
   }
 };
 
@@ -56,54 +60,29 @@ export const updateUserProfile = async (
   try {
     console.log("Updating profile for user:", userId, "with data:", profileData);
     
-    // Check if profile exists
-    const { data: existingProfile, error: checkError } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("id", userId)
-      .maybeSingle();
-      
-    if (checkError && checkError.code !== 'PGRST116') {
-      throw checkError;
-    }
-    
     // Add timestamp
     const dataWithTimestamp = {
       ...profileData,
       updated_at: new Date().toISOString()
     };
     
-    if (!existingProfile) {
-      // Create new profile - RLS will ensure user can only create their own
-      const { error } = await supabase
-        .from("profiles")
-        .insert({
-          id: userId,
-          ...dataWithTimestamp,
-          created_at: new Date().toISOString()
-        });
-        
-      if (error) {
-        console.error("Error creating profile:", error);
-        throw error;
-      }
+    // Use upsert to handle both insert and update cases
+    const { error } = await supabase
+      .from("profiles")
+      .upsert({
+        id: userId,
+        ...dataWithTimestamp,
+        created_at: new Date().toISOString()
+      }, {
+        onConflict: 'id'
+      });
       
-      console.log("Profile created successfully");
-    } else {
-      // Update existing profile - RLS will ensure user can only update their own
-      const { error } = await supabase
-        .from("profiles")
-        .update(dataWithTimestamp)
-        .eq("id", userId);
-        
-      if (error) {
-        console.error("Error updating profile:", error);
-        throw error;
-      }
-      
-      console.log("Profile updated successfully");
+    if (error) {
+      console.error("Error upserting profile:", error);
+      throw error;
     }
     
+    console.log("Profile upserted successfully");
     return { success: true };
   } catch (error) {
     console.error("Error updating user profile:", error);

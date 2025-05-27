@@ -33,14 +33,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setUser(session.user);
           setSession(session);
           
-          try {
-            // Fetch user role
-            const role = await fetchUserRole(session.user.id);
-            console.log("User role fetched:", role);
-            setUserRole(role);
-          } catch (roleError) {
-            console.error("Error fetching user role:", roleError);
-            // Continue with session but without role
+          // Get role from user metadata first, then from database
+          const metadataRole = session.user.user_metadata?.role;
+          if (metadataRole) {
+            console.log("Role found in metadata:", metadataRole);
+            setUserRole(metadataRole);
+          } else {
+            try {
+              // Fetch user role from database
+              const role = await fetchUserRole(session.user.id);
+              console.log("User role fetched from database:", role);
+              setUserRole(role);
+            } catch (roleError) {
+              console.error("Error fetching user role:", roleError);
+              // Continue with session but without role
+            }
           }
         } else {
           console.log("No active session found");
@@ -70,18 +77,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           setUser(session.user);
           setSession(session);
           
-          // To prevent issues with multiple Supabase calls in the callback,
-          // we'll wrap the role fetch in a setTimeout(0)
-          setTimeout(async () => {
-            try {
-              // Fetch user role
-              const role = await fetchUserRole(session.user.id);
-              console.log("User role fetched after sign in:", role);
-              setUserRole(role);
-            } catch (roleError) {
-              console.error("Error fetching user role after sign in:", roleError);
-            }
-          }, 0);
+          // Get role from metadata or fetch from database
+          const metadataRole = session.user.user_metadata?.role;
+          if (metadataRole) {
+            console.log("Role found in metadata after sign in:", metadataRole);
+            setUserRole(metadataRole);
+          } else {
+            // Defer database call to prevent blocking
+            setTimeout(async () => {
+              try {
+                const role = await fetchUserRole(session.user.id);
+                console.log("User role fetched after sign in:", role);
+                setUserRole(role);
+              } catch (roleError) {
+                console.error("Error fetching user role after sign in:", roleError);
+              }
+            }, 0);
+          }
         } else if (event === "SIGNED_OUT") {
           console.log("User signed out");
           setUser(null);
