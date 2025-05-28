@@ -1,206 +1,289 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, User, BookOpen, Calendar, MessageSquare, Eye } from "lucide-react";
-import { useLessonRequests } from "@/hooks/useLessonRequests";
-import { useAuth } from "@/hooks/useAuth";
-import { LessonRequest } from "@/types/lessonRequest";
-import { Loader } from "@/components/ui/loader";
+import { Badge } from "@/components/ui/badge";
+import { Calendar, Clock, User, MessageSquare, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { Loader } from "@/components/ui/loader";
 import { StudentProfileRequestDialog } from "../student/StudentProfileRequestDialog";
 
-export const LessonRequestsTab = () => {
+interface LessonRequest {
+  id: string;
+  student_id: string;
+  subject_id: string;
+  requested_date: string;
+  requested_start_time: string;
+  requested_end_time: string;
+  message?: string;
+  status: string;
+  created_at: string;
+  profiles: {
+    first_name: string;
+    last_name: string;
+    avatar_url?: string;
+    city?: string;
+  };
+  subjects: {
+    name: string;
+  };
+}
+
+export const LessonRequestsTab: React.FC = () => {
   const { user } = useAuth();
-  const { lessonRequests, isLoading, updateLessonRequestStatus } = useLessonRequests(user?.id, 'tutor');
+  const { toast } = useToast();
+  const [requests, setRequests] = useState<LessonRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleStatusUpdate = async (requestId: string, status: 'confirmed' | 'rejected') => {
-    setIsUpdating(true);
-    const success = await updateLessonRequestStatus(requestId, status);
-    if (success) {
-      setSelectedStudentId(null);
-      setSelectedRequestId(null);
+  useEffect(() => {
+    if (user?.id) {
+      fetchLessonRequests();
     }
-    setIsUpdating(false);
+  }, [user?.id]);
+
+  const fetchLessonRequests = async () => {
+    try {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('lesson_requests')
+        .select(`
+          *,
+          profiles!lesson_requests_student_id_fkey (
+            first_name,
+            last_name,
+            avatar_url,
+            city
+          ),
+          subjects (
+            name
+          )
+        `)
+        .eq('tutor_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      setRequests(data || []);
+    } catch (error) {
+      console.error('Error fetching lesson requests:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось загрузить запросы на занятия',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleViewProfile = (studentId: string, requestId: string) => {
-    setSelectedStudentId(studentId);
-    setSelectedRequestId(requestId);
+  const handleAcceptRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('lesson_requests')
+        .update({
+          status: 'confirmed',
+          responded_at: new Date().toISOString(),
+          tutor_response: 'Запрос принят'
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Запрос принят',
+        description: 'Студент получил уведомление о подтверждении'
+      });
+
+      fetchLessonRequests();
+    } catch (error) {
+      console.error('Error accepting request:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось принять запрос',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const handleRejectRequest = async (requestId: string) => {
+    try {
+      const { error } = await supabase
+        .from('lesson_requests')
+        .update({
+          status: 'rejected',
+          responded_at: new Date().toISOString(),
+          tutor_response: 'Запрос отклонен'
+        })
+        .eq('id', requestId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Запрос отклонен',
+        description: 'Студент получил уведомление об отклонении'
+      });
+
+      fetchLessonRequests();
+    } catch (error) {
+      console.error('Error rejecting request:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось отклонить запрос',
+        variant: 'destructive'
+      });
+    }
   };
 
   const getStatusBadge = (status: string) => {
-    const variants = {
-      pending: "default",
-      confirmed: "default",
-      rejected: "destructive",
-      completed: "secondary",
-      cancelled: "outline"
-    } as const;
-
-    const labels = {
-      pending: "Ожидает ответа",
-      confirmed: "Подтверждено",
-      rejected: "Отклонено",
-      completed: "Завершено",
-      cancelled: "Отменено"
-    };
-
-    return (
-      <Badge variant={variants[status as keyof typeof variants]}>
-        {labels[status as keyof typeof labels]}
-      </Badge>
-    );
+    switch (status) {
+      case 'pending':
+        return <Badge variant="outline" className="text-orange-600">Ожидает ответа</Badge>;
+      case 'confirmed':
+        return <Badge variant="default" className="bg-green-600">Подтвержден</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Отклонен</Badge>;
+      case 'cancelled':
+        return <Badge variant="secondary">Отменен</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
   if (isLoading) {
     return (
       <div className="flex justify-center py-8">
-        <Loader />
+        <Loader size="lg" />
       </div>
     );
   }
 
-  const pendingRequests = lessonRequests.filter(req => req.status === 'pending');
-  const otherRequests = lessonRequests.filter(req => req.status !== 'pending');
-
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold mb-4">Запросы на занятия</h2>
-        
-        {pendingRequests.length > 0 && (
-          <div className="mb-8">
-            <h3 className="text-lg font-semibold mb-4 text-orange-600">
-              Ожидают ответа ({pendingRequests.length})
-            </h3>
-            <div className="grid gap-4">
-              {pendingRequests.map((request) => (
-                <Card key={request.id} className="border-orange-200">
-                  <CardContent className="p-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Запросы на занятия</h2>
+        <Badge variant="outline" className="text-lg px-3 py-1">
+          {requests.filter(r => r.status === 'pending').length} новых
+        </Badge>
+      </div>
+
+      {requests.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-8">
+            <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium mb-2">Нет запросов на занятия</h3>
+            <p className="text-gray-500">
+              Когда студенты отправят вам запросы на занятия, они появятся здесь
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {requests.map((request) => (
+            <Card key={request.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="p-6">
+                <div className="flex items-start space-x-4">
+                  <Avatar className="h-12 w-12">
+                    <AvatarImage src={request.profiles.avatar_url} />
+                    <AvatarFallback>
+                      {request.profiles.first_name[0]}{request.profiles.last_name[0]}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        <Avatar>
-                          <AvatarImage src={request.student?.avatar_url || ""} />
-                          <AvatarFallback>
-                            <User className="h-4 w-4" />
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium">
-                              {request.student?.first_name} {request.student?.last_name}
-                            </h4>
-                            {getStatusBadge(request.status)}
-                          </div>
-                          
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm text-muted-foreground">
-                            <div className="flex items-center">
-                              <BookOpen className="h-4 w-4 mr-1" />
-                              {request.subject?.name || 'Предмет не указан'}
-                            </div>
-                            <div className="flex items-center">
-                              <Calendar className="h-4 w-4 mr-1" />
-                              {format(new Date(request.requested_date), 'd MMMM yyyy', { locale: ru })}
-                            </div>
-                            <div className="flex items-center">
-                              <Clock className="h-4 w-4 mr-1" />
-                              {request.requested_start_time} - {request.requested_end_time}
-                            </div>
-                          </div>
-                          
-                          {request.message && (
-                            <div className="flex items-start">
-                              <MessageSquare className="h-4 w-4 mr-1 mt-0.5 text-muted-foreground" />
-                              <p className="text-sm text-muted-foreground">{request.message}</p>
-                            </div>
-                          )}
-                        </div>
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          {request.profiles.first_name} {request.profiles.last_name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          {request.profiles.city}
+                        </p>
                       </div>
-                      
-                      <div className="flex space-x-2 ml-4">
+                      {getStatusBadge(request.status)}
+                    </div>
+
+                    <div className="mt-3 space-y-2">
+                      <div className="flex items-center text-sm">
+                        <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span className="font-medium">Предмет:</span>
+                        <span className="ml-1">{request.subjects.name}</span>
+                      </div>
+
+                      <div className="flex items-center text-sm">
+                        <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                        <span className="font-medium">Дата и время:</span>
+                        <span className="ml-1">
+                          {format(new Date(request.requested_date), 'dd MMMM yyyy', { locale: ru })} 
+                          с {request.requested_start_time} до {request.requested_end_time}
+                        </span>
+                      </div>
+
+                      {request.message && (
+                        <div className="flex items-start text-sm">
+                          <MessageSquare className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
+                          <div>
+                            <span className="font-medium">Сообщение:</span>
+                            <p className="mt-1 text-muted-foreground">{request.message}</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="text-xs text-muted-foreground">
+                        Запрос отправлен {format(new Date(request.created_at), 'dd.MM.yyyy в HH:mm', { locale: ru })}
+                      </div>
+
+                      <div className="flex items-center gap-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleViewProfile(request.student_id, request.id)}
+                          onClick={() => {
+                            setSelectedStudentId(request.student_id);
+                            setSelectedRequestId(request.id);
+                          }}
                           className="flex items-center gap-1"
                         >
-                          <Eye className="h-4 w-4" />
-                          Профиль
+                          <User className="h-4 w-4" />
+                          Профиль студента
                         </Button>
+
+                        {request.status === 'pending' && (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRejectRequest(request.id)}
+                              className="flex items-center gap-1 text-red-600 hover:text-red-700"
+                            >
+                              <X className="h-4 w-4" />
+                              Отклонить
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleAcceptRequest(request.id)}
+                              className="flex items-center gap-1"
+                            >
+                              <Check className="h-4 w-4" />
+                              Принять
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {otherRequests.length > 0 && (
-          <div>
-            <h3 className="text-lg font-semibold mb-4">История запросов</h3>
-            <div className="grid gap-4">
-              {otherRequests.map((request) => (
-                <Card key={request.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={request.student?.avatar_url || ""} />
-                          <AvatarFallback>
-                            <User className="h-3 w-3" />
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div className="flex-1 space-y-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-sm">
-                              {request.student?.first_name} {request.student?.last_name}
-                            </h4>
-                            {getStatusBadge(request.status)}
-                          </div>
-                          
-                          <div className="flex items-center space-x-4 text-xs text-muted-foreground">
-                            <span>{request.subject?.name}</span>
-                            <span>{format(new Date(request.requested_date), 'd MMM', { locale: ru })}</span>
-                            <span>{request.requested_start_time}</span>
-                          </div>
-                          
-                          {request.tutor_response && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Ваш ответ: {request.tutor_response}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {lessonRequests.length === 0 && (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <Clock className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Нет запросов на занятия</h3>
-              <p className="text-gray-500">
-                Когда студенты отправят вам запросы на занятия, они появятся здесь
-              </p>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {selectedStudentId && selectedRequestId && (
         <StudentProfileRequestDialog
@@ -211,8 +294,8 @@ export const LessonRequestsTab = () => {
           }}
           studentId={selectedStudentId}
           requestId={selectedRequestId}
-          onAccept={(requestId) => handleStatusUpdate(requestId, 'confirmed')}
-          onReject={(requestId) => handleStatusUpdate(requestId, 'rejected')}
+          onAccept={handleAcceptRequest}
+          onReject={handleRejectRequest}
         />
       )}
     </div>

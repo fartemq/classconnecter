@@ -26,16 +26,18 @@ interface TutorCardProps {
     };
     is_online?: boolean;
   };
-  onContact?: (tutorId: string) => void;
-  onFavorite?: (tutorId: string) => void;
-  isFavorite?: boolean;
+  onRequestTutor?: (tutorId: string) => void;
+  onAddToFavorites?: (tutorId: string) => void;
+  isInFavorites?: boolean;
+  relationshipStatus?: string;
 }
 
 export const TutorCard: React.FC<TutorCardProps> = ({
   tutor,
-  onContact,
-  onFavorite,
-  isFavorite = false
+  onRequestTutor,
+  onAddToFavorites,
+  isInFavorites = false,
+  relationshipStatus
 }) => {
   const [showRequestModal, setShowRequestModal] = useState(false);
 
@@ -80,10 +82,10 @@ export const TutorCard: React.FC<TutorCardProps> = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onFavorite?.(tutor.id)}
-                  className={isFavorite ? "text-red-500" : "text-muted-foreground"}
+                  onClick={() => onAddToFavorites?.(tutor.id)}
+                  className={isInFavorites ? "text-red-500" : "text-muted-foreground"}
                 >
-                  <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
+                  <Heart className={`h-4 w-4 ${isInFavorites ? "fill-current" : ""}`} />
                 </Button>
               </div>
 
@@ -145,7 +147,7 @@ export const TutorCard: React.FC<TutorCardProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onContact?.(tutor.id)}
+                    onClick={() => onRequestTutor?.(tutor.id)}
                     className="flex items-center gap-1"
                   >
                     <MessageCircle className="h-4 w-4" />

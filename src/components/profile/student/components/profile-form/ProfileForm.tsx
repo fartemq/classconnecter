@@ -32,10 +32,39 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ profile, updateProfile
   });
   const { toast } = useToast();
 
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [name]: value
+    }));
+  };
+
+  const handleSelectChange = (name: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      phone: value
+    }));
+  };
+
+  const handleBudgetChange = (value: number[]) => {
+    setFormData(prev => ({
+      ...prev,
+      budget: value[0]
+    }));
+  };
+
+  const handleAvatarUpdate = (url: string) => {
+    setFormData(prev => ({
+      ...prev,
+      avatar_url: url
     }));
   };
 
@@ -73,23 +102,34 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({ profile, updateProfile
         <ProfileAvatar
           avatarUrl={formData.avatar_url}
           firstName={formData.first_name}
-          onAvatarChange={(url) => handleInputChange('avatar_url', url)}
+          lastName={formData.last_name}
+          onAvatarUpdate={handleAvatarUpdate}
         />
       </div>
 
       <PersonalInfoForm
-        data={formData}
-        onChange={handleInputChange}
+        firstName={formData.first_name}
+        lastName={formData.last_name}
+        city={formData.city}
+        phone={formData.phone}
+        onInputChange={handleInputChange}
+        onPhoneChange={handlePhoneChange}
       />
 
       <EducationForm
-        data={formData}
-        onChange={handleInputChange}
+        educationalLevel={formData.educational_level}
+        school={formData.school}
+        grade={formData.grade}
+        learningGoals={formData.learning_goals}
+        budget={formData.budget}
+        onInputChange={handleInputChange}
+        onSelectChange={handleSelectChange}
+        onBudgetChange={handleBudgetChange}
       />
 
       <BioForm
-        data={formData}
-        onChange={handleInputChange}
+        bio={formData.bio}
+        onInputChange={handleInputChange}
       />
 
       <div className="flex justify-end pt-6 border-t">
