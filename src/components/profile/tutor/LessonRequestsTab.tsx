@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
 import { StudentProfileRequestDialog } from "../student/StudentProfileRequestDialog";
+import { TutorTimeSlotSelector } from "./TutorTimeSlotSelector";
 
 interface LessonRequest {
   id: string;
@@ -23,6 +24,7 @@ interface LessonRequest {
   message?: string;
   status: string;
   created_at: string;
+  tutor_response?: string;
   profiles: {
     first_name: string;
     last_name: string;
@@ -41,6 +43,11 @@ export const LessonRequestsTab: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
+  const [timeSlotSelectorData, setTimeSlotSelectorData] = useState<{
+    requestId: string;
+    studentName: string;
+    subject: string;
+  } | null>(null);
 
   useEffect(() => {
     if (user?.id) {
@@ -82,33 +89,12 @@ export const LessonRequestsTab: React.FC = () => {
     }
   };
 
-  const handleAcceptRequest = async (requestId: string) => {
-    try {
-      const { error } = await supabase
-        .from('lesson_requests')
-        .update({
-          status: 'confirmed',
-          responded_at: new Date().toISOString(),
-          tutor_response: 'Запрос принят'
-        })
-        .eq('id', requestId);
-
-      if (error) throw error;
-
-      toast({
-        title: 'Запрос принят',
-        description: 'Студент получил уведомление о подтверждении'
-      });
-
-      fetchLessonRequests();
-    } catch (error) {
-      console.error('Error accepting request:', error);
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось принять запрос',
-        variant: 'destructive'
-      });
-    }
+  const handleProposeTime = (request: LessonRequest) => {
+    setTimeSlotSelectorData({
+      requestId: request.id,
+      studentName: `${request.profiles.first_name} ${request.profiles.last_name}`,
+      subject: request.subjects.name
+    });
   };
 
   const handleRejectRequest = async (requestId: string) => {
@@ -144,6 +130,8 @@ export const LessonRequestsTab: React.FC = () => {
     switch (status) {
       case 'pending':
         return <Badge variant="outline" className="text-orange-600">Ожидает ответа</Badge>;
+      case 'time_slots_proposed':
+        return <Badge variant="default" className="bg-blue-600">Время предложено</Badge>;
       case 'confirmed':
         return <Badge variant="default" className="bg-green-600">Подтвержден</Badge>;
       case 'rejected':
@@ -215,15 +203,6 @@ export const LessonRequestsTab: React.FC = () => {
                         <span className="ml-1">{request.subjects.name}</span>
                       </div>
 
-                      <div className="flex items-center text-sm">
-                        <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                        <span className="font-medium">Дата и время:</span>
-                        <span className="ml-1">
-                          {format(new Date(request.requested_date), 'dd MMMM yyyy', { locale: ru })} 
-                          с {request.requested_start_time} до {request.requested_end_time}
-                        </span>
-                      </div>
-
                       {request.message && (
                         <div className="flex items-start text-sm">
                           <MessageSquare className="h-4 w-4 mr-2 mt-0.5 text-muted-foreground" />
@@ -267,11 +246,11 @@ export const LessonRequestsTab: React.FC = () => {
                             </Button>
                             <Button
                               size="sm"
-                              onClick={() => handleAcceptRequest(request.id)}
+                              onClick={() => handleProposeTime(request)}
                               className="flex items-center gap-1"
                             >
-                              <Check className="h-4 w-4" />
-                              Принять
+                              <Clock className="h-4 w-4" />
+                              Предложить время
                             </Button>
                           </>
                         )}
@@ -294,8 +273,21 @@ export const LessonRequestsTab: React.FC = () => {
           }}
           studentId={selectedStudentId}
           requestId={selectedRequestId}
-          onAccept={handleAcceptRequest}
-          onReject={handleRejectRequest}
+          onAccept={() => {}}
+          onReject={() => {}}
+        />
+      )}
+
+      {timeSlotSelectorData && (
+        <TutorTimeSlotSelector
+          isOpen={!!timeSlotSelectorData}
+          onClose={() => {
+            setTimeSlotSelectorData(null);
+            fetchLessonRequests();
+          }}
+          requestId={timeSlotSelectorData.requestId}
+          studentName={timeSlotSelectorData.studentName}
+          subject={timeSlotSelectorData.subject}
         />
       )}
     </div>

@@ -4,8 +4,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, MapPin, BookOpen, Clock, Heart, MessageCircle, Calendar } from "lucide-react";
-import { LessonRequestModal } from "../LessonRequestModal";
+import { Star, MapPin, BookOpen, Clock, Heart, MessageCircle, Calendar, User } from "lucide-react";
+import { SimpleLessonRequestModal } from "../SimpleLessonRequestModal";
+import { useNavigate } from "react-router-dom";
 
 interface TutorCardProps {
   tutor: {
@@ -40,12 +41,17 @@ export const TutorCard: React.FC<TutorCardProps> = ({
   relationshipStatus
 }) => {
   const [showRequestModal, setShowRequestModal] = useState(false);
+  const navigate = useNavigate();
 
   const averageRate = tutor.subjects?.length ? 
     Math.round(tutor.subjects.reduce((sum, s) => sum + (s.hourly_rate || 0), 0) / tutor.subjects.length) : 0;
 
   const totalExperience = tutor.subjects?.length ?
     Math.max(...tutor.subjects.map(s => s.experience_years || 0)) : 0;
+
+  const handleViewProfile = () => {
+    navigate(`/tutors/${tutor.id}`);
+  };
 
   return (
     <>
@@ -147,6 +153,16 @@ export const TutorCard: React.FC<TutorCardProps> = ({
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={handleViewProfile}
+                    className="flex items-center gap-1"
+                  >
+                    <User className="h-4 w-4" />
+                    Профиль
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={() => onRequestTutor?.(tutor.id)}
                     className="flex items-center gap-1"
                   >
@@ -169,7 +185,7 @@ export const TutorCard: React.FC<TutorCardProps> = ({
         </CardContent>
       </Card>
 
-      <LessonRequestModal
+      <SimpleLessonRequestModal
         isOpen={showRequestModal}
         onClose={() => setShowRequestModal(false)}
         tutor={{
