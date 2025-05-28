@@ -52,16 +52,38 @@ export const TutorsList: React.FC<TutorsListProps> = ({
     <div className="space-y-4">
       <p className="text-sm text-gray-500">Найдено репетиторов: {tutors.length}</p>
       
-      {tutors.map((tutor) => (
-        <TutorCard 
-          key={tutor.id} 
-          tutor={tutor} 
-          onRequestTutor={onRequestTutor ? () => onRequestTutor(tutor.id) : undefined}
-          onAddToFavorites={onAddToFavorites ? () => onAddToFavorites(tutor.id) : undefined}
-          isInFavorites={tutor.isFavorite}
-          relationshipStatus={tutor.relationshipStatus}
-        />
-      ))}
+      {tutors.map((tutor) => {
+        // Transform TutorSearchResult to match TutorCard props
+        const transformedTutor = {
+          id: tutor.id,
+          first_name: tutor.firstName,
+          last_name: tutor.lastName,
+          avatar_url: tutor.avatarUrl,
+          city: tutor.city,
+          bio: undefined, // TutorSearchResult doesn't have bio
+          subjects: tutor.subjects?.map(subject => ({
+            subject: { name: subject.name },
+            hourly_rate: subject.hourlyRate,
+            experience_years: tutor.experience
+          })),
+          reviews: tutor.rating ? {
+            average_rating: tutor.rating,
+            total_reviews: 0 // We don't have this data in TutorSearchResult
+          } : undefined,
+          is_online: undefined // We don't have this data in TutorSearchResult
+        };
+
+        return (
+          <TutorCard 
+            key={tutor.id} 
+            tutor={transformedTutor} 
+            onRequestTutor={onRequestTutor ? () => onRequestTutor(tutor.id) : undefined}
+            onAddToFavorites={onAddToFavorites ? () => onAddToFavorites(tutor.id) : undefined}
+            isInFavorites={tutor.isFavorite}
+            relationshipStatus={tutor.relationshipStatus}
+          />
+        );
+      })}
     </div>
   );
 };
