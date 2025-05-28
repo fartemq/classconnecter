@@ -3,32 +3,36 @@ import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, User, BookOpen, Calendar, MessageSquare } from "lucide-react";
+import { Clock, User, BookOpen, Calendar, MessageSquare, Eye } from "lucide-react";
 import { useLessonRequests } from "@/hooks/useLessonRequests";
 import { useAuth } from "@/hooks/useAuth";
 import { LessonRequest } from "@/types/lessonRequest";
 import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { StudentProfileRequestDialog } from "../student/StudentProfileRequestDialog";
 
 export const LessonRequestsTab = () => {
   const { user } = useAuth();
   const { lessonRequests, isLoading, updateLessonRequestStatus } = useLessonRequests(user?.id, 'tutor');
-  const [selectedRequest, setSelectedRequest] = useState<LessonRequest | null>(null);
-  const [response, setResponse] = useState("");
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(null);
   const [isUpdating, setIsUpdating] = useState(false);
 
   const handleStatusUpdate = async (requestId: string, status: 'confirmed' | 'rejected') => {
     setIsUpdating(true);
-    const success = await updateLessonRequestStatus(requestId, status, response);
+    const success = await updateLessonRequestStatus(requestId, status);
     if (success) {
-      setSelectedRequest(null);
-      setResponse("");
+      setSelectedStudentId(null);
+      setSelectedRequestId(null);
     }
     setIsUpdating(false);
+  };
+
+  const handleViewProfile = (studentId: string, requestId: string) => {
+    setSelectedStudentId(studentId);
+    setSelectedRequestId(requestId);
   };
 
   const getStatusBadge = (status: string) => {
@@ -122,51 +126,15 @@ export const LessonRequestsTab = () => {
                       </div>
                       
                       <div className="flex space-x-2 ml-4">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button 
-                              variant="outline" 
-                              size="sm"
-                              onClick={() => setSelectedRequest(request)}
-                            >
-                              Ответить
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>Ответ на запрос занятия</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4">
-                              <div className="space-y-2">
-                                <label className="text-sm font-medium">Ваш ответ (необязательно)</label>
-                                <Textarea
-                                  placeholder="Добавьте комментарий к вашему решению..."
-                                  value={response}
-                                  onChange={(e) => setResponse(e.target.value)}
-                                />
-                              </div>
-                              <div className="flex space-x-2">
-                                <Button
-                                  onClick={() => handleStatusUpdate(request.id, 'confirmed')}
-                                  disabled={isUpdating}
-                                  className="flex-1"
-                                >
-                                  {isUpdating && <Loader size="sm" className="mr-2" />}
-                                  Подтвердить
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  onClick={() => handleStatusUpdate(request.id, 'rejected')}
-                                  disabled={isUpdating}
-                                  className="flex-1"
-                                >
-                                  {isUpdating && <Loader size="sm" className="mr-2" />}
-                                  Отклонить
-                                </Button>
-                              </div>
-                            </div>
-                          </DialogContent>
-                        </Dialog>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewProfile(request.student_id, request.id)}
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="h-4 w-4" />
+                          Профиль
+                        </Button>
                       </div>
                     </div>
                   </CardContent>
@@ -233,6 +201,20 @@ export const LessonRequestsTab = () => {
           </Card>
         )}
       </div>
+
+      {selectedStudentId && selectedRequestId && (
+        <StudentProfileRequestDialog
+          isOpen={!!selectedStudentId}
+          onClose={() => {
+            setSelectedStudentId(null);
+            setSelectedRequestId(null);
+          }}
+          studentId={selectedStudentId}
+          requestId={selectedRequestId}
+          onAccept={(requestId) => handleStatusUpdate(requestId, 'confirmed')}
+          onReject={(requestId) => handleStatusUpdate(requestId, 'rejected')}
+        />
+      )}
     </div>
   );
 };

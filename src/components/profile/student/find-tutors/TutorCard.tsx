@@ -1,180 +1,182 @@
 
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Star, Heart, CheckCircle, UserPlus, MessageSquare, Clock } from 'lucide-react';
-import { TutorSearchResult } from '@/services/tutor/types';
-import { cn } from '@/lib/utils';
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Star, MapPin, BookOpen, Clock, Heart, MessageCircle, Calendar } from "lucide-react";
+import { LessonRequestModal } from "../LessonRequestModal";
 
 interface TutorCardProps {
-  tutor: TutorSearchResult;
-  onRequestTutor?: () => void;
-  onAddToFavorites?: () => void;
-  isInFavorites?: boolean;
-  relationshipStatus?: string;
+  tutor: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    avatar_url?: string;
+    city?: string;
+    bio?: string;
+    subjects?: Array<{
+      subject: { name: string };
+      hourly_rate?: number;
+      experience_years?: number;
+    }>;
+    reviews?: {
+      average_rating: number;
+      total_reviews: number;
+    };
+    is_online?: boolean;
+  };
+  onContact?: (tutorId: string) => void;
+  onFavorite?: (tutorId: string) => void;
+  isFavorite?: boolean;
 }
 
 export const TutorCard: React.FC<TutorCardProps> = ({
   tutor,
-  onRequestTutor,
-  onAddToFavorites,
-  isInFavorites,
-  relationshipStatus
+  onContact,
+  onFavorite,
+  isFavorite = false
 }) => {
-  // Find minimum hourly rate across all subjects
-  const minRate = tutor.subjects.length > 0
-    ? Math.min(...tutor.subjects.map(s => s.hourlyRate))
-    : null;
+  const [showRequestModal, setShowRequestModal] = useState(false);
 
-  // Create display name
-  const displayName = `${tutor.firstName || ''} ${tutor.lastName || ''}`.trim() || 'Репетитор';
-  
-  // Initial letter for avatar fallback
-  const initials = (tutor.firstName?.[0] || '') + (tutor.lastName?.[0] || '');
+  const averageRate = tutor.subjects?.length ? 
+    Math.round(tutor.subjects.reduce((sum, s) => sum + (s.hourly_rate || 0), 0) / tutor.subjects.length) : 0;
 
-  // Determine button state based on relationship status
-  const isRelationPending = relationshipStatus === 'pending';
-  const isRelationAccepted = relationshipStatus === 'accepted';
+  const totalExperience = tutor.subjects?.length ?
+    Math.max(...tutor.subjects.map(s => s.experience_years || 0)) : 0;
 
   return (
-    <Card className="overflow-hidden hover:shadow-md transition-shadow">
-      <CardContent className="p-0">
-        <div className="flex flex-col md:flex-row">
-          {/* Left column - avatar & price */}
-          <div className="w-full md:w-1/4 lg:w-1/5 bg-gray-50 p-4 flex flex-col items-center justify-between border-b md:border-b-0 md:border-r border-gray-100">
-            <div className="flex flex-col items-center">
-              <Avatar className="h-24 w-24 border-4 border-white shadow-sm mb-2">
-                <AvatarImage src={tutor.avatarUrl || undefined} alt={displayName} />
-                <AvatarFallback className="text-lg bg-primary text-primary-foreground">
-                  {initials}
+    <>
+      <Card className="hover:shadow-lg transition-shadow duration-200">
+        <CardContent className="p-6">
+          <div className="flex items-start space-x-4">
+            <div className="relative">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={tutor.avatar_url} alt={tutor.first_name} />
+                <AvatarFallback className="text-lg">
+                  {tutor.first_name[0]}{tutor.last_name?.[0]}
                 </AvatarFallback>
               </Avatar>
-              
-              {tutor.isVerified && (
-                <div className="flex items-center text-blue-600 text-xs font-medium mt-1">
-                  <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                  <span>Проверенный</span>
-                </div>
+              {tutor.is_online && (
+                <div className="absolute -bottom-1 -right-1 h-4 w-4 bg-green-500 border-2 border-white rounded-full" />
               )}
             </div>
-            
-            <div className="mt-4 text-center">
-              {minRate !== null ? (
+
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-500">от</p>
-                  <p className="text-xl font-bold text-primary">{minRate} ₽/час</p>
+                  <h3 className="font-semibold text-lg">
+                    {tutor.first_name} {tutor.last_name}
+                  </h3>
+                  
+                  {tutor.city && (
+                    <div className="flex items-center text-sm text-muted-foreground mt-1">
+                      <MapPin className="h-4 w-4 mr-1" />
+                      {tutor.city}
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <p className="text-sm font-medium">Цена по запросу</p>
-              )}
-            </div>
-          </div>
-          
-          {/* Right column - details */}
-          <div className="flex-1 p-4">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="text-xl font-semibold">{displayName}</h3>
-                {tutor.city && (
-                  <p className="text-sm text-gray-500 mt-1">{tutor.city}</p>
-                )}
-              </div>
-              
-              {onAddToFavorites && (
+
                 <Button
                   variant="ghost"
-                  size="icon"
-                  onClick={onAddToFavorites}
-                  title={isInFavorites ? 'Удалить из избранного' : 'Добавить в избранное'}
-                  className={cn(
-                    'h-8 w-8',
-                    isInFavorites ? 'text-rose-500 hover:text-rose-600' : 'text-gray-400 hover:text-gray-500'
-                  )}
+                  size="sm"
+                  onClick={() => onFavorite?.(tutor.id)}
+                  className={isFavorite ? "text-red-500" : "text-muted-foreground"}
                 >
-                  <Heart className="h-5 w-5" fill={isInFavorites ? 'currentColor' : 'none'} />
+                  <Heart className={`h-4 w-4 ${isFavorite ? "fill-current" : ""}`} />
                 </Button>
-              )}
-            </div>
-            
-            {/* Subject tags */}
-            <div className="mt-3 mb-4">
-              {tutor.subjects.slice(0, 4).map((subject) => (
-                <span
-                  key={subject.id}
-                  className="inline-block bg-gray-100 rounded-full px-2.5 py-1 text-xs font-medium text-gray-700 mr-1.5 mb-1.5"
-                >
-                  {subject.name}
-                </span>
-              ))}
-              {tutor.subjects.length > 4 && (
-                <span className="inline-block bg-gray-100 rounded-full px-2.5 py-1 text-xs font-medium text-gray-700">
-                  +{tutor.subjects.length - 4}
-                </span>
-              )}
-            </div>
-            
-            {/* Experience and rating */}
-            <div className="flex flex-wrap gap-3 mb-4">
-              {tutor.experience > 0 && (
-                <span className="text-sm text-gray-600">
-                  Опыт: {tutor.experience} {getPluralYears(tutor.experience)}
-                </span>
-              )}
-              
-              {tutor.rating !== null && (
-                <div className="flex items-center">
-                  <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
-                  <span className="text-sm font-medium">{tutor.rating.toFixed(1)}</span>
+              </div>
+
+              {/* Rating and Experience */}
+              <div className="flex items-center gap-4 mt-2">
+                {tutor.reviews && (
+                  <div className="flex items-center">
+                    <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                    <span className="ml-1 text-sm font-medium">
+                      {tutor.reviews.average_rating.toFixed(1)}
+                    </span>
+                    <span className="text-sm text-muted-foreground ml-1">
+                      ({tutor.reviews.total_reviews})
+                    </span>
+                  </div>
+                )}
+                
+                {totalExperience > 0 && (
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4 mr-1" />
+                    {totalExperience} лет опыта
+                  </div>
+                )}
+              </div>
+
+              {/* Subjects */}
+              {tutor.subjects && tutor.subjects.length > 0 && (
+                <div className="flex items-center mt-3">
+                  <BookOpen className="h-4 w-4 mr-2 text-muted-foreground" />
+                  <div className="flex flex-wrap gap-1">
+                    {tutor.subjects.slice(0, 3).map((subject, index) => (
+                      <Badge key={index} variant="secondary" className="text-xs">
+                        {subject.subject.name}
+                      </Badge>
+                    ))}
+                    {tutor.subjects.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{tutor.subjects.length - 3}
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               )}
-            </div>
-            
-            {/* Action buttons */}
-            <div className="flex flex-wrap gap-2 mt-2">
-              {onRequestTutor && !isRelationAccepted && (
-                <Button
-                  onClick={onRequestTutor}
-                  disabled={isRelationPending}
-                  variant={isRelationPending ? "outline" : "default"}
-                  className={isRelationPending ? "text-amber-600 border-amber-300" : ""}
-                  size="sm"
-                >
-                  {isRelationPending ? (
-                    <>
-                      <Clock className="mr-1.5 h-4 w-4" />
-                      Запрос отправлен
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="mr-1.5 h-4 w-4" />
-                      Отправить запрос
-                    </>
-                  )}
-                </Button>
+
+              {/* Bio */}
+              {tutor.bio && (
+                <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
+                  {tutor.bio}
+                </p>
               )}
-              
-              {isRelationAccepted && (
-                <Button variant="outline" size="sm">
-                  <MessageSquare className="mr-1.5 h-4 w-4" />
-                  Связаться
-                </Button>
-              )}
+
+              {/* Price and Actions */}
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-lg font-semibold">
+                  {averageRate > 0 ? `от ${averageRate} ₽/час` : 'Цена договорная'}
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onContact?.(tutor.id)}
+                    className="flex items-center gap-1"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    Написать
+                  </Button>
+                  
+                  <Button
+                    size="sm"
+                    onClick={() => setShowRequestModal(true)}
+                    className="flex items-center gap-1"
+                  >
+                    <Calendar className="h-4 w-4" />
+                    Запрос на занятие
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      <LessonRequestModal
+        isOpen={showRequestModal}
+        onClose={() => setShowRequestModal(false)}
+        tutor={{
+          id: tutor.id,
+          first_name: tutor.first_name,
+          last_name: tutor.last_name,
+          avatar_url: tutor.avatar_url
+        }}
+      />
+    </>
   );
 };
-
-// Helper function for pluralization
-function getPluralYears(years: number): string {
-  if (years % 10 === 1 && years % 100 !== 11) {
-    return 'год';
-  } else if ([2, 3, 4].includes(years % 10) && ![12, 13, 14].includes(years % 100)) {
-    return 'года';
-  } else {
-    return 'лет';
-  }
-}

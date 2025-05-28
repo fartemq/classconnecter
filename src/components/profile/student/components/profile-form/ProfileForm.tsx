@@ -1,127 +1,103 @@
 
-import React, { useState, useEffect } from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { toast } from "@/hooks/use-toast";
-import { Profile, ProfileUpdateParams } from "@/hooks/profiles";
-import { ProfileAvatar } from "../ProfileAvatar";
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Loader } from "@/components/ui/loader";
 import { PersonalInfoForm } from "../PersonalInfoForm";
 import { EducationForm } from "../EducationForm";
 import { BioForm } from "../BioForm";
-import { FormActions } from "../FormActions";
-import { useProfileFormState } from "./useProfileFormState";
+import { ProfileAvatar } from "../ProfileAvatar";
 
 interface ProfileFormProps {
-  profile: Profile;
-  updateProfile: (data: ProfileUpdateParams) => Promise<boolean>;
+  profile: any;
+  updateProfile: (data: any) => Promise<boolean>;
 }
 
 export const ProfileForm: React.FC<ProfileFormProps> = ({ profile, updateProfile }) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { formState, setFormState, handleInputChange, handleSelectChange, handleBudgetChange, handlePhoneChange, handleAvatarUpdate, resetForm } = useProfileFormState(profile);
-  
-  // Update form state when profile changes
-  useEffect(() => {
-    if (profile) {
-      resetForm(profile);
-    }
-  }, [profile, resetForm]);
-  
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const [isLoading, setIsLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    first_name: profile?.first_name || '',
+    last_name: profile?.last_name || '',
+    city: profile?.city || '',
+    phone: profile?.phone || '',
+    bio: profile?.bio || '',
+    avatar_url: profile?.avatar_url || '',
+    educational_level: profile?.student_profiles?.educational_level || '',
+    school: profile?.student_profiles?.school || '',
+    grade: profile?.student_profiles?.grade || '',
+    subjects: profile?.student_profiles?.subjects || [],
+    preferred_format: profile?.student_profiles?.preferred_format || [],
+    learning_goals: profile?.student_profiles?.learning_goals || '',
+    budget: profile?.student_profiles?.budget || 1000
+  });
+  const { toast } = useToast();
+
+  const handleInputChange = (field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    setIsLoading(true);
+
     try {
-      setIsSubmitting(true);
-      
-      // Log the form state before submission for debugging
-      console.log("Submitting form state:", formState);
-      console.log("Budget being submitted:", formState.budget);
-      
-      const success = await updateProfile(formState);
+      console.log("Submitting profile data:", formData);
+      const success = await updateProfile(formData);
       
       if (success) {
         toast({
           title: "Профиль обновлен",
-          description: "Данные профиля успешно обновлены",
+          description: "Ваши данные успешно сохранены"
         });
       } else {
-        toast({
-          variant: "destructive",
-          title: "Ошибка сохранения",
-          description: "Не удалось обновить профиль. Пожалуйста, попробуйте ещё раз.",
-        });
+        throw new Error("Failed to update profile");
       }
     } catch (error) {
       console.error("Error updating profile:", error);
       toast({
-        variant: "destructive",
-        title: "Ошибка сохранения",
-        description: "Не удалось обновить профиль. Пожалуйста, попробуйте ещё раз.",
+        title: "Ошибка",
+        description: "Не удалось обновить профиль",
+        variant: "destructive"
       });
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    resetForm(profile);
-    
-    toast({
-      title: "Изменения отменены",
-      description: "Форма возвращена к исходному состоянию",
-    });
-  };
-
   return (
-    <Card>
-      <CardContent className="p-6">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="flex flex-col items-center mb-6">
-            <ProfileAvatar 
-              avatarUrl={formState.avatar_url} 
-              firstName={formState.first_name} 
-              lastName={formState.last_name}
-              onAvatarUpdate={handleAvatarUpdate}
-            />
-            <p className="text-sm text-gray-500 mt-1">Нажмите на аватар для загрузки фото</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Personal Information */}
-            <PersonalInfoForm 
-              firstName={formState.first_name}
-              lastName={formState.last_name}
-              city={formState.city}
-              phone={formState.phone}
-              onInputChange={handleInputChange}
-              onPhoneChange={handlePhoneChange}
-            />
-            
-            {/* Education Information */}
-            <EducationForm 
-              educationalLevel={formState.educational_level}
-              school={formState.school}
-              grade={formState.grade}
-              learningGoals={formState.learning_goals}
-              budget={formState.budget}
-              onInputChange={handleInputChange}
-              onSelectChange={handleSelectChange}
-              onBudgetChange={handleBudgetChange}
-            />
-          </div>
-          
-          {/* Bio */}
-          <BioForm 
-            bio={formState.bio}
-            onInputChange={handleInputChange}
-          />
-          
-          {/* Form Actions */}
-          <FormActions 
-            isSubmitting={isSubmitting}
-            onCancel={handleCancel}
-          />
-        </form>
-      </CardContent>
-    </Card>
+    <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="text-center">
+        <ProfileAvatar
+          avatarUrl={formData.avatar_url}
+          firstName={formData.first_name}
+          onAvatarChange={(url) => handleInputChange('avatar_url', url)}
+        />
+      </div>
+
+      <PersonalInfoForm
+        data={formData}
+        onChange={handleInputChange}
+      />
+
+      <EducationForm
+        data={formData}
+        onChange={handleInputChange}
+      />
+
+      <BioForm
+        data={formData}
+        onChange={handleInputChange}
+      />
+
+      <div className="flex justify-end pt-6 border-t">
+        <Button type="submit" disabled={isLoading} className="min-w-32">
+          {isLoading && <Loader size="sm" className="mr-2" />}
+          Сохранить изменения
+        </Button>
+      </div>
+    </form>
   );
 };
