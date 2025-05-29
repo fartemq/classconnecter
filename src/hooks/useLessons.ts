@@ -19,10 +19,8 @@ export const useLessons = (date: Date | undefined) => {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData?.user) return;
       
-      // Format date as ISO string for the database query
       const dateStr = format(date, 'yyyy-MM-dd');
       
-      // Fetch lessons directly using Supabase
       const { data, error } = await supabase
         .from('lessons')
         .select(`
@@ -41,24 +39,19 @@ export const useLessons = (date: Date | undefined) => {
         `)
         .eq('tutor_id', userData.user.id)
         .gte('start_time', `${dateStr}T00:00:00`)
-        .lt('start_time', `${dateStr}T23:59:59`);
+        .lte('start_time', `${dateStr}T23:59:59`);
       
       if (error) throw error;
       
-      // Process the data and set lessons
       if (data) {
-        // Transform the data to match our Lesson type
         const transformedLessons: Lesson[] = data.map(item => {
           const student = ensureSingleObject(item.student);
           const tutor = ensureSingleObject(item.tutor);
           const subject = ensureSingleObject(item.subject);
           
-          // Extract time from the start_time
           const startTime = new Date(item.start_time);
-          const timeString = format(startTime, 'HH:mm:ss');
-          
-          // Calculate duration in minutes
           const endTime = new Date(item.end_time);
+          const timeString = format(startTime, 'HH:mm:ss');
           const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
           
           return {

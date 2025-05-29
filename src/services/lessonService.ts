@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Lesson } from "@/types/lesson";
 import { format } from "date-fns";
@@ -22,9 +23,8 @@ export const fetchStudentLessons = async (studentId: string): Promise<Lesson[]> 
         tutor_id,
         student_id,
         subject_id,
-        date,
-        time,
-        duration,
+        start_time,
+        end_time,
         status,
         created_at,
         updated_at,
@@ -32,7 +32,7 @@ export const fetchStudentLessons = async (studentId: string): Promise<Lesson[]> 
         subject:subjects (id, name)
       `)
       .eq('student_id', studentId)
-      .order('date', { ascending: true });
+      .order('start_time', { ascending: true });
       
     if (error) throw error;
     
@@ -43,14 +43,19 @@ export const fetchStudentLessons = async (studentId: string): Promise<Lesson[]> 
       const tutor = item.tutor ? ensureSingleObject(item.tutor) : undefined;
       const subject = item.subject ? ensureSingleObject(item.subject) : undefined;
       
+      // Extract date and time from start_time
+      const startTime = new Date(item.start_time);
+      const endTime = new Date(item.end_time);
+      const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+      
       return {
         id: item.id,
         tutor_id: item.tutor_id,
         student_id: item.student_id,
         subject_id: item.subject_id,
-        date: item.date,
-        time: item.time,
-        duration: item.duration,
+        date: format(startTime, 'yyyy-MM-dd'),
+        time: format(startTime, 'HH:mm:ss'),
+        duration: durationMinutes,
         status: item.status,
         created_at: item.created_at,
         updated_at: item.updated_at,
@@ -83,9 +88,8 @@ export const fetchTutorLessons = async (tutorId: string): Promise<Lesson[]> => {
         tutor_id,
         student_id,
         subject_id,
-        date,
-        time,
-        duration,
+        start_time,
+        end_time,
         status,
         created_at,
         updated_at,
@@ -93,7 +97,7 @@ export const fetchTutorLessons = async (tutorId: string): Promise<Lesson[]> => {
         subject:subjects (id, name)
       `)
       .eq('tutor_id', tutorId)
-      .order('date', { ascending: true });
+      .order('start_time', { ascending: true });
       
     if (error) throw error;
     
@@ -104,14 +108,19 @@ export const fetchTutorLessons = async (tutorId: string): Promise<Lesson[]> => {
       const student = item.student ? ensureSingleObject(item.student) : undefined;
       const subject = item.subject ? ensureSingleObject(item.subject) : undefined;
       
+      // Extract date and time from start_time
+      const startTime = new Date(item.start_time);
+      const endTime = new Date(item.end_time);
+      const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+      
       return {
         id: item.id,
         tutor_id: item.tutor_id,
         student_id: item.student_id,
         subject_id: item.subject_id,
-        date: item.date,
-        time: item.time,
-        duration: item.duration,
+        date: format(startTime, 'yyyy-MM-dd'),
+        time: format(startTime, 'HH:mm:ss'),
+        duration: durationMinutes,
         status: item.status,
         created_at: item.created_at,
         updated_at: item.updated_at,
@@ -147,9 +156,8 @@ export const fetchLessonsByDate = async (userId: string, date: Date, role: 'stud
         tutor_id,
         student_id,
         subject_id,
-        date,
-        time,
-        duration,
+        start_time,
+        end_time,
         status,
         created_at,
         updated_at,
@@ -158,7 +166,8 @@ export const fetchLessonsByDate = async (userId: string, date: Date, role: 'stud
         subject:subjects (id, name)
       `)
       .eq(fieldName, userId)
-      .eq('date', formattedDate);
+      .gte('start_time', `${formattedDate}T00:00:00`)
+      .lte('start_time', `${formattedDate}T23:59:59`);
       
     if (error) throw error;
     
@@ -170,14 +179,19 @@ export const fetchLessonsByDate = async (userId: string, date: Date, role: 'stud
       const tutor = item.tutor ? ensureSingleObject(item.tutor) : undefined;
       const subject = item.subject ? ensureSingleObject(item.subject) : undefined;
       
+      // Extract date and time from start_time
+      const startTime = new Date(item.start_time);
+      const endTime = new Date(item.end_time);
+      const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+      
       return {
         id: item.id,
         tutor_id: item.tutor_id,
         student_id: item.student_id,
         subject_id: item.subject_id,
-        date: item.date,
-        time: item.time,
-        duration: item.duration,
+        date: format(startTime, 'yyyy-MM-dd'),
+        time: format(startTime, 'HH:mm:ss'),
+        duration: durationMinutes,
         status: item.status,
         created_at: item.created_at,
         updated_at: item.updated_at,
@@ -211,8 +225,10 @@ export const bookLesson = async (request: LessonRequest): Promise<{ success: boo
   try {
     const { studentId, tutorId, subjectId, date, startTime, endTime, duration } = request;
     
-    // Format the date as ISO string (YYYY-MM-DD)
+    // Create datetime strings for start_time and end_time
     const formattedDate = format(date, 'yyyy-MM-dd');
+    const startDateTime = `${formattedDate}T${startTime}`;
+    const endDateTime = `${formattedDate}T${endTime}`;
     
     // Create the lesson
     const { data, error } = await supabase
@@ -221,9 +237,8 @@ export const bookLesson = async (request: LessonRequest): Promise<{ success: boo
         tutor_id: tutorId,
         student_id: studentId,
         subject_id: subjectId,
-        date: formattedDate,
-        time: startTime,
-        duration: duration,
+        start_time: startDateTime,
+        end_time: endDateTime,
         status: 'pending'
       })
       .select()
@@ -272,9 +287,8 @@ export const getLessonDetails = async (lessonId: string): Promise<Lesson | null>
         tutor_id,
         student_id,
         subject_id,
-        date,
-        time,
-        duration,
+        start_time,
+        end_time,
         status,
         created_at,
         updated_at,
@@ -293,14 +307,19 @@ export const getLessonDetails = async (lessonId: string): Promise<Lesson | null>
     const tutor = data.tutor ? ensureSingleObject(data.tutor) : undefined;
     const subject = data.subject ? ensureSingleObject(data.subject) : undefined;
     
+    // Extract date and time from start_time
+    const startTime = new Date(data.start_time);
+    const endTime = new Date(data.end_time);
+    const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
+    
     return {
       id: data.id,
       tutor_id: data.tutor_id,
       student_id: data.student_id,
       subject_id: data.subject_id,
-      date: data.date,
-      time: data.time,
-      duration: data.duration,
+      date: format(startTime, 'yyyy-MM-dd'),
+      time: format(startTime, 'HH:mm:ss'),
+      duration: durationMinutes,
       status: data.status,
       created_at: data.created_at,
       updated_at: data.updated_at,

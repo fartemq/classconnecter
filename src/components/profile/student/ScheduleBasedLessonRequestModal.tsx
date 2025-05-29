@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Card, CardContent } from "@/components/ui/card";
-import { User, BookOpen, MessageSquare, Calendar as CalendarIcon, Clock } from "lucide-react";
+import { User, BookOpen, MessageSquare, Calendar as CalendarIcon, Clock, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,18 +55,10 @@ export const ScheduleBasedLessonRequestModal: React.FC<ScheduleBasedLessonReques
     message: ''
   });
 
-  // Генерируем даты на следующие 14 дней
-  const getNext14Days = () => {
-    const dates = [];
-    for (let i = 1; i <= 14; i++) {
-      dates.push(addDays(new Date(), i));
-    }
-    return dates;
-  };
-
   useEffect(() => {
     if (isOpen) {
       fetchSubjects();
+      resetForm();
     }
   }, [isOpen]);
 
@@ -75,6 +67,13 @@ export const ScheduleBasedLessonRequestModal: React.FC<ScheduleBasedLessonReques
       fetchAvailableSlots(selectedDate);
     }
   }, [selectedDate, tutor.id]);
+
+  const resetForm = () => {
+    setFormData({ subject_id: '', message: '' });
+    setSelectedDate(undefined);
+    setSelectedSlot(null);
+    setAvailableSlots([]);
+  };
 
   const fetchSubjects = async () => {
     try {
@@ -101,6 +100,11 @@ export const ScheduleBasedLessonRequestModal: React.FC<ScheduleBasedLessonReques
       }
     } catch (error) {
       console.error('Error fetching subjects:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить предметы",
+        variant: "destructive"
+      });
     }
   };
 
@@ -108,11 +112,9 @@ export const ScheduleBasedLessonRequestModal: React.FC<ScheduleBasedLessonReques
     try {
       setIsLoading(true);
       
-      // Получаем день недели (1-7, где 1 = понедельник)
       const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
       const formattedDate = format(date, 'yyyy-MM-dd');
 
-      // Получаем расписание репетитора на этот день недели
       const { data: scheduleData, error: scheduleError } = await supabase
         .from('tutor_schedule')
         .select('*')
@@ -127,7 +129,6 @@ export const ScheduleBasedLessonRequestModal: React.FC<ScheduleBasedLessonReques
         return;
       }
 
-      // Получаем уже забронированные занятия на эту дату
       const { data: lessonsData, error: lessonsError } = await supabase
         .from('lessons')
         .select('start_time, end_time')
@@ -138,9 +139,7 @@ export const ScheduleBasedLessonRequestModal: React.FC<ScheduleBasedLessonReques
 
       if (lessonsError) throw lessonsError;
 
-      // Фильтруем доступные слоты, исключая забронированные
       const available = scheduleData.filter(slot => {
-        // Проверяем, не пересекается ли этот слот с уже забронированными
         return !lessonsData?.some(lesson => {
           const lessonStart = new Date(lesson.start_time).toTimeString().slice(0, 5);
           const lessonEnd = new Date(lesson.end_time).toTimeString().slice(0, 5);
@@ -185,46 +184,34 @@ export const ScheduleBasedLessonRequestModal: React.FC<ScheduleBasedLessonReques
 
     setIsLoading(true);
     try {
-      // Создаем запрос на занятие с предложенным временем
-      const timeSlotData = {
-        date: selectedSlot.date,
-        start_time: selectedSlot.time_slot.start_time,
-        end_time: selectedSlot.time_slot.end_time
-      };
+      // Сразу создаем занятие вместо сложной схемы с запросами
+      const startDateTime = `${selectedSlot.date}T${selectedSlot.time_slot.start_time}`;
+      const endDateTime = `${selectedSlot.date}T${selectedSlot.time_slot.end_time}`;
 
       const { error } = await supabase
-        .from('lesson_requests')
+        .from('lessons')
         .insert({
-          student_id: user?.id,
           tutor_id: tutor.id,
+          student_id: user?.id,
           subject_id: formData.subject_id,
-          requested_date: selectedSlot.date,
-          requested_start_time: selectedSlot.time_slot.start_time,
-          requested_end_time: selectedSlot.time_slot.end_time,
-          message: formData.message,
-          status: 'time_slots_proposed', // Сразу устанавливаем статус с предложенным временем
-          tutor_response: JSON.stringify([timeSlotData]) // Сохраняем выбранное время как предложение репетитора
+          start_time: startDateTime,
+          end_time: endDateTime,
+          status: 'pending'
         });
 
       if (error) throw error;
 
       toast({
-        title: "Запрос отправлен",
-        description: "Репетитор получит ваш запрос на выбранное время"
+        title: "Занятие забронировано",
+        description: "Ваше занятие успешно забронировано. Репетитор получит уведомление."
       });
 
       onClose();
-      setFormData({
-        subject_id: '',
-        message: ''
-      });
-      setSelectedDate(undefined);
-      setSelectedSlot(null);
     } catch (error) {
-      console.error('Error creating lesson request:', error);
+      console.error('Error booking lesson:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось отправить запрос",
+        description: "Не удалось забронировать занятие",
         variant: "destructive"
       });
     } finally {
@@ -244,7 +231,7 @@ export const ScheduleBasedLessonRequestModal: React.FC<ScheduleBasedLessonReques
         <DialogHeader>
           <DialogTitle className="flex items-center gap-3">
             <User className="h-5 w-5" />
-            Запрос на занятие
+            Бронирование занятия
           </DialogTitle>
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span>Репетитор: {tutor.first_name} {tutor.last_name}</span>
@@ -288,6 +275,20 @@ export const ScheduleBasedLessonRequestModal: React.FC<ScheduleBasedLessonReques
                   <MessageSquare className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 </div>
               </div>
+
+              {selectedSlot && (
+                <Card className="bg-green-50 border-green-200">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 text-green-800">
+                      <CheckCircle className="h-4 w-4" />
+                      <span className="font-medium">Выбранное время:</span>
+                    </div>
+                    <div className="mt-2 text-sm text-green-700">
+                      {format(new Date(selectedSlot.date), 'dd MMMM yyyy', { locale: ru })} в {selectedSlot.time_slot.start_time.slice(0, 5)} - {selectedSlot.time_slot.end_time.slice(0, 5)}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Правая колонка - Календарь и время */}
@@ -342,7 +343,7 @@ export const ScheduleBasedLessonRequestModal: React.FC<ScheduleBasedLessonReques
 
           <div className="bg-blue-50 p-3 rounded-lg">
             <p className="text-sm text-blue-800">
-              Выберите удобное время из расписания репетитора. После отправки запроса репетитор получит уведомление и сможет подтвердить занятие.
+              Выберите удобное время из расписания репетитора. Занятие будет сразу забронировано, и репетитор получит уведомление.
             </p>
           </div>
 
@@ -352,7 +353,7 @@ export const ScheduleBasedLessonRequestModal: React.FC<ScheduleBasedLessonReques
             </Button>
             <Button type="submit" disabled={isLoading || !selectedSlot || !formData.subject_id} className="flex-1">
               {isLoading && <Loader size="sm" className="mr-2" />}
-              Отправить запрос
+              Забронировать занятие
             </Button>
           </div>
         </form>

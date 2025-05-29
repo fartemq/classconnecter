@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, MapPin, BookOpen, Clock, Heart, User, Calendar } from "lucide-react";
+import { Star, MapPin, BookOpen, Clock, User, Calendar } from "lucide-react";
 import { ScheduleBasedLessonRequestModal } from "../ScheduleBasedLessonRequestModal";
 import { useNavigate } from "react-router-dom";
 
@@ -27,19 +27,9 @@ interface TutorCardProps {
     };
     is_online?: boolean;
   };
-  onRequestTutor?: (tutorId: string) => void;
-  onAddToFavorites?: (tutorId: string) => void;
-  isInFavorites?: boolean;
-  relationshipStatus?: string;
 }
 
-export const TutorCard: React.FC<TutorCardProps> = ({
-  tutor,
-  onRequestTutor,
-  onAddToFavorites,
-  isInFavorites = false,
-  relationshipStatus
-}) => {
+export const TutorCard: React.FC<TutorCardProps> = ({ tutor }) => {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const navigate = useNavigate();
 
@@ -84,15 +74,6 @@ export const TutorCard: React.FC<TutorCardProps> = ({
                     </div>
                   )}
                 </div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onAddToFavorites?.(tutor.id)}
-                  className={isInFavorites ? "text-red-500" : "text-muted-foreground"}
-                >
-                  <Heart className={`h-4 w-4 ${isInFavorites ? "fill-current" : ""}`} />
-                </Button>
               </div>
 
               {/* Rating and Experience */}

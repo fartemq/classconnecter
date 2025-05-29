@@ -37,18 +37,15 @@ export const TutorCard: React.FC<TutorCardProps> = ({
 }) => {
   const navigate = useNavigate();
   
-  // Extract first and last name from full name
   const nameParts = name.split(" ");
   const firstName = nameParts[0] || "";
   const lastName = nameParts.slice(1).join(" ") || "";
   
-  // ИСПРАВЛЕНО: Корректное определение минимальной цены
   const validSubjects = subjects.filter(s => typeof s.hourlyRate === 'number' && s.hourlyRate > 0);
   const lowestPrice = validSubjects.length > 0
     ? Math.min(...validSubjects.map(s => s.hourlyRate))
     : 0;
   
-  // ИСПРАВЛЕНО: Корректное форматирование цены
   const formattedPrice = lowestPrice > 0
     ? new Intl.NumberFormat("ru-RU", {
         style: "currency",
@@ -57,17 +54,12 @@ export const TutorCard: React.FC<TutorCardProps> = ({
       }).format(lowestPrice)
     : "По запросу";
   
-  // ИСПРАВЛЕНО: Изменен путь перехода на страницу с профилем репетитора
   const handleViewProfile = () => {
     navigate(`/tutors/${id}`);
   };
-  
-  const handleContact = () => {
-    navigate(`/profile/student/chats/${id}`);
-  };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-200">
       <CardContent className="p-0">
         <div className="grid grid-cols-12 gap-4">
           {/* Avatar section */}
@@ -111,7 +103,6 @@ export const TutorCard: React.FC<TutorCardProps> = ({
                 </div>
               )}
               
-              {/* ИСПРАВЛЕНО: Корректное отображение опыта */}
               {experience !== null && experience !== undefined && experience > 0 && (
                 <div className="flex items-center">
                   <BookOpen className="h-4 w-4 text-blue-500 mr-1" />
@@ -123,20 +114,11 @@ export const TutorCard: React.FC<TutorCardProps> = ({
             </div>
             
             <div className="mt-2">
-              <div className="text-sm font-medium">Предметы и стоимость:</div>
+              <div className="text-sm font-medium">Предметы:</div>
               <div className="flex flex-wrap gap-2 mt-1">
-                {/* ИСПРАВЛЕНО: Корректное отображение стоимости предметов */}
                 {subjects.slice(0, 3).map((subject) => (
                   <Badge key={subject.id} variant="secondary" className="font-normal">
-                    {subject.name}: {
-                      subject.hourlyRate > 0 
-                        ? `от ${new Intl.NumberFormat("ru-RU", {
-                            style: "currency",
-                            currency: "RUB",
-                            maximumFractionDigits: 0,
-                          }).format(subject.hourlyRate)}/ч` 
-                        : "по запросу"
-                    }
+                    {subject.name}
                   </Badge>
                 ))}
                 {subjects.length > 3 && (
@@ -146,31 +128,21 @@ export const TutorCard: React.FC<TutorCardProps> = ({
             </div>
           </div>
           
-          {/* Price and buttons section */}
+          {/* Price and button section */}
           <div className="col-span-12 sm:col-span-3 bg-gray-50 p-4 flex flex-col justify-center items-center">
-            <div className="text-right w-full mb-3">
+            <div className="text-center w-full mb-3">
               <div className="text-sm text-gray-500">от</div>
               <div className="text-xl font-bold">{formattedPrice}</div>
               <div className="text-sm text-gray-500">за занятие</div>
             </div>
             
-            <div className="flex flex-col w-full gap-2">
-              <Button 
-                variant="secondary" 
-                className="w-full" 
-                onClick={handleViewProfile}
-              >
-                Посмотреть профиль
-              </Button>
-              
-              <Button 
-                variant="default" 
-                className="w-full"
-                onClick={handleContact}
-              >
-                Связаться
-              </Button>
-            </div>
+            <Button 
+              variant="default" 
+              className="w-full" 
+              onClick={handleViewProfile}
+            >
+              Смотреть профиль
+            </Button>
           </div>
         </div>
       </CardContent>
