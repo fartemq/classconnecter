@@ -8,7 +8,7 @@ export interface LessonRequest {
   requested_start_time: string;
   requested_end_time: string;
   message: string | null;
-  status: 'pending' | 'confirmed' | 'rejected' | 'completed' | 'cancelled';
+  status: 'pending' | 'time_slots_proposed' | 'confirmed' | 'rejected' | 'completed' | 'cancelled';
   tutor_response: string | null;
   created_at: string;
   updated_at: string;
@@ -38,4 +38,10 @@ export interface CreateLessonRequestData {
   requested_start_time: string;
   requested_end_time: string;
   message?: string;
+}
+
+export interface TimeSlot {
+  date: string;
+  start_time: string;
+  end_time: string;
 }

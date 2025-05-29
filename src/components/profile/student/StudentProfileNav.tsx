@@ -1,33 +1,57 @@
 
-import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React from "react";
+import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
-  Calendar, Users, Heart, MessageSquare, 
-  FileText, Settings, User, ChevronDown, Sparkles
+  Search, 
+  Users, 
+  Calendar, 
+  MessageSquare, 
+  User, 
+  BarChart3, 
+  Settings, 
+  BookOpen,
+  FileText
 } from "lucide-react";
-import { 
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-
-export const studentNavItems = [
-  { name: "Расписание", path: "/profile/student/schedule", icon: Calendar, badge: 0 },
-  { name: "Репетиторы", path: "/profile/student/tutors", icon: Users },
-  { name: "Избранное", path: "/profile/student/favorites", icon: Heart },
-  { name: "Сообщения", path: "/profile/student/chats", icon: MessageSquare, badge: 2 },
-  { name: "Домашние задания", path: "/profile/student/homework", icon: FileText, badge: 1 },
-  { name: "Мой прогресс", path: "/profile/student/progress", icon: Sparkles },
-  { name: "Настройки", path: "/profile/student/settings", icon: Settings },
-  { name: "Мой профиль", path: "/profile/student/edit", icon: User },
-];
 
 export const StudentProfileNav = () => {
-  // Only needed for mobile navigation
-  // Since we're now using the header for all navigation
-  // This component is only for reference and will be removed in future updates
-  return null;
+  return (
+    <TabsList className="grid w-full grid-cols-5 lg:grid-cols-9 mb-6">
+      <TabsTrigger value="profile" className="flex items-center gap-2">
+        <User className="h-4 w-4" />
+        <span className="hidden sm:inline">Профиль</span>
+      </TabsTrigger>
+      <TabsTrigger value="find-tutors" className="flex items-center gap-2">
+        <Search className="h-4 w-4" />
+        <span className="hidden sm:inline">Поиск</span>
+      </TabsTrigger>
+      <TabsTrigger value="my-tutors" className="flex items-center gap-2">
+        <Users className="h-4 w-4" />
+        <span className="hidden sm:inline">Репетиторы</span>
+      </TabsTrigger>
+      <TabsTrigger value="lesson-requests" className="flex items-center gap-2">
+        <FileText className="h-4 w-4" />
+        <span className="hidden sm:inline">Запросы</span>
+      </TabsTrigger>
+      <TabsTrigger value="schedule" className="flex items-center gap-2">
+        <Calendar className="h-4 w-4" />
+        <span className="hidden sm:inline">Расписание</span>
+      </TabsTrigger>
+      <TabsTrigger value="homework" className="flex items-center gap-2">
+        <BookOpen className="h-4 w-4" />
+        <span className="hidden sm:inline">Домашние</span>
+      </TabsTrigger>
+      <TabsTrigger value="chats" className="flex items-center gap-2">
+        <MessageSquare className="h-4 w-4" />
+        <span className="hidden sm:inline">Чаты</span>
+      </TabsTrigger>
+      <TabsTrigger value="progress" className="flex items-center gap-2">
+        <BarChart3 className="h-4 w-4" />
+        <span className="hidden sm:inline">Прогресс</span>
+      </TabsTrigger>
+      <TabsTrigger value="settings" className="flex items-center gap-2">
+        <Settings className="h-4 w-4" />
+        <span className="hidden sm:inline">Настройки</span>
+      </TabsTrigger>
+    </TabsList>
+  );
 };
