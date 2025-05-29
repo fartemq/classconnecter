@@ -50,22 +50,51 @@ export const StudentTimeSlotPicker: React.FC<StudentTimeSlotPickerProps> = ({
 
     setIsLoading(true);
     try {
-      // Обновляем запрос с выбранным временем
-      const { error } = await supabase
+      // Получаем данные запроса
+      const { data: requestData, error: requestError } = await supabase
+        .from('lesson_requests')
+        .select('*')
+        .eq('id', requestId)
+        .single();
+
+      if (requestError) throw requestError;
+
+      // Создаем занятие в таблице lessons
+      const startDateTime = `${selectedSlot.date}T${selectedSlot.start_time}`;
+      const endDateTime = `${selectedSlot.date}T${selectedSlot.end_time}`;
+
+      const { data: lessonData, error: lessonError } = await supabase
+        .from('lessons')
+        .insert({
+          tutor_id: requestData.tutor_id,
+          student_id: requestData.student_id,
+          subject_id: requestData.subject_id,
+          start_time: startDateTime,
+          end_time: endDateTime,
+          status: 'confirmed'
+        })
+        .select()
+        .single();
+
+      if (lessonError) throw lessonError;
+
+      // Обновляем статус запроса
+      const { error: updateError } = await supabase
         .from('lesson_requests')
         .update({
           status: 'confirmed',
           requested_date: selectedSlot.date,
           requested_start_time: selectedSlot.start_time,
-          requested_end_time: selectedSlot.end_time
+          requested_end_time: selectedSlot.end_time,
+          responded_at: new Date().toISOString()
         })
         .eq('id', requestId);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
       toast({
         title: "Занятие подтверждено",
-        description: "Репетитор получит уведомление о подтвержденном времени"
+        description: "Занятие успешно забронировано. Репетитор получит уведомление."
       });
 
       onClose();

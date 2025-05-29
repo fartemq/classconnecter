@@ -4,8 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Star, MapPin, BookOpen, Clock, Heart, MessageCircle, Calendar, User } from "lucide-react";
-import { SimpleLessonRequestModal } from "../SimpleLessonRequestModal";
+import { Star, MapPin, BookOpen, Clock, Heart, User, Calendar } from "lucide-react";
+import { ScheduleBasedLessonRequestModal } from "../ScheduleBasedLessonRequestModal";
 import { useNavigate } from "react-router-dom";
 
 interface TutorCardProps {
@@ -161,16 +161,6 @@ export const TutorCard: React.FC<TutorCardProps> = ({
                   </Button>
                   
                   <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onRequestTutor?.(tutor.id)}
-                    className="flex items-center gap-1"
-                  >
-                    <MessageCircle className="h-4 w-4" />
-                    Написать
-                  </Button>
-                  
-                  <Button
                     size="sm"
                     onClick={() => setShowRequestModal(true)}
                     className="flex items-center gap-1"
@@ -185,7 +175,7 @@ export const TutorCard: React.FC<TutorCardProps> = ({
         </CardContent>
       </Card>
 
-      <SimpleLessonRequestModal
+      <ScheduleBasedLessonRequestModal
         isOpen={showRequestModal}
         onClose={() => setShowRequestModal(false)}
         tutor={{
