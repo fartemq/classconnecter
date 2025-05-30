@@ -27,33 +27,83 @@ export const useTutorProfile = () => {
 
       console.log("Updating tutor profile with data:", params);
 
-      // Update tutor-specific profile
-      const tutorUpdated = await updateTutorProfile(profile.id, params);
-      if (!tutorUpdated) {
-        throw new Error("Failed to update tutor profile");
+      // Update basic profile first
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({
+          first_name: params.first_name,
+          last_name: params.last_name,
+          bio: params.bio,
+          city: params.city,
+          avatar_url: params.avatar_url,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", profile.id);
+
+      if (profileError) {
+        console.error("Error updating basic profile:", profileError);
+        throw new Error("Failed to update basic profile");
       }
 
-      console.log("Tutor profile specific data updated successfully");
+      // Check if tutor_profiles record exists
+      const { data: existingTutorProfile, error: checkError } = await supabase
+        .from("tutor_profiles")
+        .select("id")
+        .eq("id", profile.id)
+        .maybeSingle();
 
-      // Update local state with ALL fields from params
+      if (checkError && checkError.code !== 'PGRST116') {
+        console.error("Error checking tutor profile:", checkError);
+        throw new Error("Failed to check tutor profile");
+      }
+
+      // Prepare tutor-specific data
+      const tutorData = {
+        education_institution: params.education_institution || null,
+        degree: params.degree || null,
+        graduation_year: params.graduation_year || new Date().getFullYear(),
+        methodology: params.methodology || null,
+        experience: params.experience || 0,
+        achievements: params.achievements || null,
+        video_url: params.video_url || null,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (existingTutorProfile) {
+        // Update existing tutor profile
+        const { error: tutorUpdateError } = await supabase
+          .from("tutor_profiles")
+          .update(tutorData)
+          .eq("id", profile.id);
+
+        if (tutorUpdateError) {
+          console.error("Error updating tutor profile:", tutorUpdateError);
+          throw new Error("Failed to update tutor profile");
+        }
+      } else {
+        // Create new tutor profile
+        const { error: tutorCreateError } = await supabase
+          .from("tutor_profiles")
+          .insert({
+            id: profile.id,
+            ...tutorData,
+            is_published: false,
+            education_verified: false,
+          });
+
+        if (tutorCreateError) {
+          console.error("Error creating tutor profile:", tutorCreateError);
+          throw new Error("Failed to create tutor profile");
+        }
+      }
+
+      // Update local state
       setProfile(prev => {
         if (!prev) return prev;
         return { 
           ...prev, 
           ...params,
-          // Explicitly maintain required Profile fields
-          id: prev.id,
-          role: prev.role,
-          created_at: prev.created_at,
-          updated_at: prev.updated_at,
-          // Explicitly update education fields to ensure they're properly stored in state
-          education_institution: params.education_institution || prev.education_institution,
-          degree: params.degree || prev.degree,
-          graduation_year: params.graduation_year || prev.graduation_year,
-          experience: params.experience || prev.experience,
-          methodology: params.methodology || prev.methodology,
-          achievements: params.achievements || prev.achievements,
-          video_url: params.video_url || prev.video_url
+          updated_at: new Date().toISOString(),
         };
       });
 
@@ -67,7 +117,7 @@ export const useTutorProfile = () => {
       console.error("Error in updateProfile:", error);
       toast({
         title: "Ошибка",
-        description: "Не удалось обновить профиль. Пожалуйста, попробуйте ещё раз.",
+        description: error instanceof Error ? error.message : "Не удалось обновить профиль",
         variant: "destructive",
       });
       return false;
@@ -93,7 +143,6 @@ export const useTutorProfile = () => {
         };
       } else {
         console.log("No tutor profile found, creating one");
-        // Create tutor profile if it doesn't exist
         await createRoleSpecificProfile(userId, 'tutor');
         return null;
       }

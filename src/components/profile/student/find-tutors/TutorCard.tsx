@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Star, MapPin, BookOpen, Clock, User, Calendar } from "lucide-react";
-import { ScheduleBasedLessonRequestModal } from "../ScheduleBasedLessonRequestModal";
+import { TrialLessonBooking } from "../booking/TrialLessonBooking";
 import { useNavigate } from "react-router-dom";
 
 interface TutorCardProps {
@@ -30,7 +30,7 @@ interface TutorCardProps {
 }
 
 export const TutorCard: React.FC<TutorCardProps> = ({ tutor }) => {
-  const [showRequestModal, setShowRequestModal] = useState(false);
+  const [showTrialBooking, setShowTrialBooking] = useState(false);
   const navigate = useNavigate();
 
   const averageRate = tutor.subjects?.length ? 
@@ -143,11 +143,11 @@ export const TutorCard: React.FC<TutorCardProps> = ({ tutor }) => {
                   
                   <Button
                     size="sm"
-                    onClick={() => setShowRequestModal(true)}
-                    className="flex items-center gap-1"
+                    onClick={() => setShowTrialBooking(true)}
+                    className="flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
                   >
                     <Calendar className="h-4 w-4" />
-                    Запрос на занятие
+                    Пробное занятие
                   </Button>
                 </div>
               </div>
@@ -156,9 +156,9 @@ export const TutorCard: React.FC<TutorCardProps> = ({ tutor }) => {
         </CardContent>
       </Card>
 
-      <ScheduleBasedLessonRequestModal
-        isOpen={showRequestModal}
-        onClose={() => setShowRequestModal(false)}
+      <TrialLessonBooking
+        isOpen={showTrialBooking}
+        onClose={() => setShowTrialBooking(false)}
         tutor={{
           id: tutor.id,
           first_name: tutor.first_name,
