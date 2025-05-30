@@ -9,7 +9,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { searchTutors } from '@/services/tutor/searchService';
-import { supabase } from "@/integrations/supabase/client";
 import { TutorSearchFilters } from '@/services/tutor/types';
 
 export const FindTutorsTab = () => {
@@ -89,136 +88,6 @@ export const FindTutorsTab = () => {
     loadTutors();
   };
 
-  const handleRequestTutor = async (tutorId) => {
-    if (!user?.id) {
-      toast({
-        title: 'Требуется авторизация',
-        description: 'Войдите или зарегистрируйтесь, чтобы отправить запрос репетитору',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    try {
-      console.log("Requesting tutor with ID:", tutorId);
-      
-      // Check if a relationship already exists
-      const { data: existingRel } = await supabase
-        .from('student_tutor_relationships')
-        .select()
-        .eq('student_id', user.id)
-        .eq('tutor_id', tutorId)
-        .maybeSingle();
-        
-      if (existingRel && existingRel.status === 'pending') {
-        toast({
-          title: 'Запрос уже отправлен',
-          description: 'Вы уже отправили запрос этому репетитору'
-        });
-        return;
-      }
-      
-      if (existingRel && existingRel.status === 'accepted') {
-        toast({
-          title: 'Связь уже установлена',
-          description: 'Вы уже работаете с этим репетитором'
-        });
-        return;
-      }
-
-      // Create a new relationship request
-      const { error } = await supabase
-        .from('student_tutor_relationships')
-        .insert({
-          student_id: user.id,
-          tutor_id: tutorId,
-          status: 'pending',
-          start_date: new Date().toISOString()
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: 'Запрос отправлен',
-        description: 'Репетитор получил ваш запрос. Вы получите уведомление, когда он примет решение.'
-      });
-
-      // Refresh the list to update relationship status
-      loadTutors();
-    } catch (error) {
-      console.error('Error sending request to tutor:', error);
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось отправить запрос репетитору',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  const handleAddToFavorites = async (tutorId) => {
-    if (!user?.id) {
-      toast({
-        title: 'Требуется авторизация',
-        description: 'Войдите или зарегистрируйтесь, чтобы добавить репетитора в избранное',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    try {
-      console.log("Toggling favorite status for tutor ID:", tutorId);
-      
-      // Check if already in favorites
-      const { data: existingFavorite } = await supabase
-        .from('favorite_tutors')
-        .select()
-        .eq('student_id', user.id)
-        .eq('tutor_id', tutorId)
-        .maybeSingle();
-
-      if (existingFavorite) {
-        // Remove from favorites
-        const { error } = await supabase
-          .from('favorite_tutors')
-          .delete()
-          .eq('student_id', user.id)
-          .eq('tutor_id', tutorId);
-
-        if (error) throw error;
-
-        toast({
-          title: 'Удалено из избранного',
-          description: 'Репетитор удален из списка избранного'
-        });
-      } else {
-        // Add to favorites
-        const { error } = await supabase
-          .from('favorite_tutors')
-          .insert({
-            student_id: user.id,
-            tutor_id: tutorId
-          });
-
-        if (error) throw error;
-
-        toast({
-          title: 'Добавлено в избранное',
-          description: 'Репетитор добавлен в список избранного'
-        });
-      }
-
-      // Refresh the list to update favorite status
-      loadTutors();
-    } catch (error) {
-      console.error('Error updating favorites:', error);
-      toast({
-        title: 'Ошибка',
-        description: 'Не удалось обновить список избранного',
-        variant: 'destructive'
-      });
-    }
-  };
-
   const handleFiltersChange = (newFilters) => {
     console.log("Filters changed:", newFilters);
     setFilters(newFilters);
@@ -268,8 +137,6 @@ export const FindTutorsTab = () => {
           <TutorsList 
             tutors={tutors} 
             isLoading={isLoading}
-            onRequestTutor={handleRequestTutor}
-            onAddToFavorites={handleAddToFavorites}
             onResetFilters={handleResetFilters}
           />
         </div>

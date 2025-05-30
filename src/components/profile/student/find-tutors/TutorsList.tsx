@@ -9,16 +9,12 @@ import { TutorSearchResult } from '@/services/tutor/types';
 interface TutorsListProps {
   tutors: TutorSearchResult[];
   isLoading: boolean;
-  onRequestTutor?: (tutorId: string) => void;
-  onAddToFavorites?: (tutorId: string) => void;
   onResetFilters?: () => void;
 }
 
 export const TutorsList: React.FC<TutorsListProps> = ({ 
   tutors, 
   isLoading, 
-  onRequestTutor, 
-  onAddToFavorites,
   onResetFilters
 }) => {
   
@@ -77,10 +73,6 @@ export const TutorsList: React.FC<TutorsListProps> = ({
           <TutorCard 
             key={tutor.id} 
             tutor={transformedTutor} 
-            onRequestTutor={onRequestTutor ? () => onRequestTutor(tutor.id) : undefined}
-            onAddToFavorites={onAddToFavorites ? () => onAddToFavorites(tutor.id) : undefined}
-            isInFavorites={tutor.isFavorite}
-            relationshipStatus={tutor.relationshipStatus}
           />
         );
       })}
