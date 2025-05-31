@@ -64,7 +64,11 @@ export const TutorChatsTab = () => {
       messages?.forEach(message => {
         const isFromTutor = message.sender_id === user?.id;
         const studentId = isFromTutor ? message.receiver_id : message.sender_id;
-        const studentData = isFromTutor ? message.receiver : message.sender;
+        
+        // Правильно извлекаем данные профиля
+        const studentData = isFromTutor 
+          ? (Array.isArray(message.receiver) ? message.receiver[0] : message.receiver)
+          : (Array.isArray(message.sender) ? message.sender[0] : message.sender);
         
         if (!chatMap.has(studentId)) {
           chatMap.set(studentId, {
