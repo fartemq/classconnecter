@@ -12,6 +12,8 @@ import { LessonRequestsTab } from "./LessonRequestsTab";
 import { NotificationsTab } from "./NotificationsTab";
 import { TutorAnalytics } from "./analytics/TutorAnalytics";
 import { ProfileCompletionChecker } from "./publish/ProfileCompletionChecker";
+import { TutorHomeworkManagement } from "./homework/TutorHomeworkManagement";
+import { TutorStudentSchedule } from "./schedule/TutorStudentSchedule";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Loader } from "@/components/ui/loader";
@@ -31,7 +33,13 @@ export const TutorProfileContent = () => {
     } else if (pathParts.includes('students')) {
       return "students";
     } else if (pathParts.includes('schedule')) {
+      // Check if this is student-specific schedule
+      if (location.search.includes('student=')) {
+        return "student-schedule";
+      }
       return "schedule";
+    } else if (pathParts.includes('homework')) {
+      return "homework";
     } else if (pathParts.includes('stats')) {
       return "analytics";
     } else if (pathParts.includes('settings')) {
@@ -50,7 +58,7 @@ export const TutorProfileContent = () => {
   // Update active tab when location changes
   React.useEffect(() => {
     setActiveTab(getActiveTabFromPath());
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   // Fetch subjects for the profile completion form
   const { data: subjects = [] } = useQuery({
@@ -89,6 +97,10 @@ export const TutorProfileContent = () => {
         return <StudentsTab />;
       case "schedule":
         return <ScheduleManagement />;
+      case "student-schedule":
+        return <TutorStudentSchedule />;
+      case "homework":
+        return <TutorHomeworkManagement />;
       case "analytics":
         return <TutorAnalytics tutorId={user.id} />;
       case "chats":
