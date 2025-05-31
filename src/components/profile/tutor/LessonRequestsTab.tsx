@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Calendar, Clock, User, BookOpen } from "lucide-react";
+import { Calendar, Clock, User, BookOpen, CheckCircle, XCircle } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 
 interface LessonRequest {
@@ -113,9 +113,15 @@ export const LessonRequestsTab = () => {
       toast({
         title: action === 'confirmed' ? "Занятие подтверждено" : "Запрос отклонен",
         description: action === 'confirmed' 
-          ? "Студент получит уведомление о подтверждении" 
+          ? "Студент автоматически добавлен в ваш список учеников" 
           : "Студент получит уведомление об отклонении",
       });
+
+      // Если запрос подтвержден, обновляем счетчики
+      if (action === 'confirmed') {
+        // Trigger to update students list will be handled by database trigger
+        console.log('Request confirmed, student-tutor relationship will be created automatically');
+      }
     } catch (error) {
       console.error('Error updating lesson request:', error);
       toast({
@@ -154,11 +160,11 @@ export const LessonRequestsTab = () => {
       ) : (
         <div className="space-y-4">
           {requests.map((request) => (
-            <Card key={request.id}>
+            <Card key={request.id} className="border-l-4 border-l-orange-400">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-12 w-12">
                       <AvatarImage src={request.student?.avatar_url} />
                       <AvatarFallback>
                         {request.student?.first_name?.[0] || '?'}
@@ -169,18 +175,20 @@ export const LessonRequestsTab = () => {
                       <CardTitle className="text-lg">
                         {request.student?.first_name} {request.student?.last_name}
                       </CardTitle>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-sm text-gray-500 flex items-center">
+                        <Clock className="h-3 w-3 mr-1" />
                         Запрос от {format(new Date(request.created_at), 'dd MMMM yyyy, HH:mm', { locale: ru })}
                       </p>
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-orange-600 border-orange-200">
+                  <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
+                    <Clock className="h-3 w-3 mr-1" />
                     Ожидает ответа
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                   <div className="flex items-center space-x-2">
                     <BookOpen className="h-4 w-4 text-blue-500" />
                     <span className="text-sm">
@@ -200,18 +208,29 @@ export const LessonRequestsTab = () => {
                     </span>
                   </div>
                 </div>
+
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-amber-800">
+                    <strong>Внимание:</strong> При подтверждении этого запроса студент автоматически будет добавлен в ваш список учеников, 
+                    и вы сможете общаться с ним через чат и планировать дальнейшие занятия.
+                  </p>
+                </div>
                 
-                <div className="flex justify-end space-x-2">
+                <div className="flex justify-end space-x-3">
                   <Button
                     variant="outline"
                     onClick={() => handleRequestResponse(request.id, 'cancelled')}
+                    className="border-red-200 text-red-700 hover:bg-red-50"
                   >
+                    <XCircle className="h-4 w-4 mr-2" />
                     Отклонить
                   </Button>
                   <Button
                     onClick={() => handleRequestResponse(request.id, 'confirmed')}
+                    className="bg-green-600 hover:bg-green-700"
                   >
-                    Подтвердить
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Подтвердить и добавить ученика
                   </Button>
                 </div>
               </CardContent>

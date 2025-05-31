@@ -5,7 +5,6 @@ import { ProfileUpdateParams } from "./types";
 import { useBaseProfile } from "./useBaseProfile";
 import { createRoleSpecificProfile } from "./utils";
 import { fetchTutorProfileData } from "./utils/fetchProfile";
-import { updateTutorProfile } from "./utils/updateProfile";
 
 /**
  * Hook for managing tutor profile data
@@ -28,22 +27,36 @@ export const useTutorProfile = () => {
 
       console.log("Updating tutor profile with data:", params);
 
+      // Start transaction-like approach
+      const profileData = {
+        first_name: params.first_name,
+        last_name: params.last_name,
+        bio: params.bio,
+        city: params.city,
+        avatar_url: params.avatar_url,
+        updated_at: new Date().toISOString(),
+      };
+
+      const tutorData = {
+        education_institution: params.education_institution || '',
+        degree: params.degree || '',
+        graduation_year: params.graduation_year || new Date().getFullYear(),
+        methodology: params.methodology || '',
+        experience: params.experience || 0,
+        achievements: params.achievements || '',
+        video_url: params.video_url || '',
+        updated_at: new Date().toISOString(),
+      };
+
       // Update basic profile first
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({
-          first_name: params.first_name,
-          last_name: params.last_name,
-          bio: params.bio,
-          city: params.city,
-          avatar_url: params.avatar_url,
-          updated_at: new Date().toISOString(),
-        })
+        .update(profileData)
         .eq("id", profile.id);
 
       if (profileError) {
         console.error("Error updating basic profile:", profileError);
-        throw new Error("Failed to update basic profile");
+        throw profileError;
       }
 
       // Check if tutor_profiles record exists
@@ -55,20 +68,8 @@ export const useTutorProfile = () => {
 
       if (checkError && checkError.code !== 'PGRST116') {
         console.error("Error checking tutor profile:", checkError);
-        throw new Error("Failed to check tutor profile");
+        throw checkError;
       }
-
-      // Prepare tutor-specific data
-      const tutorData = {
-        education_institution: params.education_institution || null,
-        degree: params.degree || null,
-        graduation_year: params.graduation_year || new Date().getFullYear(),
-        methodology: params.methodology || null,
-        experience: params.experience || 0,
-        achievements: params.achievements || null,
-        video_url: params.video_url || null,
-        updated_at: new Date().toISOString(),
-      };
 
       if (existingTutorProfile) {
         // Update existing tutor profile
@@ -79,7 +80,7 @@ export const useTutorProfile = () => {
 
         if (tutorUpdateError) {
           console.error("Error updating tutor profile:", tutorUpdateError);
-          throw new Error("Failed to update tutor profile");
+          throw tutorUpdateError;
         }
       } else {
         // Create new tutor profile
@@ -94,7 +95,7 @@ export const useTutorProfile = () => {
 
         if (tutorCreateError) {
           console.error("Error creating tutor profile:", tutorCreateError);
-          throw new Error("Failed to create tutor profile");
+          throw tutorCreateError;
         }
       }
 
@@ -113,6 +114,7 @@ export const useTutorProfile = () => {
         description: "Профиль успешно обновлен",
       });
 
+      console.log("Profile update completed successfully");
       return true;
     } catch (error) {
       console.error("Error in updateProfile:", error);
