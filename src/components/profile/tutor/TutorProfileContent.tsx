@@ -1,10 +1,12 @@
 
 import React, { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { TutorSidebar } from "./TutorSidebar";
 import { TutorDashboard } from "./TutorDashboard";
 import { StudentsTab } from "./StudentsTab";
 import { ScheduleManagement } from "./schedule/ScheduleManagement";
-import { ChatsTab } from "./ChatsTab";
+import { TutorChatsTab } from "./TutorChatsTab";
+import { TutorChatView } from "./TutorChatView";
 import { TutorSettingsTab } from "./TutorSettingsTab";
 import { LessonRequestsTab } from "./LessonRequestsTab";
 import { NotificationsTab } from "./NotificationsTab";
@@ -17,9 +19,38 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 export const TutorProfileContent = () => {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const location = useLocation();
+  const pathParts = location.pathname.split('/');
+  
+  // Determine active tab from URL
+  const getActiveTabFromPath = () => {
+    if (pathParts.includes('chats') && pathParts.length > 4) {
+      return "chat-view"; // Individual chat view
+    } else if (pathParts.includes('chats')) {
+      return "chats"; // Chat list
+    } else if (pathParts.includes('students')) {
+      return "students";
+    } else if (pathParts.includes('schedule')) {
+      return "schedule";
+    } else if (pathParts.includes('stats')) {
+      return "analytics";
+    } else if (pathParts.includes('settings')) {
+      return "settings";
+    } else if (pathParts.includes('profile')) {
+      return "profile";
+    } else {
+      return "dashboard";
+    }
+  };
+
+  const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
   const { user } = useAuth();
   const { profile, isLoading } = useProfile("tutor");
+
+  // Update active tab when location changes
+  React.useEffect(() => {
+    setActiveTab(getActiveTabFromPath());
+  }, [location.pathname]);
 
   // Fetch subjects for the profile completion form
   const { data: subjects = [] } = useQuery({
@@ -61,7 +92,9 @@ export const TutorProfileContent = () => {
       case "analytics":
         return <TutorAnalytics tutorId={user.id} />;
       case "chats":
-        return <ChatsTab />;
+        return <TutorChatsTab />;
+      case "chat-view":
+        return <TutorChatView />;
       case "settings":
         return <TutorSettingsTab profile={profile} />;
       default:
