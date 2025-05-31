@@ -103,7 +103,16 @@ export const TutorHomeworkManagement = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setHomework(data || []);
+      
+      // Transform data to match HomeworkItem interface
+      const transformedData: HomeworkItem[] = (data || []).map(item => ({
+        ...item,
+        subjects: Array.isArray(item.subjects) && item.subjects.length > 0 
+          ? item.subjects[0] 
+          : null
+      }));
+      
+      setHomework(transformedData);
     } catch (error) {
       console.error('Error fetching homework:', error);
       toast({

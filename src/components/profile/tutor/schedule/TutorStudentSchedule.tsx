@@ -91,7 +91,16 @@ export const TutorStudentSchedule = () => {
         .order('start_time', { ascending: true });
 
       if (error) throw error;
-      setLessons(data || []);
+      
+      // Transform data to match LessonItem interface
+      const transformedData: LessonItem[] = (data || []).map(item => ({
+        ...item,
+        subjects: Array.isArray(item.subjects) && item.subjects.length > 0 
+          ? item.subjects[0] 
+          : null
+      }));
+      
+      setLessons(transformedData);
     } catch (error) {
       console.error('Error fetching lessons:', error);
       toast({
