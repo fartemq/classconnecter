@@ -96,7 +96,7 @@ export const TutorHomeworkManagement = () => {
           status,
           created_at,
           subject_id,
-          subjects!inner(name)
+          subjects(name)
         `)
         .eq('tutor_id', user?.id)
         .eq('student_id', studentId)

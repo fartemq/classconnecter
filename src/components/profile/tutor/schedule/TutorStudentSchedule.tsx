@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -83,7 +82,7 @@ export const TutorStudentSchedule = () => {
           status,
           created_at,
           subject_id,
-          subjects!inner(name)
+          subjects(name)
         `)
         .eq('tutor_id', user?.id)
         .eq('student_id', studentId)
