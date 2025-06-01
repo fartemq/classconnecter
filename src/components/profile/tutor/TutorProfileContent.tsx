@@ -1,7 +1,7 @@
 
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { TutorSidebar } from "./TutorSidebar";
+import { TutorMobileLayout } from "@/components/mobile/TutorMobileLayout";
 import { TutorDashboard } from "./TutorDashboard";
 import { StudentsTab } from "./StudentsTab";
 import { ScheduleManagement } from "./schedule/ScheduleManagement";
@@ -46,6 +46,10 @@ export const TutorProfileContent = () => {
       return "settings";
     } else if (pathParts.includes('profile')) {
       return "profile";
+    } else if (pathParts.includes('lesson-requests')) {
+      return "lesson-requests";
+    } else if (pathParts.includes('notifications')) {
+      return "notifications";
     } else {
       return "dashboard";
     }
@@ -115,13 +119,8 @@ export const TutorProfileContent = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <TutorSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-      <div className="flex-1">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          {renderContent()}
-        </div>
-      </div>
-    </div>
+    <TutorMobileLayout activeTab={activeTab} onTabChange={setActiveTab}>
+      {renderContent()}
+    </TutorMobileLayout>
   );
 };

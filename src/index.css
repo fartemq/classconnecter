@@ -115,4 +115,52 @@
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary via-secondary to-primary;
   }
+
+  /* Mobile touch targets */
+  .touch-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Mobile-friendly forms */
+  @media (max-width: 768px) {
+    input[type="text"], 
+    input[type="email"], 
+    input[type="password"], 
+    textarea, 
+    select {
+      @apply text-base; /* Prevents zoom on iOS */
+    }
+    
+    .mobile-card {
+      @apply mx-2 rounded-lg;
+    }
+    
+    .mobile-padding {
+      @apply px-4 py-3;
+    }
+    
+    .mobile-text {
+      @apply text-sm;
+    }
+    
+    .mobile-button {
+      @apply px-6 py-3 text-base;
+    }
+  }
+
+  /* Mobile navigation */
+  .mobile-nav-item {
+    @apply flex items-center px-4 py-3 text-base font-medium rounded-lg transition-colors;
+  }
+
+  .mobile-nav-item:active {
+    @apply bg-gray-100;
+  }
+
+  /* Mobile modal improvements */
+  @media (max-width: 768px) {
+    .mobile-modal {
+      @apply mx-2 my-4 max-h-[90vh] overflow-y-auto;
+    }
+  }
 }

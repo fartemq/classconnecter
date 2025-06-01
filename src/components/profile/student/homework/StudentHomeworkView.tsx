@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface HomeworkItem {
   id: string;
@@ -28,6 +29,7 @@ interface HomeworkItem {
 export const StudentHomeworkView = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   const [homework, setHomework] = useState<HomeworkItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [submissionText, setSubmissionText] = useState<{ [key: string]: string }>({});
@@ -156,13 +158,13 @@ export const StudentHomeworkView = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Домашние задания</h1>
+          <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>Домашние задания</h1>
           <p className="text-gray-600">Задания от ваших репетиторов</p>
         </div>
-        <Badge variant="outline" className="text-lg px-3 py-1">
+        <Badge variant="outline" className={`${isMobile ? 'text-sm px-2 py-1' : 'text-lg px-3 py-1'}`}>
           <FileText className="h-4 w-4 mr-2" />
           {homework.length}
         </Badge>
@@ -185,16 +187,18 @@ export const StudentHomeworkView = () => {
             
             return (
               <Card key={item.id} className={`${isOverdue ? 'border-red-200 bg-red-50' : ''}`}>
-                <CardHeader>
+                <CardHeader className={isMobile ? 'pb-3' : ''}>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <CardTitle className="text-lg">{item.title}</CardTitle>
-                        {getStatusBadge(item.status, item.due_date)}
-                        {isOverdue && <AlertCircle className="h-4 w-4 text-red-500" />}
+                      <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center space-x-3'} mb-2`}>
+                        <CardTitle className={`${isMobile ? 'text-lg' : 'text-lg'}`}>{item.title}</CardTitle>
+                        <div className="flex items-center space-x-2">
+                          {getStatusBadge(item.status, item.due_date)}
+                          {isOverdue && <AlertCircle className="h-4 w-4 text-red-500" />}
+                        </div>
                       </div>
                       
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <div className={`flex ${isMobile ? 'flex-col space-y-1' : 'items-center space-x-4'} text-sm text-gray-500`}>
                         <span className="flex items-center">
                           <BookOpen className="h-3 w-3 mr-1" />
                           {item.subjects?.name}
@@ -234,13 +238,15 @@ export const StudentHomeworkView = () => {
                             [item.id]: e.target.value 
                           }))}
                           placeholder="Введите ваш ответ или решение..."
-                          rows={4}
+                          rows={isMobile ? 3 : 4}
+                          className={isMobile ? 'text-base' : ''}
                         />
                       </div>
                       
                       <Button 
                         onClick={() => submitHomework(item.id)}
-                        className="flex items-center"
+                        className={`flex items-center ${isMobile ? 'w-full' : ''}`}
+                        size={isMobile ? "lg" : "default"}
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Отправить на проверку
