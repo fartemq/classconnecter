@@ -19,12 +19,12 @@ import StudentProfilePage from "./pages/StudentProfilePage";
 import StudentEditProfilePage from "./pages/StudentEditProfilePage";
 import StudentChatsPage from "./pages/StudentChatsPage";
 import StudentSettingsPage from "./pages/StudentSettingsPage";
-import StudentSchedulePage from "./pages/StudentSchedulePage";
 import StudentFindTutorsPage from "./pages/StudentFindTutorsPage";
 import StudentMyTutorsPage from "./pages/StudentMyTutorsPage";
 import StudentProfileEditPage from "./pages/StudentProfileEditPage";
 import StudentProgressPage from "./pages/StudentProgressPage";
 import StudentHomeworkPage from "./pages/StudentHomeworkPage";
+import StudentSchedulePage from "./pages/StudentSchedulePage";
 import TutorProfilePage from "./pages/TutorProfilePage";
 import PublicTutorProfilePage from "./pages/PublicTutorProfilePage";
 import SchoolStudentPage from "./pages/SchoolStudentPage";
@@ -37,7 +37,7 @@ import HomeworkSubmissionPage from "./pages/HomeworkSubmissionPage";
 import HomeworkAssignmentPage from "./pages/HomeworkAssignmentPage";
 import HomeworkGradingPage from "./pages/HomeworkGradingPage";
 
-// Add the import for the new page
+// Student materials page
 import StudentMaterialsPage from "./pages/StudentMaterialsPage";
 
 // Create a new QueryClient instance
@@ -70,11 +70,11 @@ const App = () => {
                 <Route path="/profile/student/settings" element={<StudentSettingsPage />} />
                 <Route path="/profile/student/edit" element={<StudentEditProfilePage />} />
                 <Route path="/profile/student/schedule" element={<StudentSchedulePage />} />
+                <Route path="/profile/student/homework" element={<StudentHomeworkPage />} />
                 <Route path="/profile/student/find-tutors" element={<StudentFindTutorsPage />} />
                 <Route path="/profile/student/my-tutors" element={<StudentMyTutorsPage />} />
                 <Route path="/profile/student/profile" element={<StudentProfileEditPage />} />
                 <Route path="/profile/student/progress" element={<StudentProgressPage />} />
-                <Route path="/profile/student/homework" element={<StudentHomeworkPage />} />
                 <Route path="/profile/student/homework/:homeworkId" element={<HomeworkSubmissionPage />} />
                 <Route path="/profile/student/materials" element={<StudentMaterialsPage />} />
               </Route>

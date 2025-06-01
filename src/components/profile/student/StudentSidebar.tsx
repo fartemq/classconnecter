@@ -9,7 +9,7 @@ import {
   LineChart, 
   Settings, 
   MessageSquare,
-  Book
+  BookOpen
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,6 +39,11 @@ export const StudentSidebar = () => {
       href: "/profile/student/schedule",
     },
     {
+      icon: <BookOpen className="h-5 w-5" />,
+      label: "Домашние задания",
+      href: "/profile/student/homework",
+    },
+    {
       icon: <Search className="h-5 w-5" />,
       label: "Поиск репетиторов",
       href: "/profile/student/find-tutors",
@@ -54,11 +59,6 @@ export const StudentSidebar = () => {
       icon: <MessageSquare className="h-5 w-5" />,
       label: "Чаты",
       href: "/profile/student/chats",
-    },
-    {
-      icon: <Book className="h-5 w-5" />,
-      label: "Материалы",
-      href: "/profile/student/materials",
     },
     {
       icon: <LineChart className="h-5 w-5" />,
