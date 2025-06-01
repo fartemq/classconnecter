@@ -24,7 +24,7 @@ export const TutorMobileSidebar = ({ isOpen, onClose }: TutorMobileSidebarProps)
   const location = useLocation();
 
   const navItems = [
-    { icon: Home, label: "Дашборд", href: "/profile/tutor", exact: true },
+    { icon: Home, label: "Главная", href: "/profile/tutor", exact: true },
     { icon: User, label: "Моя анкета", href: "/profile/tutor/profile" },
     { icon: FileText, label: "Запросы на занятия", href: "/profile/tutor/lesson-requests" },
     { icon: Bell, label: "Уведомления", href: "/profile/tutor/notifications" },

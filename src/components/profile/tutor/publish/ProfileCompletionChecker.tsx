@@ -2,10 +2,8 @@
 import React, { useState, useEffect } from "react";
 import { TutorProfile } from "@/types/tutor";
 import { TutorProfileWizard } from "../TutorProfileWizard";
-import { TutorProfileSettingsTab } from "../TutorProfileSettingsTab";
 import { Profile } from "@/hooks/profiles/types";
 import { useTutorProfile } from "@/hooks/profiles/useTutorProfile";
-import { convertProfileToTutorProfile } from "@/utils/tutorProfileConverters";
 import { Loader } from "@/components/ui/loader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
