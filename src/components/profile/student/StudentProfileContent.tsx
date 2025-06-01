@@ -69,7 +69,7 @@ export const StudentProfileContent = () => {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <StudentSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+      <StudentSidebar />
       <div className="flex-1">
         <div className="max-w-7xl mx-auto px-6 py-8">
           {renderContent()}
