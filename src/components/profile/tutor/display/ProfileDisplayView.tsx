@@ -189,9 +189,9 @@ export const ProfileDisplayView: React.FC<ProfileDisplayViewProps> = ({
                   <span className="text-lg font-bold text-green-600">1000 ₽/час</span>
                 </div>
                 <div className="flex flex-wrap gap-1">
-                  <Badge variant="secondary" size="sm">Школьник</Badge>
-                  <Badge variant="secondary" size="sm">Студент</Badge>
-                  <Badge variant="secondary" size="sm">Взрослый</Badge>
+                  <Badge variant="secondary">Школьник</Badge>
+                  <Badge variant="secondary">Студент</Badge>
+                  <Badge variant="secondary">Взрослый</Badge>
                 </div>
               </div>
             </div>
