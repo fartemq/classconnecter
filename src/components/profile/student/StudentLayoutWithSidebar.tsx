@@ -21,7 +21,7 @@ export const StudentLayoutWithSidebar: React.FC<StudentLayoutWithSidebarProps> =
   // Mobile version - use mobile layout
   if (isMobile) {
     return (
-      <StudentMobileLayout>
+      <StudentMobileLayout showProfileCard={showProfileCard}>
         {children}
       </StudentMobileLayout>
     );

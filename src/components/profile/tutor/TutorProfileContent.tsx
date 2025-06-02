@@ -43,7 +43,7 @@ export const TutorProfileContent = () => {
       return "schedule";
     } else if (pathParts.includes('homework')) {
       return "homework";
-    } else if (pathParts.includes('stats')) {
+    } else if (pathParts.includes('analytics')) {
       return "analytics";
     } else if (pathParts.includes('settings')) {
       return "settings";

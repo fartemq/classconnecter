@@ -1,7 +1,5 @@
 
 import React from "react";
-import { Footer } from "@/components/Footer";
-import { TutorSidebar } from "@/components/profile/tutor/TutorSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TutorMobileLayoutProps {
@@ -18,33 +16,26 @@ export const TutorMobileLayout: React.FC<TutorMobileLayoutProps> = ({
   const isMobile = useIsMobile();
   
   if (isMobile) {
-    // Mobile layout - full width with just content (Header is handled globally)
+    // Mobile layout - full width with just content
     return (
-      <div className="min-h-screen flex flex-col">
-        <main className="flex-grow bg-gray-50">
+      <div className="min-h-screen flex flex-col bg-gray-50">
+        <main className="flex-grow">
           <div className="px-4 py-4">
             {children}
           </div>
         </main>
-        <Footer className="py-2" />
       </div>
     );
   }
 
-  // Desktop layout - with sidebar
+  // This should not be reached as we handle desktop in parent component
   return (
-    <div className="min-h-screen flex flex-col">
-      <main className="flex-grow bg-gray-50">
-        <div className="flex">
-          <TutorSidebar activeTab={activeTab} onTabChange={onTabChange} />
-          <div className="flex-1">
-            <div className="max-w-7xl mx-auto px-6 py-8">
-              {children}
-            </div>
-          </div>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <main className="flex-grow">
+        <div className="px-4 py-4">
+          {children}
         </div>
       </main>
-      <Footer className="py-2" />
     </div>
   );
 };

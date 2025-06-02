@@ -10,15 +10,15 @@ export const TutorProfileLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col">
-      {/* Header only for desktop version */}
-      {!isMobile && <Header />}
+      {/* Header - always show but adapt for mobile */}
+      <Header />
       
       <main className="flex-grow">
         <TutorProfileContent />
       </main>
       
-      {/* Footer only for desktop version */}
-      {!isMobile && <Footer />}
+      {/* Footer - show on both but adapt */}
+      <Footer />
     </div>
   );
 };
