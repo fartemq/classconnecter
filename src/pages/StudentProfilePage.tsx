@@ -14,12 +14,13 @@ import { StudentProfileNav } from "@/components/profile/student/StudentProfileNa
 import { StudentLayoutWithSidebar } from "@/components/profile/student/StudentLayoutWithSidebar";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useLocation } from "react-router-dom";
+import { StudentMobileLayout } from "@/components/mobile/StudentMobileLayout";
 
 const StudentProfilePage = () => {
   const isMobile = useIsMobile();
   const location = useLocation();
   
-  // Determine active tab from URL for mobile
+  // Determine active tab from URL
   const getActiveTabFromPath = () => {
     const pathParts = location.pathname.split('/');
     if (pathParts.includes('find-tutors')) return "find-tutors";
@@ -59,11 +60,11 @@ const StudentProfilePage = () => {
     };
 
     return (
-      <StudentLayoutWithSidebar>
+      <StudentMobileLayout>
         <div className="space-y-4">
           {renderMobileContent()}
         </div>
-      </StudentLayoutWithSidebar>
+      </StudentMobileLayout>
     );
   }
 

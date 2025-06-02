@@ -30,13 +30,12 @@ export const TutorProfileContent = () => {
   // Determine active tab from URL
   const getActiveTabFromPath = () => {
     if (pathParts.includes('chats') && pathParts.length > 4) {
-      return "chat-view"; // Individual chat view
+      return "chat-view";
     } else if (pathParts.includes('chats')) {
-      return "chats"; // Chat list
+      return "chats";
     } else if (pathParts.includes('students')) {
       return "students";
     } else if (pathParts.includes('schedule')) {
-      // Check if this is student-specific schedule
       if (location.search.includes('student=')) {
         return "student-schedule";
       }
@@ -121,7 +120,7 @@ export const TutorProfileContent = () => {
     }
   };
 
-  // Mobile version - use mobile layout
+  // Mobile version - use TutorMobileLayout with proper navigation
   if (isMobile) {
     return (
       <TutorMobileLayout activeTab={activeTab} onTabChange={setActiveTab}>

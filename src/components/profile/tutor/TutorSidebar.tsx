@@ -15,15 +15,15 @@ export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab, onTabChan
   const location = useLocation();
 
   const navItems = [
-    { icon: Home, label: "Главная", href: "/profile/tutor", exact: true },
-    { icon: User, label: "Моя анкета", href: "/profile/tutor/profile" },
-    { icon: FileText, label: "Запросы на занятия", href: "/profile/tutor/lesson-requests" },
-    { icon: Bell, label: "Уведомления", href: "/profile/tutor/notifications" },
-    { icon: Users, label: "Мои ученики", href: "/profile/tutor/students" },
-    { icon: Calendar, label: "Расписание", href: "/profile/tutor/schedule" },
-    { icon: BarChart3, label: "Аналитика", href: "/profile/tutor/analytics" },
-    { icon: MessageSquare, label: "Сообщения", href: "/profile/tutor/chats" },
-    { icon: Settings, label: "Настройки", href: "/profile/tutor/settings" },
+    { icon: Home, label: "Главная", href: "/profile/tutor", exact: true, tab: "dashboard" },
+    { icon: User, label: "Моя анкета", href: "/profile/tutor/profile", tab: "profile" },
+    { icon: FileText, label: "Запросы на занятия", href: "/profile/tutor/lesson-requests", tab: "lesson-requests" },
+    { icon: Bell, label: "Уведомления", href: "/profile/tutor/notifications", tab: "notifications" },
+    { icon: Users, label: "Мои ученики", href: "/profile/tutor/students", tab: "students" },
+    { icon: Calendar, label: "Расписание", href: "/profile/tutor/schedule", tab: "schedule" },
+    { icon: BarChart3, label: "Аналитика", href: "/profile/tutor/analytics", tab: "analytics" },
+    { icon: MessageSquare, label: "Сообщения", href: "/profile/tutor/chats", tab: "chats" },
+    { icon: Settings, label: "Настройки", href: "/profile/tutor/settings", tab: "settings" },
   ];
 
   const isActive = (path: string, exact?: boolean) => {
@@ -41,6 +41,7 @@ export const TutorSidebar: React.FC<TutorSidebarProps> = ({ activeTab, onTabChan
             <Link
               key={item.href}
               to={item.href}
+              onClick={() => onTabChange(item.tab)}
               className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
                 isActive(item.href, item.exact)
                   ? "bg-primary text-white" 

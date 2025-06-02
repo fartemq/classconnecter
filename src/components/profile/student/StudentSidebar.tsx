@@ -81,7 +81,7 @@ export const StudentSidebar = () => {
       {/* Profile section */}
       <NavLink 
         to="/profile/student/edit" 
-        className="p-4 border-b cursor-pointer"
+        className="p-4 border-b cursor-pointer hover:bg-gray-50"
       >
         <div className="flex items-center space-x-3">
           <Avatar className="h-10 w-10">
