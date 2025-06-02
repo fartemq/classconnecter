@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { TutorMobileLayout } from "@/components/mobile/TutorMobileLayout";
+import { TutorSidebar } from "./TutorSidebar";
 import { TutorDashboard } from "./TutorDashboard";
 import { StudentsTab } from "./StudentsTab";
 import { ScheduleManagement } from "./schedule/ScheduleManagement";
@@ -19,10 +20,12 @@ import { useProfile } from "@/hooks/useProfile";
 import { Loader } from "@/components/ui/loader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const TutorProfileContent = () => {
   const location = useLocation();
   const pathParts = location.pathname.split('/');
+  const isMobile = useIsMobile();
   
   // Determine active tab from URL
   const getActiveTabFromPath = () => {
@@ -118,9 +121,26 @@ export const TutorProfileContent = () => {
     }
   };
 
+  // Mobile version - use mobile layout
+  if (isMobile) {
+    return (
+      <TutorMobileLayout activeTab={activeTab} onTabChange={setActiveTab}>
+        {renderContent()}
+      </TutorMobileLayout>
+    );
+  }
+
+  // Desktop version - original design with sidebar
   return (
-    <TutorMobileLayout activeTab={activeTab} onTabChange={setActiveTab}>
-      {renderContent()}
-    </TutorMobileLayout>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <div className="flex flex-1">
+        <TutorSidebar activeTab={activeTab} onTabChange={setActiveTab} />
+        <div className="flex-1">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            {renderContent()}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };

@@ -12,8 +12,23 @@ import { HomeworkTab } from "@/components/profile/student/HomeworkTab";
 import { LessonRequestsTab } from "@/components/profile/student/LessonRequestsTab";
 import { StudentProfileNav } from "@/components/profile/student/StudentProfileNav";
 import { StudentLayoutWithSidebar } from "@/components/profile/student/StudentLayoutWithSidebar";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const StudentProfilePage = () => {
+  const isMobile = useIsMobile();
+
+  // Mobile version - show content directly through layout
+  if (isMobile) {
+    return (
+      <StudentLayoutWithSidebar>
+        <div className="space-y-4">
+          <ProfileTab />
+        </div>
+      </StudentLayoutWithSidebar>
+    );
+  }
+
+  // Desktop version - original tabs structure
   return (
     <StudentLayoutWithSidebar>
       <Tabs defaultValue="profile" className="w-full">
