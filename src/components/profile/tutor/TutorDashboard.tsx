@@ -62,10 +62,10 @@ export const TutorDashboard: React.FC<TutorDashboardProps> = ({ profile }) => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">
-            Главная
+            Добро пожаловать, {profile?.first_name || 'Репетитор'}!
           </h1>
           <p className="text-muted-foreground mt-1">
-            Добро пожаловать, {profile?.first_name || 'Репетитор'}! Управляйте своими занятиями и учениками
+            Управляйте своими занятиями и учениками
           </p>
         </div>
         <Badge 

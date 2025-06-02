@@ -2,7 +2,6 @@
 import React, { useState } from "react";
 import { useLocation } from "react-router-dom";
 import { TutorMobileLayout } from "@/components/mobile/TutorMobileLayout";
-import { TutorSidebar } from "./TutorSidebar";
 import { TutorDashboard } from "./TutorDashboard";
 import { StudentsTab } from "./StudentsTab";
 import { ScheduleManagement } from "./schedule/ScheduleManagement";
@@ -20,29 +19,28 @@ import { useProfile } from "@/hooks/useProfile";
 import { Loader } from "@/components/ui/loader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsMobile } from "@/hooks/use-mobile";
 
 export const TutorProfileContent = () => {
   const location = useLocation();
   const pathParts = location.pathname.split('/');
-  const isMobile = useIsMobile();
   
   // Determine active tab from URL
   const getActiveTabFromPath = () => {
     if (pathParts.includes('chats') && pathParts.length > 4) {
-      return "chat-view";
+      return "chat-view"; // Individual chat view
     } else if (pathParts.includes('chats')) {
-      return "chats";
+      return "chats"; // Chat list
     } else if (pathParts.includes('students')) {
       return "students";
     } else if (pathParts.includes('schedule')) {
+      // Check if this is student-specific schedule
       if (location.search.includes('student=')) {
         return "student-schedule";
       }
       return "schedule";
     } else if (pathParts.includes('homework')) {
       return "homework";
-    } else if (pathParts.includes('analytics')) {
+    } else if (pathParts.includes('stats')) {
       return "analytics";
     } else if (pathParts.includes('settings')) {
       return "settings";
@@ -120,26 +118,9 @@ export const TutorProfileContent = () => {
     }
   };
 
-  // Mobile version - use TutorMobileLayout with proper navigation
-  if (isMobile) {
-    return (
-      <TutorMobileLayout activeTab={activeTab} onTabChange={setActiveTab}>
-        {renderContent()}
-      </TutorMobileLayout>
-    );
-  }
-
-  // Desktop version - original design with sidebar
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <div className="flex flex-1">
-        <TutorSidebar activeTab={activeTab} onTabChange={setActiveTab} />
-        <div className="flex-1">
-          <div className="max-w-7xl mx-auto px-6 py-8">
-            {renderContent()}
-          </div>
-        </div>
-      </div>
-    </div>
+    <TutorMobileLayout activeTab={activeTab} onTabChange={setActiveTab}>
+      {renderContent()}
+    </TutorMobileLayout>
   );
 };
