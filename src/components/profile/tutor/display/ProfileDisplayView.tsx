@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Edit, GraduationCap, BookOpen, Award, Video, MapPin, Calendar, User } from "lucide-react";
 import { Profile } from "@/hooks/profiles/types";
 import { ProfileEditModal } from "./ProfileEditModal";
+import { ProfilePublishControls } from "../ProfilePublishControls";
 
 interface ProfileDisplayViewProps {
   profile: Profile;
@@ -30,6 +31,9 @@ export const ProfileDisplayView: React.FC<ProfileDisplayViewProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Profile Publication Controls */}
+      <ProfilePublishControls tutorId={profile.id} />
+
       {/* Main Profile Card */}
       <Card className="overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-primary/10 to-secondary/10">
