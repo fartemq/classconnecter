@@ -9,7 +9,8 @@ import {
   LineChart, 
   Settings, 
   MessageSquare,
-  BookOpen
+  BookOpen,
+  FileText
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -34,16 +35,6 @@ export const StudentSidebar = () => {
       href: "/profile/student/edit",
     },
     {
-      icon: <CalendarDays className="h-5 w-5" />,
-      label: "Расписание",
-      href: "/profile/student/schedule",
-    },
-    {
-      icon: <BookOpen className="h-5 w-5" />,
-      label: "Домашние задания",
-      href: "/profile/student/homework",
-    },
-    {
       icon: <Search className="h-5 w-5" />,
       label: "Поиск репетиторов",
       href: "/profile/student/find-tutors",
@@ -54,6 +45,21 @@ export const StudentSidebar = () => {
       label: "Мои репетиторы",
       href: "/profile/student/my-tutors",
       description: "Управление репетиторами"
+    },
+    {
+      icon: <FileText className="h-5 w-5" />,
+      label: "Запросы на занятия",
+      href: "/profile/student/lesson-requests",
+    },
+    {
+      icon: <CalendarDays className="h-5 w-5" />,
+      label: "Расписание",
+      href: "/profile/student/schedule",
+    },
+    {
+      icon: <BookOpen className="h-5 w-5" />,
+      label: "Домашние задания",
+      href: "/profile/student/homework",
     },
     {
       icon: <MessageSquare className="h-5 w-5" />,

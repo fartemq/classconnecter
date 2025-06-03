@@ -10,15 +10,12 @@ import { ProgressTab } from "@/components/profile/student/ProgressTab";
 import { SettingsTab } from "@/components/profile/student/SettingsTab";
 import { HomeworkTab } from "@/components/profile/student/HomeworkTab";
 import { LessonRequestsTab } from "@/components/profile/student/LessonRequestsTab";
-import { StudentProfileNav } from "@/components/profile/student/StudentProfileNav";
 import { StudentLayoutWithSidebar } from "@/components/profile/student/StudentLayoutWithSidebar";
 
 const StudentProfilePage = () => {
   return (
     <StudentLayoutWithSidebar>
       <Tabs defaultValue="profile" className="w-full">
-        <StudentProfileNav />
-        
         <TabsContent value="profile" className="space-y-4">
           <ProfileTab />
         </TabsContent>

@@ -9,7 +9,8 @@ import {
   Users,
   BarChart3,
   FileText,
-  Edit3
+  Edit3,
+  Home
 } from "lucide-react";
 
 interface TutorSidebarProps {
@@ -21,8 +22,8 @@ export const TutorSidebar = ({ activeTab, onTabChange }: TutorSidebarProps) => {
   const menuItems = [
     {
       id: "dashboard",
-      label: "Дашборд",
-      icon: BarChart3,
+      label: "Главная",
+      icon: Home,
     },
     {
       id: "profile",
