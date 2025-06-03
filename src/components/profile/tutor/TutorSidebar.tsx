@@ -10,7 +10,8 @@ import {
   BarChart3,
   FileText,
   Edit3,
-  Home
+  Home,
+  ClipboardList
 } from "lucide-react";
 
 interface TutorSidebarProps {
@@ -33,7 +34,7 @@ export const TutorSidebar = ({ activeTab, onTabChange }: TutorSidebarProps) => {
     {
       id: "lesson-requests",
       label: "Запросы на занятия",
-      icon: FileText,
+      icon: ClipboardList,
     },
     {
       id: "notifications",

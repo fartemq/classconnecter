@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -102,7 +101,7 @@ export const saveTutorSubjects = async (userId: string, subjects: string[], hour
     return { success: true };
   } catch (error) {
     console.error("Error in saveTutorSubjects:", error);
-    throw error;
+    return { success: false, error };
   }
 };
 

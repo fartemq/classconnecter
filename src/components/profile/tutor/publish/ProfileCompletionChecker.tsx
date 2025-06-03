@@ -22,6 +22,7 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
 }) => {
   const { updateProfile } = useTutorProfile();
   const [isLoading, setIsLoading] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
 
   // Check if profile is complete
   const { data: profileCompletion, isLoading: checkingCompletion, refetch } = useQuery({
@@ -91,6 +92,7 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
       if (success) {
         // Refresh the completion check
         refetch();
+        setShowWizard(false);
       }
       
       return {
@@ -114,6 +116,15 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
     refetch();
   };
 
+  const handleSwitchToWizard = () => {
+    setShowWizard(true);
+  };
+
+  const handleSwitchToDisplay = () => {
+    setShowWizard(false);
+    refetch();
+  };
+
   if (checkingCompletion) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -122,8 +133,8 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
     );
   }
 
-  // If profile is not complete, show wizard
-  if (!profileCompletion?.isComplete) {
+  // If profile is not complete OR user wants to use wizard, show wizard
+  if (!profileCompletion?.isComplete || showWizard) {
     const initialValues = {
       firstName: profile.first_name || "",
       lastName: profile.last_name || "",
@@ -132,7 +143,7 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
       avatarUrl: profile.avatar_url || "",
       // Add default values for other fields to prevent form errors
       hourlyRate: 1000,
-      subjects: [],
+      subjects: profile.subjects || [],
       teachingLevels: ["школьник", "студент", "взрослый"] as string[],
       educationInstitution: profile.education_institution || "",
       degree: profile.degree || "",
@@ -144,12 +155,23 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
     };
 
     return (
-      <TutorProfileWizard
-        initialValues={initialValues}
-        onSubmit={handleSubmit}
-        subjects={subjects}
-        isLoading={isLoading}
-      />
+      <div className="space-y-4">
+        {profileCompletion?.isComplete && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p className="text-sm text-blue-700">
+              Вы находитесь в режиме полного редактирования анкеты. 
+              После сохранения вы вернетесь к обычному просмотру профиля.
+            </p>
+          </div>
+        )}
+        <TutorProfileWizard
+          initialValues={initialValues}
+          onSubmit={handleSubmit}
+          subjects={subjects}
+          isLoading={isLoading}
+          onComplete={handleSwitchToDisplay}
+        />
+      </div>
     );
   }
 
@@ -159,6 +181,7 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
       profile={profile}
       subjects={subjects}
       onUpdate={handleUpdate}
+      onSwitchToWizard={handleSwitchToWizard}
     />
   );
 };

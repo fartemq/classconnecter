@@ -16,8 +16,8 @@ import { useTutorProfile } from "@/hooks/profiles/useTutorProfile";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
+import { saveTutorSubjects } from "@/services/tutorSubjectsService";
 
-// Define a unified form data type
 interface UnifiedFormData {
   first_name?: string;
   last_name?: string;
@@ -92,19 +92,36 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
     setIsLoading(true);
 
     try {
-      const success = await updateProfile(formData);
-      if (success) {
-        toast({
-          title: "Успешно",
-          description: "Профиль успешно обновлен"
-        });
-        onUpdate();
-        onClose();
+      // For subjects, use the tutorSubjectsService
+      if (type === 'subjects' && formData.selectedSubjects) {
+        const success = await saveTutorSubjects(
+          profile.id, 
+          formData.selectedSubjects, 
+          1000 // Default hourly rate, можно сделать настраиваемым
+        );
+        
+        if (!success.success) {
+          throw new Error("Не удалось сохранить предметы");
+        }
+      } else {
+        // For other fields, use updateProfile
+        const success = await updateProfile(formData);
+        if (!success) {
+          throw new Error("Не удалось обновить профиль");
+        }
       }
+
+      toast({
+        title: "Успешно",
+        description: "Данные успешно сохранены"
+      });
+      onUpdate();
+      onClose();
     } catch (error) {
+      console.error("Error updating profile:", error);
       toast({
         title: "Ошибка",
-        description: "Не удалось обновить профиль",
+        description: error instanceof Error ? error.message : "Не удалось обновить профиль",
         variant: "destructive"
       });
     } finally {

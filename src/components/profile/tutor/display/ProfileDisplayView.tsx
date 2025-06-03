@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Edit, GraduationCap, BookOpen, Award, Video, MapPin, Calendar, User } from "lucide-react";
+import { Edit, GraduationCap, BookOpen, Award, Video, MapPin, Calendar, User, Settings } from "lucide-react";
 import { Profile } from "@/hooks/profiles/types";
 import { ProfileEditModal } from "./ProfileEditModal";
 import { ProfilePublishControls } from "../ProfilePublishControls";
@@ -13,12 +13,14 @@ interface ProfileDisplayViewProps {
   profile: Profile;
   subjects: any[];
   onUpdate: () => void;
+  onSwitchToWizard?: () => void;
 }
 
 export const ProfileDisplayView: React.FC<ProfileDisplayViewProps> = ({
   profile,
   subjects,
-  onUpdate
+  onUpdate,
+  onSwitchToWizard
 }) => {
   const [editModal, setEditModal] = useState<string | null>(null);
   
@@ -33,6 +35,27 @@ export const ProfileDisplayView: React.FC<ProfileDisplayViewProps> = ({
     <div className="space-y-6">
       {/* Profile Publication Controls */}
       <ProfilePublishControls tutorId={profile.id} />
+
+      {/* Action Buttons */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Управление анкетой</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap gap-3">
+            {onSwitchToWizard && (
+              <Button 
+                onClick={onSwitchToWizard}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Settings className="w-4 h-4" />
+                Редактировать анкету полностью
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Profile Card */}
       <Card className="overflow-hidden">
