@@ -27,10 +27,12 @@ export const WizardPersonalStep: React.FC<WizardPersonalStepProps> = ({
     bio: data.bio || "",
   });
   const [avatarUrl, setAvatarUrl] = useState<string | null>(data.avatarUrl || null);
+  const [localAvatarFile, setLocalAvatarFile] = useState<File | null>(avatarFile);
 
   useEffect(() => {
-    onDataChange(localData);
-  }, [localData]);
+    // Update data with avatar URL and file info
+    onDataChange({ ...localData, avatarUrl }, localAvatarFile);
+  }, [localData, localAvatarFile, avatarUrl]);
 
   const handleInputChange = (field: string, value: string) => {
     const newData = { ...localData, [field]: value };
@@ -40,9 +42,22 @@ export const WizardPersonalStep: React.FC<WizardPersonalStepProps> = ({
   const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        console.error("File too large");
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        console.error("Invalid file type");
+        return;
+      }
+
       const url = URL.createObjectURL(file);
       setAvatarUrl(url);
-      onDataChange(localData, file);
+      setLocalAvatarFile(file);
+      console.log("Avatar file selected:", file.name, file.size);
     }
   };
 
@@ -86,6 +101,11 @@ export const WizardPersonalStep: React.FC<WizardPersonalStepProps> = ({
             <p className="text-sm text-muted-foreground mt-2">
               Рекомендуем использовать фото, где ваше лицо хорошо видно
             </p>
+            {localAvatarFile && (
+              <p className="text-xs text-green-600 mt-1">
+                Файл выбран: {localAvatarFile.name}
+              </p>
+            )}
           </div>
         </div>
       </Card>

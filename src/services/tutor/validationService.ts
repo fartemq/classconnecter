@@ -157,35 +157,35 @@ export const validateTutorProfile = async (tutorId: string) => {
 };
 
 /**
- * Get the publication status and validation of a tutor profile
+ * Get comprehensive publication status for tutor
  */
 export const getTutorPublicationStatus = async (tutorId: string) => {
   try {
-    console.log("Getting publication status for tutor ID:", tutorId);
+    const validation = await validateTutorProfile(tutorId);
     
-    // Get the current published status
-    const { data: profileData } = await supabase
+    // Get current publication status
+    const { data: tutorProfile, error } = await supabase
       .from("tutor_profiles")
       .select("is_published")
       .eq("id", tutorId)
       .maybeSingle();
-    
-    const isPublished = !!profileData?.is_published;
-    console.log("Is published:", isPublished);
-    
-    // Validate the profile
-    const validation = await validateTutorProfile(tutorId);
+      
+    if (error && error.code !== 'PGRST116') {
+      console.error("Error getting publication status:", error);
+    }
     
     return {
-      isPublished,
-      ...validation
+      isPublished: tutorProfile?.is_published || false,
+      isValid: validation.isValid,
+      missingFields: validation.missingFields,
+      warnings: validation.warnings
     };
   } catch (error) {
-    console.error("Error getting tutor publication status:", error);
+    console.error("Error getting publication status:", error);
     return {
       isPublished: false,
       isValid: false,
-      missingFields: ["Ошибка проверки статуса публикации"],
+      missingFields: ["Ошибка получения статуса"],
       warnings: []
     };
   }

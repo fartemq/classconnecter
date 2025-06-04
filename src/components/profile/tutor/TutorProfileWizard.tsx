@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -110,9 +111,11 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
   const progress = ((currentStep + 1) / steps.length) * 100;
 
   const handleStepData = (stepData: Partial<TutorFormValues>, avatar?: File | null) => {
+    console.log("Step data updated:", stepData);
     setFormData(prev => ({ ...prev, ...stepData }));
     if (avatar !== undefined) {
       setAvatarFile(avatar);
+      console.log("Avatar file updated:", avatar?.name);
     }
   };
 
@@ -127,35 +130,45 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
       return;
     }
 
-    // Save current step data
-    setIsStepLoading(true);
-    try {
-      const result = await onSubmit(formData as TutorFormValues, avatarFile);
-      if (!result.success) {
-        throw new Error(result.error);
-      }
-      
-      // Update avatar URL if it was uploaded
-      if (result.avatarUrl) {
-        setFormData(prev => ({ ...prev, avatarUrl: result.avatarUrl }));
-      }
+    // For preview step, don't save yet - just move to the next step
+    if (currentStep === steps.length - 2) { // subjects step (before preview)
+      setCurrentStep(currentStep + 1);
+      toast({
+        title: "Переходим к предварительному просмотру",
+        description: "Проверьте все данные перед завершением",
+      });
+      return;
+    }
 
-      if (currentStep < steps.length - 1) {
+    // For other steps (not preview), save and continue
+    if (currentStep < steps.length - 2) {
+      setIsStepLoading(true);
+      try {
+        const result = await onSubmit(formData as TutorFormValues, avatarFile);
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+        
+        // Update avatar URL if it was uploaded
+        if (result.avatarUrl) {
+          setFormData(prev => ({ ...prev, avatarUrl: result.avatarUrl }));
+        }
+
         setCurrentStep(currentStep + 1);
         toast({
           title: "Данные сохранены",
           description: "Переходим к следующему шагу",
         });
+      } catch (error) {
+        console.error("Error saving step:", error);
+        toast({
+          title: "Ошибка сохранения",
+          description: "Не удалось сохранить данные, попробуйте еще раз",
+          variant: "destructive",
+        });
+      } finally {
+        setIsStepLoading(false);
       }
-    } catch (error) {
-      console.error("Error saving step:", error);
-      toast({
-        title: "Ошибка сохранения",
-        description: "Не удалось сохранить данные, попробуйте еще раз",
-        variant: "destructive",
-      });
-    } finally {
-      setIsStepLoading(false);
     }
   };
 
@@ -168,6 +181,9 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
   const handleFinish = async () => {
     setIsStepLoading(true);
     try {
+      console.log("Final form data before submit:", formData);
+      console.log("Avatar file before submit:", avatarFile);
+      
       const result = await onSubmit(formData as TutorFormValues, avatarFile);
       if (!result.success) {
         throw new Error(result.error);
@@ -186,7 +202,7 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
       console.error("Error finishing wizard:", error);
       toast({
         title: "Ошибка завершения",
-        description: "Не удалось завершить создание профиля",
+        description: error instanceof Error ? error.message : "Не удалось завершить создание профиля",
         variant: "destructive",
       });
     } finally {

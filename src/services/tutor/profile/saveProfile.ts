@@ -10,17 +10,18 @@ export const saveTutorProfile = async (
   values: TutorFormValues, 
   userId: string, 
   avatarFile: File | null, 
-  avatarUrl: string | null
+  existingAvatarUrl: string | null
 ): Promise<{ success: boolean; avatarUrl: string | null; error?: any }> => {
   try {
     console.log("Saving tutor profile for user:", userId);
     console.log("Form values:", values);
     console.log("Avatar file provided:", !!avatarFile);
+    console.log("Existing avatar URL:", existingAvatarUrl);
     
-    // Upload avatar if selected
-    let finalAvatarUrl = avatarUrl;
+    // Upload avatar if new file is selected
+    let finalAvatarUrl = existingAvatarUrl || values.avatarUrl;
     if (avatarFile) {
-      console.log("Uploading avatar file");
+      console.log("Uploading new avatar file");
       try {
         finalAvatarUrl = await uploadAvatar(avatarFile, userId);
         console.log("Avatar uploaded, URL:", finalAvatarUrl);
@@ -37,7 +38,7 @@ export const saveTutorProfile = async (
       last_name: values.lastName,
       bio: values.bio,
       city: values.city,
-      avatar_url: finalAvatarUrl, // Use the URL of uploaded avatar
+      avatar_url: finalAvatarUrl,
       updated_at: new Date().toISOString(),
     }).eq("id", userId);
     
@@ -56,16 +57,16 @@ export const saveTutorProfile = async (
       
     console.log("Tutor profile exists check:", existingTutorProfile, checkError);
     
-    // Prepare tutor profile data with mapped education fields
+    // Prepare tutor profile data with proper field mapping
     const tutorProfileData: any = {
       updated_at: new Date().toISOString(),
-      education_institution: values.educationInstitution || null,
-      degree: values.degree || null,
-      graduation_year: values.graduationYear || null,
-      methodology: values.methodology || null,
+      education_institution: values.educationInstitution || "",
+      degree: values.degree || "",
+      graduation_year: values.graduationYear || new Date().getFullYear(),
+      methodology: values.methodology || "",
       experience: values.experience || 0,
-      achievements: values.achievements || null,
-      video_url: values.videoUrl || null
+      achievements: values.achievements || "",
+      video_url: values.videoUrl || ""
     };
     
     console.log("Tutor profile data for saving:", tutorProfileData);
