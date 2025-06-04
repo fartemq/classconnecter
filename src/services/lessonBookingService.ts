@@ -7,36 +7,59 @@ export interface BookingRequest {
   tutorId: string;
   subjectId: string;
   date: Date;
-  startTime: string;
-  endTime: string;
+  scheduleSlotId: string; // Обязательно используем ID слота из расписания
 }
 
 export const bookLesson = async (request: BookingRequest): Promise<{ success: boolean; error?: string; lessonId?: string }> => {
   try {
-    const { studentId, tutorId, subjectId, date, startTime, endTime } = request;
+    const { studentId, tutorId, subjectId, date, scheduleSlotId } = request;
     
-    // Format the date as ISO string (YYYY-MM-DD)
     const formattedDate = format(date, 'yyyy-MM-dd');
     
-    console.log("Starting lesson booking process");
+    console.log("Starting lesson booking process with schedule validation");
     console.log("Booking details:", { 
       studentId, 
       tutorId, 
       subjectId, 
       date: formattedDate, 
-      startTime, 
-      endTime 
+      scheduleSlotId 
     });
     
-    // Validate inputs
-    if (!studentId || !tutorId || !subjectId || !formattedDate || !startTime || !endTime) {
+    // Валидация входных данных
+    if (!studentId || !tutorId || !subjectId || !formattedDate || !scheduleSlotId) {
       return { 
         success: false, 
         error: "Не все обязательные поля заполнены" 
       };
     }
     
-    // Check if there are any exceptions for this date
+    // ОБЯЗАТЕЛЬНАЯ проверка: слот должен существовать в расписании репетитора
+    const { data: slotData, error: slotError } = await supabase
+      .from('tutor_schedule')
+      .select('*')
+      .eq('id', scheduleSlotId)
+      .eq('tutor_id', tutorId)
+      .eq('is_available', true)
+      .single();
+      
+    if (slotError || !slotData) {
+      console.error("Schedule slot validation failed:", slotError);
+      return { 
+        success: false, 
+        error: "Выбранный слот отсутствует в расписании репетитора" 
+      };
+    }
+    
+    // Проверка дня недели
+    const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
+    if (slotData.day_of_week !== dayOfWeek) {
+      return {
+        success: false,
+        error: "Слот не соответствует выбранному дню недели"
+      };
+    }
+    
+    // Проверка исключений в расписании
     const { data: exceptions, error: exceptionsError } = await supabase
       .from('tutor_schedule_exceptions')
       .select('*')
@@ -53,51 +76,19 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
     }
     
     if (exceptions && exceptions.length > 0) {
-      console.log("Tutor has a full day exception on this date");
       return {
         success: false,
         error: "Репетитор недоступен в выбранную дату"
       };
     }
     
-    // Get the day of week (1-7, where 1 is Monday)
-    const dayOfWeek = date.getDay() === 0 ? 7 : date.getDay();
-    
-    console.log("Checking if the selected time slot exists and is available");
-    
-    // Check if the slot exists and is available
-    const { data: slotData, error: slotError } = await supabase
-      .from('tutor_schedule')
-      .select('*')
-      .eq('id', startTime) // Using ID from the slot
-      .eq('tutor_id', tutorId)
-      .eq('day_of_week', dayOfWeek)
-      .eq('is_available', true);
-      
-    if (slotError) {
-      console.error("Error checking slot:", slotError);
-      return { 
-        success: false, 
-        error: "Не удалось проверить доступность слота" 
-      };
-    }
-    
-    if (!slotData || slotData.length === 0) {
-      console.log("Selected slot not found or not available");
-      return { 
-        success: false, 
-        error: "Выбранный слот недоступен" 
-      };
-    }
-    
-    console.log("Checking for existing bookings at this time");
-    
-    // Check if there's already a lesson booked for this slot and date
+    // Проверка существующих занятий в этот слот
     const { data: existingLessons, error: lessonsError } = await supabase
       .from('lessons')
       .select('*')
       .eq('tutor_id', tutorId)
-      .eq('date', formattedDate)
+      .gte('start_time', `${formattedDate}T${slotData.start_time}`)
+      .lt('start_time', `${formattedDate}T${slotData.end_time}`)
       .in('status', ['pending', 'confirmed']);
       
     if (lessonsError) {
@@ -108,38 +99,27 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
       };
     }
     
-    // Check for time conflicts
     if (existingLessons && existingLessons.length > 0) {
-      const selectedSlot = slotData[0];
-      const hasConflict = existingLessons.some(lesson => {
-        // Check if time periods overlap
-        return (
-          (selectedSlot.start_time < lesson.end_time && 
-           selectedSlot.end_time > lesson.start_time)
-        );
-      });
-      
-      if (hasConflict) {
-        console.log("Time conflict detected with existing lesson");
-        return { 
-          success: false, 
-          error: "Это время уже забронировано другим учеником" 
-        };
-      }
+      return { 
+        success: false, 
+        error: "Это время уже забронировано другим учеником" 
+      };
     }
     
-    console.log("All checks passed, creating the lesson");
+    console.log("All validations passed, creating the lesson");
     
-    // Create the lesson
+    // Создание занятия СТРОГО по расписанию
+    const startDateTime = `${formattedDate}T${slotData.start_time}`;
+    const endDateTime = `${formattedDate}T${slotData.end_time}`;
+    
     const { data, error } = await supabase
       .from('lessons')
       .insert({
         student_id: studentId,
         tutor_id: tutorId,
         subject_id: subjectId,
-        date: formattedDate,
-        start_time: slotData[0].start_time,
-        end_time: slotData[0].end_time,
+        start_time: startDateTime,
+        end_time: endDateTime,
         status: 'pending'
       })
       .select();
@@ -152,7 +132,7 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
       };
     }
     
-    console.log("Lesson created successfully:", data);
+    console.log("Lesson created successfully according to schedule:", data);
     
     return { 
       success: true,

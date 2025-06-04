@@ -6,12 +6,12 @@ import { useTutorSlots } from "@/hooks/useTutorSlots";
 import { Loader } from "@/components/ui/loader";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { format, addDays, isAfter, isBefore, startOfDay } from "date-fns";
+import { format, addDays, isBefore, startOfDay } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
-import { BookingRequest, bookLesson } from "@/services/lessonBookingService";
+import { bookLesson } from "@/services/lessonBookingService";
 
 interface TutorScheduleViewProps {
   tutorId: string;
@@ -28,7 +28,7 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
   const { user } = useAuth();
   const { toast } = useToast();
   
-  // Fetch tutor's subjects
+  // Загрузка предметов репетитора
   useEffect(() => {
     const fetchSubjects = async () => {
       try {
@@ -43,9 +43,7 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
         if (error) throw error;
         
         if (data) {
-          // Properly map the data to match the expected type
           const formattedSubjects = data.map(item => {
-            // Type assertion to make TypeScript happy
             const subject = item.subjects as unknown as { id: string; name: string };
             return {
               id: subject.id,
@@ -55,7 +53,6 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
           
           setSubjects(formattedSubjects);
           
-          // Select first subject by default
           if (formattedSubjects.length > 0 && !selectedSubject) {
             setSelectedSubject(formattedSubjects[0].id);
           }
@@ -75,8 +72,6 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
   
   const handleDateChange = (newDate: Date | undefined) => {
     if (!newDate) return;
-    
-    // Reset selected slot when date changes
     setSelectedSlot(null);
     setDate(newDate);
   };
@@ -98,45 +93,30 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
     try {
       setIsBooking(true);
       
-      // Find the selected slot
-      const slot = availableSlots.find(s => s.id === selectedSlot);
-      if (!slot) {
-        toast({
-          title: "Ошибка",
-          description: "Выбранный слот недоступен",
-          variant: "destructive"
-        });
-        return;
-      }
-      
-      const bookingRequest: BookingRequest = {
+      // ВАЖНО: используем scheduleSlotId для строгой привязки к расписанию
+      const result = await bookLesson({
         studentId: user.id,
         tutorId,
         subjectId: selectedSubject,
         date,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-      };
-      
-      console.log("Booking request:", bookingRequest);
-      
-      const result = await bookLesson(bookingRequest);
-      
-      console.log("Booking result:", result);
+        scheduleSlotId: selectedSlot, // Передаем ID слота из расписания
+      });
       
       if (result.success) {
         toast({
-          title: "Запрос отправлен",
-          description: "Ваш запрос на бронирование занятия успешно отправлен репетитору",
+          title: "Занятие забронировано",
+          description: "Ваше занятие успешно забронировано согласно расписанию репетитора",
         });
         
-        // Close the dialog if provided
+        // Обновляем доступные слоты
+        refreshSlots();
+        
         if (onClose) {
           onClose();
         }
       } else {
         toast({
-          title: "Ошибка",
+          title: "Ошибка бронирования",
           description: result.error || "Не удалось забронировать занятие",
           variant: "destructive"
         });
@@ -153,15 +133,23 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
     }
   };
   
-  // Filter function for calendar - disable dates in the past
   const isDateDisabled = (date: Date) => {
     return isBefore(date, startOfDay(new Date()));
   };
   
   return (
     <div className="space-y-6">
+      <div className="bg-amber-50 p-4 rounded-lg border border-amber-200">
+        <p className="text-amber-800 text-sm font-medium">
+          ⚠️ Бронирование происходит ТОЛЬКО по расписанию репетитора
+        </p>
+        <p className="text-amber-700 text-sm mt-1">
+          Доступно только время, которое репетитор открыл для занятий
+        </p>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Left Column - Calendar */}
+        {/* Календарь */}
         <div>
           <h3 className="font-medium mb-2">Выберите дату занятия</h3>
           <Card className="p-2">
@@ -176,7 +164,7 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
           </Card>
         </div>
         
-        {/* Right Column - Subject selection and time slots */}
+        {/* Предметы и слоты времени */}
         <div className="space-y-4">
           <div>
             <h3 className="font-medium mb-2">Выберите предмет</h3>
@@ -203,7 +191,7 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
           
           <div>
             <h3 className="font-medium mb-2">
-              Доступное время {format(date, "d MMMM", { locale: ru })}
+              Доступные слоты {format(date, "d MMMM", { locale: ru })}
             </h3>
             
             {loading ? (
@@ -231,7 +219,10 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
             ) : (
               <div className="bg-gray-50 p-4 rounded-md text-center">
                 <p className="text-gray-500">
-                  Нет доступных слотов на эту дату
+                  Репетитор не открыл слоты на эту дату
+                </p>
+                <p className="text-gray-400 text-sm mt-1">
+                  Выберите другую дату или свяжитесь с репетитором
                 </p>
               </div>
             )}
@@ -251,7 +242,7 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ tutorId, o
           disabled={!selectedSlot || !selectedSubject || isBooking}
         >
           {isBooking ? <Loader size="sm" className="mr-2" /> : null}
-          {isBooking ? "Бронирование..." : "Забронировать занятие"}
+          {isBooking ? "Бронирование..." : "Забронировать по расписанию"}
         </Button>
       </div>
     </div>

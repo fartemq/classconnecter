@@ -1,15 +1,10 @@
 
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
-import { useTutorSlots } from "@/hooks/useTutorSlots";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
+import { TutorScheduleView } from "../schedule/TutorScheduleView";
 
 interface RegularLessonBookingProps {
   isOpen: boolean;
@@ -27,14 +22,9 @@ export const RegularLessonBooking: React.FC<RegularLessonBookingProps> = ({
   onClose,
   tutor
 }) => {
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>();
-  const [selectedSubject, setSelectedSubject] = useState<string>("");
-  const [selectedSlot, setSelectedSlot] = useState<string>("");
   const [subjects, setSubjects] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { availableSlots, loading: slotsLoading } = useTutorSlots(tutor.id, selectedDate);
 
   React.useEffect(() => {
     if (isOpen) {
@@ -62,141 +52,41 @@ export const RegularLessonBooking: React.FC<RegularLessonBookingProps> = ({
     }
   };
 
-  const handleBookLesson = async () => {
-    if (!user || !selectedDate || !selectedSlot || !selectedSubject) {
-      toast({
-        title: "Ошибка",
-        description: "Пожалуйста, заполните все поля",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsLoading(true);
-
-    try {
-      const slot = availableSlots.find(s => s.id === selectedSlot);
-      if (!slot) throw new Error("Слот не найден");
-
-      const startDateTime = `${format(selectedDate, 'yyyy-MM-dd')}T${slot.startTime}`;
-      const endDateTime = `${format(selectedDate, 'yyyy-MM-dd')}T${slot.endTime}`;
-
-      const { error } = await supabase
-        .from('lessons')
-        .insert({
-          tutor_id: tutor.id,
-          student_id: user.id,
-          subject_id: selectedSubject,
-          start_time: startDateTime,
-          end_time: endDateTime,
-          status: 'confirmed' // Regular lessons are auto-confirmed for established relationships
-        });
-
-      if (error) throw error;
-
-      toast({
-        title: "Занятие забронировано",
-        description: "Занятие успешно добавлено в ваше расписание.",
-      });
-
-      onClose();
-    } catch (error) {
-      console.error('Error booking lesson:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось забронировать занятие",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handleBookingComplete = () => {
+    toast({
+      title: "Занятие забронировано",
+      description: "Занятие успешно добавлено в ваше расписание.",
+    });
+    onClose();
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             Занятие с {tutor.first_name} {tutor.last_name}
           </DialogTitle>
+          <p className="text-sm text-muted-foreground">
+            Выберите время из расписания репетитора
+          </p>
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
-            <label className="text-sm font-medium mb-2 block">Предмет</label>
-            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
-              <SelectTrigger>
-                <SelectValue placeholder="Выберите предмет" />
-              </SelectTrigger>
-              <SelectContent>
-                {subjects.map((subject) => (
-                  <SelectItem key={subject.id} value={subject.subject_id}>
-                    {subject.subjects?.name} - {subject.hourly_rate} ₽
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Дата</label>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              disabled={(date) => date < new Date()}
-              locale={ru}
-              className="rounded-md border"
-            />
-          </div>
-
-          {selectedDate && (
-            <div>
-              <label className="text-sm font-medium mb-2 block">Доступное время</label>
-              {slotsLoading ? (
-                <div className="text-center py-4">Загрузка...</div>
-              ) : availableSlots.length > 0 ? (
-                <Select value={selectedSlot} onValueChange={setSelectedSlot}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Выберите время" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableSlots.map((slot) => (
-                      <SelectItem key={slot.id} value={slot.id}>
-                        {slot.startTime} - {slot.endTime}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              ) : (
-                <div className="text-center py-4 text-gray-500">
-                  На эту дату нет доступных слотов
-                </div>
-              )}
-            </div>
-          )}
-
           <div className="bg-green-50 p-3 rounded-lg text-sm">
             <p className="font-medium text-green-800 mb-1">Обычное занятие:</p>
             <ul className="text-green-700 space-y-1">
-              <li>• Полный доступ к расписанию репетитора</li>
-              <li>• Автоматическое подтверждение</li>
-              <li>• Доступно для постоянных учеников</li>
+              <li>• Бронирование только по установленному расписанию</li>
+              <li>• Доступны только открытые репетитором слоты</li>
+              <li>• Автоматическое подтверждение для постоянных учеников</li>
             </ul>
           </div>
 
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onClose} className="flex-1">
-              Отмена
-            </Button>
-            <Button 
-              onClick={handleBookLesson} 
-              disabled={!selectedDate || !selectedSlot || !selectedSubject || isLoading}
-              className="flex-1"
-            >
-              {isLoading ? "Бронирование..." : "Забронировать"}
-            </Button>
-          </div>
+          {/* Используем TutorScheduleView для строгого соблюдения расписания */}
+          <TutorScheduleView 
+            tutorId={tutor.id} 
+            onClose={handleBookingComplete}
+          />
         </div>
       </DialogContent>
     </Dialog>
