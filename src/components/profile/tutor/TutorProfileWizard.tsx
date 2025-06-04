@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +23,7 @@ interface TutorProfileWizardProps {
   }>;
   subjects: any[];
   isLoading: boolean;
+  onComplete?: () => void;
 }
 
 interface Step {
@@ -39,7 +39,8 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
   initialValues,
   onSubmit,
   subjects,
-  isLoading
+  isLoading,
+  onComplete
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState<Partial<TutorFormValues>>(initialValues);
@@ -176,6 +177,11 @@ export const TutorProfileWizard: React.FC<TutorProfileWizardProps> = ({
         title: "Профиль успешно создан!",
         description: "Теперь вы можете опубликовать профиль и начать работу с учениками",
       });
+
+      // Call the completion callback to switch to display mode
+      if (onComplete) {
+        onComplete();
+      }
     } catch (error) {
       console.error("Error finishing wizard:", error);
       toast({

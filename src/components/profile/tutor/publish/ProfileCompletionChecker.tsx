@@ -10,6 +10,7 @@ import { Loader } from "@/components/ui/loader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { ProfileDisplayView } from "../display/ProfileDisplayView";
+import { saveTutorSubjects } from "@/services/tutorSubjectsService";
 
 interface ProfileCompletionCheckerProps {
   profile: Profile;
@@ -89,16 +90,27 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
 
       const success = await updateProfile(updateParams);
       
-      if (success) {
-        // Refresh the completion check
-        refetch();
-        setShowWizard(false);
+      if (!success) {
+        throw new Error("Ошибка сохранения профиля");
+      }
+
+      // Save subjects if they are provided
+      if (values.subjects && values.subjects.length > 0 && values.hourlyRate) {
+        console.log("Saving subjects:", values.subjects, "Rate:", values.hourlyRate);
+        const subjectsResult = await saveTutorSubjects(profile.id, values.subjects, values.hourlyRate);
+        if (!subjectsResult.success) {
+          console.error("Error saving subjects:", subjectsResult.error);
+          throw new Error("Ошибка сохранения предметов");
+        }
       }
       
+      // Refresh the completion check
+      refetch();
+      
       return {
-        success,
+        success: true,
         avatarUrl: values.avatarUrl,
-        error: success ? null : "Ошибка сохранения"
+        error: null
       };
     } catch (error) {
       console.error("Error in handleSubmit:", error);
@@ -121,6 +133,11 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
   };
 
   const handleSwitchToDisplay = () => {
+    setShowWizard(false);
+    refetch();
+  };
+
+  const handleWizardComplete = () => {
     setShowWizard(false);
     refetch();
   };
@@ -175,6 +192,7 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
           onSubmit={handleSubmit}
           subjects={subjects}
           isLoading={isLoading}
+          onComplete={handleWizardComplete}
         />
       </div>
     );

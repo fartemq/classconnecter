@@ -8,6 +8,7 @@ import { Edit, GraduationCap, BookOpen, Award, Video, MapPin, Calendar, User, Se
 import { Profile } from "@/hooks/profiles/types";
 import { ProfileEditModal } from "./ProfileEditModal";
 import { ProfilePublishControls } from "../ProfilePublishControls";
+import { DocumentUploadSection } from "../verification/DocumentUploadSection";
 
 interface ProfileDisplayViewProps {
   profile: Profile;
@@ -168,6 +169,12 @@ export const ProfileDisplayView: React.FC<ProfileDisplayViewProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Document Verification Section */}
+      <DocumentUploadSection 
+        tutorId={profile.id} 
+        isEducationVerified={profile.education_verified}
+      />
 
       {/* Teaching Methodology */}
       <Card>
