@@ -162,6 +162,12 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
               Вы находитесь в режиме полного редактирования анкеты. 
               После сохранения вы вернетесь к обычному просмотру профиля.
             </p>
+            <button 
+              onClick={handleSwitchToDisplay}
+              className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+            >
+              Вернуться к просмотру профиля
+            </button>
           </div>
         )}
         <TutorProfileWizard
@@ -169,7 +175,6 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
           onSubmit={handleSubmit}
           subjects={subjects}
           isLoading={isLoading}
-          onComplete={handleSwitchToDisplay}
         />
       </div>
     );
