@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { BookOpen, Calendar, Clock, FileText, CheckCircle, AlertCircle } from "lucide-react";
+import { BookOpen, Calendar, Clock, FileText, CheckCircle, AlertCircle, Download } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -12,6 +11,7 @@ import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { FileUpload } from "@/components/common/FileUpload";
 
 interface HomeworkItem {
   id: string;
@@ -22,6 +22,8 @@ interface HomeworkItem {
   created_at: string;
   tutor_id: string;
   subject_id: string;
+  materials: Array<{ path: string; name: string }>;
+  answer_files: Array<{ path: string; name: string }>;
   subjects: { name: string } | null;
   tutor: { first_name: string; last_name: string } | null;
 }
@@ -33,6 +35,7 @@ export const StudentHomeworkView = () => {
   const [homework, setHomework] = useState<HomeworkItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [submissionText, setSubmissionText] = useState<{ [key: string]: string }>({});
+  const [uploadingFiles, setUploadingFiles] = useState<{ [key: string]: boolean }>({});
 
   useEffect(() => {
     if (user?.id) {
@@ -54,6 +57,8 @@ export const StudentHomeworkView = () => {
           created_at,
           tutor_id,
           subject_id,
+          materials,
+          answer_files,
           subjects(name),
           tutor:profiles!tutor_id(first_name, last_name)
         `)
@@ -64,6 +69,8 @@ export const StudentHomeworkView = () => {
       
       const transformedData: HomeworkItem[] = (data || []).map(item => ({
         ...item,
+        materials: item.materials || [],
+        answer_files: item.answer_files || [],
         subjects: Array.isArray(item.subjects) && item.subjects.length > 0 
           ? item.subjects[0] 
           : null,
@@ -87,10 +94,12 @@ export const StudentHomeworkView = () => {
 
   const submitHomework = async (homeworkId: string) => {
     const submission = submissionText[homeworkId];
-    if (!submission?.trim()) {
+    const homeworkItem = homework.find(h => h.id === homeworkId);
+    
+    if (!submission?.trim() && (!homeworkItem?.answer_files || homeworkItem.answer_files.length === 0)) {
       toast({
         title: "Ошибка",
-        description: "Введите ответ на задание",
+        description: "Введите ответ или прикрепите файлы",
         variant: "destructive"
       });
       return;
@@ -101,7 +110,7 @@ export const StudentHomeworkView = () => {
         .from('homework')
         .update({ 
           status: 'submitted',
-          feedback: submission
+          feedback: submission || null
         })
         .eq('id', homeworkId);
 
@@ -119,6 +128,70 @@ export const StudentHomeworkView = () => {
       toast({
         title: "Ошибка",
         description: "Не удалось отправить задание",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleFileUploaded = async (homeworkId: string, filePath: string, fileName: string) => {
+    try {
+      const homeworkItem = homework.find(h => h.id === homeworkId);
+      const currentFiles = homeworkItem?.answer_files || [];
+      const newFiles = [...currentFiles, { path: filePath, name: fileName }];
+
+      const { error } = await supabase
+        .from('homework')
+        .update({ answer_files: newFiles })
+        .eq('id', homeworkId);
+
+      if (error) throw error;
+
+      await fetchHomework();
+    } catch (error) {
+      console.error('Error updating homework files:', error);
+    }
+  };
+
+  const handleFileRemoved = async (homeworkId: string, filePath: string) => {
+    try {
+      const homeworkItem = homework.find(h => h.id === homeworkId);
+      const currentFiles = homeworkItem?.answer_files || [];
+      const newFiles = currentFiles.filter(f => f.path !== filePath);
+
+      const { error } = await supabase
+        .from('homework')
+        .update({ answer_files: newFiles })
+        .eq('id', homeworkId);
+
+      if (error) throw error;
+
+      await fetchHomework();
+    } catch (error) {
+      console.error('Error removing homework file:', error);
+    }
+  };
+
+  const downloadFile = async (filePath: string, fileName: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('homework-materials')
+        .download(filePath);
+
+      if (error) throw error;
+
+      const url = URL.createObjectURL(data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось скачать файл",
         variant: "destructive"
       });
     }
@@ -225,6 +298,27 @@ export const StudentHomeworkView = () => {
                     </div>
                   )}
 
+                  {/* Материалы от репетитора */}
+                  {item.materials && item.materials.length > 0 && (
+                    <div className="mb-4">
+                      <h4 className="font-medium mb-2">Материалы для изучения:</h4>
+                      <div className="space-y-2">
+                        {item.materials.map((material, index) => (
+                          <Button
+                            key={index}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => downloadFile(material.path, material.name)}
+                            className="flex items-center"
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            {material.name}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {isSubmittable(item.status) && (
                     <div className="space-y-3">
                       <div>
@@ -240,6 +334,21 @@ export const StudentHomeworkView = () => {
                           placeholder="Введите ваш ответ или решение..."
                           rows={isMobile ? 3 : 4}
                           className={isMobile ? 'text-base' : ''}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium mb-2">
+                          Прикрепить файлы с ответами:
+                        </label>
+                        <FileUpload
+                          bucket="homework-answers"
+                          folder={user?.id || ''}
+                          onFileUploaded={(filePath, fileName) => handleFileUploaded(item.id, filePath, fileName)}
+                          onFileRemoved={(filePath) => handleFileRemoved(item.id, filePath)}
+                          existingFiles={item.answer_files}
+                          accept="image/*,.pdf,.doc,.docx,.txt"
+                          maxFiles={5}
                         />
                       </div>
                       

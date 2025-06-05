@@ -20,23 +20,22 @@ export const getStudentTutorRelationships = async (studentId: string): Promise<S
         updated_at,
         start_date,
         end_date,
-        tutor:tutor_id (
+        tutor:profiles!tutor_id (
           first_name,
           last_name,
           avatar_url,
           city
         )
       `)
-      .eq('student_id', studentId);
+      .eq('student_id', studentId)
+      .eq('status', 'accepted');
 
     if (error) {
       console.error('Error fetching student-tutor relationships:', error);
       return [];
     }
 
-    // Format the response with proper typing
     const relationships = data.map(item => {
-      // Ensure tutor is handled correctly - it should be an object not an array
       const formattedTutor = item.tutor ? ensureSingleObject(item.tutor) : undefined;
       
       return {
@@ -54,20 +53,20 @@ export const getStudentTutorRelationships = async (studentId: string): Promise<S
 };
 
 /**
- * Send a request to a tutor
+ * Send a request to a tutor (создает запрос в student_requests)
  */
-export const requestTutor = async (studentId: string, tutorId: string): Promise<boolean> => {
+export const requestTutor = async (studentId: string, tutorId: string, message?: string): Promise<boolean> => {
   try {
-    // Check if relationship already exists
-    const { data: existingRelationship, error: checkError } = await supabase
-      .from('student_tutor_relationships')
+    // Проверяем существующие запросы
+    const { data: existingRequest, error: checkError } = await supabase
+      .from('student_requests')
       .select('id, status')
       .eq('student_id', studentId)
       .eq('tutor_id', tutorId)
       .maybeSingle();
 
     if (checkError) {
-      console.error('Error checking existing relationship:', checkError);
+      console.error('Error checking existing request:', checkError);
       toast({
         title: "Ошибка",
         description: "Не удалось проверить существующие запросы",
@@ -76,58 +75,36 @@ export const requestTutor = async (studentId: string, tutorId: string): Promise<
       return false;
     }
 
-    // If relationship exists and is not removed, return appropriate message
-    if (existingRelationship) {
-      if (existingRelationship.status === 'pending') {
+    if (existingRequest) {
+      if (existingRequest.status === 'pending') {
         toast({
           title: "Запрос уже отправлен",
           description: "Вы уже отправили запрос этому репетитору",
         });
         return false;
-      } else if (existingRelationship.status === 'accepted') {
+      } else if (existingRequest.status === 'accepted') {
         toast({
-          title: "Репетитор уже добавлен",
+          title: "Репетитор уже принят",
           description: "Этот репетитор уже находится в вашем списке",
         });
         return false;
-      } else if (existingRelationship.status === 'rejected') {
-        // If the request was rejected before, we can allow to send a new one
-        const { error: updateError } = await supabase
-          .from('student_tutor_relationships')
-          .update({ status: 'pending', updated_at: new Date().toISOString() })
-          .eq('id', existingRelationship.id);
-
-        if (updateError) {
-          console.error('Error updating relationship:', updateError);
-          toast({
-            title: "Ошибка",
-            description: "Не удалось отправить запрос репетитору",
-            variant: "destructive",
-          });
-          return false;
-        }
-
-        toast({
-          title: "Запрос отправлен",
-          description: "Новый запрос успешно отправлен репетитору",
-        });
-        return true;
       }
     }
 
-    // Create a new relationship
+    // Создаем новый запрос
     const { error: insertError } = await supabase
-      .from('student_tutor_relationships')
+      .from('student_requests')
       .insert([
         { 
           student_id: studentId, 
-          tutor_id: tutorId, 
+          tutor_id: tutorId,
+          message: message || null,
           status: 'pending'
         }
       ]);
 
     if (insertError) {
-      console.error('Error creating relationship:', insertError);
+      console.error('Error creating request:', insertError);
       toast({
         title: "Ошибка",
         description: "Не удалось отправить запрос репетитору",
@@ -154,21 +131,20 @@ export const requestTutor = async (studentId: string, tutorId: string): Promise<
 };
 
 /**
- * Respond to a student's request (for tutors)
+ * Respond to a student's request (для репетиторов)
  */
 export const respondToStudentRequest = async (
-  relationshipId: string, 
+  requestId: string, 
   status: 'accepted' | 'rejected'
 ): Promise<boolean> => {
   try {
     const { error } = await supabase
-      .from('student_tutor_relationships')
+      .from('student_requests')
       .update({ 
         status, 
-        updated_at: new Date().toISOString(),
-        ...(status === 'accepted' ? { start_date: new Date().toISOString() } : {})
+        updated_at: new Date().toISOString()
       })
-      .eq('id', relationshipId);
+      .eq('id', requestId);
 
     if (error) {
       console.error(`Error ${status === 'accepted' ? 'accepting' : 'rejecting'} student request:`, error);
