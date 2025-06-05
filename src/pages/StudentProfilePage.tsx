@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { StudentDashboardTab } from "@/components/profile/student/StudentDashboardTab";
 import { ProfileTab } from "@/components/profile/student/ProfileTab";
 import { FindTutorsTab } from "@/components/profile/student/FindTutorsTab";
 import { MyTutorsTab } from "@/components/profile/student/MyTutorsTab";
@@ -15,7 +16,11 @@ import { StudentLayoutWithSidebar } from "@/components/profile/student/StudentLa
 const StudentProfilePage = () => {
   return (
     <StudentLayoutWithSidebar>
-      <Tabs defaultValue="profile" className="w-full">
+      <Tabs defaultValue="dashboard" className="w-full">
+        <TabsContent value="dashboard" className="space-y-4">
+          <StudentDashboardTab />
+        </TabsContent>
+        
         <TabsContent value="profile" className="space-y-4">
           <ProfileTab />
         </TabsContent>

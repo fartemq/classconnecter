@@ -25,6 +25,7 @@ import StudentProfileEditPage from "./pages/StudentProfileEditPage";
 import StudentProgressPage from "./pages/StudentProgressPage";
 import StudentHomeworkPage from "./pages/StudentHomeworkPage";
 import StudentSchedulePage from "./pages/StudentSchedulePage";
+import StudentLessonRequestsPage from "./pages/StudentLessonRequestsPage";
 import TutorProfilePage from "./pages/TutorProfilePage";
 import PublicTutorProfilePage from "./pages/PublicTutorProfilePage";
 import SchoolStudentPage from "./pages/SchoolStudentPage";
@@ -75,6 +76,7 @@ const App = () => {
                 <Route path="/profile/student/my-tutors" element={<StudentMyTutorsPage />} />
                 <Route path="/profile/student/profile" element={<StudentProfileEditPage />} />
                 <Route path="/profile/student/progress" element={<StudentProgressPage />} />
+                <Route path="/profile/student/lesson-requests" element={<StudentLessonRequestsPage />} />
                 <Route path="/profile/student/homework/:homeworkId" element={<HomeworkSubmissionPage />} />
                 <Route path="/profile/student/materials" element={<StudentMaterialsPage />} />
               </Route>

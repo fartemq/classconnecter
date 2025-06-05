@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { X, Home, User, Calendar, BookOpen, Search, Users, MessageSquare, BarChart3, Settings } from "lucide-react";
+import { X, Home, User, Calendar, BookOpen, Search, Users, MessageSquare, BarChart3, Settings, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +30,7 @@ export const StudentMobileSidebar = ({ isOpen, onClose }: StudentMobileSidebarPr
     { icon: BookOpen, label: "Домашние задания", href: "/profile/student/homework" },
     { icon: Search, label: "Поиск репетиторов", href: "/profile/student/find-tutors" },
     { icon: Users, label: "Мои репетиторы", href: "/profile/student/my-tutors" },
+    { icon: FileText, label: "Запросы на занятия", href: "/profile/student/lesson-requests" },
     { icon: MessageSquare, label: "Сообщения", href: "/profile/student/chats" },
     { icon: BarChart3, label: "Мой прогресс", href: "/profile/student/progress" },
     { icon: Settings, label: "Настройки", href: "/profile/student/settings" },
