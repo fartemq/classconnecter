@@ -4,8 +4,14 @@ import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Lesson } from "@/types/lesson";
-import { TimeSlot } from "./useTutorSlots";
 import { ensureSingleObject } from "@/utils/supabaseUtils";
+
+interface TimeSlot {
+  id: string;
+  tutorId: string;
+  startTime: string;
+  endTime: string;
+}
 
 export const useBooking = (setLessons?: React.Dispatch<React.SetStateAction<Lesson[]>>, lessons?: Lesson[]) => {
   const [bookingSlot, setBookingSlot] = useState<string | null>(null);
