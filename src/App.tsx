@@ -1,6 +1,6 @@
 
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -38,33 +38,16 @@ function App() {
               <Route path="/subjects/:subject/:level" element={<SubjectPage />} />
               <Route path="/become-tutor" element={<BecomeTutorPage />} />
               
-              {/* Protected routes */}
-              <Route 
-                path="/profile/student/*" 
-                element={
-                  <ProtectedRoute allowedRoles={["student"]}>
-                    <StudentProfilePage />
-                  </ProtectedRoute>
-                } 
-              />
+              {/* Protected routes for students */}
+              <Route element={<ProtectedRoute allowedRoles={["student"]} />}>
+                <Route path="/profile/student/*" element={<StudentProfilePage />} />
+              </Route>
               
-              <Route 
-                path="/profile/tutor/*" 
-                element={
-                  <ProtectedRoute allowedRoles={["tutor"]}>
-                    <TutorProfilePage />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              <Route 
-                path="/complete/tutor" 
-                element={
-                  <ProtectedRoute allowedRoles={["tutor"]}>
-                    <TutorCompletePage />
-                  </ProtectedRoute>
-                } 
-              />
+              {/* Protected routes for tutors */}
+              <Route element={<ProtectedRoute allowedRoles={["tutor"]} />}>
+                <Route path="/profile/tutor/*" element={<TutorProfilePage />} />
+                <Route path="/complete/tutor" element={<TutorCompletePage />} />
+              </Route>
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
