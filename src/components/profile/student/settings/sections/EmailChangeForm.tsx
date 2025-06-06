@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Mail } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 export const EmailChangeForm = () => {
   const { user } = useAuth();

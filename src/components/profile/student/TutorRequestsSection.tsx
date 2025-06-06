@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs } from "@/components/ui/tabs";
 import { Filter } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useTutorRequests } from "@/hooks/useTutorRequests";
 import { RequestTabs } from './tutor-requests/RequestTabs';
 import { RequestsList } from './tutor-requests/RequestsList';

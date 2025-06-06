@@ -14,7 +14,7 @@ import { ProgressTab } from "./ProgressTab";
 import { LessonRequestsTab } from "./LessonRequestsTab";
 import { NotificationsTab } from "./NotificationsTab";
 import { SettingsTab } from "./SettingsTab";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Loader } from "@/components/ui/loader";
 

@@ -6,7 +6,7 @@ import { ScheduleContent } from "./schedule/ScheduleContent";
 import { useSchedule } from "@/hooks/useSchedule";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 export const ScheduleTab = () => {
   const [searchParams] = useSearchParams();

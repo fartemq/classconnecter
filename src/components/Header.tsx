@@ -8,7 +8,7 @@ import { AuthButtons } from "./header/AuthButtons";
 import { UserMenu } from "./header/UserMenu";
 import { StudentMobileSidebar } from "./mobile/StudentMobileSidebar";
 import { TutorMobileSidebar } from "./mobile/TutorMobileSidebar";
-import { useAuth } from "@/hooks/auth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Header = () => {
