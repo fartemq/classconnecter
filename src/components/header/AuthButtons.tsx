@@ -12,14 +12,14 @@ export const AuthButtons = () => {
   // Function to handle logout
   const handleLogout = async () => {
     try {
-      const result = await logout();
-      if (result?.success) {
+      const success = await logout();
+      if (success) {
         toast({
           title: "Успешный выход",
           description: "Вы вышли из системы",
         });
       } else {
-        throw new Error(result?.error || "Не удалось выйти из системы");
+        throw new Error("Не удалось выйти из системы");
       }
     } catch (error) {
       toast({

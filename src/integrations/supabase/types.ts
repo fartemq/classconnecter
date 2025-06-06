@@ -792,16 +792,6 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
-      get_admin_messages_for_user: {
-        Args: { user_id_param: string }
-        Returns: {
-          id: string
-          subject: string
-          content: string
-          created_at: string
-          is_from_admin: boolean
-        }[]
-      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
