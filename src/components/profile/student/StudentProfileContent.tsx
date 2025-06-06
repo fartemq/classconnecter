@@ -15,7 +15,7 @@ import { LessonRequestsTab } from "./LessonRequestsTab";
 import { NotificationsTab } from "./NotificationsTab";
 import { SettingsTab } from "./SettingsTab";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/profiles/useProfile";
 import { Loader } from "@/components/ui/loader";
 
 export const StudentProfileContent = () => {
@@ -53,7 +53,7 @@ export const StudentProfileContent = () => {
 
   const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
   const { user } = useAuth();
-  const { profile, isLoading } = useProfile("student");
+  const { profile, isLoading } = useProfile();
 
   // Update active tab when location changes
   React.useEffect(() => {

@@ -3,10 +3,10 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchStudentLessons } from "@/services/lessonService";
 import { Lesson } from "@/types/lesson";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/profiles/useProfile";
 
 export const useStudentDashboard = () => {
-  const { profile } = useProfile("student");
+  const { profile } = useProfile();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [loading, setLoading] = useState(true);
 

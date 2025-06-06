@@ -5,7 +5,7 @@ import { X, Home, User, Calendar, BookOpen, Search, Users, MessageSquare, BarCha
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/profiles/useProfile";
 import { getInitials } from "@/lib/utils";
 import {
   Sheet,
@@ -20,7 +20,7 @@ interface StudentMobileSidebarProps {
 }
 
 export const StudentMobileSidebar = ({ isOpen, onClose }: StudentMobileSidebarProps) => {
-  const { profile } = useProfile("student");
+  const { profile } = useProfile();
   const location = useLocation();
 
   const navItems = [

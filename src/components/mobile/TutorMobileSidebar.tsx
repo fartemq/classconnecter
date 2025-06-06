@@ -5,7 +5,7 @@ import { X, Home, User, Calendar, Users, MessageSquare, BarChart3, Settings, Bel
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/profiles/useProfile";
 import { getInitials } from "@/lib/utils";
 import {
   Sheet,
@@ -20,7 +20,7 @@ interface TutorMobileSidebarProps {
 }
 
 export const TutorMobileSidebar = ({ isOpen, onClose }: TutorMobileSidebarProps) => {
-  const { profile } = useProfile("tutor");
+  const { profile } = useProfile();
   const location = useLocation();
 
   const navItems = [

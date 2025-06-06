@@ -15,7 +15,7 @@ import { ProfileCompletionChecker } from "./publish/ProfileCompletionChecker";
 import { TutorHomeworkManagement } from "./homework/TutorHomeworkManagement";
 import { TutorStudentSchedule } from "./schedule/TutorStudentSchedule";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/profiles/useProfile";
 import { Loader } from "@/components/ui/loader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -58,7 +58,7 @@ export const TutorProfileContent = () => {
 
   const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
   const { user } = useAuth();
-  const { profile, isLoading } = useProfile("tutor");
+  const { profile, isLoading } = useProfile();
 
   // Update active tab when location changes
   React.useEffect(() => {

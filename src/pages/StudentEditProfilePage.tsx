@@ -1,12 +1,12 @@
 
 import React from "react";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/profiles/useProfile";
 import { Loader } from "@/components/ui/loader";
 import { ProfileTab } from "@/components/profile/student/ProfileTab";
 import { StudentLayoutWithSidebar } from "@/components/profile/student/StudentLayoutWithSidebar";
 
 const StudentEditProfilePage = () => {
-  const { isLoading } = useProfile("student");
+  const { isLoading } = useProfile();
   
   if (isLoading) {
     return (

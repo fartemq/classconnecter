@@ -3,7 +3,7 @@ import React from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { StudentSidebar } from "./StudentSidebar";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/profiles/useProfile";
 import { StudentProfileCard } from "./StudentProfileCard";
 import { Button } from "@/components/ui/button";
 import { Calendar, Users } from "lucide-react";
@@ -18,7 +18,7 @@ export const StudentLayoutWithBooking: React.FC<StudentLayoutWithBookingProps> =
   children, 
   showBookingActions = false 
 }) => {
-  const { profile } = useProfile("student");
+  const { profile } = useProfile();
   
   return (
     <div className="min-h-screen flex flex-col">

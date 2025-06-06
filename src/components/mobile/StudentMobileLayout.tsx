@@ -3,7 +3,7 @@ import React from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { StudentSidebar } from "@/components/profile/student/StudentSidebar";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/profiles/useProfile";
 import { StudentProfileCard } from "@/components/profile/student/StudentProfileCard";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -20,7 +20,7 @@ export const StudentMobileLayout: React.FC<StudentMobileLayoutProps> = ({
   activeTab = "dashboard",
   onTabChange = () => {}
 }) => {
-  const { profile } = useProfile("student");
+  const { profile } = useProfile();
   const isMobile = useIsMobile();
   
   if (isMobile) {

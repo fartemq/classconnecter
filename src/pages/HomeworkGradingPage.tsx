@@ -2,12 +2,12 @@
 import React from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { useProfile } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/profiles/useProfile";
 import { Loader } from "@/components/ui/loader";
 import HomeworkGrading from "@/components/homework/HomeworkGrading";
 
 const HomeworkGradingPage = () => {
-  const { isLoading } = useProfile("tutor");
+  const { isLoading } = useProfile();
   
   if (isLoading) {
     return (
