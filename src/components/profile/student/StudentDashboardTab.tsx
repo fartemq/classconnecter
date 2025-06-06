@@ -28,10 +28,7 @@ export const StudentDashboardTab = () => {
       <AdminMessagesDisplay />
       <ProfileCompletionTracker />
       <QuickActionsGrid />
-      <DashboardStats 
-        upcomingLessonsCount={upcomingLessons.length}
-        completedLessonsCount={completedLessons.length}
-      />
+      <DashboardStats />
       <UpcomingLessonsCard upcomingLessons={upcomingLessons} />
     </div>
   );
