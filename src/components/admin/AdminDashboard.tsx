@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminHeader } from "./AdminHeader";
 import { AdminStats } from "./AdminStats";
+import { AdminMotivationalPage } from "./AdminMotivationalPage";
 import { UserManagementPanel } from "./UserManagementPanel";
 import { DocumentVerificationPanel } from "./DocumentVerificationPanel";
 import { SubjectManagementPanel } from "./SubjectManagementPanel";
@@ -30,7 +31,14 @@ export const AdminDashboard = () => {
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
-        return <AdminStats />;
+        return (
+          <div className="space-y-8">
+            <div className="bg-white rounded-lg p-6">
+              <AdminMotivationalPage />
+            </div>
+            <AdminStats />
+          </div>
+        );
       case 'users':
         return <UserManagementPanel />;
       case 'documents':
