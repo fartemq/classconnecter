@@ -41,16 +41,42 @@ export const AdminChatsPanel = () => {
 
   const fetchMessages = async () => {
     try {
-      const { data, error } = await supabase
+      // Сначала загружаем сообщения
+      const { data: messagesData, error: messagesError } = await supabase
         .from('admin_messages')
-        .select(`
-          *,
-          recipient:profiles!recipient_id (first_name, last_name, avatar_url, role)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setMessages(data || []);
+      if (messagesError) throw messagesError;
+
+      // Затем загружаем профили получателей отдельно
+      if (messagesData && messagesData.length > 0) {
+        const recipientIds = [...new Set(messagesData.map(msg => msg.recipient_id))];
+        
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, avatar_url, role')
+          .in('id', recipientIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        }
+
+        // Объединяем данные
+        const messagesWithRecipients = messagesData.map(message => ({
+          ...message,
+          recipient: profilesData?.find(profile => profile.id === message.recipient_id) || {
+            first_name: 'Неизвестный',
+            last_name: 'пользователь',
+            avatar_url: '',
+            role: 'unknown'
+          }
+        }));
+
+        setMessages(messagesWithRecipients);
+      } else {
+        setMessages([]);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
       toast({

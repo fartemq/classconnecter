@@ -80,7 +80,7 @@ export const MessageForm = ({ users, onMessageSent }: MessageFormProps) => {
       console.log('Тема:', subject.trim() || 'Без темы');
       console.log('Содержание:', content.trim());
 
-      // Отправляем сообщение
+      // Отправляем сообщение напрямую в таблицу admin_messages
       const messageData = {
         admin_id: currentUser.user.id,
         recipient_id: selectedUser!.id,
@@ -91,18 +91,18 @@ export const MessageForm = ({ users, onMessageSent }: MessageFormProps) => {
 
       console.log('Данные для отправки:', messageData);
 
-      const { data, error } = await supabase
+      const { data: messageResult, error: messageError } = await supabase
         .from('admin_messages')
         .insert(messageData)
         .select()
         .single();
 
-      if (error) {
-        console.error('Ошибка при вставке в admin_messages:', error);
-        throw new Error(`Ошибка базы данных: ${error.message}`);
+      if (messageError) {
+        console.error('Ошибка при вставке в admin_messages:', messageError);
+        throw new Error(`Ошибка базы данных: ${messageError.message}`);
       }
 
-      console.log('Сообщение успешно создано:', data);
+      console.log('Сообщение успешно создано:', messageResult);
 
       // Создаем уведомление получателю
       try {
@@ -111,7 +111,7 @@ export const MessageForm = ({ users, onMessageSent }: MessageFormProps) => {
           type: 'admin_message',
           title: 'Сообщение от администрации',
           message: subject.trim() || 'Вы получили новое сообщение от администрации',
-          related_id: data.id
+          related_id: messageResult.id
         };
 
         console.log('Создаем уведомление:', notificationData);
