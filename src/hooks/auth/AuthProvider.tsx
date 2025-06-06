@@ -1,203 +1,127 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthContext, AuthProviderProps } from "./AuthContext";
-import { toast } from "@/hooks/use-toast";
-import { fetchUserRole } from "@/services/auth/userService";
-import { loginUser } from "@/services/auth/loginService";
+import { AuthContext } from "./AuthContext";
+import { useAuthValidation } from "./useAuthValidation";
+
+interface AuthProviderProps {
+  children: React.ReactNode;
+}
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [session, setSession] = useState<Session | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
 
-  // Handle auth state change
+  // Используем валидацию аутентификации
+  useAuthValidation();
+
   useEffect(() => {
-    const initializeAuth = async () => {
+    const getInitialSession = async () => {
       try {
-        setIsLoading(true);
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
         
-        // Check current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("❌ Error fetching session:", sessionError);
-          throw sessionError;
-        }
-        
-        if (session?.user) {
-          console.log("✅ Session found, user is logged in:", session.user.id);
-          setUser(session.user);
-          setSession(session);
-          
-          // Дополнительная проверка для конкретного админ пользователя
-          if (session.user.email === "arsenalreally35@gmail.com") {
-            console.log("🔑 Special admin user detected, setting admin role");
-            setUserRole("admin");
-          } else {
-            // Get role from user metadata first, then from database
-            const metadataRole = session.user.user_metadata?.role;
-            if (metadataRole) {
-              console.log("📋 Role found in metadata:", metadataRole);
-              setUserRole(metadataRole);
-            } else {
-              try {
-                // Fetch user role from database
-                const role = await fetchUserRole(session.user.id);
-                console.log("🔍 User role fetched from database:", role);
-                setUserRole(role || 'student');
-              } catch (roleError) {
-                console.error("❌ Error fetching user role:", roleError);
-                // Use metadata role as fallback, or default to student
-                const fallbackRole = session.user.user_metadata?.role || 'student';
-                console.log("🔄 Using fallback role:", fallbackRole);
-                setUserRole(fallbackRole);
-              }
-            }
-          }
+        if (error) {
+          console.error("Error getting initial session:", error);
         } else {
-          console.log("ℹ️ No active session found");
-          setUser(null);
-          setUserRole(null);
-          setSession(null);
+          setSession(initialSession);
+          setUser(initialSession?.user ?? null);
+          
+          if (initialSession?.user) {
+            await fetchUserRole(initialSession.user.id);
+          }
         }
       } catch (error) {
-        console.error("❌ Auth initialization error:", error);
-        // In case of error, clear auth state
-        setUser(null);
-        setUserRole(null);
-        setSession(null);
+        console.error("Error in getInitialSession:", error);
       } finally {
         setIsLoading(false);
-        setAuthChecked(true);
       }
     };
 
-    // Setup auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("🔄 Auth state changed:", event);
+    getInitialSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
         
-        if (event === "SIGNED_IN" && session?.user) {
-          console.log("✅ User signed in:", session.user.id);
-          setUser(session.user);
-          setSession(session);
-          
-          // Дополнительная проверка для конкретного админ пользователя
-          if (session.user.email === "arsenalreally35@gmail.com") {
-            console.log("🔑 Special admin user signed in, setting admin role");
-            setUserRole("admin");
-          } else {
-            // Get role from metadata or fetch from database
-            const metadataRole = session.user.user_metadata?.role;
-            if (metadataRole) {
-              console.log("📋 Role found in metadata after sign in:", metadataRole);
-              setUserRole(metadataRole);
-            } else {
-              // Defer database call to prevent blocking
-              setTimeout(async () => {
-                try {
-                  const role = await fetchUserRole(session.user.id);
-                  console.log("🔍 User role fetched after sign in:", role);
-                  setUserRole(role || 'student'); // Default to student if no role found
-                } catch (roleError) {
-                  console.error("❌ Error fetching user role after sign in:", roleError);
-                  setUserRole('student'); // Default fallback
-                }
-              }, 0);
-            }
-          }
-        } else if (event === "SIGNED_OUT") {
-          console.log("👋 User signed out");
-          setUser(null);
+        setSession(session);
+        setUser(session?.user ?? null);
+
+        if (session?.user) {
+          await fetchUserRole(session.user.id);
+        } else {
           setUserRole(null);
-          setSession(null);
         }
+
+        if (event === 'SIGNED_OUT') {
+          setUserRole(null);
+        }
+
+        setIsLoading(false);
       }
     );
 
-    // Initialize auth state when component mounts
-    initializeAuth();
-
-    // Cleanup auth listener when component unmounts
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Login function 
-  const login = async (email: string, password: string) => {
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role, is_blocked, first_name')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching user role:", error);
+        return;
+      }
+
+      // Проверяем статус пользователя
+      if (data?.is_blocked || data?.first_name === '[УДАЛЕН]') {
+        console.log("User is blocked or deleted, signing out");
+        await supabase.auth.signOut();
+        return;
+      }
+
+      setUserRole(data?.role || null);
+    } catch (error) {
+      console.error("Error in fetchUserRole:", error);
+    }
+  };
+
+  const signOut = async () => {
     try {
       setIsLoading(true);
-      const response = await loginUser(email, password);
-      
-      if (!response.success) {
-        throw new Error(response.error || "Failed to login");
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Error signing out:", error);
+        throw error;
       }
       
-      return { success: true };
-    } catch (error: any) {
-      console.error("Login error:", error);
-      
-      return {
-        success: false,
-        error: error.message || "Failed to login"
-      };
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+    } catch (error) {
+      console.error("Error in signOut:", error);
+      throw error;
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Logout function
-  const logout = async () => {
-    try {
-      await signOut();
-      return true;
-    } catch (error) {
-      console.error("Logout error:", error);
-      return false;
-    }
-  };
-
-  // Sign out function
-  const signOut = async () => {
-    setIsLoading(true);
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      toast({
-        title: "Ошибка выхода",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
-    }
-    
-    // Reset auth state
-    setUser(null);
-    setUserRole(null);
-    setSession(null);
-    setIsLoading(false);
+  const value = {
+    user,
+    session,
+    userRole,
+    isLoading,
+    signOut,
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        userRole,
-        isLoading,
-        session,
-        signOut,
-        setUser,
-        setUserRole,
-        setIsLoading,
-        login,
-        logout
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
