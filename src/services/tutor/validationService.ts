@@ -1,192 +1,141 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Check if a tutor has added any subjects
- */
-export const hasTutorAddedSubjects = async (tutorId: string): Promise<boolean> => {
-  try {
-    const { count, error } = await supabase
-      .from("tutor_subjects")
-      .select("*", { count: 'exact', head: true })
-      .eq("tutor_id", tutorId)
-      .eq("is_active", true);
-      
-    if (error) throw error;
-    return count !== null && count > 0;
-  } catch (error) {
-    console.error("Error checking if tutor has added subjects:", error);
-    return false;
-  }
-};
+export interface TutorValidationResult {
+  isValid: boolean;
+  missingFields: string[];
+  warnings: string[];
+}
 
 /**
- * Check if a tutor has added schedule slots
+ * Validate tutor profile for publication
  */
-export const hasTutorAddedSchedule = async (tutorId: string): Promise<boolean> => {
-  try {
-    const { data, error } = await supabase
-      .from("tutor_schedule")
-      .select("id")
-      .eq("tutor_id", tutorId)
-      .limit(1);
-      
-    if (error) throw error;
-    return data && data.length > 0;
-  } catch (error) {
-    console.error("Error checking if tutor has added schedule:", error);
-    return false;
-  }
-};
-
-/**
- * Validate the completeness of a tutor profile for publishing
- */
-export const validateTutorProfile = async (tutorId: string) => {
+export const validateTutorProfile = async (tutorId: string): Promise<TutorValidationResult> => {
   try {
     console.log("Validating tutor profile for ID:", tutorId);
     
-    // Get tutor profile data with proper joins
+    const missingFields: string[] = [];
+    const warnings: string[] = [];
+    
+    // Fetch basic profile data
     const { data: profileData, error: profileError } = await supabase
       .from("profiles")
-      .select(`
-        id,
-        first_name,
-        last_name,
-        avatar_url,
-        city,
-        bio,
-        tutor_profiles (
-          education_institution,
-          methodology,
-          experience,
-          is_published,
-          degree,
-          graduation_year
-        )
-      `)
+      .select("*")
       .eq("id", tutorId)
       .single();
-
-    if (profileError || !profileData) {
-      console.error("Error fetching profile for validation:", profileError);
-      return {
-        isValid: false,
-        missingFields: ["Профиль не найден"],
-        warnings: [],
-      };
-    }
-
-    console.log("Profile data for validation:", profileData);
-
-    // Check if tutor has added subjects and schedule
-    const [hasSubjects, hasSchedule] = await Promise.all([
-      hasTutorAddedSubjects(tutorId),
-      hasTutorAddedSchedule(tutorId)
-    ]);
-
-    console.log("Has subjects:", hasSubjects, "Has schedule:", hasSchedule);
-
-    // List of missing required fields
-    const missingFields = [];
-    const warnings = [];
-    
-    // Validate basic profile fields
-    if (!profileData.first_name) missingFields.push("Имя");
-    if (!profileData.last_name) missingFields.push("Фамилия");
-    if (!profileData.avatar_url) missingFields.push("Фотография профиля");
-    if (!profileData.city) missingFields.push("Город");
-    if (!profileData.bio) missingFields.push("О себе");
-    
-    // Validate tutor-specific fields
-    const tutorProfileData = profileData.tutor_profiles;
-    
-    // Handle the tutor profile data properly
-    let tutorProfile: any = null;
-    
-    if (tutorProfileData) {
-      if (Array.isArray(tutorProfileData)) {
-        tutorProfile = tutorProfileData.length > 0 ? tutorProfileData[0] : null;
-      } else {
-        tutorProfile = tutorProfileData;
-      }
+      
+    if (profileError) {
+      console.error("Error fetching profile:", profileError);
+      throw new Error("Не удалось загрузить профиль");
     }
     
-    if (!tutorProfile) {
+    // Check required basic fields
+    if (!profileData.first_name?.trim()) {
+      missingFields.push("Имя");
+    }
+    if (!profileData.last_name?.trim()) {
+      missingFields.push("Фамилия");
+    }
+    if (!profileData.city?.trim()) {
+      missingFields.push("Город");
+    }
+    if (!profileData.bio?.trim()) {
+      missingFields.push("О себе");
+    }
+    
+    // Fetch tutor-specific data
+    const { data: tutorData, error: tutorError } = await supabase
+      .from("tutor_profiles")
+      .select("*")
+      .eq("id", tutorId)
+      .maybeSingle();
+      
+    if (tutorError && tutorError.code !== 'PGRST116') {
+      console.error("Error fetching tutor profile:", tutorError);
+      throw new Error("Не удалось загрузить данные репетитора");
+    }
+    
+    if (!tutorData) {
       missingFields.push("Профиль репетитора не создан");
     } else {
-      if (!tutorProfile.education_institution) missingFields.push("Учебное заведение");
-      if (!tutorProfile.degree) missingFields.push("Степень образования");
-      if (!tutorProfile.graduation_year) missingFields.push("Год окончания");
-      if (!tutorProfile.methodology) missingFields.push("Методика преподавания");
-      if (tutorProfile.experience === null || tutorProfile.experience === undefined) {
-        missingFields.push("Опыт преподавания");
+      // Check required tutor fields
+      if (!tutorData.education_institution?.trim()) {
+        missingFields.push("Учебное заведение");
+      }
+      if (!tutorData.degree?.trim()) {
+        missingFields.push("Степень/специальность");
+      }
+      if (!tutorData.graduation_year || tutorData.graduation_year < 1950) {
+        missingFields.push("Год окончания");
+      }
+      if (!tutorData.experience || tutorData.experience < 0) {
+        warnings.push("Опыт работы не указан");
       }
     }
     
     // Check subjects
-    if (!hasSubjects) missingFields.push("Предметы и цены");
-    
-    // Check schedule
-    if (!hasSchedule) warnings.push("Рекомендуется добавить расписание для удобства учеников");
-
-    // Additional warnings for profile quality
-    if (profileData.bio && profileData.bio.length < 50) {
-      warnings.push("Рекомендуется расширить описание о себе");
+    const { data: subjectsData, error: subjectsError } = await supabase
+      .from("tutor_subjects")
+      .select("*")
+      .eq("tutor_id", tutorId)
+      .eq("is_active", true);
+      
+    if (subjectsError) {
+      console.error("Error fetching subjects:", subjectsError);
+      warnings.push("Не удалось проверить предметы");
+    } else if (!subjectsData || subjectsData.length === 0) {
+      missingFields.push("Хотя бы один предмет");
     }
     
-    console.log("Missing fields:", missingFields);
-    console.log("Warnings:", warnings);
-    
-    // Profile is valid if there are no missing required fields
     const isValid = missingFields.length === 0;
-
+    
+    console.log("Validation result:", { isValid, missingFields, warnings });
+    
     return {
       isValid,
       missingFields,
-      warnings,
+      warnings
     };
   } catch (error) {
     console.error("Error validating tutor profile:", error);
     return {
       isValid: false,
-      missingFields: ["Ошибка проверки профиля"],
-      warnings: [],
+      missingFields: ["Ошибка валидации профиля"],
+      warnings: []
     };
   }
 };
 
 /**
- * Get comprehensive publication status for tutor
+ * Get comprehensive tutor publication status
  */
 export const getTutorPublicationStatus = async (tutorId: string) => {
   try {
+    // Get validation status
     const validation = await validateTutorProfile(tutorId);
     
     // Get current publication status
-    const { data: tutorProfile, error } = await supabase
+    const { data: tutorData, error } = await supabase
       .from("tutor_profiles")
       .select("is_published")
       .eq("id", tutorId)
       .maybeSingle();
       
     if (error && error.code !== 'PGRST116') {
-      console.error("Error getting publication status:", error);
+      console.error("Error fetching publication status:", error);
+      throw error;
     }
     
+    const isPublished = tutorData?.is_published || false;
+    
     return {
-      isPublished: tutorProfile?.is_published || false,
       isValid: validation.isValid,
       missingFields: validation.missingFields,
-      warnings: validation.warnings
+      warnings: validation.warnings,
+      isPublished
     };
   } catch (error) {
     console.error("Error getting publication status:", error);
-    return {
-      isPublished: false,
-      isValid: false,
-      missingFields: ["Ошибка получения статуса"],
-      warnings: []
-    };
+    throw error;
   }
 };

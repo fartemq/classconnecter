@@ -2,202 +2,207 @@
 import React, { useState, useEffect } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthContext, AuthProviderProps } from "./AuthContext";
-import { toast } from "@/hooks/use-toast";
-import { fetchUserRole } from "@/services/auth/userService";
-import { loginUser } from "@/services/auth/loginService";
+import { AuthContext, AuthContextType } from "./AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
-export const AuthProvider = ({ children }: AuthProviderProps) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [session, setSession] = useState<Session | null>(null);
-  const [authChecked, setAuthChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
-  // Handle auth state change
-  useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        setIsLoading(true);
+  // Check if user is blocked
+  const checkUserBlocked = async (userId: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("is_blocked")
+        .eq("id", userId)
+        .single();
         
-        // Check current session
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error("❌ Error fetching session:", sessionError);
-          throw sessionError;
-        }
-        
-        if (session?.user) {
-          console.log("✅ Session found, user is logged in:", session.user.id);
-          setUser(session.user);
-          setSession(session);
-          
-          // Дополнительная проверка для конкретного админ пользователя
-          if (session.user.email === "arsenalreally35@gmail.com") {
-            console.log("🔑 Special admin user detected, setting admin role");
-            setUserRole("admin");
-          } else {
-            // Get role from user metadata first, then from database
-            const metadataRole = session.user.user_metadata?.role;
-            if (metadataRole) {
-              console.log("📋 Role found in metadata:", metadataRole);
-              setUserRole(metadataRole);
-            } else {
-              try {
-                // Fetch user role from database
-                const role = await fetchUserRole(session.user.id);
-                console.log("🔍 User role fetched from database:", role);
-                setUserRole(role || 'student');
-              } catch (roleError) {
-                console.error("❌ Error fetching user role:", roleError);
-                // Use metadata role as fallback, or default to student
-                const fallbackRole = session.user.user_metadata?.role || 'student';
-                console.log("🔄 Using fallback role:", fallbackRole);
-                setUserRole(fallbackRole);
-              }
-            }
-          }
-        } else {
-          console.log("ℹ️ No active session found");
-          setUser(null);
-          setUserRole(null);
-          setSession(null);
-        }
-      } catch (error) {
-        console.error("❌ Auth initialization error:", error);
-        // In case of error, clear auth state
-        setUser(null);
-        setUserRole(null);
-        setSession(null);
-      } finally {
-        setIsLoading(false);
-        setAuthChecked(true);
+      if (error) {
+        console.error("Error checking user blocked status:", error);
+        return false;
       }
-    };
+      
+      return data?.is_blocked || false;
+    } catch (error) {
+      console.error("Error in checkUserBlocked:", error);
+      return false;
+    }
+  };
 
-    // Setup auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        console.log("🔄 Auth state changed:", event);
-        
-        if (event === "SIGNED_IN" && session?.user) {
-          console.log("✅ User signed in:", session.user.id);
-          setUser(session.user);
-          setSession(session);
-          
-          // Дополнительная проверка для конкретного админ пользователя
-          if (session.user.email === "arsenalreally35@gmail.com") {
-            console.log("🔑 Special admin user signed in, setting admin role");
-            setUserRole("admin");
-          } else {
-            // Get role from metadata or fetch from database
-            const metadataRole = session.user.user_metadata?.role;
-            if (metadataRole) {
-              console.log("📋 Role found in metadata after sign in:", metadataRole);
-              setUserRole(metadataRole);
-            } else {
-              // Defer database call to prevent blocking
-              setTimeout(async () => {
-                try {
-                  const role = await fetchUserRole(session.user.id);
-                  console.log("🔍 User role fetched after sign in:", role);
-                  setUserRole(role || 'student'); // Default to student if no role found
-                } catch (roleError) {
-                  console.error("❌ Error fetching user role after sign in:", roleError);
-                  setUserRole('student'); // Default fallback
-                }
-              }, 0);
-            }
-          }
-        } else if (event === "SIGNED_OUT") {
-          console.log("👋 User signed out");
-          setUser(null);
-          setUserRole(null);
-          setSession(null);
-        }
+  // Logout function
+  const logout = async (): Promise<boolean> => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error("Logout error:", error);
+        return false;
       }
-    );
+      return true;
+    } catch (error) {
+      console.error("Logout exception:", error);
+      return false;
+    }
+  };
 
-    // Initialize auth state when component mounts
-    initializeAuth();
-
-    // Cleanup auth listener when component unmounts
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  // Login function 
+  // Login function
   const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const response = await loginUser(email, password);
       
-      if (!response.success) {
-        throw new Error(response.error || "Failed to login");
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        console.error("Login error:", error);
+        return { 
+          success: false, 
+          error: error.message === "Invalid login credentials" 
+            ? "Неверные данные для входа" 
+            : error.message 
+        };
       }
-      
-      return { success: true };
-    } catch (error: any) {
-      console.error("Login error:", error);
-      
-      return {
-        success: false,
-        error: error.message || "Failed to login"
+
+      if (data.user) {
+        // Check if user is blocked before allowing login
+        const isBlocked = await checkUserBlocked(data.user.id);
+        
+        if (isBlocked) {
+          // Force logout if user is blocked
+          await supabase.auth.signOut();
+          
+          toast({
+            title: "Аккаунт заблокирован",
+            description: "Ваш аккаунт был заблокирован администратором. Для получения дополнительной информации обратитесь в службу поддержки.",
+            variant: "destructive",
+          });
+          
+          return { 
+            success: false, 
+            error: "Ваш аккаунт заблокирован администратором" 
+          };
+        }
+
+        return { success: true };
+      }
+
+      return { success: false, error: "Не удалось войти в систему" };
+    } catch (error) {
+      console.error("Login exception:", error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : "Произошла ошибка при входе" 
       };
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Logout function
-  const logout = async () => {
+  // Sign out function
+  const signOut = async (): Promise<void> => {
     try {
-      await signOut();
-      return true;
+      await supabase.auth.signOut();
     } catch (error) {
-      console.error("Logout error:", error);
-      return false;
+      console.error("Sign out error:", error);
     }
   };
 
-  // Sign out function
-  const signOut = async () => {
-    setIsLoading(true);
-    const { error } = await supabase.auth.signOut();
-    
-    if (error) {
-      toast({
-        title: "Ошибка выхода",
-        description: error.message,
-        variant: "destructive",
-      });
-      throw error;
+  // Fetch user role from profiles table
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("role, is_blocked")
+        .eq("id", userId)
+        .single();
+
+      if (error) {
+        console.error("Error fetching user role:", error);
+        return null;
+      }
+
+      // Check if user is blocked
+      if (data?.is_blocked) {
+        toast({
+          title: "Аккаунт заблокирован",
+          description: "Ваш аккаунт был заблокирован администратором.",
+          variant: "destructive",
+        });
+        
+        // Force logout
+        await supabase.auth.signOut();
+        return null;
+      }
+
+      return data?.role || "student";
+    } catch (error) {
+      console.error("Error in fetchUserRole:", error);
+      return null;
     }
-    
-    // Reset auth state
-    setUser(null);
-    setUserRole(null);
-    setSession(null);
-    setIsLoading(false);
+  };
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log("Auth state changed:", event, session?.user?.email);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Fetch user role when user logs in
+          setTimeout(async () => {
+            const role = await fetchUserRole(session.user.id);
+            setUserRole(role);
+            setIsLoading(false);
+          }, 0);
+        } else {
+          setUserRole(null);
+          setIsLoading(false);
+        }
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.email);
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserRole(session.user.id).then(role => {
+          setUserRole(role);
+          setIsLoading(false);
+        });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const value: AuthContextType = {
+    user,
+    userRole,
+    isLoading,
+    session,
+    signOut,
+    setUser,
+    setUserRole,
+    setIsLoading,
+    login,
+    logout,
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        user,
-        userRole,
-        isLoading,
-        session,
-        signOut,
-        setUser,
-        setUserRole,
-        setIsLoading,
-        login,
-        logout
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
