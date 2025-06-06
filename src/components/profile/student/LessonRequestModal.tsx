@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
-import { Calendar as CalendarIcon, Clock, User, BookOpen, MessageSquare } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { format, addDays } from "date-fns";
+import { ru } from "date-fns/locale";
+import { Calendar as CalendarIcon, Clock, User, BookOpen } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { Loader } from "@/components/ui/loader";
+import { useToast } from "@/hooks/use-toast";
+import { useLessonRequests } from "@/hooks/useLessonRequests";
 
 interface LessonRequestModalProps {
   isOpen: boolean;

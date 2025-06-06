@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile } from '../types';
+import { useAuth } from '@/hooks/auth/useAuth';
 
 interface UseStudentProfileParams {
   user: User | null;
@@ -13,9 +14,8 @@ interface UseStudentProfileReturn {
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  updateProfile: (updates: Partial<Profile>) => Promise<void>;
 }
-
-import { useAuth } from '@/hooks/auth/useAuth';
 
 export const useStudentProfile = (): UseStudentProfileReturn => {
   const { user } = useAuth();
@@ -52,6 +52,25 @@ export const useStudentProfile = (): UseStudentProfileReturn => {
     }
   };
 
+  const updateProfile = async (updates: Partial<Profile>) => {
+    if (!user?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      // Update local state
+      setProfile(prev => prev ? { ...prev, ...updates } : null);
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      throw err;
+    }
+  };
+
   useEffect(() => {
     fetchProfile();
   }, [user?.id]);
@@ -61,5 +80,6 @@ export const useStudentProfile = (): UseStudentProfileReturn => {
     isLoading,
     error,
     refetch: fetchProfile,
+    updateProfile,
   };
 };

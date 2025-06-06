@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -82,7 +83,7 @@ export const MyTutorsTab = () => {
       if (error) throw error;
 
       const formattedTutors = data?.map(item => {
-        const tutorData = item.tutor;
+        const tutorData = Array.isArray(item.tutor) ? item.tutor[0] : item.tutor;
         
         // Extract subjects
         const subjects = tutorData?.tutor_subjects?.map(ts => ts.subjects) || [];

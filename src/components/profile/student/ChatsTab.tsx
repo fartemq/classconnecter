@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, MessageSquare, User, Clock } from "lucide-react";
+import { Loader } from "@/components/ui/loader";
+import { Search, MessageSquare, User, Clock, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
 
 interface Conversation {
@@ -172,7 +173,7 @@ export const ChatsTab = () => {
       
       {loading ? (
         <div className="flex justify-center py-8">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <Loader className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : filteredConversations.length > 0 ? (
         <div className="space-y-2">
@@ -208,7 +209,7 @@ export const ChatsTab = () => {
         <div className="text-center py-8 text-gray-500">
           {searchTerm ? (
             <div>
-              <XCircle size={48} className="mx-auto mb-4 text-gray-300" />
+              <X size={48} className="mx-auto mb-4 text-gray-300" />
               <p className="mb-4">По запросу «{searchTerm}» ничего не найдено</p>
               <Button 
                 variant="outline" 

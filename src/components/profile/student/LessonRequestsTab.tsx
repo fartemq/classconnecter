@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, User, BookOpen, Calendar, MessageSquare, Plus } from "lucide-react";
+import { Clock, User, BookOpen, Calendar, MessageSquare, CheckCircle, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { LessonRequestModal } from "./LessonRequestModal";
-import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Loader } from "@/components/ui/loader";
 import { StudentTimeSlotPicker } from "./StudentTimeSlotPicker";
 import { LessonRequest, TimeSlot } from "@/types/lessonRequest";
 
@@ -200,7 +200,7 @@ export const LessonRequestsTab: React.FC = () => {
 
                         {request.status === 'rejected' && (
                           <div className="flex items-center gap-2 text-red-600">
-                            <XCircle className="h-4 w-4" />
+                            <X className="h-4 w-4" />
                             <span className="text-sm font-medium">Запрос отклонен</span>
                           </div>
                         )}

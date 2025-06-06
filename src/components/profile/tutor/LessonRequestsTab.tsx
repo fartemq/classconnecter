@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, User, BookOpen, Calendar, MessageSquare, Check, X } from "lucide-react";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { Clock, User, BookOpen, Calendar, MessageSquare, Check, X, CheckCircle } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format } from "date-fns";
-import { ru } from "date-fns/locale";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useToast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
 
 interface LessonRequest {

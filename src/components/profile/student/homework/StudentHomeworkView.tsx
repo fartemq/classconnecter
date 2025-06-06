@@ -2,15 +2,12 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { BookOpen, Calendar, Clock, FileText, CheckCircle, AlertCircle, Download } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { Loader } from "@/components/ui/loader";
+import { BookOpen, Calendar, Clock, Download, Upload, CheckCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { FileUpload } from "@/components/common/FileUpload";
 
 interface HomeworkItem {
   id: string;
@@ -29,8 +26,6 @@ interface HomeworkItem {
 
 export const StudentHomeworkView = () => {
   const { user } = useAuth();
-  const { toast } = useToast();
-  const isMobile = useIsMobile();
   const [homework, setHomework] = useState<HomeworkItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [submissionText, setSubmissionText] = useState<{ [key: string]: string }>({});
@@ -81,11 +76,6 @@ export const StudentHomeworkView = () => {
       setHomework(transformedData);
     } catch (error) {
       console.error('Error fetching homework:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось загрузить домашние задания",
-        variant: "destructive"
-      });
     } finally {
       setIsLoading(false);
     }

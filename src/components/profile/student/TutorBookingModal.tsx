@@ -55,11 +55,7 @@ export const TutorBookingModal: React.FC<TutorBookingModalProps> = ({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Используем только компонент, работающий по расписанию */}
-          <TutorScheduleView 
-            tutorId={tutor.id} 
-            onClose={handleBookingComplete}
-          />
+          <TutorScheduleView />
 
           {message && (
             <div className="space-y-2">

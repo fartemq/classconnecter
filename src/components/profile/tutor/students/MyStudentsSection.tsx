@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,7 +11,21 @@ import { MessageSquare, Calendar, User, BookOpen } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { StudentCardData } from "./types";
+
+interface StudentCardData {
+  id: string;
+  name: string;
+  avatar?: string;
+  city?: string;
+  level: string;
+  grade?: string;
+  relationshipStart: string;
+  lastActive?: string;
+  subjects: string[];
+  about?: string;
+  interests?: string[];
+  status: string;
+}
 
 export const MyStudentsSection = () => {
   const { user } = useAuth();
@@ -42,7 +57,8 @@ export const MyStudentsSection = () => {
             city,
             student_profiles (
               educational_level,
-              grade
+              grade,
+              subjects
             )
           )
         `)
@@ -69,7 +85,12 @@ export const MyStudentsSection = () => {
           city: studentData?.city || undefined,
           level: studentProfile?.educational_level || 'Не указано',
           grade: studentProfile?.grade,
-          relationshipStart: item.start_date
+          relationshipStart: item.start_date,
+          lastActive: new Date().toISOString(), // Placeholder
+          subjects: studentProfile?.subjects || [],
+          about: 'Информация о студенте', // Placeholder
+          interests: [], // Placeholder
+          status: 'active'
         };
       }).filter(student => student.name) || []; // Filter out invalid students
 
