@@ -22,6 +22,19 @@ interface Student {
   relationship_status: string;
 }
 
+interface StudentRelationshipData {
+  student_id: string;
+  start_date: string;
+  status: string;
+  student: {
+    id: string;
+    first_name: string;
+    last_name: string | null;
+    avatar_url: string | null;
+    city: string | null;
+  };
+}
+
 export const StudentsTab = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -58,15 +71,20 @@ export const StudentsTab = () => {
 
       if (error) throw error;
 
-      const formattedStudents = data?.map(item => ({
-        id: item.student_id,
-        first_name: Array.isArray(item.student) ? item.student[0]?.first_name : item.student?.first_name,
-        last_name: Array.isArray(item.student) ? item.student[0]?.last_name : item.student?.last_name,
-        avatar_url: Array.isArray(item.student) ? item.student[0]?.avatar_url : item.student?.avatar_url,
-        city: Array.isArray(item.student) ? item.student[0]?.city : item.student?.city,
-        relationship_start: item.start_date,
-        relationship_status: item.status
-      })).filter(student => student.first_name) || []; // Filter out invalid students
+      const formattedStudents = (data as StudentRelationshipData[])?.map(item => {
+        // Safely extract student data
+        const studentData = item.student;
+        
+        return {
+          id: item.student_id,
+          first_name: studentData?.first_name || '',
+          last_name: studentData?.last_name || null,
+          avatar_url: studentData?.avatar_url || null,
+          city: studentData?.city || null,
+          relationship_start: item.start_date,
+          relationship_status: item.status
+        };
+      }).filter(student => student.first_name) || []; // Filter out invalid students
 
       setStudents(formattedStudents);
     } catch (error) {
