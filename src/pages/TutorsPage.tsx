@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
@@ -8,7 +7,7 @@ import { TutorsFilter } from "@/components/tutors/TutorsFilter";
 import { Loader } from "@/components/ui/loader";
 import { useToast } from "@/hooks/use-toast";
 import { fetchPublicTutors, PublicTutorProfile } from "@/services/publicTutorService";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { Button } from "@/components/ui/button";
 import { LogIn, UserPlus, BookOpen, CheckCircle, Star, Users } from "lucide-react";
 

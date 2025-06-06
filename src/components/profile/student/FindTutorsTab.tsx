@@ -7,7 +7,7 @@ import { TutorsList } from './find-tutors/TutorsList';
 import { TutorFilterForm } from './find-tutors/TutorFilterForm';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth/useAuth';
 import { searchTutors } from '@/services/tutor/searchService';
 import { TutorSearchFilters } from '@/services/tutor/types';
 

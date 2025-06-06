@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { User, BookOpen, MessageSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useLessonRequests } from "@/hooks/useLessonRequests";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader } from "@/components/ui/loader";
 
