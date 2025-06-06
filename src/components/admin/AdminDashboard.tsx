@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { AdminHeader } from "./AdminHeader";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminStats } from "./AdminStats";
 import { UserManagementPanel } from "./UserManagementPanel";
@@ -34,10 +35,13 @@ export const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
-      <div className="flex-1 p-8">
-        {renderContent()}
+    <div className="min-h-screen bg-gray-50">
+      <AdminHeader />
+      <div className="flex">
+        <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
+        <div className="flex-1 p-8">
+          {renderContent()}
+        </div>
       </div>
     </div>
   );
