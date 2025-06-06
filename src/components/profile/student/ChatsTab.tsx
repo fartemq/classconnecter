@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader } from "@/components/ui/loader";
-import { Search, MessageSquare, User, Clock, X } from "lucide-react";
+import { Search, MessageSquare, User, Clock, X, Crown, Check } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -23,23 +23,12 @@ interface Conversation {
   unread: boolean;
 }
 
-interface MessageData {
+interface AdminMessage {
   id: string;
-  sender_id: string;
-  receiver_id: string;
+  subject: string;
   content: string;
-  is_read: boolean;
   created_at: string;
-  sender: {
-    first_name: string;
-    last_name: string | null;
-    avatar_url: string | null;
-  };
-  receiver: {
-    first_name: string;
-    last_name: string | null;
-    avatar_url: string | null;
-  };
+  is_read?: boolean;
 }
 
 export const ChatsTab = () => {
@@ -47,12 +36,14 @@ export const ChatsTab = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [adminMessages, setAdminMessages] = useState<AdminMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   
   useEffect(() => {
     if (user) {
       fetchConversations();
+      fetchAdminMessages();
     }
   }, [user]);
   
@@ -130,6 +121,42 @@ export const ChatsTab = () => {
       setLoading(false);
     }
   };
+
+  const fetchAdminMessages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_messages')
+        .select('id, subject, content, created_at')
+        .eq('recipient_id', user!.id)
+        .eq('is_from_admin', true)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error("Error fetching admin messages:", error);
+        return;
+      }
+
+      setAdminMessages(data || []);
+    } catch (error) {
+      console.error("Error in fetchAdminMessages:", error);
+    }
+  };
+
+  const markAdminMessageAsRead = async (messageId: string) => {
+    try {
+      // В реальном приложении здесь была бы логика отметки сообщения как прочитанного
+      setAdminMessages(prev => 
+        prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, is_read: true }
+            : msg
+        )
+      );
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+    }
+  };
   
   const formatTimestamp = (timestamp: string): string => {
     const date = new Date(timestamp);
@@ -172,6 +199,48 @@ export const ChatsTab = () => {
           />
         </div>
       </div>
+
+      {/* Admin Messages Section - Закрепленные сверху */}
+      {adminMessages.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-gray-600 mb-3 flex items-center">
+            <Crown className="h-4 w-4 mr-2 text-yellow-500" />
+            Сообщения от администрации
+          </h3>
+          <div className="space-y-2">
+            {adminMessages.map((message) => (
+              <Card 
+                key={message.id}
+                className="p-3 bg-yellow-50 border-yellow-200 hover:bg-yellow-100 cursor-pointer transition-colors"
+                onClick={() => markAdminMessageAsRead(message.id)}
+              >
+                <div className="flex items-center">
+                  <Avatar className="h-10 w-10 mr-3 bg-yellow-500">
+                    <AvatarFallback className="bg-yellow-500 text-white">
+                      <Crown className="h-5 w-5" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-medium text-yellow-800 flex items-center">
+                        Администратор
+                        {!message.is_read && (
+                          <Check className="h-4 w-4 ml-2 text-green-600" />
+                        )}
+                      </h4>
+                      <span className="text-xs text-yellow-600">
+                        {formatTimestamp(message.created_at)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-yellow-700 font-medium">{message.subject}</p>
+                    <p className="text-sm truncate text-yellow-700">{message.content}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
       
       {loading ? (
         <div className="flex justify-center py-8">

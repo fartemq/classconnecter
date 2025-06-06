@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,17 +48,42 @@ export const DocumentVerificationPanel = () => {
     try {
       setIsLoading(true);
       
-      // Note: This would require admin access in a real app
-      const { data, error } = await supabase
+      // Получаем документы с профилями репетиторов
+      const { data: documentsData, error: documentsError } = await supabase
         .from('document_verifications')
-        .select(`
-          *,
-          tutor:profiles!tutor_id (first_name, last_name, avatar_url, city)
-        `)
+        .select('*')
         .order('submitted_at', { ascending: false });
 
-      if (error) throw error;
-      setDocuments(data || []);
+      if (documentsError) throw documentsError;
+
+      if (documentsData && documentsData.length > 0) {
+        // Получаем профили репетиторов отдельным запросом
+        const tutorIds = [...new Set(documentsData.map(doc => doc.tutor_id))];
+        
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, avatar_url, city')
+          .in('id', tutorIds);
+
+        if (profilesError) {
+          console.error('Error fetching profiles:', profilesError);
+        }
+
+        // Объединяем данные
+        const documentsWithTutors = documentsData.map(doc => ({
+          ...doc,
+          tutor: profilesData?.find(profile => profile.id === doc.tutor_id) || {
+            first_name: 'Неизвестный',
+            last_name: 'репетитор',
+            avatar_url: '',
+            city: ''
+          }
+        }));
+
+        setDocuments(documentsWithTutors);
+      } else {
+        setDocuments([]);
+      }
     } catch (error) {
       console.error('Error fetching documents:', error);
       toast({

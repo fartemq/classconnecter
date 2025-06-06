@@ -1,16 +1,18 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, MessageSquare, User, Clock } from "lucide-react";
+import { Search, MessageSquare, User, Clock, Crown, Check } from "lucide-react";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Loader } from "@/components/ui/loader";
+import { useToast } from "@/hooks/use-toast";
 
 interface ChatPreview {
   id: string;
@@ -23,16 +25,27 @@ interface ChatPreview {
   is_online: boolean;
 }
 
+interface AdminMessage {
+  id: string;
+  subject: string;
+  content: string;
+  created_at: string;
+  is_read?: boolean;
+}
+
 export const TutorChatsTab = () => {
   const [chats, setChats] = useState<ChatPreview[]>([]);
+  const [adminMessages, setAdminMessages] = useState<AdminMessage[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
+  const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user?.id) {
       fetchChats();
+      fetchAdminMessages();
     }
   }, [user?.id]);
 
@@ -92,8 +105,63 @@ export const TutorChatsTab = () => {
       setChats(Array.from(chatMap.values()));
     } catch (error) {
       console.error('Error fetching chats:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить чаты",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchAdminMessages = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('admin_messages')
+        .select('id, subject, content, created_at')
+        .eq('recipient_id', user!.id)
+        .eq('is_from_admin', true)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        console.error("Error fetching admin messages:", error);
+        return;
+      }
+
+      setAdminMessages(data || []);
+    } catch (error) {
+      console.error("Error in fetchAdminMessages:", error);
+    }
+  };
+
+  const markAdminMessageAsRead = async (messageId: string) => {
+    try {
+      setAdminMessages(prev => 
+        prev.map(msg => 
+          msg.id === messageId 
+            ? { ...msg, is_read: true }
+            : msg
+        )
+      );
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+    }
+  };
+
+  const formatTimestamp = (timestamp: string): string => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const dayInMs = 24 * 60 * 60 * 1000;
+    
+    if (diff < dayInMs) {
+      return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    } else if (diff < 2 * dayInMs) {
+      return 'Вчера';
+    } else {
+      return date.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' });
     }
   };
 
@@ -129,6 +197,48 @@ export const TutorChatsTab = () => {
           className="pl-10"
         />
       </div>
+
+      {/* Admin Messages Section - Закрепленные сверху */}
+      {adminMessages.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-medium text-gray-600 mb-3 flex items-center">
+            <Crown className="h-4 w-4 mr-2 text-yellow-500" />
+            Сообщения от администрации
+          </h3>
+          <div className="space-y-2">
+            {adminMessages.map((message) => (
+              <Card 
+                key={message.id}
+                className="p-4 bg-yellow-50 border-yellow-200 hover:bg-yellow-100 cursor-pointer transition-colors"
+                onClick={() => markAdminMessageAsRead(message.id)}
+              >
+                <div className="flex items-center">
+                  <Avatar className="h-12 w-12 mr-4 bg-yellow-500">
+                    <AvatarFallback className="bg-yellow-500 text-white">
+                      <Crown className="h-6 w-6" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1">
+                    <div className="flex justify-between items-start">
+                      <h4 className="font-medium text-yellow-800 flex items-center">
+                        Администратор
+                        {!message.is_read && (
+                          <Check className="h-4 w-4 ml-2 text-green-600" />
+                        )}
+                      </h4>
+                      <span className="text-xs text-yellow-600">
+                        {formatTimestamp(message.created_at)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-yellow-700 font-medium">{message.subject}</p>
+                    <p className="text-sm truncate text-yellow-700">{message.content}</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {filteredChats.length === 0 ? (
         <Card>

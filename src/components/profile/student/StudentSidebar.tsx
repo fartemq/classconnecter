@@ -1,6 +1,6 @@
 
 import React from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { 
   Home, 
@@ -21,6 +21,8 @@ interface StudentSidebarProps {
 }
 
 export const StudentSidebar = ({ activeTab, onTabChange }: StudentSidebarProps) => {
+  const location = useLocation();
+  
   const menuItems = [
     { id: "dashboard", label: "Главная", icon: Home, path: "/profile/student" },
     { id: "profile", label: "Профиль", icon: User, path: "/profile/student/profile" },
@@ -35,6 +37,39 @@ export const StudentSidebar = ({ activeTab, onTabChange }: StudentSidebarProps) 
     { id: "settings", label: "Настройки", icon: Settings, path: "/profile/student/settings" }
   ];
 
+  // Определяем активную вкладку на основе текущего URL
+  const getActiveTabFromPath = () => {
+    const pathParts = location.pathname.split('/');
+    
+    if (pathParts.includes('chats') && pathParts.length > 4) {
+      return "chats"; // Individual chat view
+    } else if (pathParts.includes('chats')) {
+      return "chats"; // Chat list
+    } else if (pathParts.includes('find-tutors')) {
+      return "find-tutors";
+    } else if (pathParts.includes('my-tutors')) {
+      return "my-tutors";
+    } else if (pathParts.includes('schedule')) {
+      return "schedule";
+    } else if (pathParts.includes('homework')) {
+      return "homework";
+    } else if (pathParts.includes('progress')) {
+      return "progress";
+    } else if (pathParts.includes('lesson-requests')) {
+      return "lesson-requests";
+    } else if (pathParts.includes('notifications')) {
+      return "notifications";
+    } else if (pathParts.includes('settings')) {
+      return "settings";
+    } else if (pathParts.includes('profile')) {
+      return "profile";
+    } else {
+      return "dashboard";
+    }
+  };
+
+  const currentActiveTab = getActiveTabFromPath();
+
   return (
     <div className="w-64 bg-white shadow-sm border-r border-gray-200 min-h-screen">
       <div className="p-6">
@@ -46,7 +81,7 @@ export const StudentSidebar = ({ activeTab, onTabChange }: StudentSidebarProps) 
         <ul className="space-y-1">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = activeTab === item.id;
+            const isActive = currentActiveTab === item.id;
             
             return (
               <li key={item.id}>
