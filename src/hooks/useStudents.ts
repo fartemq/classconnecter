@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import { fetchAvailableStudents, fetchMyStudents, sendRequestToStudent } from "@/services/studentService";
 import { Student } from "@/types/student";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 

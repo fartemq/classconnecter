@@ -1,7 +1,7 @@
 
 import React from "react";
 import { AdminDashboard } from "@/components/admin/AdminDashboard";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { Navigate } from "react-router-dom";
 import { Loader } from "@/components/ui/loader";
 

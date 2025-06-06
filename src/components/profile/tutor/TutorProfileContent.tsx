@@ -14,7 +14,7 @@ import { TutorAnalytics } from "./analytics/TutorAnalytics";
 import { ProfileCompletionChecker } from "./publish/ProfileCompletionChecker";
 import { TutorHomeworkManagement } from "./homework/TutorHomeworkManagement";
 import { TutorStudentSchedule } from "./schedule/TutorStudentSchedule";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useProfile } from "@/hooks/useProfile";
 import { Loader } from "@/components/ui/loader";
 import { useQuery } from "@tanstack/react-query";
