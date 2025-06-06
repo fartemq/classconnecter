@@ -37,14 +37,14 @@ export const useStudentDashboard = () => {
     lesson.status === "completed"
   ) || [];
 
-  // Check profile completeness
-  const isProfileComplete = profile && 
+  // Check profile completeness - convert to boolean
+  const isProfileComplete = !!(profile && 
     profile.first_name && 
     profile.last_name && 
     profile.city && 
     profile.bio &&
     profile.student_profiles?.educational_level &&
-    profile.student_profiles?.subjects?.length;
+    profile.student_profiles?.subjects?.length > 0);
 
   return {
     profile,
