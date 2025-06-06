@@ -38,15 +38,15 @@ export const UserMenu = () => {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      const success = await logout();
-      if (success) {
+      const result = await logout();
+      if (result?.success) {
         toast({
           title: "Успешный выход",
           description: "Вы вышли из системы",
         });
         navigate("/");
       } else {
-        throw new Error("Не удалось выйти из системы");
+        throw new Error(result?.error || "Не удалось выйти из системы");
       }
     } catch (error) {
       toast({

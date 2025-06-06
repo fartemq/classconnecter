@@ -119,15 +119,16 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.error("Error signing out:", error);
-        throw error;
+        return { error: error.message };
       }
       
       setUser(null);
       setSession(null);
       setUserRole(null);
+      return { success: true };
     } catch (error) {
       console.error("Error in signOut:", error);
-      throw error;
+      return { error: error instanceof Error ? error.message : "Sign out failed" };
     } finally {
       setIsLoading(false);
     }
