@@ -7,11 +7,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
 export const AdminHeader = () => {
-  const { user, userRole, signOut } = useAuth();
+  const { user, userRole, logout } = useAuth();
   const navigate = useNavigate();
 
   const handleSignOut = async () => {
-    await signOut();
+    await logout();
     navigate("/");
   };
 

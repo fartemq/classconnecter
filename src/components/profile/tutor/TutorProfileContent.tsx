@@ -19,6 +19,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { Loader } from "@/components/ui/loader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Profile } from "@/hooks/profiles/types";
 
 export const TutorProfileContent = () => {
   const location = useLocation();
@@ -87,12 +88,15 @@ export const TutorProfileContent = () => {
     );
   }
 
+  // Cast to Profile type for components that require it
+  const tutorProfile = profile as Profile;
+
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <TutorDashboard profile={profile} />;
+        return <TutorDashboard profile={tutorProfile} />;
       case "profile":
-        return <ProfileCompletionChecker profile={profile} subjects={subjects} />;
+        return <ProfileCompletionChecker profile={tutorProfile} subjects={subjects} />;
       case "lesson-requests":
         return <LessonRequestsTab />;
       case "notifications":
@@ -112,9 +116,9 @@ export const TutorProfileContent = () => {
       case "chat-view":
         return <TutorChatView />;
       case "settings":
-        return <TutorSettingsTab profile={profile} />;
+        return <TutorSettingsTab profile={tutorProfile} />;
       default:
-        return <TutorDashboard profile={profile} />;
+        return <TutorDashboard profile={tutorProfile} />;
     }
   };
 

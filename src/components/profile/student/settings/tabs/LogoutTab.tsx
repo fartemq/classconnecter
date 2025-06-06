@@ -9,16 +9,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export const LogoutTab: React.FC = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { logout } = useAuth();
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      toast({
-        title: "Выход выполнен успешно",
-        description: "Вы вышли из системы",
-      });
-      navigate('/');
+      const success = await logout();
+      if (success) {
+        toast({
+          title: "Выход выполнен успешно",
+          description: "Вы вышли из системы",
+        });
+        navigate('/');
+      } else {
+        throw new Error("Не удалось выйти из системы");
+      }
     } catch (error) {
       console.error("Ошибка при выходе из системы:", error);
       toast({
