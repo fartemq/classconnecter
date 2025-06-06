@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "./AuthContext";
-import { useAuthValidation } from "./useAuthValidation";
+import { toast } from "@/hooks/use-toast";
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -14,9 +14,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Используем валидацию аутентификации
-  useAuthValidation();
 
   useEffect(() => {
     const getInitialSession = async () => {
@@ -66,6 +63,46 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Check user status function (moved from useAuthValidation)
+  const checkUserStatus = async (userId: string) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('is_blocked, first_name')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error checking user status:', error);
+        return;
+      }
+
+      if (profile?.is_blocked) {
+        // Если пользователь заблокирован, выходим из системы
+        await supabase.auth.signOut();
+        toast({
+          title: "Доступ ограничен",
+          description: "Ваш аккаунт заблокирован администратором.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (profile?.first_name === '[УДАЛЕН]') {
+        // Если профиль помечен как удаленный, выходим из системы
+        await supabase.auth.signOut();
+        toast({
+          title: "Аккаунт удален",
+          description: "Этот аккаунт был удален администратором.",
+          variant: "destructive"
+        });
+        return;
+      }
+    } catch (error) {
+      console.error('Error in auth validation:', error);
+    }
+  };
+
   const fetchUserRole = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -82,7 +119,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       // Проверяем статус пользователя
       if (data?.is_blocked || data?.first_name === '[УДАЛЕН]') {
         console.log("User is blocked or deleted, signing out");
-        await supabase.auth.signOut();
+        await checkUserStatus(userId);
         return;
       }
 
