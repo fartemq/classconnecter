@@ -5,8 +5,19 @@ import { QuickActionsGrid } from "./dashboard/QuickActionsGrid";
 import { DashboardStats } from "./dashboard/DashboardStats";
 import { UpcomingLessonsCard } from "./dashboard/UpcomingLessonsCard";
 import { AdminMessagesDisplay } from "./AdminMessagesDisplay";
+import { useStudentDashboard } from "./dashboard/useStudentDashboard";
 
 export const StudentDashboardTab = () => {
+  const { upcomingLessons, completedLessons, loading } = useStudentDashboard();
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -17,8 +28,11 @@ export const StudentDashboardTab = () => {
       <AdminMessagesDisplay />
       <ProfileCompletionTracker />
       <QuickActionsGrid />
-      <DashboardStats />
-      <UpcomingLessonsCard />
+      <DashboardStats 
+        upcomingLessonsCount={upcomingLessons.length}
+        completedLessonsCount={completedLessons.length}
+      />
+      <UpcomingLessonsCard upcomingLessons={upcomingLessons} />
     </div>
   );
 };

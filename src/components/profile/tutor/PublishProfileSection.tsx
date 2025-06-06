@@ -1,10 +1,12 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Upload } from "lucide-react";
 import { 
-  validateTutorProfile
+  validateTutorProfile,
+  ValidationResult 
 } from "@/services/tutor/validationService";
 import { ValidationAlert } from "./publish/ValidationAlert";
 import { RecommendationAlert } from "./publish/RecommendationAlert";
@@ -23,19 +25,38 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
   const [hasSubjects, setHasSubjects] = useState(true);
   const [hasSchedule, setHasSchedule] = useState(true);
   const [showValidation, setShowValidation] = useState(true);
-  const [validationResult, setValidationResult] = useState<{
-    isValid: boolean;
-    missingFields: string[];
-    warnings: string[];
-  }>({ isValid: true, missingFields: [], warnings: [] });
+  const [validationResult, setValidationResult] = useState<ValidationResult>({
+    isValid: true,
+    missingFields: [],
+    warnings: [],
+    errors: [],
+    completionPercentage: 100
+  });
   const { toast } = useToast();
 
   // Check profile completeness
   useEffect(() => {
     const checkProfileCompleteness = async () => {
       try {
-        // Check if the tutor profile is complete
-        const result = await validateTutorProfile(tutorId);
+        // Get tutor profile data
+        const { data: profile, error } = await supabase
+          .from('profiles')
+          .select(`
+            *,
+            tutor_profiles(*)
+          `)
+          .eq('id', tutorId)
+          .single();
+
+        if (error) throw error;
+
+        // Validate the tutor profile
+        const profileData = {
+          ...profile,
+          ...profile.tutor_profiles?.[0]
+        };
+        
+        const result = validateTutorProfile(profileData);
         setValidationResult(result);
         
         // Check if tutor has added subjects
@@ -74,23 +95,20 @@ export function PublishProfileSection({ tutorId, isPublished, onPublishStatusCha
       
       // If trying to publish, validate profile first
       if (!isPublished) {
-        const result = await validateTutorProfile(tutorId);
-        
-        if (!result.isValid) {
+        if (!validationResult.isValid) {
           toast({
             title: "Профиль не заполнен",
             description: "Пожалуйста, заполните все обязательные поля профиля перед публикацией",
             variant: "destructive",
           });
-          setValidationResult(result);
           setShowValidation(true);
           setIsLoading(false);
           return;
         }
         
         // Show warnings but allow publishing
-        if (result.warnings.length > 0) {
-          const warningText = result.warnings.join("\n");
+        if (validationResult.warnings.length > 0) {
+          const warningText = validationResult.warnings.join("\n");
           toast({
             title: "Предупреждение",
             description: warningText,

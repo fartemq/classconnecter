@@ -76,22 +76,23 @@ export const useStudentProfile = (): UseStudentProfileResult => {
       setProfile(prev => {
         if (!prev) return prev;
         
-        const studentProfiles = prev.student_profiles || {} as StudentProfileData;
+        const studentProfiles = ('student_profiles' in prev ? prev.student_profiles : {}) as StudentProfileData;
         
-        return { 
+        // Create a complete profile with all extended fields
+        const updatedProfile: Profile = { 
           ...prev, 
           ...params,
           id: prev.id,
           role: prev.role,
           created_at: prev.created_at,
           updated_at: new Date().toISOString(),
-          school: params.school || prev.school,
-          grade: params.grade || prev.grade,
-          learning_goals: params.learning_goals || prev.learning_goals,
-          educational_level: params.educational_level || prev.educational_level,
-          subjects: params.subjects || prev.subjects || [],
-          preferred_format: params.preferred_format || prev.preferred_format || [],
-          budget: params.budget || prev.budget || 1000,
+          school: params.school || ('school' in prev ? prev.school : undefined),
+          grade: params.grade || ('grade' in prev ? prev.grade : undefined),
+          learning_goals: params.learning_goals || ('learning_goals' in prev ? prev.learning_goals : undefined),
+          educational_level: params.educational_level || ('educational_level' in prev ? prev.educational_level : undefined),
+          subjects: params.subjects || ('subjects' in prev ? prev.subjects : []),
+          preferred_format: params.preferred_format || ('preferred_format' in prev ? prev.preferred_format : []),
+          budget: params.budget || ('budget' in prev ? prev.budget : 1000),
           student_profiles: {
             ...studentProfiles,
             educational_level: params.educational_level || studentProfiles.educational_level || null,
@@ -103,6 +104,8 @@ export const useStudentProfile = (): UseStudentProfileResult => {
             budget: params.budget || studentProfiles.budget || 1000
           }
         };
+        
+        return updatedProfile;
       });
 
       toast({
@@ -123,7 +126,7 @@ export const useStudentProfile = (): UseStudentProfileResult => {
   };
 
   // Load student-specific data with proper error handling
-  const loadStudentData = async (userId: string) => {
+  const loadStudentData = async (userId: string): Promise<Profile | null> => {
     try {
       console.log("Loading student data for user:", userId);
       const studentData = await fetchStudentProfileData(userId);
@@ -143,7 +146,7 @@ export const useStudentProfile = (): UseStudentProfileResult => {
   };
 
   return {
-    profile,
+    profile: profile as Profile | null,
     isLoading,
     updateProfile,
     loadStudentData,

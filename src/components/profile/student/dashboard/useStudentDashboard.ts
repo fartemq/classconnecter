@@ -43,8 +43,8 @@ export const useStudentDashboard = () => {
     profile.last_name && 
     profile.city && 
     profile.bio &&
-    profile.student_profiles?.educational_level &&
-    profile.student_profiles?.subjects?.length > 0);
+    ('student_profiles' in profile && profile.student_profiles?.educational_level) &&
+    ('student_profiles' in profile && profile.student_profiles?.subjects?.length > 0));
 
   return {
     profile,

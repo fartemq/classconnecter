@@ -2,46 +2,56 @@
 import { supabase } from "@/integrations/supabase/client";
 import { validateTutorProfile } from "./validationService";
 
-/**
- * Update the published status of a tutor profile with proper RLS compliance
- */
-export const publishTutorProfile = async (tutorId: string, publishStatus: boolean): Promise<boolean> => {
+export const getTutorPublicationStatus = async (tutorId: string) => {
   try {
-    console.log(`Attempting to ${publishStatus ? 'publish' : 'unpublish'} tutor profile for ID:`, tutorId);
+    // Get tutor profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select(`
+        *,
+        tutor_profiles(*)
+      `)
+      .eq('id', tutorId)
+      .single();
+
+    if (profileError) throw profileError;
+
+    // Validate profile
+    const profileData = {
+      ...profile,
+      ...profile.tutor_profiles?.[0]
+    };
     
-    // If trying to publish, check if the profile is valid
-    if (publishStatus) {
-      const validation = await validateTutorProfile(tutorId);
-      if (!validation.isValid) {
-        console.error("Cannot publish invalid profile. Missing fields:", validation.missingFields);
-        throw new Error(`Профиль не готов к публикации. Заполните: ${validation.missingFields.join(', ')}`);
-      }
-    }
+    const result = validateTutorProfile(profileData);
     
-    // Update the publish status - RLS will ensure user can only update their own profile
+    return {
+      isValid: result.isValid,
+      missingFields: result.missingFields || [],
+      warnings: result.warnings || [],
+      isPublished: profile.tutor_profiles?.[0]?.is_published || false
+    };
+  } catch (error) {
+    console.error('Error getting tutor publication status:', error);
+    return {
+      isValid: false,
+      missingFields: ['Ошибка загрузки профиля'],
+      warnings: [],
+      isPublished: false
+    };
+  }
+};
+
+export const publishTutorProfile = async (tutorId: string, isPublished: boolean) => {
+  try {
     const { error } = await supabase
-      .from("tutor_profiles")
-      .update({ 
-        is_published: publishStatus,
-        updated_at: new Date().toISOString()
-      })
-      .eq("id", tutorId);
-    
-    if (error) {
-      console.error("Error updating tutor profile publish status:", error);
-      
-      // Check if it's an RLS error
-      if (error.message?.includes('row-level security')) {
-        throw new Error("У вас нет прав для изменения этого профиля");
-      }
-      
-      throw new Error("Не удалось обновить статус публикации");
-    }
-    
-    console.log(`Tutor profile successfully ${publishStatus ? 'published' : 'unpublished'}`);
+      .from('tutor_profiles')
+      .update({ is_published: isPublished })
+      .eq('id', tutorId);
+
+    if (error) throw error;
     return true;
   } catch (error) {
-    console.error("Exception in publishTutorProfile:", error);
-    throw error;
+    console.error('Error publishing tutor profile:', error);
+    return false;
   }
 };

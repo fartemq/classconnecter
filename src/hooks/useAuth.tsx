@@ -1,58 +1,75 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
-  session: Session | null;
   userRole: string | null;
+  session: Session | null;
   isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, userData: any) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
-  resetPassword: (email: string) => Promise<{ error: any }>;
+  login: (email: string, password: string) => Promise<{ error?: any }>;
+  register: (email: string, password: string, userData?: any) => Promise<{ error?: any }>;
+  logout: () => Promise<boolean>;
+  updateUserRole: (role: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        console.log('Auth state changed:', event, session?.user?.id);
+    // Get initial session
+    const getInitialSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) {
+          console.error('Error getting initial session:', error);
+          return;
+        }
         
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Fetch user role when user logs in
         if (session?.user) {
-          setTimeout(async () => {
-            try {
-              const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('role')
-                .eq('id', session.user.id)
-                .single();
-              
-              if (error) {
-                console.error('Error fetching user role:', error);
-                setUserRole(null);
-              } else {
-                setUserRole(profile?.role || null);
-              }
-            } catch (error) {
-              console.error('Error in role fetch:', error);
-              setUserRole(null);
-            }
-          }, 0);
+          await fetchUserRole(session.user.id);
+        }
+      } catch (error) {
+        console.error('Error in getInitialSession:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    getInitialSession();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.email);
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          await fetchUserRole(session.user.id);
         } else {
           setUserRole(null);
         }
@@ -61,143 +78,144 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Check for existing session
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) {
-        console.error('Error getting session:', error);
-      }
-      setSession(session);
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return;
+      }
+
+      setUserRole(data?.role || 'student');
+    } catch (error) {
+      console.error('Error in fetchUserRole:', error);
+    }
+  };
+
+  const login = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      
+
       if (error) {
         toast({
           title: "Ошибка входа",
           description: error.message,
-          variant: "destructive"
+          variant: "destructive",
         });
+        return { error };
       }
-      
-      return { error };
+
+      return { error: null };
     } catch (error) {
-      console.error('Sign in error:', error);
+      console.error('Login error:', error);
       return { error };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signUp = async (email: string, password: string, userData: any) => {
+  const register = async (email: string, password: string, userData?: any) => {
     try {
       setIsLoading(true);
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: redirectUrl,
-          data: userData
-        }
+          emailRedirectTo: `${window.location.origin}/`,
+          data: userData,
+        },
       });
-      
+
       if (error) {
         toast({
           title: "Ошибка регистрации",
           description: error.message,
-          variant: "destructive"
+          variant: "destructive",
         });
-      } else {
-        toast({
-          title: "Регистрация успешна",
-          description: "Проверьте электронную почту для подтверждения аккаунта"
-        });
+        return { error };
       }
-      
-      return { error };
+
+      return { error: null };
     } catch (error) {
-      console.error('Sign up error:', error);
+      console.error('Registration error:', error);
       return { error };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const signOut = async () => {
+  const logout = async (): Promise<boolean> => {
     try {
       setIsLoading(true);
       const { error } = await supabase.auth.signOut();
       
       if (error) {
+        console.error('Logout error:', error);
         toast({
-          title: "Ошибка выхода",
-          description: error.message,
-          variant: "destructive"
+          title: "Ошибка",
+          description: "Не удалось выйти из системы",
+          variant: "destructive",
         });
-      } else {
-        setUser(null);
-        setSession(null);
-        setUserRole(null);
-        toast({
-          title: "Выход выполнен",
-          description: "Вы успешно вышли из системы"
-        });
+        return false;
       }
+
+      // Clear local state
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      
+      return true;
     } catch (error) {
-      console.error('Sign out error:', error);
+      console.error('Logout error:', error);
+      return false;
     } finally {
       setIsLoading(false);
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const updateUserRole = async (role: string) => {
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectUrl
-      });
-      
+      if (!user) return;
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ role })
+        .eq('id', user.id);
+
       if (error) {
-        toast({
-          title: "Ошибка",
-          description: error.message,
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Письмо отправлено",
-          description: "Проверьте электронную почту для восстановления пароля"
-        });
+        console.error('Error updating user role:', error);
+        return;
       }
-      
-      return { error };
+
+      setUserRole(role);
     } catch (error) {
-      console.error('Reset password error:', error);
-      return { error };
+      console.error('Error in updateUserRole:', error);
     }
   };
 
-  const value = {
+  const value: AuthContextType = {
     user,
-    session,
     userRole,
+    session,
     isLoading,
-    signIn,
-    signUp,
-    signOut,
-    resetPassword
+    login,
+    register,
+    logout,
+    updateUserRole,
   };
 
   return (
@@ -205,12 +223,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

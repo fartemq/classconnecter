@@ -10,11 +10,15 @@ import { useIsMobile } from "@/hooks/use-mobile";
 interface StudentMobileLayoutProps {
   children: React.ReactNode;
   showProfileCard?: boolean;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
 export const StudentMobileLayout: React.FC<StudentMobileLayoutProps> = ({ 
   children, 
-  showProfileCard = true 
+  showProfileCard = true,
+  activeTab = "dashboard",
+  onTabChange = () => {}
 }) => {
   const { profile } = useProfile("student");
   const isMobile = useIsMobile();
@@ -44,11 +48,19 @@ export const StudentMobileLayout: React.FC<StudentMobileLayoutProps> = ({
             {/* Left sidebar */}
             <div className="lg:col-span-1 space-y-4">
               {/* Profile card */}
-              {profile && showProfileCard && <StudentProfileCard profile={profile} />}
+              {profile && showProfileCard && profile.first_name && (
+                <StudentProfileCard 
+                  profile={{
+                    first_name: profile.first_name || "",
+                    last_name: profile.last_name || "",
+                    avatar_url: profile.avatar_url || null
+                  }} 
+                />
+              )}
               
               {/* Navigation sidebar */}
               <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-                <StudentSidebar />
+                <StudentSidebar activeTab={activeTab} onTabChange={onTabChange} />
               </div>
             </div>
             

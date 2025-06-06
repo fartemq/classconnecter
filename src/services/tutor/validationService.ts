@@ -24,59 +24,69 @@ export interface ValidationResult {
   errors: string[];
   warnings: string[];
   completionPercentage: number;
+  missingFields: string[];
 }
 
 export const validateTutorProfile = (profile: TutorProfile): ValidationResult => {
   const errors: string[] = [];
   const warnings: string[] = [];
+  const missingFields: string[] = [];
   let completedFields = 0;
   const totalFields = 10;
 
   // Required fields validation
   if (!profile.first_name?.trim()) {
     errors.push("Укажите имя");
+    missingFields.push("Имя");
   } else {
     completedFields++;
   }
 
   if (!profile.last_name?.trim()) {
     errors.push("Укажите фамилию");
+    missingFields.push("Фамилия");
   } else {
     completedFields++;
   }
 
   if (!profile.bio?.trim()) {
     errors.push("Добавьте описание о себе");
+    missingFields.push("Описание");
   } else {
     completedFields++;
   }
 
   if (!profile.city?.trim()) {
     errors.push("Укажите город");
+    missingFields.push("Город");
   } else {
     completedFields++;
   }
 
   if (!profile.education_institution?.trim()) {
     errors.push("Укажите учебное заведение");
+    missingFields.push("Учебное заведение");
   } else {
     completedFields++;
   }
 
   if (!profile.degree?.trim()) {
     errors.push("Укажите степень/квалификацию");
+    missingFields.push("Степень/квалификация");
   } else {
     completedFields++;
   }
 
   if (!profile.graduation_year || profile.graduation_year < 1950 || profile.graduation_year > new Date().getFullYear()) {
     errors.push("Укажите корректный год окончания");
+    missingFields.push("Год окончания");
   } else {
     completedFields++;
   }
 
   if (profile.experience === undefined || profile.experience < 0) {
     errors.push("Укажите опыт работы");
+    missingFields.push("Опыт работы");
   } else {
     completedFields++;
   }
@@ -114,7 +124,8 @@ export const validateTutorProfile = (profile: TutorProfile): ValidationResult =>
     isValid,
     errors,
     warnings,
-    completionPercentage
+    completionPercentage,
+    missingFields
   };
 };
 

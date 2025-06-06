@@ -19,8 +19,8 @@ export const ProfileCompletionTracker = () => {
     if (!isLoading && profile) {
       console.log("Checking profile completion with data:", profile);
       
-      // Get student-specific profile data safely
-      const studentProfiles = profile.student_profiles || {};
+      // Get student-specific profile data safely - check if profile has the extended fields
+      const studentProfiles = 'student_profiles' in profile ? profile.student_profiles : null;
       console.log("Student profile data:", studentProfiles);
       
       // Update completion status for each step
@@ -39,8 +39,8 @@ export const ProfileCompletionTracker = () => {
             return { 
               ...step, 
               isCompleted: Boolean(
-                profile.educational_level || 
-                profile.school || 
+                ('educational_level' in profile && profile.educational_level) || 
+                ('school' in profile && profile.school) || 
                 (studentProfiles && 'educational_level' in studentProfiles && studentProfiles.educational_level) || 
                 (studentProfiles && 'school' in studentProfiles && studentProfiles.school)
               )
@@ -49,7 +49,7 @@ export const ProfileCompletionTracker = () => {
             return { 
               ...step, 
               isCompleted: Boolean(
-                profile.grade || 
+                ('grade' in profile && profile.grade) || 
                 (studentProfiles && 'grade' in studentProfiles && studentProfiles.grade)
               )
             };

@@ -29,7 +29,15 @@ export const StudentLayoutWithBooking: React.FC<StudentLayoutWithBookingProps> =
             {/* Left sidebar */}
             <div className="lg:col-span-1 space-y-4">
               {/* Profile card */}
-              {profile && <StudentProfileCard profile={profile} />}
+              {profile && profile.first_name && (
+                <StudentProfileCard 
+                  profile={{
+                    first_name: profile.first_name || "",
+                    last_name: profile.last_name || "",
+                    avatar_url: profile.avatar_url || null
+                  }} 
+                />
+              )}
               
               {/* Quick booking actions */}
               {showBookingActions && (
@@ -54,7 +62,7 @@ export const StudentLayoutWithBooking: React.FC<StudentLayoutWithBookingProps> =
               
               {/* Navigation sidebar */}
               <div className="bg-white rounded-lg border shadow-sm overflow-hidden">
-                <StudentSidebar />
+                <StudentSidebar activeTab="dashboard" onTabChange={() => {}} />
               </div>
             </div>
             
