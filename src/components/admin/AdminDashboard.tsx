@@ -14,6 +14,10 @@ type AdminView = 'dashboard' | 'users' | 'documents' | 'subjects' | 'logs' | 'se
 export const AdminDashboard = () => {
   const [activeView, setActiveView] = useState<AdminView>('dashboard');
 
+  const handleViewChange = (view: string) => {
+    setActiveView(view as AdminView);
+  };
+
   const renderContent = () => {
     switch (activeView) {
       case 'dashboard':
@@ -37,7 +41,7 @@ export const AdminDashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <AdminHeader />
       <div className="flex">
-        <AdminSidebar activeView={activeView} onViewChange={setActiveView} />
+        <AdminSidebar activeView={activeView} onViewChange={handleViewChange} />
         <main className="flex-1 p-8">
           {renderContent()}
         </main>
