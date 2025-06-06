@@ -18,11 +18,11 @@ export const HeroSection = () => {
         
         <div className="flex flex-col md:flex-row items-center justify-center gap-4">
           <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
-            <Link to="/school-student">Я - школьник</Link>
+            <Link to="/subjects/mathematics/school">Я - школьник</Link>
           </Button>
           
           <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
-            <Link to="/adult-student">Я - студент/взрослый</Link>
+            <Link to="/subjects/mathematics/adult">Я - студент/взрослый</Link>
           </Button>
           
           <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
