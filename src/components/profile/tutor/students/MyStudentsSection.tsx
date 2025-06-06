@@ -11,6 +11,7 @@ import { MessageSquare, Calendar, User, BookOpen } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { ensureSingleObject } from "@/utils/supabaseUtils";
 
 interface StudentCardData {
   id: string;
@@ -70,13 +71,8 @@ export const MyStudentsSection = () => {
 
       const formattedStudents = data?.map(item => {
         // Handle both array and single object cases from Supabase
-        const studentData = Array.isArray(item.student) 
-          ? item.student[0] 
-          : item.student;
-        
-        const studentProfile = studentData?.student_profiles && Array.isArray(studentData.student_profiles) 
-          ? studentData.student_profiles[0] 
-          : studentData?.student_profiles;
+        const studentData = ensureSingleObject(item.student);
+        const studentProfile = ensureSingleObject(studentData?.student_profiles);
         
         return {
           id: item.student_id,
@@ -107,7 +103,7 @@ export const MyStudentsSection = () => {
   };
 
   const handleScheduleWithStudent = (studentId: string) => {
-    navigate(`/profile/tutor/schedule?student=${studentId}`);
+    navigate(`/profile/tutor/schedule?studentId=${studentId}`);
   };
 
   if (isLoading) {
@@ -131,17 +127,10 @@ export const MyStudentsSection = () => {
         <Card>
           <CardContent className="text-center py-12">
             <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium mb-2">Пока нет учеников</h3>
-            <p className="text-gray-500 mb-4">
-              Когда студенты отправят вам запросы и вы их примете, они появятся здесь
+            <h3 className="text-lg font-medium mb-2">У вас пока нет учеников</h3>
+            <p className="text-gray-500">
+              Когда студенты начнут заниматься с вами, они появятся здесь
             </p>
-            <Button 
-              onClick={() => navigate('/profile/tutor/requests')}
-              variant="outline"
-            >
-              <BookOpen className="h-4 w-4 mr-2" />
-              Посмотреть запросы
-            </Button>
           </CardContent>
         </Card>
       ) : (

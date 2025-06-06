@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useParams, useNavigate } from "react-router-dom";
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { ensureSingleObject } from "@/utils/supabaseUtils";
 
 interface Message {
   id: string;
@@ -82,15 +84,20 @@ export const TutorChatView = () => {
         return;
       }
 
-      const formattedMessages = data?.map(msg => ({
-        id: msg.id,
-        content: msg.content,
-        created_at: msg.created_at,
-        sender_id: msg.sender_id,
-        receiver_id: msg.receiver_id,
-        sender_name: msg.sender?.first_name || 'Unknown',
-        receiver_name: msg.receiver?.first_name || 'Unknown',
-      })) || [];
+      const formattedMessages = data?.map(msg => {
+        const senderData = ensureSingleObject(msg.sender);
+        const receiverData = ensureSingleObject(msg.receiver);
+        
+        return {
+          id: msg.id,
+          content: msg.content,
+          created_at: msg.created_at,
+          sender_id: msg.sender_id,
+          receiver_id: msg.receiver_id,
+          sender_name: senderData?.first_name || 'Unknown',
+          receiver_name: receiverData?.first_name || 'Unknown',
+        };
+      }) || [];
 
       setMessages(formattedMessages);
     } catch (error) {
@@ -149,14 +156,17 @@ export const TutorChatView = () => {
         return;
       }
 
+      const senderDataResult = ensureSingleObject(data.sender);
+      const receiverDataResult = ensureSingleObject(data.receiver);
+
       const formattedMessage = {
         id: data.id,
         content: data.content,
         created_at: data.created_at,
         sender_id: data.sender_id,
         receiver_id: data.receiver_id,
-        sender_name: data.sender?.first_name || 'Unknown',
-        receiver_name: data.receiver?.first_name || 'Unknown',
+        sender_name: senderDataResult?.first_name || 'Unknown',
+        receiver_name: receiverDataResult?.first_name || 'Unknown',
       };
 
       setMessages(prevMessages => [...prevMessages, formattedMessage]);

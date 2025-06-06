@@ -1,43 +1,31 @@
 
-import { ProfileUpdateParams } from "./types";
-import { useStudentProfile } from "./student";
-import { useTutorProfile } from "./useTutorProfile";
-import { useProfileCommon } from "./useProfileCommon";
+import { useStudentProfile } from './student/useStudentProfile';
+import { useTutorProfile } from './useTutorProfile';
+import { useAuth } from '@/hooks/auth/useAuth';
 
-/**
- * Main profile hook that uses the appropriate specialized hook based on role
- */
-export const useProfile = (requiredRole?: string) => {
-  // Use the appropriate specialized hook based on the required role
-  if (requiredRole === 'student') {
-    return useStudentProfile();
-  } 
-  
-  if (requiredRole === 'tutor') {
-    return useTutorProfile();
+export const useProfile = () => {
+  const { user } = useAuth();
+  const studentProfile = useStudentProfile();
+  const tutorProfile = useTutorProfile();
+
+  // Determine which profile to use based on user role
+  const userRole = user?.user_metadata?.role || 'student';
+
+  if (userRole === 'tutor') {
+    return {
+      ...tutorProfile,
+      updateProfile: async (updates: any) => {
+        const result = await tutorProfile.updateProfile(updates);
+        return result;
+      }
+    };
   }
 
-  // For general use or when role is unknown, use the common hook
-  const { profile, isLoading, error, userRole } = useProfileCommon();
-  
-  // General update profile function that dispatches to the appropriate specialized function
-  const updateProfile = async (params: ProfileUpdateParams): Promise<boolean> => {
-    if (userRole === 'student') {
-      const studentProfile = useStudentProfile();
-      return studentProfile.updateProfile(params);
-    } else if (userRole === 'tutor') {
-      const tutorProfile = useTutorProfile();
-      return tutorProfile.updateProfile(params);
-    } else {
-      console.error("Unknown user role:", userRole);
-      return false;
-    }
-  };
-
   return {
-    profile,
-    isLoading,
-    updateProfile,
-    error
+    ...studentProfile,
+    updateProfile: async (updates: any) => {
+      const result = await studentProfile.updateProfile(updates);
+      return result;
+    }
   };
 };
