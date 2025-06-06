@@ -15,8 +15,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Используем валидацию аутентификации
-  useAuthValidation();
+  // Используем валидацию аутентификации, передавая user
+  useAuthValidation(user);
 
   useEffect(() => {
     const getInitialSession = async () => {

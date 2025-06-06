@@ -1,12 +1,10 @@
 
 import { useEffect } from "react";
+import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
 
-export const useAuthValidation = () => {
-  const { user } = useAuth();
-
+export const useAuthValidation = (user: User | null) => {
   useEffect(() => {
     if (user) {
       checkUserStatus();
