@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User, Settings, LogOut } from "lucide-react";
+import { User, Settings, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 
@@ -64,7 +64,7 @@ export const UserMenu = () => {
           <div className="flex flex-col space-y-1 leading-none">
             <p className="font-medium">{user.email}</p>
             <p className="w-[200px] truncate text-sm text-muted-foreground">
-              {userRole === "tutor" ? "Репетитор" : "Ученик"}
+              {userRole === "tutor" ? "Репетитор" : userRole === "admin" ? "Администратор" : userRole === "moderator" ? "Модератор" : "Ученик"}
             </p>
           </div>
         </div>
@@ -81,6 +81,20 @@ export const UserMenu = () => {
             <span>Настройки</span>
           </Link>
         </DropdownMenuItem>
+        
+        {/* Показываем ссылку на админ-панель только для админов и модераторов */}
+        {(userRole === "admin" || userRole === "moderator") && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/admin" className="flex items-center">
+                <Shield className="mr-2 h-4 w-4" />
+                <span>Админ-панель</span>
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
+        
         <DropdownMenuSeparator />
         <DropdownMenuItem 
           onClick={handleLogout}

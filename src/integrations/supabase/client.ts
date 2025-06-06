@@ -44,6 +44,35 @@ export interface Database {
           updated_at?: string | null;
         };
       };
+      admin_logs: {
+        Row: {
+          id: string;
+          admin_id: string;
+          action: string;
+          target_type: string | null;
+          target_id: string | null;
+          details: any;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_id: string;
+          action: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          details?: any;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          admin_id?: string;
+          action?: string;
+          target_type?: string | null;
+          target_id?: string | null;
+          details?: any;
+          created_at?: string;
+        };
+      };
       subjects: {
         Row: {
           id: string;
@@ -245,6 +274,15 @@ export interface Database {
           description: string;
           file_path: string;
           due_date: string;
+        };
+        Returns: string;
+      };
+      log_admin_action: {
+        Args: {
+          action_text: string;
+          target_type_param?: string;
+          target_id_param?: string;
+          details_param?: any;
         };
         Returns: string;
       };
