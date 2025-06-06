@@ -32,6 +32,12 @@ interface StudentRelationshipData {
     last_name: string | null;
     avatar_url: string | null;
     city: string | null;
+  }[] | {
+    id: string;
+    first_name: string;
+    last_name: string | null;
+    avatar_url: string | null;
+    city: string | null;
   };
 }
 
@@ -71,9 +77,11 @@ export const StudentsTab = () => {
 
       if (error) throw error;
 
-      const formattedStudents = (data as StudentRelationshipData[])?.map(item => {
-        // Safely extract student data
-        const studentData = item.student;
+      const formattedStudents = data?.map(item => {
+        // Handle both array and single object cases from Supabase
+        const studentData = Array.isArray(item.student) 
+          ? item.student[0] 
+          : item.student;
         
         return {
           id: item.student_id,
