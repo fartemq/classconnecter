@@ -6,7 +6,7 @@ import { CtaSection } from "@/components/CtaSection";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { AdminMotivationalPage } from "@/components/admin/AdminMotivationalPage";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth";
 
 const Index = () => {
   const { user } = useAuth();
