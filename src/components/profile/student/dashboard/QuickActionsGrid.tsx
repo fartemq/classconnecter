@@ -8,34 +8,39 @@ import { useNavigate } from "react-router-dom";
 export const QuickActionsGrid = () => {
   const navigate = useNavigate();
 
+  const handleNavigation = (path: string) => {
+    console.log("QuickActionsGrid: Navigating to:", path);
+    navigate(path);
+  };
+
   const quickActions = [
     {
       title: "Найти репетитора",
       description: "Поиск новых репетиторов",
       icon: Users,
       color: "bg-blue-500",
-      action: () => navigate("/profile/student/find-tutors")
+      path: "/profile/student/find-tutors"
     },
     {
       title: "Расписание",
       description: "Управление занятиями",
       icon: Calendar,
       color: "bg-green-500",
-      action: () => navigate("/profile/student/schedule")
+      path: "/profile/student/schedule"
     },
     {
       title: "Домашние задания",
       description: "Проверить задания",
       icon: BookOpen,
       color: "bg-orange-500",
-      action: () => navigate("/profile/student/homework")
+      path: "/profile/student/homework"
     },
     {
       title: "Сообщения",
       description: "Чат с репетиторами",
       icon: MessageSquare,
       color: "bg-purple-500",
-      action: () => navigate("/profile/student/chats")
+      path: "/profile/student/chats"
     }
   ];
 
@@ -50,8 +55,8 @@ export const QuickActionsGrid = () => {
             <Button
               key={index}
               variant="outline"
-              className="h-auto p-4 flex flex-col items-center space-y-2"
-              onClick={action.action}
+              className="h-auto p-4 flex flex-col items-center space-y-2 hover:shadow-md transition-all cursor-pointer"
+              onClick={() => handleNavigation(action.path)}
             >
               <div className={`w-10 h-10 rounded-full ${action.color} flex items-center justify-center`}>
                 <action.icon className="h-5 w-5 text-white" />

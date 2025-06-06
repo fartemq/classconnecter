@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   Home, Calendar, Search, Users, Heart, MessageSquare, 
   FileText, Settings, User, Activity, BookOpen
@@ -22,6 +22,7 @@ const studentTabs = [
 
 export const StudentNavigation = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   // Function to check if a student tab is active
   const isStudentTabActive = (path: string) => {
@@ -29,17 +30,23 @@ export const StudentNavigation = () => {
            (path !== "/profile/student" && location.pathname.includes(path));
   };
 
+  const handleTabClick = (path: string, event: React.MouseEvent) => {
+    event.preventDefault();
+    console.log("StudentNavigation: Navigating to:", path);
+    navigate(path);
+  };
+
   return (
     <div className="flex items-center gap-1 overflow-x-auto py-1">
       {studentTabs.map((tab) => (
-        <Link 
+        <button 
           key={tab.path}
-          to={tab.path}
+          onClick={(e) => handleTabClick(tab.path, e)}
           className={`${
             isStudentTabActive(tab.path) 
               ? "text-primary font-medium bg-primary/10 shadow-sm" 
               : "text-gray-700 hover:bg-gray-100"
-          } px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all relative text-sm whitespace-nowrap`}
+          } px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all relative text-sm whitespace-nowrap cursor-pointer`}
         >
           <tab.icon className="h-4 w-4" />
           <span>{tab.name}</span>
@@ -52,7 +59,7 @@ export const StudentNavigation = () => {
               {tab.notificationCount}
             </Badge>
           )}
-        </Link>
+        </button>
       ))}
     </div>
   );
