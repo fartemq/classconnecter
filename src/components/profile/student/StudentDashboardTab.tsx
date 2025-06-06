@@ -20,7 +20,7 @@ import { useLessons } from "@/hooks/useLessons";
 export const StudentDashboardTab = () => {
   const navigate = useNavigate();
   const { profile } = useProfile("student");
-  const { lessons } = useLessons();
+  const { lessons } = useLessons("student");
 
   // Подсчет статистики
   const upcomingLessons = lessons?.filter(lesson => 
