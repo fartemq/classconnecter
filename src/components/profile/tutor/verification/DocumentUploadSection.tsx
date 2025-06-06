@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, Check, X, Eye, Loader } from "lucide-react";
+import { Upload, FileText, Check, X, Loader, AlertCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface DocumentUploadSectionProps {
   tutorId: string;
@@ -21,6 +22,9 @@ const DOCUMENT_TYPES = [
   { value: 'other', label: 'Другой документ' }
 ];
 
+const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const ALLOWED_FILE_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+
 export const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
   tutorId,
   isEducationVerified = false
@@ -28,66 +32,175 @@ export const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
   const [uploading, setUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [selectedDocType, setSelectedDocType] = useState('diploma');
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const validateFile = (file: File): string | null => {
+    if (file.size > MAX_FILE_SIZE) {
+      return `Файл "${file.name}" слишком большой. Максимальный размер: 10MB`;
+    }
+    
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      return `Файл "${file.name}" имеет неподдерживаемый формат. Разрешены: PDF, JPG, PNG, DOC, DOCX`;
+    }
+    
+    return null;
+  };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     
-    setSelectedFiles(Array.from(files));
+    setError(null);
+    const fileArray = Array.from(files);
+    
+    // Проверяем каждый файл
+    for (const file of fileArray) {
+      const validationError = validateFile(file);
+      if (validationError) {
+        setError(validationError);
+        return;
+      }
+    }
+    
+    if (fileArray.length > 5) {
+      setError('Можно загрузить максимум 5 файлов за раз');
+      return;
+    }
+    
+    setSelectedFiles(fileArray);
   };
 
   const handleSubmitDocuments = async () => {
+    console.log('=== Начало загрузки документов ===');
+    setError(null);
+    
     if (selectedFiles.length === 0) {
-      toast({
-        title: "Ошибка",
-        description: "Выберите файлы для загрузки",
-        variant: "destructive",
-      });
+      setError('Выберите файлы для загрузки');
+      return;
+    }
+
+    if (!tutorId) {
+      setError('Ошибка: ID пользователя не найден');
       return;
     }
 
     setUploading(true);
     
     try {
-      for (const file of selectedFiles) {
-        // Загружаем файл в storage
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${tutorId}/${Date.now()}_${selectedDocType}.${fileExt}`;
-        
-        const { error: uploadError } = await supabase.storage
-          .from('document-verifications')
-          .upload(fileName, file);
+      // Проверяем авторизацию
+      const { data: currentUser, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !currentUser.user) {
+        throw new Error('Вы не авторизованы. Пожалуйста, войдите в систему.');
+      }
 
-        if (uploadError) throw uploadError;
+      console.log('Пользователь авторизован:', currentUser.user.id);
+      console.log('Загружаем файлы для пользователя:', tutorId);
+      console.log('Количество файлов:', selectedFiles.length);
+      console.log('Тип документа:', selectedDocType);
 
-        // Создаем запись в базе данных
-        const { error: dbError } = await supabase
-          .from('document_verifications')
-          .insert({
+      const uploadPromises = selectedFiles.map(async (file, index) => {
+        try {
+          // Создаем уникальное имя файла
+          const fileExt = file.name.split('.').pop();
+          const timestamp = Date.now();
+          const fileName = `${tutorId}/${timestamp}_${index}_${selectedDocType}.${fileExt}`;
+          
+          console.log(`Загружаем файл ${index + 1}: ${fileName}`);
+
+          // Загружаем файл в storage
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('document-verifications')
+            .upload(fileName, file, {
+              cacheControl: '3600',
+              upsert: false
+            });
+
+          if (uploadError) {
+            console.error(`Ошибка загрузки файла ${fileName}:`, uploadError);
+            throw new Error(`Ошибка загрузки файла "${file.name}": ${uploadError.message}`);
+          }
+
+          console.log(`Файл успешно загружен: ${fileName}`, uploadData);
+
+          // Создаем запись в базе данных
+          const verificationData = {
             tutor_id: tutorId,
             document_type: selectedDocType,
-            file_path: fileName
-          });
+            file_path: fileName,
+            status: 'pending'
+          };
 
-        if (dbError) throw dbError;
-      }
+          console.log('Создаем запись в document_verifications:', verificationData);
+
+          const { data: dbData, error: dbError } = await supabase
+            .from('document_verifications')
+            .insert(verificationData)
+            .select()
+            .single();
+
+          if (dbError) {
+            console.error('Ошибка записи в БД:', dbError);
+            // Удаляем загруженный файл при ошибке БД
+            await supabase.storage
+              .from('document-verifications')
+              .remove([fileName]);
+            throw new Error(`Ошибка сохранения в базе данных: ${dbError.message}`);
+          }
+
+          console.log('Запись в БД создана:', dbData);
+
+          // Создаем уведомление администраторам
+          try {
+            const { error: notificationError } = await supabase
+              .from('notifications')
+              .insert({
+                user_id: tutorId, // Временно отправляем уведомление самому пользователю
+                type: 'document_submitted',
+                title: 'Документ отправлен на проверку',
+                message: `Документ "${DOCUMENT_TYPES.find(t => t.value === selectedDocType)?.label}" отправлен администратору на проверку`,
+                related_id: dbData.id
+              });
+
+            if (notificationError) {
+              console.error('Ошибка создания уведомления:', notificationError);
+            }
+          } catch (notificationError) {
+            console.error('Ошибка при создании уведомления:', notificationError);
+          }
+
+          return { success: true, fileName, file: file.name };
+        } catch (error) {
+          console.error(`Ошибка обработки файла ${file.name}:`, error);
+          throw error;
+        }
+      });
+
+      const results = await Promise.all(uploadPromises);
+      
+      console.log('Все файлы успешно обработаны:', results);
       
       toast({
         title: "Документы отправлены",
-        description: "Ваши документы отправлены на проверку администрации",
+        description: `${selectedFiles.length} документов отправлены на проверку администрации`,
       });
       
+      // Очищаем состояние
       setSelectedFiles([]);
+      setSelectedDocType('diploma');
+      
       // Сбрасываем input
       const input = document.getElementById('documents') as HTMLInputElement;
       if (input) input.value = '';
       
-    } catch (error) {
-      console.error('Error uploading documents:', error);
+    } catch (error: any) {
+      console.error('Общая ошибка загрузки документов:', error);
+      const errorMessage = error.message || 'Не удалось загрузить документы';
+      setError(errorMessage);
       toast({
         title: "Ошибка загрузки",
-        description: "Не удалось загрузить документы",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -142,6 +255,13 @@ export const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
               </p>
             </div>
 
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
             <div>
               <Label htmlFor="docType">Тип документа</Label>
               <select
@@ -149,6 +269,7 @@ export const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
                 value={selectedDocType}
                 onChange={(e) => setSelectedDocType(e.target.value)}
                 className="w-full mt-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={uploading}
               >
                 {DOCUMENT_TYPES.map(type => (
                   <option key={type.value} value={type.value}>
@@ -171,7 +292,7 @@ export const DocumentUploadSection: React.FC<DocumentUploadSectionProps> = ({
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Поддерживаемые форматы: PDF, JPG, PNG, DOC, DOCX. Максимум 5 файлов.
+                Поддерживаемые форматы: PDF, JPG, PNG, DOC, DOCX. Максимум 5 файлов, до 10MB каждый.
               </p>
             </div>
 

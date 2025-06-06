@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { AdminMessagesDisplay } from "@/components/admin/AdminMessagesDisplay";
 
 export const NotificationsTab = () => {
   const { user } = useAuth();
@@ -37,6 +37,8 @@ export const NotificationsTab = () => {
 
   return (
     <div className="space-y-6">
+      <AdminMessagesDisplay />
+      
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Уведомления</h2>
