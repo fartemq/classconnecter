@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,12 +15,33 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useProfile } from "@/hooks/useProfile";
-import { useLessons } from "@/hooks/useLessons";
+import { fetchStudentLessons } from "@/services/lessonService";
+import { Lesson } from "@/types/lesson";
+import { supabase } from "@/integrations/supabase/client";
 
 export const StudentDashboardTab = () => {
   const navigate = useNavigate();
   const { profile } = useProfile("student");
-  const { lessons } = useLessons("student");
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadLessons = async () => {
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        if (userData?.user) {
+          const studentLessons = await fetchStudentLessons(userData.user.id);
+          setLessons(studentLessons);
+        }
+      } catch (error) {
+        console.error('Error loading lessons:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadLessons();
+  }, []);
 
   // Подсчет статистики
   const upcomingLessons = lessons?.filter(lesson => 
