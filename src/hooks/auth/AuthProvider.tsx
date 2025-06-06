@@ -4,7 +4,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext, AuthProviderProps } from "./AuthContext";
 import { toast } from "@/hooks/use-toast";
-import { fetchUserRole } from "@/services/auth/authUtils";
+import { fetchUserRole } from "@/services/auth/userService";
 import { loginUser } from "@/services/auth/loginService";
 
 export const AuthProvider = ({ children }: AuthProviderProps) => {
@@ -24,48 +24,48 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          console.error("Error fetching session:", sessionError);
+          console.error("❌ Error fetching session:", sessionError);
           throw sessionError;
         }
         
         if (session?.user) {
-          console.log("Session found, user is logged in:", session.user.id);
+          console.log("✅ Session found, user is logged in:", session.user.id);
           setUser(session.user);
           setSession(session);
           
-          // Get role from user metadata first, then from database
-          const metadataRole = session.user.user_metadata?.role;
-          if (metadataRole) {
-            console.log("Role found in metadata:", metadataRole);
-            setUserRole(metadataRole);
+          // Дополнительная проверка для конкретного админ пользователя
+          if (session.user.email === "arsenalreally35@gmail.com") {
+            console.log("🔑 Special admin user detected, setting admin role");
+            setUserRole("admin");
           } else {
-            try {
-              // Fetch user role from database with timeout
-              const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout')), 5000)
-              );
-              
-              const rolePromise = fetchUserRole(session.user.id);
-              const role = await Promise.race([rolePromise, timeoutPromise]);
-              
-              console.log("User role fetched from database:", role);
-              setUserRole(role as string);
-            } catch (roleError) {
-              console.error("Error fetching user role:", roleError);
-              // Use metadata role as fallback, or default to student
-              const fallbackRole = session.user.user_metadata?.role || 'student';
-              console.log("Using fallback role:", fallbackRole);
-              setUserRole(fallbackRole);
+            // Get role from user metadata first, then from database
+            const metadataRole = session.user.user_metadata?.role;
+            if (metadataRole) {
+              console.log("📋 Role found in metadata:", metadataRole);
+              setUserRole(metadataRole);
+            } else {
+              try {
+                // Fetch user role from database
+                const role = await fetchUserRole(session.user.id);
+                console.log("🔍 User role fetched from database:", role);
+                setUserRole(role || 'student');
+              } catch (roleError) {
+                console.error("❌ Error fetching user role:", roleError);
+                // Use metadata role as fallback, or default to student
+                const fallbackRole = session.user.user_metadata?.role || 'student';
+                console.log("🔄 Using fallback role:", fallbackRole);
+                setUserRole(fallbackRole);
+              }
             }
           }
         } else {
-          console.log("No active session found");
+          console.log("ℹ️ No active session found");
           setUser(null);
           setUserRole(null);
           setSession(null);
         }
       } catch (error) {
-        console.error("Auth initialization error:", error);
+        console.error("❌ Auth initialization error:", error);
         // In case of error, clear auth state
         setUser(null);
         setUserRole(null);
@@ -79,33 +79,39 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Setup auth state change listener
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log("Auth state changed:", event);
+        console.log("🔄 Auth state changed:", event);
         
         if (event === "SIGNED_IN" && session?.user) {
-          console.log("User signed in:", session.user.id);
+          console.log("✅ User signed in:", session.user.id);
           setUser(session.user);
           setSession(session);
           
-          // Get role from metadata or fetch from database
-          const metadataRole = session.user.user_metadata?.role;
-          if (metadataRole) {
-            console.log("Role found in metadata after sign in:", metadataRole);
-            setUserRole(metadataRole);
+          // Дополнительная проверка для конкретного админ пользователя
+          if (session.user.email === "arsenalreally35@gmail.com") {
+            console.log("🔑 Special admin user signed in, setting admin role");
+            setUserRole("admin");
           } else {
-            // Defer database call to prevent blocking
-            setTimeout(async () => {
-              try {
-                const role = await fetchUserRole(session.user.id);
-                console.log("User role fetched after sign in:", role);
-                setUserRole(role || 'student'); // Default to student if no role found
-              } catch (roleError) {
-                console.error("Error fetching user role after sign in:", roleError);
-                setUserRole('student'); // Default fallback
-              }
-            }, 0);
+            // Get role from metadata or fetch from database
+            const metadataRole = session.user.user_metadata?.role;
+            if (metadataRole) {
+              console.log("📋 Role found in metadata after sign in:", metadataRole);
+              setUserRole(metadataRole);
+            } else {
+              // Defer database call to prevent blocking
+              setTimeout(async () => {
+                try {
+                  const role = await fetchUserRole(session.user.id);
+                  console.log("🔍 User role fetched after sign in:", role);
+                  setUserRole(role || 'student'); // Default to student if no role found
+                } catch (roleError) {
+                  console.error("❌ Error fetching user role after sign in:", roleError);
+                  setUserRole('student'); // Default fallback
+                }
+              }, 0);
+            }
           }
         } else if (event === "SIGNED_OUT") {
-          console.log("User signed out");
+          console.log("👋 User signed out");
           setUser(null);
           setUserRole(null);
           setSession(null);

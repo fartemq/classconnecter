@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -6,49 +5,39 @@ import { supabase } from "@/integrations/supabase/client";
  */
 export const fetchUserRole = async (userId: string): Promise<string | null> => {
   try {
-    console.log("Fetching role for user using security definer function:", userId);
+    console.log("🔍 Fetching role for user:", userId);
     
-    // Add timeout to prevent hanging
-    const timeoutPromise = new Promise((_, reject) => 
-      setTimeout(() => reject(new Error('Database query timeout')), 10000)
-    );
+    // First try the RPC function
+    const { data: rpcData, error: rpcError } = await supabase.rpc('get_current_user_role');
     
-    const queryPromise = supabase.rpc('get_current_user_role');
+    if (!rpcError && rpcData) {
+      console.log("✅ Found role via RPC:", rpcData);
+      return rpcData;
+    }
     
-    const { data, error } = await Promise.race([queryPromise, timeoutPromise]) as any;
+    console.log("⚠️ RPC failed, trying direct query. RPC Error:", rpcError);
     
-    if (error) {
-      console.error("Error fetching role via RPC:", error);
+    // Fallback to direct query
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", userId)
+      .maybeSingle();
       
-      // Fallback to direct query if RPC fails
-      const fallbackPromise = supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", userId)
-        .maybeSingle();
-        
-      const { data: profile, error: profileError } = await Promise.race([
-        fallbackPromise, 
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Fallback timeout')), 5000))
-      ]) as any;
-        
-      if (profileError) {
-        console.error("Error fetching profile:", profileError);
-        return null;
-      }
-      
-      if (profile && profile.role) {
-        console.log("Found role via fallback query:", profile.role);
-        return profile.role;
-      }
-      
+    if (profileError) {
+      console.error("❌ Error fetching profile:", profileError);
       return null;
     }
     
-    console.log("Found role via security definer function:", data);
-    return data;
+    if (profile && profile.role) {
+      console.log("✅ Found role via direct query:", profile.role);
+      return profile.role;
+    }
+    
+    console.log("⚠️ No role found in profile");
+    return null;
   } catch (error) {
-    console.error("Error in fetchUserRole:", error);
+    console.error("❌ Error in fetchUserRole:", error);
     return null;
   }
 };

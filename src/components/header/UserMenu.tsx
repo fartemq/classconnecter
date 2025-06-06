@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,6 +21,19 @@ export const UserMenu = () => {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showAdminDialog, setShowAdminDialog] = useState(false);
+
+  // Отладочная информация
+  useEffect(() => {
+    if (user) {
+      console.log("👤 UserMenu Debug Info:");
+      console.log("- User ID:", user.id);
+      console.log("- User Email:", user.email);
+      console.log("- User Role:", userRole);
+      console.log("- Is Admin Role:", userRole === "admin");
+      console.log("- Is Moderator Role:", userRole === "moderator");
+      console.log("- Is Admin/Moderator:", userRole === "admin" || userRole === "moderator");
+    }
+  }, [user, userRole]);
 
   const handleLogout = async () => {
     try {
@@ -54,7 +67,17 @@ export const UserMenu = () => {
 
   const profilePath = userRole === "tutor" ? "/profile/tutor" : "/profile/student";
   const initials = user.email?.charAt(0).toUpperCase() || "U";
-  const isAdminOrModerator = userRole === "admin" || userRole === "moderator";
+  
+  // Дополнительная проверка для конкретного админ пользователя
+  const isSpecificAdmin = user.email === "arsenalreally35@gmail.com";
+  const isAdminOrModerator = userRole === "admin" || userRole === "moderator" || isSpecificAdmin;
+
+  console.log("🔍 Final admin check:", {
+    userRole,
+    isSpecificAdmin,
+    isAdminOrModerator,
+    userEmail: user.email
+  });
 
   return (
     <>
@@ -90,7 +113,7 @@ export const UserMenu = () => {
             </Link>
           </DropdownMenuItem>
           
-          {/* Показываем ссылку на админ-панель только для админов и модераторов */}
+          {/* Показываем ссылку на админ-панель для админов, модераторов и конкретного пользователя */}
           {isAdminOrModerator && (
             <>
               <DropdownMenuSeparator />
