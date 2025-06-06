@@ -112,12 +112,40 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const login = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+      return { success: true };
+    } catch (error: any) {
+      return { success: false, error: error.message };
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await signOut();
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
   const value = {
     user,
     session,
     userRole,
     isLoading,
     signOut,
+    setUser,
+    setUserRole,
+    setIsLoading,
+    login,
+    logout,
   };
 
   return (

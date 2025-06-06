@@ -30,9 +30,11 @@ const LoginPage = () => {
     if (user && userRole) {
       console.log("User is logged in with role:", userRole);
       if (userRole === "tutor") {
-        navigate("/profile/tutor");
+        navigate("/tutor/profile");
+      } else if (userRole === "admin") {
+        navigate("/admin");
       } else {
-        navigate("/profile/student");
+        navigate("/student/profile");
       }
     }
   }, [user, userRole, navigate]);
@@ -87,10 +89,8 @@ const LoginPage = () => {
         </CardHeader>
         <CardContent>
           <LoginAlerts 
-            needConfirmation={needConfirmation}
-            loginAttempted={loginAttempted}
-            isLoading={isLoading}
-            errorMessage={errorMessage}
+            error={errorMessage}
+            isEmailConfirmationRequired={needConfirmation}
           />
           
           <LoginForm 
