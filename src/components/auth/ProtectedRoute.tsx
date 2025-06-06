@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { Loader } from "@/components/ui/loader";
 
 interface ProtectedRouteProps {

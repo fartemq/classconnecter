@@ -3,7 +3,7 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/auth";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 export const AuthButtons = () => {
   const { user, userRole, logout } = useAuth();

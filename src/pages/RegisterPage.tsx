@@ -17,7 +17,7 @@ import { RegisterFormValues } from "@/components/auth/register-form-schema";
 import { registerUser } from "@/services/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { EmailConfirmationStatus } from "@/components/auth/EmailConfirmationStatus";
-import { useAuth } from "@/hooks/auth";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 const RegisterPage = () => {
   const navigate = useNavigate();

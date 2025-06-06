@@ -6,7 +6,7 @@ import { LoadingScreen } from "@/components/auth/LoadingScreen";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { LoginForm, LoginFormValues } from "@/components/auth/LoginForm";
 import { LoginAlerts } from "@/components/auth/LoginAlerts";
-import { useAuth } from "@/hooks/auth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { toast } from "@/hooks/use-toast";
 
 const LoginPage = () => {
