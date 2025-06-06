@@ -92,6 +92,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const login = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : "Login failed" };
+    }
+  };
+
+  const logout = async () => {
+    return signOut();
+  };
+
   const signOut = async () => {
     try {
       setIsLoading(true);
@@ -117,6 +138,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     session,
     userRole,
     isLoading,
+    setUser,
+    setUserRole,
+    setIsLoading,
+    login,
+    logout,
     signOut,
   };
 

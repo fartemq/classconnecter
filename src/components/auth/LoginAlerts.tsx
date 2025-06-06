@@ -3,12 +3,26 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle, UserX, Mail } from "lucide-react";
 
 interface LoginAlertsProps {
-  error: string | null;
+  needConfirmation?: boolean;
+  loginAttempted?: boolean;
+  isLoading?: boolean;
+  errorMessage?: string | null;
+  error?: string | null;
   isEmailConfirmationRequired?: boolean;
 }
 
-export const LoginAlerts = ({ error, isEmailConfirmationRequired }: LoginAlertsProps) => {
-  if (isEmailConfirmationRequired) {
+export const LoginAlerts = ({ 
+  needConfirmation, 
+  loginAttempted, 
+  isLoading, 
+  errorMessage, 
+  error,
+  isEmailConfirmationRequired 
+}: LoginAlertsProps) => {
+  const actualError = errorMessage || error;
+  const showConfirmation = needConfirmation || isEmailConfirmationRequired;
+
+  if (showConfirmation) {
     return (
       <Alert className="border-blue-200 bg-blue-50">
         <Mail className="h-4 w-4 text-blue-600" />
@@ -19,18 +33,18 @@ export const LoginAlerts = ({ error, isEmailConfirmationRequired }: LoginAlertsP
     );
   }
 
-  if (!error) return null;
+  if (!actualError) return null;
 
   // Проверяем различные типы ошибок
   const getErrorContent = () => {
-    if (error.includes('Invalid login credentials') || error.includes('invalid_credentials')) {
+    if (actualError.includes('Invalid login credentials') || actualError.includes('invalid_credentials')) {
       return {
         icon: <AlertTriangle className="h-4 w-4 text-red-600" />,
         message: "Неверный email или пароль. Проверьте правильность введенных данных."
       };
     }
     
-    if (error.includes('Email not confirmed')) {
+    if (actualError.includes('Email not confirmed')) {
       return {
         icon: <Mail className="h-4 w-4 text-blue-600" />,
         message: "Подтвердите ваш email, перейдя по ссылке в письме.",
@@ -38,14 +52,14 @@ export const LoginAlerts = ({ error, isEmailConfirmationRequired }: LoginAlertsP
       };
     }
     
-    if (error.includes('User account has been blocked') || error.includes('blocked')) {
+    if (actualError.includes('User account has been blocked') || actualError.includes('blocked')) {
       return {
         icon: <UserX className="h-4 w-4 text-red-600" />,
         message: "Ваш аккаунт заблокирован администратором. Если у вас есть вопросы, обратитесь в службу поддержки."
       };
     }
     
-    if (error.includes('User profile has been deleted') || error.includes('deleted')) {
+    if (actualError.includes('User profile has been deleted') || actualError.includes('deleted')) {
       return {
         icon: <UserX className="h-4 w-4 text-red-600" />,
         message: "Этот аккаунт был удален администратором. Для восстановления доступа обратитесь в службу поддержки."
