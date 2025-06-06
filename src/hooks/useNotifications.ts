@@ -28,6 +28,11 @@ export const useNotifications = (userId: string | undefined) => {
       setUnreadCount(data?.filter(n => !n.is_read).length || 0);
     } catch (error) {
       console.error('Error fetching notifications:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить уведомления",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -56,13 +61,31 @@ export const useNotifications = (userId: string | undefined) => {
             description: newNotification.message,
           });
         })
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`
+        }, (payload) => {
+          const updatedNotification = payload.new as Notification;
+          setNotifications(prev => 
+            prev.map(n => 
+              n.id === updatedNotification.id ? updatedNotification : n
+            )
+          );
+          
+          // Update unread count if notification was marked as read
+          if (updatedNotification.is_read) {
+            setUnreadCount(prev => Math.max(0, prev - 1));
+          }
+        })
         .subscribe();
 
       return () => {
         supabase.removeChannel(channel);
       };
     }
-  }, [userId]);
+  }, [userId, toast]);
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -86,6 +109,11 @@ export const useNotifications = (userId: string | undefined) => {
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Error marking notification as read:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось отметить уведомление как прочитанное",
+        variant: "destructive"
+      });
     }
   };
 
@@ -106,8 +134,18 @@ export const useNotifications = (userId: string | undefined) => {
         prev.map(n => ({ ...n, is_read: true, read_at: new Date().toISOString() }))
       );
       setUnreadCount(0);
+      
+      toast({
+        title: "Готово",
+        description: "Все уведомления отмечены как прочитанные",
+      });
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось отметить все уведомления как прочитанные",
+        variant: "destructive"
+      });
     }
   };
 
