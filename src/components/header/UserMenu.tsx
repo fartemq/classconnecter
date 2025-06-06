@@ -13,12 +13,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Settings, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { AdminAccessDialog } from "@/components/admin/AdminAccessDialog";
 
 export const UserMenu = () => {
   const { user, userRole, logout } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showAdminDialog, setShowAdminDialog] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -44,67 +46,77 @@ export const UserMenu = () => {
     }
   };
 
+  const handleAdminAccess = () => {
+    setShowAdminDialog(true);
+  };
+
   if (!user) return null;
 
   const profilePath = userRole === "tutor" ? "/profile/tutor" : "/profile/student";
   const initials = user.email?.charAt(0).toUpperCase() || "U";
+  const isAdminOrModerator = userRole === "admin" || userRole === "moderator";
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src="" />
-            <AvatarFallback>{initials}</AvatarFallback>
-          </Avatar>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
-        <div className="flex items-center justify-start gap-2 p-2">
-          <div className="flex flex-col space-y-1 leading-none">
-            <p className="font-medium">{user.email}</p>
-            <p className="w-[200px] truncate text-sm text-muted-foreground">
-              {userRole === "tutor" ? "Репетитор" : userRole === "admin" ? "Администратор" : userRole === "moderator" ? "Модератор" : "Ученик"}
-            </p>
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src="" />
+              <AvatarFallback>{initials}</AvatarFallback>
+            </Avatar>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-56" align="end" forceMount>
+          <div className="flex items-center justify-start gap-2 p-2">
+            <div className="flex flex-col space-y-1 leading-none">
+              <p className="font-medium">{user.email}</p>
+              <p className="w-[200px] truncate text-sm text-muted-foreground">
+                {userRole === "tutor" ? "Репетитор" : userRole === "admin" ? "Администратор" : userRole === "moderator" ? "Модератор" : "Ученик"}
+              </p>
+            </div>
           </div>
-        </div>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link to={profilePath} className="flex items-center">
-            <User className="mr-2 h-4 w-4" />
-            <span>Мой профиль</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link to={`${profilePath}/settings`} className="flex items-center">
-            <Settings className="mr-2 h-4 w-4" />
-            <span>Настройки</span>
-          </Link>
-        </DropdownMenuItem>
-        
-        {/* Показываем ссылку на админ-панель только для админов и модераторов */}
-        {(userRole === "admin" || userRole === "moderator") && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/admin" className="flex items-center">
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to={profilePath} className="flex items-center">
+              <User className="mr-2 h-4 w-4" />
+              <span>Мой профиль</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to={`${profilePath}/settings`} className="flex items-center">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Настройки</span>
+            </Link>
+          </DropdownMenuItem>
+          
+          {/* Показываем ссылку на админ-панель только для админов и модераторов */}
+          {isAdminOrModerator && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleAdminAccess} className="flex items-center">
                 <Shield className="mr-2 h-4 w-4" />
                 <span>Админ-панель</span>
-              </Link>
-            </DropdownMenuItem>
-          </>
-        )}
-        
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          className="flex items-center text-red-600"
-        >
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>{isLoggingOut ? "Выход..." : "Выйти"}</span>
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+              </DropdownMenuItem>
+            </>
+          )}
+          
+          <DropdownMenuSeparator />
+          <DropdownMenuItem 
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="flex items-center text-red-600"
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>{isLoggingOut ? "Выход..." : "Выйти"}</span>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AdminAccessDialog 
+        open={showAdminDialog}
+        onOpenChange={setShowAdminDialog}
+      />
+    </>
   );
 };
