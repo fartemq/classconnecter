@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { 
   Home, Calendar, Search, Users, Heart, MessageSquare, 
   FileText, Settings, User, Activity, BookOpen
@@ -26,12 +26,10 @@ export const StudentNavigation = () => {
   
   // Function to check if a student tab is active
   const isStudentTabActive = (path: string) => {
-    return location.pathname === path || 
-           (path !== "/profile/student" && location.pathname.includes(path));
+    return location.pathname === path;
   };
 
-  const handleTabClick = (path: string, event: React.MouseEvent) => {
-    event.preventDefault();
+  const handleTabClick = (path: string) => {
     console.log("StudentNavigation: Navigating to:", path);
     navigate(path);
   };
@@ -41,7 +39,7 @@ export const StudentNavigation = () => {
       {studentTabs.map((tab) => (
         <button 
           key={tab.path}
-          onClick={(e) => handleTabClick(tab.path, e)}
+          onClick={() => handleTabClick(tab.path)}
           className={`${
             isStudentTabActive(tab.path) 
               ? "text-primary font-medium bg-primary/10 shadow-sm" 

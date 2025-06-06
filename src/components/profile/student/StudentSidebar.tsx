@@ -12,7 +12,7 @@ import {
   BookOpen,
   FileText
 } from "lucide-react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { getInitials } from "@/lib/utils";
@@ -79,8 +79,7 @@ export const StudentSidebar = () => {
     },
   ];
 
-  const handleNavItemClick = (href: string, event: React.MouseEvent) => {
-    event.preventDefault();
+  const handleNavItemClick = (href: string) => {
     console.log("StudentSidebar: Navigating to:", href);
     navigate(href);
   };
@@ -93,7 +92,7 @@ export const StudentSidebar = () => {
     <aside className="w-full h-full flex flex-col bg-white">
       {/* Profile section */}
       <button 
-        onClick={(e) => handleNavItemClick("/profile/student/profile", e)}
+        onClick={() => handleNavItemClick("/profile/student/profile")}
         className="p-4 border-b cursor-pointer hover:bg-gray-50 transition-colors text-left"
       >
         <div className="flex items-center space-x-3">
@@ -124,12 +123,12 @@ export const StudentSidebar = () => {
           {navItems.map((item) => {
             const isActive = item.exact 
               ? location.pathname === item.href
-              : location.pathname.startsWith(item.href);
+              : location.pathname === item.href;
             
             return (
               <button
                 key={item.href}
-                onClick={(e) => handleNavItemClick(item.href, e)}
+                onClick={() => handleNavItemClick(item.href)}
                 className={`w-full flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors text-left ${
                   isActive 
                     ? "bg-primary text-white" 

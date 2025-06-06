@@ -19,7 +19,7 @@ export const StudentDashboardTab = () => {
   const navigate = useNavigate();
 
   const handleNavigation = (path: string) => {
-    console.log("Navigating to:", path);
+    console.log("StudentDashboardTab: Navigating to:", path);
     navigate(path);
   };
 
