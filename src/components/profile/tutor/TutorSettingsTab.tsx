@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -77,6 +76,21 @@ export const TutorSettingsTab: React.FC<TutorSettingsTabProps> = ({ profile }) =
     }));
   };
 
+  const handleAvatarChange = (file: File | null, url: string | null) => {
+    if (profile?.id && url) {
+      supabase
+        .from("profiles")
+        .update({ avatar_url: url })
+        .eq("id", profile.id)
+        .then(() => {
+          toast({
+            title: "Аватар обновлен",
+            description: "Ваш аватар успешно обновлен",
+          });
+        });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -92,22 +106,9 @@ export const TutorSettingsTab: React.FC<TutorSettingsTabProps> = ({ profile }) =
         </CardHeader>
         <CardContent>
           <AvatarUpload
-            currentAvatarUrl={profile?.avatar_url}
-            onAvatarUpdate={(url) => {
-              // Обновляем аватар через отдельный запрос
-              if (profile?.id) {
-                supabase
-                  .from("profiles")
-                  .update({ avatar_url: url })
-                  .eq("id", profile.id)
-                  .then(() => {
-                    toast({
-                      title: "Аватар обновлен",
-                      description: "Ваш аватар успешно обновлен",
-                    });
-                  });
-              }
-            }}
+            avatarUrl={profile?.avatar_url}
+            firstName={formData.firstName}
+            onChange={handleAvatarChange}
           />
         </CardContent>
       </Card>

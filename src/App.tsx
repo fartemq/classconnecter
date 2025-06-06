@@ -5,7 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/auth";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 import Index from "./pages/Index";
 import LoginPage from "./pages/LoginPage";
@@ -19,9 +19,6 @@ import StudentProfilePage from "./pages/StudentProfilePage";
 
 // Tutor pages  
 import TutorProfilePage from "./pages/TutorProfilePage";
-
-// Admin pages
-import AdminPage from "./pages/AdminPage";
 
 const queryClient = new QueryClient();
 
@@ -65,15 +62,6 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={["tutor"]}>
                     <TutorCompletePage />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              <Route 
-                path="/admin/*" 
-                element={
-                  <ProtectedRoute allowedRoles={["admin"]}>
-                    <AdminPage />
                   </ProtectedRoute>
                 } 
               />

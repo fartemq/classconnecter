@@ -1,9 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { ensureSingleObject } from "@/utils/supabaseUtils";
 import { TutorSearchFilters, TutorSearchResult } from "./types";
-// Import instead of redefining
-import { hasTutorAddedSubjects } from "./validationService";
 
 /**
  * Get user relationships and favorites for filtering search results
