@@ -1,4 +1,7 @@
 
+import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
+
 export const HeroSection = () => {
   return (
     <div className="bg-accent py-16 md:py-24">
@@ -13,13 +16,18 @@ export const HeroSection = () => {
           соответствует вашему расписанию.
         </p>
         
-        <div className="bg-gradient-to-r from-[#3498db] to-[#2980b9] text-white py-8 px-6 rounded-xl shadow-lg max-w-2xl mx-auto">
-          <h2 className="text-2xl md:text-3xl font-semibold mb-4">
-            🎓 Начните свой путь к знаниям уже сегодня!
-          </h2>
-          <p className="text-lg opacity-95">
-            Зарегистрируйтесь на платформе и откройте мир качественного образования
-          </p>
+        <div className="flex flex-col md:flex-row items-center justify-center gap-4">
+          <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
+            <Link to="/school-student">Я - школьник</Link>
+          </Button>
+          
+          <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
+            <Link to="/adult-student">Я - студент/взрослый</Link>
+          </Button>
+          
+          <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
+            <Link to="/become-tutor">Я - репетитор</Link>
+          </Button>
         </div>
       </div>
     </div>
