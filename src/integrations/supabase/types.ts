@@ -39,6 +39,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_messages: {
+        Row: {
+          admin_id: string
+          content: string
+          created_at: string
+          id: string
+          is_from_admin: boolean | null
+          recipient_id: string
+          subject: string | null
+        }
+        Insert: {
+          admin_id: string
+          content: string
+          created_at?: string
+          id?: string
+          is_from_admin?: boolean | null
+          recipient_id: string
+          subject?: string | null
+        }
+        Update: {
+          admin_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          is_from_admin?: boolean | null
+          recipient_id?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -380,6 +410,7 @@ export type Database = {
           created_at: string | null
           first_name: string | null
           id: string
+          is_blocked: boolean | null
           last_name: string | null
           phone: string | null
           role: string | null
@@ -392,6 +423,7 @@ export type Database = {
           created_at?: string | null
           first_name?: string | null
           id: string
+          is_blocked?: boolean | null
           last_name?: string | null
           phone?: string | null
           role?: string | null
@@ -404,6 +436,7 @@ export type Database = {
           created_at?: string | null
           first_name?: string | null
           id?: string
+          is_blocked?: boolean | null
           last_name?: string | null
           phone?: string | null
           role?: string | null
@@ -739,6 +772,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      block_user: {
+        Args: { user_id_param: string; block_status: boolean }
+        Returns: boolean
+      }
       create_homework: {
         Args: {
           tutor_id: string
@@ -750,6 +787,10 @@ export type Database = {
           due_date: string
         }
         Returns: string
+      }
+      delete_user_profile: {
+        Args: { user_id_param: string }
+        Returns: boolean
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
@@ -776,6 +817,14 @@ export type Database = {
           target_type_param?: string
           target_id_param?: string
           details_param?: Json
+        }
+        Returns: string
+      }
+      send_admin_message: {
+        Args: {
+          recipient_id_param: string
+          subject_param: string
+          content_param: string
         }
         Returns: string
       }

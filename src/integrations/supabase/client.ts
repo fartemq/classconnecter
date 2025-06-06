@@ -18,6 +18,7 @@ export interface Database {
           role: string | null;
           created_at: string | null;
           updated_at: string | null;
+          is_blocked: boolean | null;
         };
         Insert: {
           id: string;
@@ -30,6 +31,7 @@ export interface Database {
           role?: string | null;
           created_at?: string | null;
           updated_at?: string | null;
+          is_blocked?: boolean | null;
         };
         Update: {
           id?: string;
@@ -42,6 +44,7 @@ export interface Database {
           role?: string | null;
           created_at?: string | null;
           updated_at?: string | null;
+          is_blocked?: boolean | null;
         };
       };
       admin_logs: {
@@ -70,6 +73,35 @@ export interface Database {
           target_type?: string | null;
           target_id?: string | null;
           details?: any;
+          created_at?: string;
+        };
+      };
+      admin_messages: {
+        Row: {
+          id: string;
+          admin_id: string;
+          recipient_id: string;
+          subject: string | null;
+          content: string;
+          is_from_admin: boolean | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          admin_id: string;
+          recipient_id: string;
+          subject?: string | null;
+          content: string;
+          is_from_admin?: boolean | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          admin_id?: string;
+          recipient_id?: string;
+          subject?: string | null;
+          content?: string;
+          is_from_admin?: boolean | null;
           created_at?: string;
         };
       };
@@ -283,6 +315,27 @@ export interface Database {
           target_type_param?: string;
           target_id_param?: string;
           details_param?: any;
+        };
+        Returns: string;
+      };
+      block_user: {
+        Args: {
+          user_id_param: string;
+          block_status: boolean;
+        };
+        Returns: boolean;
+      };
+      delete_user_profile: {
+        Args: {
+          user_id_param: string;
+        };
+        Returns: boolean;
+      };
+      send_admin_message: {
+        Args: {
+          recipient_id_param: string;
+          subject_param: string;
+          content_param: string;
         };
         Returns: string;
       };
