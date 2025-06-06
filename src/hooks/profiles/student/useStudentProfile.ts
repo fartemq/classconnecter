@@ -14,7 +14,7 @@ interface UseStudentProfileReturn {
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
-  updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  updateProfile: (updates: Partial<Profile>) => Promise<boolean>;
 }
 
 export const useStudentProfile = (): UseStudentProfileReturn => {
@@ -52,8 +52,8 @@ export const useStudentProfile = (): UseStudentProfileReturn => {
     }
   };
 
-  const updateProfile = async (updates: Partial<Profile>) => {
-    if (!user?.id) return;
+  const updateProfile = async (updates: Partial<Profile>): Promise<boolean> => {
+    if (!user?.id) return false;
 
     try {
       const { error } = await supabase
@@ -65,9 +65,10 @@ export const useStudentProfile = (): UseStudentProfileReturn => {
 
       // Update local state
       setProfile(prev => prev ? { ...prev, ...updates } : null);
+      return true;
     } catch (err) {
       console.error('Error updating profile:', err);
-      throw err;
+      return false;
     }
   };
 

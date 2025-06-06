@@ -2,12 +2,15 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader } from "@/components/ui/loader";
-import { BookOpen, Calendar, Clock, Download, Upload, CheckCircle } from "lucide-react";
+import { BookOpen, Calendar, Clock, Download, Upload, CheckCircle, FileText, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { useToast } from "@/hooks/use-toast";
+import { FileUpload } from "@/components/common/FileUpload";
 
 interface HomeworkItem {
   id: string;
@@ -26,6 +29,7 @@ interface HomeworkItem {
 
 export const StudentHomeworkView = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [homework, setHomework] = useState<HomeworkItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [submissionText, setSubmissionText] = useState<{ [key: string]: string }>({});
@@ -223,10 +227,10 @@ export const StudentHomeworkView = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold`}>Домашние задания</h1>
+          <h1 className="text-2xl font-bold">Домашние задания</h1>
           <p className="text-gray-600">Задания от ваших репетиторов</p>
         </div>
-        <Badge variant="outline" className={`${isMobile ? 'text-sm px-2 py-1' : 'text-lg px-3 py-1'}`}>
+        <Badge variant="outline" className="text-lg px-3 py-1">
           <FileText className="h-4 w-4 mr-2" />
           {homework.length}
         </Badge>
@@ -249,18 +253,18 @@ export const StudentHomeworkView = () => {
             
             return (
               <Card key={item.id} className={`${isOverdue ? 'border-red-200 bg-red-50' : ''}`}>
-                <CardHeader className={isMobile ? 'pb-3' : ''}>
+                <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'items-center space-x-3'} mb-2`}>
-                        <CardTitle className={`${isMobile ? 'text-lg' : 'text-lg'}`}>{item.title}</CardTitle>
+                      <div className="flex items-center space-x-3 mb-2">
+                        <CardTitle className="text-lg">{item.title}</CardTitle>
                         <div className="flex items-center space-x-2">
                           {getStatusBadge(item.status, item.due_date)}
                           {isOverdue && <AlertCircle className="h-4 w-4 text-red-500" />}
                         </div>
                       </div>
                       
-                      <div className={`flex ${isMobile ? 'flex-col space-y-1' : 'items-center space-x-4'} text-sm text-gray-500`}>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
                         <span className="flex items-center">
                           <BookOpen className="h-3 w-3 mr-1" />
                           {item.subjects?.name}
@@ -321,8 +325,7 @@ export const StudentHomeworkView = () => {
                             [item.id]: e.target.value 
                           }))}
                           placeholder="Введите ваш ответ или решение..."
-                          rows={isMobile ? 3 : 4}
-                          className={isMobile ? 'text-base' : ''}
+                          rows={4}
                         />
                       </div>
 
@@ -343,8 +346,7 @@ export const StudentHomeworkView = () => {
                       
                       <Button 
                         onClick={() => submitHomework(item.id)}
-                        className={`flex items-center ${isMobile ? 'w-full' : ''}`}
-                        size={isMobile ? "lg" : "default"}
+                        className="flex items-center"
                       >
                         <CheckCircle className="h-4 w-4 mr-2" />
                         Отправить на проверку

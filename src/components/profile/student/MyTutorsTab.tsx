@@ -85,8 +85,12 @@ export const MyTutorsTab = () => {
       const formattedTutors = data?.map(item => {
         const tutorData = Array.isArray(item.tutor) ? item.tutor[0] : item.tutor;
         
-        // Extract subjects
-        const subjects = tutorData?.tutor_subjects?.map(ts => ts.subjects) || [];
+        // Extract subjects - handle nested structure properly
+        const tutorSubjects = tutorData?.tutor_subjects || [];
+        const subjects = tutorSubjects.map(ts => {
+          const subjectData = Array.isArray(ts.subjects) ? ts.subjects[0] : ts.subjects;
+          return { name: subjectData?.name || '' };
+        }).filter(s => s.name);
 
         return {
           id: tutorData?.id,

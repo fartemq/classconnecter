@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -9,11 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { format, addDays } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Calendar as CalendarIcon, Clock, User, BookOpen } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, User, BookOpen, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useLessonRequests } from "@/hooks/useLessonRequests";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader } from "@/components/ui/loader";
 
 interface LessonRequestModalProps {
   isOpen: boolean;
