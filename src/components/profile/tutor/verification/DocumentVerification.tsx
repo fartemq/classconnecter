@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { FileUpload } from "@/components/common/FileUpload";
+import { DocumentUploadSection } from "./DocumentUploadSection";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
@@ -30,11 +30,12 @@ export const DocumentVerification = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [verifications, setVerifications] = useState<DocumentVerification[]>([]);
-  const [selectedDocType, setSelectedDocType] = useState('diploma');
+  const [isEducationVerified, setIsEducationVerified] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
       fetchVerifications();
+      checkEducationStatus();
     }
   }, [user?.id]);
 
@@ -53,31 +54,18 @@ export const DocumentVerification = () => {
     }
   };
 
-  const handleFileUploaded = async (filePath: string, fileName: string) => {
+  const checkEducationStatus = async () => {
     try {
-      const { error } = await supabase
-        .from('document_verifications')
-        .insert({
-          tutor_id: user?.id,
-          document_type: selectedDocType,
-          file_path: filePath
-        });
+      const { data, error } = await supabase
+        .from('tutor_profiles')
+        .select('education_verified')
+        .eq('id', user?.id)
+        .single();
 
       if (error) throw error;
-
-      toast({
-        title: "Документ загружен",
-        description: "Документ отправлен на проверку администратору"
-      });
-
-      fetchVerifications();
+      setIsEducationVerified(data?.education_verified || false);
     } catch (error) {
-      console.error('Error submitting verification:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось отправить документ на проверку",
-        variant: "destructive"
-      });
+      console.error('Error checking education status:', error);
     }
   };
 
@@ -100,39 +88,10 @@ export const DocumentVerification = () => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Загрузка документов для верификации</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Тип документа:
-              </label>
-              <select
-                value={selectedDocType}
-                onChange={(e) => setSelectedDocType(e.target.value)}
-                className="w-full px-3 py-2 border rounded-md"
-              >
-                {DOCUMENT_TYPES.map(type => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <FileUpload
-              bucket="document-verifications"
-              folder={user?.id || ''}
-              onFileUploaded={handleFileUploaded}
-              accept="image/*,.pdf,.doc,.docx"
-              maxFiles={1}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <DocumentUploadSection 
+        tutorId={user?.id || ''}
+        isEducationVerified={isEducationVerified}
+      />
 
       <Card>
         <CardHeader>

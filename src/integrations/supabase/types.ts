@@ -101,6 +101,42 @@ export type Database = {
           },
         ]
       }
+      document_verifications: {
+        Row: {
+          admin_comment: string | null
+          document_type: string
+          file_path: string
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          submitted_at: string
+          tutor_id: string
+        }
+        Insert: {
+          admin_comment?: string | null
+          document_type: string
+          file_path: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          tutor_id: string
+        }
+        Update: {
+          admin_comment?: string | null
+          document_type?: string
+          file_path?: string
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          submitted_at?: string
+          tutor_id?: string
+        }
+        Relationships: []
+      }
       favorite_tutors: {
         Row: {
           created_at: string | null

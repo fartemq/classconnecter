@@ -8,7 +8,8 @@ import {
   BookOpen, 
   Activity, 
   Settings,
-  Shield
+  Shield,
+  MessageSquare
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +23,7 @@ export const AdminSidebar = ({ activeView, onViewChange }: AdminSidebarProps) =>
     { id: 'dashboard', label: 'Обзор', icon: LayoutDashboard },
     { id: 'users', label: 'Пользователи', icon: Users },
     { id: 'documents', label: 'Документы', icon: FileCheck },
+    { id: 'chats', label: 'Чаты', icon: MessageSquare },
     { id: 'subjects', label: 'Предметы', icon: BookOpen },
     { id: 'logs', label: 'Логи действий', icon: Activity },
     { id: 'settings', label: 'Настройки', icon: Settings },
