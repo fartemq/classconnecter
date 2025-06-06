@@ -102,13 +102,37 @@ export const AdminChatsPanel = () => {
     setIsSending(true);
     
     try {
-      const { error } = await supabase.rpc('send_admin_message', {
-        recipient_id_param: selectedUser.id,
-        subject_param: subject.trim() || null,
-        content_param: content.trim()
+      console.log('Отправка сообщения:', {
+        recipient_id: selectedUser.id,
+        subject: subject.trim() || null,
+        content: content.trim()
       });
 
-      if (error) throw error;
+      // Используем прямую вставку в таблицу вместо RPC функции
+      const { data: currentUser } = await supabase.auth.getUser();
+      
+      if (!currentUser.user) {
+        throw new Error('Пользователь не авторизован');
+      }
+
+      const { data, error } = await supabase
+        .from('admin_messages')
+        .insert({
+          admin_id: currentUser.user.id,
+          recipient_id: selectedUser.id,
+          subject: subject.trim() || null,
+          content: content.trim(),
+          is_from_admin: true
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Ошибка при отправке сообщения:', error);
+        throw error;
+      }
+
+      console.log('Сообщение успешно отправлено:', data);
 
       toast({
         title: "Сообщение отправлено",
@@ -119,11 +143,11 @@ export const AdminChatsPanel = () => {
       setContent('');
       setSelectedUser(null);
       fetchMessages();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending message:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось отправить сообщение",
+        description: error.message || "Не удалось отправить сообщение",
         variant: "destructive"
       });
     } finally {
