@@ -1,13 +1,11 @@
-
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Send, Calendar, BookOpen, MoreVertical } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { Send, ArrowLeft, User } from "lucide-react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";

@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { MessageSquare, Calendar, User, BookOpen } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -158,45 +158,43 @@ export const StudentsTab = () => {
                   <Avatar className="h-12 w-12">
                     <AvatarImage src={student.avatar_url || undefined} />
                     <AvatarFallback>
-                      {student.first_name?.[0]}{student.last_name?.[0]}
+                      {student.first_name?.[0]?.toUpperCase() || 'S'}
                     </AvatarFallback>
                   </Avatar>
+                  
                   <div className="flex-1">
-                    <CardTitle className="text-lg">
+                    <h3 className="font-medium">
                       {student.first_name} {student.last_name}
-                    </CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {student.city || "Город не указан"}
+                    </h3>
+                    {student.city && (
+                      <p className="text-sm text-muted-foreground">{student.city}</p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      С {format(new Date(student.relationship_start), 'd MMM yyyy', { locale: ru })}
                     </p>
                   </div>
                 </div>
               </CardHeader>
               
-              <CardContent className="space-y-4">
-                <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                  <Calendar className="h-4 w-4" />
-                  <span>
-                    Начали работать: {format(new Date(student.relationship_start), 'dd MMMM yyyy', { locale: ru })}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
+              <CardContent className="pt-0">
+                <div className="flex space-x-2">
                   <Button
-                    size="sm"
                     variant="outline"
+                    size="sm"
                     onClick={() => handleChatWithStudent(student.id)}
-                    className="flex items-center space-x-1"
+                    className="flex-1"
                   >
-                    <MessageSquare className="h-4 w-4" />
-                    <span>Чат</span>
+                    <MessageSquare className="h-4 w-4 mr-2" />
+                    Чат
                   </Button>
                   <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => handleScheduleWithStudent(student.id)}
-                    className="flex items-center space-x-1"
+                    className="flex-1"
                   >
-                    <Calendar className="h-4 w-4" />
-                    <span>Расписание</span>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    Расписание
                   </Button>
                 </div>
               </CardContent>

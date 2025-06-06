@@ -8,7 +8,7 @@ import { fetchTutorProfile } from "@/services/tutor/profile/fetchProfile";
 import { TutorProfile } from "@/types/tutor";
 import { Loader } from "@/components/ui/loader";
 import { TutorPublishController } from "./TutorPublishController";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { Profile } from "@/hooks/profiles/types";
 import { Button } from "@/components/ui/button";
 import { TutorProfilePreviewModal } from "./preview/TutorProfilePreviewModal";

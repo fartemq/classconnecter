@@ -1,123 +1,74 @@
-
 import React, { useState, useEffect } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, BookOpen, Calendar, Clock, FileText } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Plus, BookOpen, Calendar, User, FileText, Clock, CheckCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 
-interface HomeworkItem {
+interface Homework {
   id: string;
   title: string;
   description: string;
-  due_date: string;
-  status: string;
-  created_at: string;
   subject_id: string;
-  subjects: { name: string } | null;
-}
-
-interface StudentInfo {
-  id: string;
-  first_name: string;
-  last_name: string;
-  avatar_url?: string;
+  student_id: string;
+  tutor_id: string;
+  deadline: string;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export const TutorHomeworkManagement = () => {
-  const [searchParams] = useSearchParams();
-  const studentId = searchParams.get('student');
-  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-
-  const [studentInfo, setStudentInfo] = useState<StudentInfo | null>(null);
-  const [homework, setHomework] = useState<HomeworkItem[]>([]);
-  const [subjects, setSubjects] = useState<Array<{ id: string; name: string }>>([]);
+  const [homeworkList, setHomeworkList] = useState<Homework[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isCreating, setIsCreating] = useState(false);
-  const [showCreateForm, setShowCreateForm] = useState(false);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [subjects, setSubjects] = useState<{ id: string; name: string }[]>([]);
+  const [students, setStudents] = useState<{ id: string; name: string }[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState("");
+  const [selectedStudent, setSelectedStudent] = useState("");
   const [newHomework, setNewHomework] = useState({
     title: "",
     description: "",
-    subject_id: "",
-    due_date: ""
+    deadline: ""
   });
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    if (studentId && user?.id) {
-      fetchStudentInfo();
+    if (user?.id) {
       fetchHomework();
       fetchSubjects();
+      fetchStudents();
     }
-  }, [studentId, user?.id]);
-
-  const fetchStudentInfo = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name, avatar_url')
-        .eq('id', studentId)
-        .single();
-
-      if (error) throw error;
-      setStudentInfo(data);
-    } catch (error) {
-      console.error('Error fetching student info:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось загрузить информацию об ученике",
-        variant: "destructive"
-      });
-    }
-  };
+  }, [user?.id]);
 
   const fetchHomework = async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('homework')
-        .select(`
-          id,
-          title,
-          description,
-          due_date,
-          status,
-          created_at,
-          subject_id,
-          subjects(name)
-        `)
-        .eq('tutor_id', user?.id)
-        .eq('student_id', studentId)
-        .order('created_at', { ascending: false });
+        .select('*')
+        .eq('tutor_id', user.id)
+        .order('deadline', { ascending: true });
 
       if (error) throw error;
-      
-      // Transform data to match HomeworkItem interface
-      const transformedData: HomeworkItem[] = (data || []).map(item => ({
-        ...item,
-        subjects: Array.isArray(item.subjects) && item.subjects.length > 0 
-          ? item.subjects[0] 
-          : null
-      }));
-      
-      setHomework(transformedData);
+      setHomeworkList(data || []);
     } catch (error) {
       console.error('Error fetching homework:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось загрузить домашние задания",
+        description: "Не удалось загрузить список заданий",
         variant: "destructive"
       });
     } finally {
@@ -130,142 +81,185 @@ export const TutorHomeworkManagement = () => {
       const { data, error } = await supabase
         .from('subjects')
         .select('id, name')
-        .eq('is_active', true)
-        .order('name');
+        .eq('is_active', true);
 
       if (error) throw error;
       setSubjects(data || []);
     } catch (error) {
       console.error('Error fetching subjects:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить список предметов",
+        variant: "destructive"
+      });
     }
   };
 
-  const createHomework = async () => {
-    if (!newHomework.title || !newHomework.subject_id || !newHomework.due_date) {
+  const fetchStudents = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('student_tutor_relationships')
+        .select(`
+          student_id,
+          profiles (
+            first_name,
+            last_name
+          )
+        `)
+        .eq('tutor_id', user.id)
+        .eq('status', 'accepted');
+
+      if (error) throw error;
+
+      const formattedStudents = data?.map(item => ({
+        id: item.student_id,
+        name: `${item.profiles?.first_name} ${item.profiles?.last_name || ''}`
+      })) || [];
+
+      setStudents(formattedStudents);
+    } catch (error) {
+      console.error('Error fetching students:', error);
       toast({
         title: "Ошибка",
-        description: "Заполните все обязательные поля",
+        description: "Не удалось загрузить список учеников",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setNewHomework(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleAddHomework = async () => {
+    if (!selectedSubject || !selectedStudent || !newHomework.title || !newHomework.description || !newHomework.deadline) {
+      toast({
+        title: "Заполните все поля",
+        description: "Пожалуйста, заполните все обязательные поля",
         variant: "destructive"
       });
       return;
     }
 
-    setIsCreating(true);
+    setIsSubmitting(true);
     try {
       const { error } = await supabase
         .from('homework')
         .insert({
-          tutor_id: user?.id,
-          student_id: studentId,
-          subject_id: newHomework.subject_id,
           title: newHomework.title,
           description: newHomework.description,
-          due_date: newHomework.due_date,
-          status: 'assigned'
+          subject_id: selectedSubject,
+          student_id: selectedStudent,
+          tutor_id: user.id,
+          deadline: newHomework.deadline,
+          is_completed: false
         });
 
       if (error) throw error;
 
       toast({
-        title: "Успешно",
-        description: "Домашнее задание создано"
+        title: "Успех",
+        description: "Задание успешно добавлено",
       });
 
-      setNewHomework({ title: "", description: "", subject_id: "", due_date: "" });
-      setShowCreateForm(false);
-      await fetchHomework();
+      setNewHomework({ title: "", description: "", deadline: "" });
+      setSelectedSubject("");
+      setSelectedStudent("");
+      fetchHomework();
+      setOpen(false);
     } catch (error) {
-      console.error('Error creating homework:', error);
+      console.error('Error adding homework:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось создать домашнее задание",
+        description: "Не удалось добавить задание",
         variant: "destructive"
       });
     } finally {
-      setIsCreating(false);
+      setIsSubmitting(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'assigned':
-        return <Badge variant="outline">Назначено</Badge>;
-      case 'submitted':
-        return <Badge variant="default">Отправлено</Badge>;
-      case 'reviewed':
-        return <Badge variant="secondary">Проверено</Badge>;
-      case 'completed':
-        return <Badge className="bg-green-500">Завершено</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  const handleCompleteToggle = async (homeworkId: string, isCompleted: boolean) => {
+    try {
+      setIsLoading(true);
+      const { error } = await supabase
+        .from('homework')
+        .update({ is_completed: !isCompleted })
+        .eq('id', homeworkId);
+
+      if (error) throw error;
+      fetchHomework();
+    } catch (error) {
+      console.error('Error updating homework status:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось изменить статус задания",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  if (!studentId) {
+  if (isLoading) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">Выберите ученика для управления домашними заданиями</p>
+      <div className="flex justify-center py-8">
+        <Loader size="lg" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => navigate('/profile/tutor/students')}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Назад к ученикам
-          </Button>
-          
-          {studentInfo && (
-            <div>
-              <h1 className="text-2xl font-bold">
-                Домашние задания для {studentInfo.first_name} {studentInfo.last_name}
-              </h1>
-            </div>
-          )}
-        </div>
-
-        <Button onClick={() => setShowCreateForm(!showCreateForm)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Создать задание
-        </Button>
-      </div>
-
-      {/* Create Form */}
-      {showCreateForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Новое домашнее задание</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="title">Название задания *</Label>
+        <h2 className="text-2xl font-bold">Управление домашними заданиями</h2>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              Добавить задание
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle>Новое задание</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="title" className="text-right">
+                  Название
+                </Label>
                 <Input
+                  type="text"
                   id="title"
+                  name="title"
                   value={newHomework.title}
-                  onChange={(e) => setNewHomework(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Введите название задания"
+                  onChange={handleInputChange}
+                  className="col-span-3"
                 />
               </div>
-              <div>
-                <Label htmlFor="subject">Предмет *</Label>
-                <Select 
-                  value={newHomework.subject_id} 
-                  onValueChange={(value) => setNewHomework(prev => ({ ...prev, subject_id: value }))}
-                >
-                  <SelectTrigger>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="description" className="text-right">
+                  Описание
+                </Label>
+                <Textarea
+                  id="description"
+                  name="description"
+                  value={newHomework.description}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="subject" className="text-right">
+                  Предмет
+                </Label>
+                <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                  <SelectTrigger className="col-span-3">
                     <SelectValue placeholder="Выберите предмет" />
                   </SelectTrigger>
                   <SelectContent>
-                    {subjects.map((subject) => (
+                    {subjects.map(subject => (
                       <SelectItem key={subject.id} value={subject.id}>
                         {subject.name}
                       </SelectItem>
@@ -273,100 +267,105 @@ export const TutorHomeworkManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="student" className="text-right">
+                  Ученик
+                </Label>
+                <Select value={selectedStudent} onValueChange={setSelectedStudent}>
+                  <SelectTrigger className="col-span-3">
+                    <SelectValue placeholder="Выберите ученика" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {students.map(student => (
+                      <SelectItem key={student.id} value={student.id}>
+                        {student.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="deadline" className="text-right">
+                  Срок сдачи
+                </Label>
+                <Input
+                  type="date"
+                  id="deadline"
+                  name="deadline"
+                  value={newHomework.deadline}
+                  onChange={handleInputChange}
+                  className="col-span-3"
+                />
+              </div>
             </div>
-
-            <div>
-              <Label htmlFor="due_date">Срок выполнения *</Label>
-              <Input
-                id="due_date"
-                type="datetime-local"
-                value={newHomework.due_date}
-                onChange={(e) => setNewHomework(prev => ({ ...prev, due_date: e.target.value }))}
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="description">Описание задания</Label>
-              <Textarea
-                id="description"
-                value={newHomework.description}
-                onChange={(e) => setNewHomework(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Опишите задание подробно..."
-                rows={4}
-              />
-            </div>
-
-            <div className="flex space-x-2">
-              <Button onClick={createHomework} disabled={isCreating}>
-                {isCreating ? "Создание..." : "Создать задание"}
+            <div className="flex justify-end">
+              <Button type="submit" onClick={handleAddHomework} disabled={isSubmitting}>
+                {isSubmitting && <Loader size="sm" className="mr-2" />}
+                Добавить
               </Button>
-              <Button variant="outline" onClick={() => setShowCreateForm(false)}>
-                Отмена
-              </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      {homeworkList.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-8">
+            <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium mb-2">Нет заданий</h3>
+            <p className="text-gray-500">
+              Добавьте задания для ваших учеников
+            </p>
           </CardContent>
         </Card>
-      )}
-
-      {/* Homework List */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BookOpen className="h-5 w-5" />
-            Домашние задания
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader size="lg" />
-            </div>
-          ) : homework.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-lg font-medium mb-2">Пока нет домашних заданий</p>
-              <p className="text-sm">Создайте первое задание для этого ученика</p>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {homework.map((item) => (
-                <div
-                  key={item.id}
-                  className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="font-semibold">{item.title}</h3>
-                        {getStatusBadge(item.status)}
-                      </div>
-                      
-                      {item.description && (
-                        <p className="text-gray-600 text-sm mb-3">{item.description}</p>
-                      )}
-                      
-                      <div className="flex items-center space-x-4 text-xs text-gray-500">
-                        <span className="flex items-center">
-                          <BookOpen className="h-3 w-3 mr-1" />
-                          {item.subjects?.name}
-                        </span>
-                        <span className="flex items-center">
-                          <Calendar className="h-3 w-3 mr-1" />
-                          Срок: {format(new Date(item.due_date), 'dd MMM yyyy HH:mm', { locale: ru })}
-                        </span>
-                        <span className="flex items-center">
-                          <Clock className="h-3 w-3 mr-1" />
-                          Создано: {format(new Date(item.created_at), 'dd MMM yyyy', { locale: ru })}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {homeworkList.map((homework) => (
+            <Card key={homework.id} className="bg-white shadow-sm rounded-md">
+              <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+                <CardTitle className="text-sm font-medium">{homework.title}</CardTitle>
+                <Badge variant={homework.is_completed ? "secondary" : "outline"}>
+                  {homework.is_completed ? "Выполнено" : "В процессе"}
+                </Badge>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-gray-500 mb-2">
+                  <BookOpen className="h-4 w-4 mr-1 inline-block" />
+                  {subjects.find(s => s.id === homework.subject_id)?.name || 'Предмет не указан'}
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                <div className="text-sm text-gray-500 mb-2">
+                  <User className="h-4 w-4 mr-1 inline-block" />
+                  {students.find(s => s.id === homework.student_id)?.name || 'Ученик не указан'}
+                </div>
+                <div className="text-sm text-gray-500">
+                  <Calendar className="h-4 w-4 mr-1 inline-block" />
+                  Срок сдачи: {format(new Date(homework.deadline), 'dd MMM yyyy', { locale: ru })}
+                </div>
+                <p className="text-sm mt-2">{homework.description}</p>
+              </CardContent>
+              <div className="p-4 border-t">
+                <Button
+                  variant="outline"
+                  className="w-full justify-center"
+                  onClick={() => handleCompleteToggle(homework.id, homework.is_completed)}
+                >
+                  {homework.is_completed ? (
+                    <>
+                      <Clock className="h-4 w-4 mr-2" />
+                      Отметить как невыполненное
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Отметить как выполненное
+                    </>
+                  )}
+                </Button>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
     </div>
   );
 };

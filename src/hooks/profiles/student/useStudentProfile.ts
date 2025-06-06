@@ -1,161 +1,65 @@
 
-import { toast } from "@/hooks/use-toast";
-import { Profile, ProfileUpdateParams } from "../types";
-import { StudentProfileData } from "../types/profileTypes";
-import { useBaseProfile } from "../useBaseProfile";
-import { createRoleSpecificProfile } from "../utils";
-import { fetchStudentProfileData } from "../utils/fetchProfile";
-import { updateStudentProfileData } from "./updateStudentProfile";
-import { UseStudentProfileResult } from "./types";
-import { useEffect } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useState, useEffect } from 'react';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { Profile } from '../types';
 
-/**
- * Hook for managing student profile data with proper RLS compliance
- */
-export const useStudentProfile = (): UseStudentProfileResult => {
-  const { profile, setProfile, isLoading, error, user } = useBaseProfile("student");
-  const { user: authUser } = useAuth();
+interface UseStudentProfileParams {
+  user: User | null;
+}
 
-  // Auto-create profile if it doesn't exist but user is authenticated
+interface UseStudentProfileReturn {
+  profile: Profile | null;
+  isLoading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+import { useAuth } from '@/hooks/auth/useAuth';
+
+export const useStudentProfile = (): UseStudentProfileReturn => {
+  const { user } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProfile = async () => {
+    if (!user?.id) {
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      setProfile(data);
+    } catch (err) {
+      console.error('Error fetching student profile:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch profile');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const autoCreateProfile = async () => {
-      if (authUser && !profile && !isLoading && !error) {
-        console.log("Auto-creating student profile for user:", authUser.id);
-        try {
-          await createRoleSpecificProfile(authUser.id, 'student');
-          
-          // Refresh profile data without page reload
-          const profileData = await fetchStudentProfileData(authUser.id);
-          if (profileData) {
-            setProfile(profileData);
-          }
-        } catch (error) {
-          console.error("Error auto-creating student profile:", error);
-          // Only show error if it's not related to RLS permissions
-          if (!error?.message?.includes('row-level security')) {
-            toast({
-              title: "Информация",
-              description: "Создаем ваш профиль ученика. Это займет несколько секунд...",
-            });
-          }
-        }
-      }
-    };
-
-    // Only try to create profile after auth is loaded and we're sure there's no profile
-    if (!isLoading && authUser) {
-      autoCreateProfile();
-    }
-  }, [authUser, profile, isLoading, error, setProfile]);
-
-  // Update profile function with RLS compliance
-  const updateProfile = async (params: ProfileUpdateParams): Promise<boolean> => {
-    try {
-      if (!profile?.id) {
-        console.error("No profile ID found");
-        toast({
-          title: "Ошибка",
-          description: "Пользователь не авторизован",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      console.log("Updating student profile with data:", params);
-
-      // Update student-specific profile - RLS will ensure proper access
-      const studentUpdated = await updateStudentProfileData(profile.id, params);
-      if (!studentUpdated) {
-        throw new Error("Failed to update student profile");
-      }
-
-      console.log("Student profile specific data updated successfully");
-
-      // Update local state with ALL fields from params
-      setProfile(prev => {
-        if (!prev) return prev;
-        
-        const studentProfiles = ('student_profiles' in prev ? prev.student_profiles : {}) as StudentProfileData;
-        
-        // Create a complete profile with all extended fields
-        const updatedProfile: Profile = { 
-          ...prev, 
-          ...params,
-          id: prev.id,
-          role: (prev.role || 'student') as "student" | "tutor",
-          created_at: prev.created_at || new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          first_name: params.first_name || prev.first_name || "",
-          last_name: params.last_name || prev.last_name || "",
-          avatar_url: params.avatar_url || prev.avatar_url || null,
-          bio: params.bio || prev.bio || null,
-          city: params.city || prev.city || null,
-          phone: params.phone || prev.phone || null,
-          school: params.school || ('school' in prev ? (prev as any).school : undefined),
-          grade: params.grade || ('grade' in prev ? (prev as any).grade : undefined),
-          learning_goals: params.learning_goals || ('learning_goals' in prev ? (prev as any).learning_goals : undefined),
-          educational_level: params.educational_level || ('educational_level' in prev ? (prev as any).educational_level : undefined),
-          subjects: params.subjects || ('subjects' in prev ? (prev as any).subjects : []),
-          preferred_format: params.preferred_format || ('preferred_format' in prev ? (prev as any).preferred_format : []),
-          budget: params.budget || ('budget' in prev ? (prev as any).budget : 1000),
-          student_profiles: {
-            ...studentProfiles,
-            educational_level: params.educational_level || studentProfiles.educational_level || null,
-            subjects: params.subjects || studentProfiles.subjects || [],
-            learning_goals: params.learning_goals || studentProfiles.learning_goals || null,
-            preferred_format: params.preferred_format || studentProfiles.preferred_format || [],
-            school: params.school || studentProfiles.school || null,
-            grade: params.grade || studentProfiles.grade || null,
-            budget: params.budget || studentProfiles.budget || 1000
-          }
-        };
-        
-        return updatedProfile;
-      });
-
-      toast({
-        title: "Успешно",
-        description: "Профиль успешно обновлен",
-      });
-
-      return true;
-    } catch (error) {
-      console.error("Error in updateProfile:", error);
-      toast({
-        variant: "destructive",
-        title: "Ошибка сохранения",
-        description: "Не удалось обновить профиль. Пожалуйста, попробуйте ещё раз.",
-      });
-      return false;
-    }
-  };
-
-  // Load student-specific data with proper error handling
-  const loadStudentData = async (userId: string): Promise<Profile | null> => {
-    try {
-      console.log("Loading student data for user:", userId);
-      const studentData = await fetchStudentProfileData(userId);
-      
-      if (studentData) {
-        console.log("Student data loaded successfully:", studentData);
-        return studentData;
-      } else {
-        console.log("No student profile found, creating one");
-        await createRoleSpecificProfile(userId, 'student');
-        return null;
-      }
-    } catch (error) {
-      console.error("Error loading student data:", error);
-      return null;
-    }
-  };
+    fetchProfile();
+  }, [user?.id]);
 
   return {
-    profile: profile as Profile | null,
+    profile,
     isLoading,
-    updateProfile,
-    loadStudentData,
-    error
+    error,
+    refetch: fetchProfile,
   };
 };

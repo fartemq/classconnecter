@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Search, MessageCircle, Clock } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { Search, MessageSquare, User, Clock } from "lucide-react";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { format } from "date-fns";
@@ -134,7 +133,7 @@ export const TutorChatsTab = () => {
       {filteredChats.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
-            <MessageCircle className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <MessageSquare className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium mb-2">Нет сообщений</h3>
             <p className="text-gray-500">
               Когда ученики напишут вам, их сообщения появятся здесь

@@ -1,12 +1,14 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useNavigate } from 'react-router-dom';
 import { StudentsList } from './StudentsList';
 import { StudentTabsFilter } from './StudentTabsFilter';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Button } from '@/components/ui/button';
 import { Upload } from 'lucide-react';
 import { EmptySearchResults } from './EmptySearchResults';
 import { StudentContactDialog } from './StudentContactDialog';

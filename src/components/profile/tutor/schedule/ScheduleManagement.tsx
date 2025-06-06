@@ -1,14 +1,14 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Clock, Calendar as CalendarIcon } from "lucide-react";
+import { Plus, Clock, Calendar as CalendarIcon, User, X } from "lucide-react";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { useTutorSchedule } from "@/hooks/useTutorSchedule";
-import { useAuth } from "@/hooks/useAuth";
 import { Loader } from "@/components/ui/loader";
 
 const DAYS_OF_WEEK = [
@@ -194,7 +194,7 @@ export const ScheduleManagement = () => {
                               onClick={() => deleteTimeSlot(slot.id)}
                               className="h-8 w-8 p-0"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <X className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>

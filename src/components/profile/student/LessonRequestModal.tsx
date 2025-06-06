@@ -1,17 +1,17 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { CalendarIcon, Clock, User, BookOpen, MessageSquare } from "lucide-react";
-import { format, addDays } from "date-fns";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { useToast } from "@/hooks/use-toast";
-import { useLessonRequests } from "@/hooks/useLessonRequests";
-import { useAuth } from "@/hooks/useAuth";
+import { Calendar as CalendarIcon, Clock, User, BookOpen, MessageSquare } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader } from "@/components/ui/loader";
 
