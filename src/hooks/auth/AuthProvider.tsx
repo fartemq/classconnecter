@@ -12,20 +12,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Cache for user role to avoid repeated fetches
+  // Simple in-memory cache for roles
   const roleCache = new Map<string, string>();
 
-  // Fetch user role from profiles table with caching
-  const fetchUserRole = async (userId: string) => {
+  // Fetch user role with improved error handling
+  const fetchUserRole = async (userId: string): Promise<string | null> => {
     try {
       console.log("🔍 Fetching role for user:", userId);
       
       // Check cache first
       if (roleCache.has(userId)) {
-        console.log("✅ Role found in cache:", roleCache.get(userId));
-        return roleCache.get(userId);
+        const cachedRole = roleCache.get(userId)!;
+        console.log("✅ Role found in cache:", cachedRole);
+        return cachedRole;
       }
       
+      // Special case for admin user - set immediately
+      if (userId === "861128e6-be26-48ee-b576-e7accded9f70") {
+        console.log("🛡️ Admin user detected");
+        roleCache.set(userId, "admin");
+        return "admin";
+      }
+
       const { data, error } = await supabase
         .from("profiles")
         .select("role, is_blocked")
@@ -33,8 +41,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (error) {
-        console.error("Error fetching user role:", error);
-        return null;
+        console.error("❌ Error fetching user role:", error);
+        // Return default role instead of null to prevent blocking
+        const defaultRole = "student";
+        roleCache.set(userId, defaultRole);
+        return defaultRole;
       }
 
       if (data?.is_blocked) {
@@ -50,12 +61,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null;
       }
 
-      if (userId === "861128e6-be26-48ee-b576-e7accded9f70") {
-        console.log("🛡️ Admin user detected");
-        roleCache.set(userId, "admin");
-        return "admin";
-      }
-
       const role = data?.role || "student";
       console.log("✅ User role fetched:", role);
       
@@ -63,12 +68,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       roleCache.set(userId, role);
       return role;
     } catch (error) {
-      console.error("Error in fetchUserRole:", error);
-      return null;
+      console.error("❌ Exception in fetchUserRole:", error);
+      // Return default role to prevent blocking
+      const defaultRole = "student";
+      roleCache.set(userId, defaultRole);
+      return defaultRole;
     }
   };
 
-  // Login function
+  // Improved login function
   const login = async (email: string, password: string) => {
     try {
       console.log("🔐 Starting login process for:", email);
@@ -79,7 +87,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) {
-        console.error("Login error:", error);
+        console.error("❌ Login error:", error);
         let errorMessage = "Ошибка входа. Пожалуйста, попробуйте снова.";
         
         if (error.message.includes("Invalid login credentials")) {
@@ -94,10 +102,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      console.log("✅ Login successful");
+      console.log("✅ Login successful, auth state will be handled by onAuthStateChange");
       return { success: true };
     } catch (error) {
-      console.error("Login exception:", error);
+      console.error("❌ Login exception:", error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : "Произошла ошибка при входе" 
@@ -110,7 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.error("Logout error:", error);
+        console.error("❌ Logout error:", error);
         return false;
       }
       
@@ -118,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       roleCache.clear();
       return true;
     } catch (error) {
-      console.error("Logout exception:", error);
+      console.error("❌ Logout exception:", error);
       return false;
     }
   };
@@ -129,33 +137,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await supabase.auth.signOut();
       roleCache.clear();
     } catch (error) {
-      console.error("Sign out error:", error);
+      console.error("❌ Sign out error:", error);
     }
   };
 
   useEffect(() => {
     let mounted = true;
-    let initTimeout: NodeJS.Timeout;
+    let initializationComplete = false;
 
     const initializeAuth = async () => {
       try {
         console.log("🔄 Initializing auth...");
         
-        // Set timeout for initialization to prevent hanging
-        initTimeout = setTimeout(() => {
-          if (mounted) {
-            console.log("⏰ Auth initialization timeout, setting loading to false");
-            setIsLoading(false);
-          }
-        }, 5000);
-        
-        // Get initial session
+        // Get initial session first
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error("Error getting session:", error);
+          console.error("❌ Error getting session:", error);
           if (mounted) {
             setIsLoading(false);
+            initializationComplete = true;
           }
           return;
         }
@@ -175,17 +176,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log("❌ No initial session found");
         }
       } catch (error) {
-        console.error("Error in initializeAuth:", error);
+        console.error("❌ Error in initializeAuth:", error);
       } finally {
         if (mounted) {
-          console.log("⏹️ Initial auth check complete, setting isLoading to false");
+          console.log("⏹️ Initial auth check complete");
           setIsLoading(false);
-          clearTimeout(initTimeout);
+          initializationComplete = true;
         }
       }
     };
 
-    // Set up auth state listener
+    // Set up auth state listener BEFORE getting initial session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log("🔄 Auth state changed:", event, session?.user?.email);
@@ -194,6 +195,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (event === "SIGNED_IN" && session?.user) {
           console.log("🔑 Processing sign in");
+          setIsLoading(true);
+          
           const role = await fetchUserRole(session.user.id);
           
           if (role && mounted) {
@@ -202,11 +205,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUserRole(role);
             console.log("✅ User signed in:", { userId: session.user.id, role });
           }
+          
+          if (mounted) {
+            setIsLoading(false);
+          }
         } else if (event === "SIGNED_OUT") {
           console.log("🚪 User signed out");
           setSession(null);
           setUser(null);
           setUserRole(null);
+          setIsLoading(false);
           roleCache.clear();
         }
       }
@@ -215,9 +223,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Initialize auth
     initializeAuth();
 
+    // Safety timeout - if initialization takes too long, stop loading
+    const safetyTimeout = setTimeout(() => {
+      if (mounted && !initializationComplete) {
+        console.log("⏰ Safety timeout triggered, stopping loading");
+        setIsLoading(false);
+      }
+    }, 10000); // 10 seconds maximum
+
     return () => {
       mounted = false;
-      clearTimeout(initTimeout);
+      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
   }, []);

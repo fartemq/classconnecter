@@ -16,8 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Link } from "react-router-dom";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2 } from "lucide-react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
 
 // Define the schema for our login form
 const loginFormSchema = z.object({
@@ -29,7 +27,7 @@ const loginFormSchema = z.object({
 export type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export interface LoginFormProps {
-  onSuccess: (values: LoginFormValues) => void;
+  onSuccess: (values: LoginFormValues) => Promise<void>;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
   setLoginAttempted: (attempted: boolean) => void;
@@ -43,7 +41,6 @@ export function LoginForm({
   setLoginAttempted,
   needConfirmation
 }: LoginFormProps) {
-  const [error, setError] = useState<string | null>(null);
   
   // Initialize react-hook-form
   const form = useForm<LoginFormValues>({
@@ -56,36 +53,21 @@ export function LoginForm({
   });
 
   async function onSubmit(values: LoginFormValues) {
+    if (isLoading) return; // Prevent double submission
+    
     setLoginAttempted(true);
-    setError(null);
     
     try {
       await onSuccess(values);
     } catch (error) {
       console.error("Login form error:", error);
-      setError(error instanceof Error ? error.message : "Произошла ошибка при входе");
+      // Error handling is done in the parent component
     }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {error && (
-          <Alert className="bg-red-50">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-        
-        {needConfirmation && (
-          <Alert className="bg-blue-50">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              Пожалуйста, подтвердите ваш email перед входом. Проверьте свою почту.
-            </AlertDescription>
-          </Alert>
-        )}
-        
         <FormField
           control={form.control}
           name="email"
@@ -93,7 +75,11 @@ export function LoginForm({
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="email@example.com" {...field} />
+                <Input 
+                  placeholder="email@example.com" 
+                  {...field} 
+                  disabled={isLoading}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -106,7 +92,12 @@ export function LoginForm({
             <FormItem>
               <FormLabel>Пароль</FormLabel>
               <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
+                <Input 
+                  type="password" 
+                  placeholder="••••••••" 
+                  {...field} 
+                  disabled={isLoading}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -122,6 +113,7 @@ export function LoginForm({
                 <Checkbox 
                   checked={field.value} 
                   onCheckedChange={field.onChange} 
+                  disabled={isLoading}
                 />
               </FormControl>
               <FormLabel className="text-sm font-normal">Запомнить меня</FormLabel>

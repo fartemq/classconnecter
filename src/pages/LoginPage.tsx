@@ -16,6 +16,7 @@ const LoginPage = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [needConfirmation, setNeedConfirmation] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   // Check if coming from registration page
   useEffect(() => {
@@ -24,28 +25,32 @@ const LoginPage = () => {
     }
   }, [location]);
 
-  // Redirect logged in users based on role
+  // Redirect logged in users based on role - only once
   useEffect(() => {
-    if (user && userRole && !isLoggingIn) {
+    if (user && userRole && !isLoggingIn && !hasRedirected && !authLoading) {
       console.log("🚀 Redirecting user with role:", userRole);
+      setHasRedirected(true);
       
-      switch (userRole) {
-        case "admin":
-        case "moderator":
-          navigate("/admin", { replace: true });
-          break;
-        case "tutor":
-          navigate("/profile/tutor", { replace: true });
-          break;
-        case "student":
-          navigate("/profile/student", { replace: true });
-          break;
-        default:
-          navigate("/profile/student", { replace: true });
-          break;
-      }
+      const redirectPath = (() => {
+        switch (userRole) {
+          case "admin":
+          case "moderator":
+            return "/admin";
+          case "tutor":
+            return "/profile/tutor";
+          case "student":
+            return "/profile/student";
+          default:
+            return "/profile/student";
+        }
+      })();
+
+      // Use setTimeout to prevent potential race conditions
+      setTimeout(() => {
+        navigate(redirectPath, { replace: true });
+      }, 100);
     }
-  }, [user, userRole, navigate, isLoggingIn]);
+  }, [user, userRole, navigate, isLoggingIn, hasRedirected, authLoading]);
 
   // Handle login form submission
   const handleLoginSuccess = async (values: LoginFormValues) => {
@@ -59,12 +64,14 @@ const LoginPage = () => {
       const result = await login(values.email, values.password);
       
       if (result?.success) {
+        console.log("✅ Login successful, waiting for auth state change");
         toast({
           title: "Успешный вход",
           description: "Добро пожаловать в Stud.rep!",
         });
-        // Redirect will happen in useEffect above
+        // Don't set isLoggingIn to false here - let the redirect happen
       } else if (result?.error) {
+        console.error("❌ Login failed:", result.error);
         setErrorMessage(result.error);
         toast({
           title: "Ошибка входа",
@@ -74,7 +81,7 @@ const LoginPage = () => {
         setIsLoggingIn(false);
       }
     } catch (error) {
-      console.error("Login form error:", error);
+      console.error("❌ Login form error:", error);
       const errorMsg = error instanceof Error ? error.message : "Произошла ошибка при входе";
       setErrorMessage(errorMsg);
       toast({
@@ -87,16 +94,25 @@ const LoginPage = () => {
   };
 
   // Show loading screen during auth check or login
-  if (authLoading || isLoggingIn) {
+  if (authLoading) {
     return (
       <AuthLayout>
-        <LoadingScreen message={authLoading ? "Проверка сессии..." : "Выполняется вход..."} />
+        <LoadingScreen message="Проверка сессии..." />
+      </AuthLayout>
+    );
+  }
+
+  // Show loading during login process
+  if (isLoggingIn) {
+    return (
+      <AuthLayout>
+        <LoadingScreen message="Выполняется вход..." />
       </AuthLayout>
     );
   }
 
   // If user is already logged in, show loading while redirecting
-  if (user && userRole) {
+  if (user && userRole && !hasRedirected) {
     return (
       <AuthLayout>
         <LoadingScreen message="Переход в профиль..." />
