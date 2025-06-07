@@ -153,7 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("Error in initializeAuth:", error);
       } finally {
         if (mounted) {
-          console.log("⏹️ Setting isLoading to false");
+          console.log("⏹️ Initial auth check complete, setting isLoading to false");
           setIsLoading(false);
         }
       }
@@ -181,12 +181,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(null);
           setUser(null);
           setUserRole(null);
-        }
-        
-        // Убеждаемся что isLoading устанавливается в false после обработки события
-        if (mounted && event !== "INITIAL_SESSION") {
-          console.log("⏹️ Setting isLoading to false after auth event");
-          setIsLoading(false);
         }
       }
     );
