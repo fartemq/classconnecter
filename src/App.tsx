@@ -29,18 +29,14 @@ const App = () => (
             <Route path="/register" element={<RegisterPage />} />
             
             {/* Protected routes */}
-            <Route path="/profile/tutor/*" element={
-              <ProtectedRoute allowedRoles={["tutor"]}>
-                <TutorProfilePage />
-              </ProtectedRoute>
-            } />
+            <Route path="/profile/tutor/*" element={<ProtectedRoute allowedRoles={["tutor"]} />}>
+              <Route index element={<TutorProfilePage />} />
+            </Route>
             
             {/* Lesson interface route */}
-            <Route path="/lesson/:lessonId" element={
-              <ProtectedRoute>
-                <LessonPage />
-              </ProtectedRoute>
-            } />
+            <Route path="/lesson/:lessonId" element={<ProtectedRoute />}>
+              <Route index element={<LessonPage />} />
+            </Route>
             
             {/* Redirect unknown routes */}
             <Route path="*" element={<Navigate to="/" replace />} />
