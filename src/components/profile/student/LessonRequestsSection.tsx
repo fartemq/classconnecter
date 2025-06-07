@@ -12,7 +12,7 @@ import { ru } from "date-fns/locale";
 
 export const LessonRequestsSection = () => {
   const { user } = useAuth();
-  const { lessonRequests, isLoading } = useLessonRequests(user?.id, 'student');
+  const { requests, loading } = useLessonRequests(user?.id, 'student');
 
   const getStatusBadge = (status: string) => {
     const variants = {
@@ -38,7 +38,7 @@ export const LessonRequestsSection = () => {
     );
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex justify-center py-8">
         <Loader />
@@ -55,7 +55,7 @@ export const LessonRequestsSection = () => {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {lessonRequests.length === 0 ? (
+        {requests.length === 0 ? (
           <div className="text-center py-8">
             <Clock className="h-12 w-12 mx-auto text-gray-300 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Нет запросов</h3>
@@ -65,7 +65,7 @@ export const LessonRequestsSection = () => {
           </div>
         ) : (
           <div className="space-y-4">
-            {lessonRequests.map((request) => (
+            {requests.map((request) => (
               <div key={request.id} className="border rounded-lg p-4">
                 <div className="flex items-start space-x-4">
                   <Avatar>
