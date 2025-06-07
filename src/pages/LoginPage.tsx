@@ -83,7 +83,8 @@ const LoginPage = () => {
     }
   };
 
-  if (authLoading) {
+  // Show loading screen only during initial auth check, not during login
+  if (authLoading && !loginAttempted) {
     return (
       <AuthLayout>
         <LoadingScreen />
@@ -92,7 +93,7 @@ const LoginPage = () => {
   }
 
   // If user is already logged in, don't show login page
-  if (user) {
+  if (user && !authLoading) {
     return null; // Will be redirected in useEffect
   }
 

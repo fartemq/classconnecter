@@ -10,6 +10,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userRole, setUserRole] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [initializing, setInitializing] = useState(true);
   const { toast } = useToast();
 
   // Fetch user role from profiles table
@@ -78,28 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      if (data.user) {
-        // Fetch and set user role
-        const role = await fetchUserRole(data.user.id);
-        
-        if (role === null) {
-          // User is blocked or there was an error
-          return { 
-            success: false, 
-            error: "Не удалось войти в систему" 
-          };
-        }
-        
-        setUserRole(role);
-        setUser(data.user);
-        setSession(data.session);
-        
-        console.log("✅ Login successful:", { userId: data.user.id, role });
-        
-        return { success: true };
-      }
-
-      return { success: false, error: "Не удалось войти в систему" };
+      // Auth state change handler will take care of setting user and role
+      return { success: true };
     } catch (error) {
       console.error("Login exception:", error);
       return { 
@@ -120,11 +101,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
       
-      // Clear state
-      setUser(null);
-      setUserRole(null);
-      setSession(null);
-      
       return true;
     } catch (error) {
       console.error("Logout exception:", error);
@@ -136,9 +112,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async (): Promise<void> => {
     try {
       await supabase.auth.signOut();
-      setUser(null);
-      setUserRole(null);
-      setSession(null);
     } catch (error) {
       console.error("Sign out error:", error);
     }
@@ -150,16 +123,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Get initial session
     const getInitialSession = async () => {
       try {
+        console.log("🔄 Getting initial session...");
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error("Error getting session:", error);
-          setIsLoading(false);
+          if (mounted) {
+            setInitializing(false);
+            setIsLoading(false);
+          }
           return;
         }
 
         if (session?.user && mounted) {
-          console.log("Initial session found:", session.user.email);
+          console.log("✅ Initial session found:", session.user.email);
           
           const role = await fetchUserRole(session.user.id);
           
@@ -169,14 +146,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUserRole(role);
             console.log("✅ Initial auth state set:", { userId: session.user.id, role });
           }
+        } else {
+          console.log("❌ No initial session found");
         }
         
         if (mounted) {
+          setInitializing(false);
           setIsLoading(false);
         }
       } catch (error) {
         console.error("Error in getInitialSession:", error);
         if (mounted) {
+          setInitializing(false);
           setIsLoading(false);
         }
       }
@@ -190,6 +171,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!mounted) return;
         
         if (event === "SIGNED_IN" && session?.user) {
+          setIsLoading(true);
           const role = await fetchUserRole(session.user.id);
           
           if (role && mounted) {
@@ -198,21 +180,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUserRole(role);
             console.log("✅ User signed in:", { userId: session.user.id, role });
           }
+          
+          if (mounted) {
+            setIsLoading(false);
+          }
         } else if (event === "SIGNED_OUT") {
           console.log("🚪 User signed out");
           setSession(null);
           setUser(null);
           setUserRole(null);
-        }
-        
-        if (mounted) {
-          setIsLoading(false);
+          
+          if (mounted) {
+            setIsLoading(false);
+          }
         }
       }
     );
 
-    // Get initial session
-    getInitialSession();
+    // Get initial session only if not already initializing
+    if (initializing) {
+      getInitialSession();
+    }
 
     return () => {
       mounted = false;
@@ -223,7 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value: AuthContextType = {
     user,
     userRole,
-    isLoading,
+    isLoading: isLoading || initializing,
     session,
     signOut,
     setUser,
