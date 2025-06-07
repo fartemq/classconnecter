@@ -7,11 +7,13 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, Calendar, User, BookOpen } from "lucide-react";
+import { MessageSquare, Calendar, User } from "lucide-react";
 import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { ensureSingleObject } from "@/utils/supabaseUtils";
+import { LessonAccessButton } from "@/components/lesson/LessonAccessButton";
+import { useRelationshipStatus } from "@/hooks/useRelationshipStatus";
 
 interface StudentCardData {
   id: string;
@@ -38,6 +40,32 @@ export const MyStudentsSection = () => {
     if (user?.id) {
       fetchStudents();
     }
+  }, [user?.id]);
+
+  // Добавляем realtime подписку для автоматического обновления
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('student_relationships_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'student_tutor_relationships',
+          filter: `tutor_id=eq.${user.id}`
+        },
+        () => {
+          console.log('Student relationship updated, refreshing...');
+          fetchStudents();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   const fetchStudents = async () => {
@@ -70,7 +98,6 @@ export const MyStudentsSection = () => {
       if (error) throw error;
 
       const formattedStudents = data?.map(item => {
-        // Handle both array and single object cases from Supabase
         const studentData = ensureSingleObject(item.student);
         const studentProfile = ensureSingleObject(studentData?.student_profiles);
         
@@ -82,13 +109,13 @@ export const MyStudentsSection = () => {
           level: studentProfile?.educational_level || 'Не указано',
           grade: studentProfile?.grade,
           relationshipStart: item.start_date,
-          lastActive: new Date().toISOString(), // Placeholder
+          lastActive: new Date().toISOString(),
           subjects: studentProfile?.subjects || [],
-          about: 'Информация о студенте', // Placeholder
-          interests: [], // Placeholder
+          about: 'Информация о студенте',
+          interests: [],
           status: 'active'
         };
-      }).filter(student => student.name) || []; // Filter out invalid students
+      }).filter(student => student.name) || [];
 
       setStudents(formattedStudents);
     } catch (error) {
@@ -136,57 +163,98 @@ export const MyStudentsSection = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {students.map((student) => (
-            <Card key={student.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={student.avatar} />
-                    <AvatarFallback>
-                      {student.name.charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1">
-                    <CardTitle className="text-base">{student.name}</CardTitle>
-                    <div className="flex items-center text-xs text-muted-foreground mt-1">
-                      <span>{student.level}</span>
-                      {student.grade && <span className="ml-1">, {student.grade} класс</span>}
-                      {student.city && <span className="ml-1">• {student.city}</span>}
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <div className="text-xs text-muted-foreground mb-3">
-                  С {format(new Date(student.relationshipStart), 'd MMMM yyyy', { locale: ru })}
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleChatWithStudent(student.id)}
-                    className="flex-1"
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Чат
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleScheduleWithStudent(student.id)}
-                    className="flex-1"
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Расписание
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <StudentCard
+              key={student.id}
+              student={student}
+              currentUserId={user?.id}
+              onChatClick={handleChatWithStudent}
+              onScheduleClick={handleScheduleWithStudent}
+            />
           ))}
         </div>
       )}
     </div>
+  );
+};
+
+interface StudentCardProps {
+  student: StudentCardData;
+  currentUserId: string | undefined;
+  onChatClick: (studentId: string) => void;
+  onScheduleClick: (studentId: string) => void;
+}
+
+const StudentCard: React.FC<StudentCardProps> = ({
+  student,
+  currentUserId,
+  onChatClick,
+  onScheduleClick
+}) => {
+  const { hasRelationship, hasConfirmedLessons } = useRelationshipStatus(
+    currentUserId,
+    student.id,
+    'tutor'
+  );
+
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader className="pb-2">
+        <div className="flex items-center space-x-4">
+          <Avatar className="h-10 w-10">
+            <AvatarImage src={student.avatar} />
+            <AvatarFallback>
+              {student.name.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          
+          <div className="flex-1">
+            <CardTitle className="text-base">{student.name}</CardTitle>
+            <div className="flex items-center text-xs text-muted-foreground mt-1">
+              <span>{student.level}</span>
+              {student.grade && <span className="ml-1">, {student.grade} класс</span>}
+              {student.city && <span className="ml-1">• {student.city}</span>}
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="pt-0">
+        <div className="text-xs text-muted-foreground mb-3">
+          С {format(new Date(student.relationshipStart), 'd MMMM yyyy', { locale: ru })}
+        </div>
+        
+        <div className="grid grid-cols-1 gap-2">
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onChatClick(student.id)}
+              className="flex-1"
+            >
+              <MessageSquare className="h-4 w-4 mr-2" />
+              Чат
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onScheduleClick(student.id)}
+              className="flex-1"
+            >
+              <Calendar className="h-4 w-4 mr-2" />
+              Расписание
+            </Button>
+          </div>
+          
+          <LessonAccessButton
+            studentId={student.id}
+            userRole="tutor"
+            relationshipExists={hasRelationship}
+            hasConfirmedLessons={hasConfirmedLessons}
+            size="sm"
+            variant="default"
+          />
+        </div>
+      </CardContent>
+    </Card>
   );
 };

@@ -4,55 +4,64 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  MessageSquare, 
-  Calendar, 
-  User, 
-  BookOpen, 
-  Star,
-  Clock,
-  MapPin,
-  GraduationCap,
-  Phone,
-  Mail,
-  DollarSign,
-  Heart,
-  HeartOff,
-  Users,
-  CheckCircle,
-  AlertCircle,
-  Plus
-} from "lucide-react";
+import { MessageSquare, Calendar, Star, MapPin, User } from "lucide-react";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { ensureSingleObject } from "@/utils/supabaseUtils";
+import { LessonAccessButton } from "@/components/lesson/LessonAccessButton";
+import { useRelationshipStatus } from "@/hooks/useRelationshipStatus";
 
-interface Tutor {
+interface TutorData {
   id: string;
-  first_name: string;
-  last_name: string | null;
-  avatar_url: string | null;
-  city: string | null;
-  subjects: { name: string }[];
-  hourly_rate: number;
-  education_verified: boolean;
-  rating: number | null;
-  total_reviews: number;
+  name: string;
+  avatar?: string;
+  city?: string;
+  relationshipStart: string;
+  subjects: string[];
+  rating?: number;
+  experience?: number;
 }
 
 export const MyTutorsTab = () => {
-  const [tutors, setTutors] = useState<Tutor[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const [tutors, setTutors] = useState<TutorData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (user?.id) {
       fetchTutors();
     }
+  }, [user?.id]);
+
+  // Добавляем realtime подписку для автоматического обновления
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('tutor_relationships_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'student_tutor_relationships',
+          filter: `student_id=eq.${user.id}`
+        },
+        () => {
+          console.log('Tutor relationship updated, refreshing...');
+          fetchTutors();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user?.id]);
 
   const fetchTutors = async () => {
@@ -63,57 +72,61 @@ export const MyTutorsTab = () => {
         .from('student_tutor_relationships')
         .select(`
           tutor_id,
+          start_date,
+          status,
           tutor:profiles!tutor_id (
             id,
             first_name,
             last_name,
             avatar_url,
             city,
-            education_verified,
-            tutor_subjects (
-              subjects (
-                name
-              )
+            tutor_profiles (
+              experience
             )
           )
         `)
         .eq('student_id', user?.id)
-        .eq('status', 'accepted');
+        .eq('status', 'accepted')
+        .order('start_date', { ascending: false });
 
       if (error) throw error;
 
-      const formattedTutors = data?.map(item => {
-        const tutorData = Array.isArray(item.tutor) ? item.tutor[0] : item.tutor;
-        
-        // Extract subjects - handle nested structure properly
-        const tutorSubjects = tutorData?.tutor_subjects || [];
-        const subjects = tutorSubjects.map(ts => {
-          const subjectData = Array.isArray(ts.subjects) ? ts.subjects[0] : ts.subjects;
-          return { name: subjectData?.name || '' };
-        }).filter(s => s.name);
+      // Получаем предметы для каждого репетитора
+      const tutorsWithSubjects = await Promise.all(
+        (data || []).map(async (item) => {
+          const tutorData = ensureSingleObject(item.tutor);
+          const tutorProfile = ensureSingleObject(tutorData?.tutor_profiles);
 
-        return {
-          id: tutorData?.id,
-          first_name: tutorData?.first_name || '',
-          last_name: tutorData?.last_name || null,
-          avatar_url: tutorData?.avatar_url || null,
-          city: tutorData?.city || null,
-          subjects: subjects,
-          hourly_rate: 500, // TODO: Replace with actual hourly rate
-          education_verified: tutorData?.education_verified || false,
-          rating: 4.5, // TODO: Replace with actual rating
-          total_reviews: 50 // TODO: Replace with actual review count
-        };
-      }) || [];
+          // Получаем предметы репетитора
+          const { data: subjectsData } = await supabase
+            .from('tutor_subjects')
+            .select(`
+              subject:subjects(name)
+            `)
+            .eq('tutor_id', item.tutor_id)
+            .eq('is_active', true);
 
-      setTutors(formattedTutors);
+          const subjects = subjectsData?.map(s => {
+            const subject = ensureSingleObject(s.subject);
+            return subject?.name;
+          }).filter(Boolean) || [];
+
+          return {
+            id: item.tutor_id,
+            name: `${tutorData?.first_name || ''} ${tutorData?.last_name || ''}`.trim(),
+            avatar: tutorData?.avatar_url || undefined,
+            city: tutorData?.city || undefined,
+            relationshipStart: item.start_date,
+            subjects,
+            experience: tutorProfile?.experience || 0,
+            rating: 5 // Placeholder
+          };
+        })
+      );
+
+      setTutors(tutorsWithSubjects.filter(tutor => tutor.name));
     } catch (error) {
       console.error('Error fetching tutors:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось загрузить список репетиторов",
-        variant: "destructive"
-      });
     } finally {
       setIsLoading(false);
     }
@@ -123,7 +136,7 @@ export const MyTutorsTab = () => {
     navigate(`/profile/student/chats/${tutorId}`);
   };
 
-  const handleScheduleLesson = (tutorId: string) => {
+  const handleScheduleWithTutor = (tutorId: string) => {
     navigate(`/profile/student/schedule?tutorId=${tutorId}`);
   };
 
@@ -136,15 +149,10 @@ export const MyTutorsTab = () => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Мои репетиторы</h2>
-          <p className="text-muted-foreground">
-            Репетиторы, с которыми вы занимаетесь
-          </p>
-        </div>
-        <Badge variant="secondary">
+        <h2 className="text-xl font-semibold">Мои репетиторы</h2>
+        <Badge variant="outline" className="text-xs">
           {tutors.length} репетиторов
         </Badge>
       </div>
@@ -152,99 +160,141 @@ export const MyTutorsTab = () => {
       {tutors.length === 0 ? (
         <Card>
           <CardContent className="text-center py-12">
-            <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <h3 className="text-lg font-medium mb-2">У вас пока нет репетиторов</h3>
             <p className="text-gray-500 mb-4">
-              Найдите подходящего репетитора и начните заниматься уже сегодня
+              Найдите репетиторов и отправьте им запросы на занятия
             </p>
-            <Button onClick={() => navigate('/tutors')} variant="outline">
-              <Plus className="h-4 w-4 mr-2" />
-              Найти репетитора
+            <Button onClick={() => navigate('/profile/student/tutors')}>
+              Найти репетиторов
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {tutors.map((tutor) => (
-            <Card key={tutor.id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-4">
-                <div className="flex items-center space-x-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarImage src={tutor.avatar_url || undefined} />
-                    <AvatarFallback>
-                      {tutor.first_name?.[0]}{tutor.last_name?.[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="flex-1">
-                    <h3 className="font-medium">
-                      {tutor.first_name} {tutor.last_name}
-                    </h3>
-                    {tutor.city && (
-                      <p className="text-sm text-muted-foreground">{tutor.city}</p>
-                    )}
-                    <div className="flex items-center space-x-1 text-xs text-muted-foreground">
-                      <Star className="h-3 w-3" />
-                      <span>{tutor.rating || 'Нет оценок'} ({tutor.total_reviews} отзывов)</span>
-                    </div>
-                  </div>
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <BookOpen className="h-4 w-4" />
-                    <span>
-                      {tutor.subjects.map(subject => subject.name).join(', ') || 'Предметы не указаны'}
-                    </span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                    <DollarSign className="h-4 w-4" />
-                    <span>{tutor.hourly_rate} ₽/час</span>
-                  </div>
-                  
-                  {tutor.education_verified ? (
-                    <div className="flex items-center space-x-2 text-sm text-green-500">
-                      <CheckCircle className="h-4 w-4" />
-                      <span>Образование подтверждено</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center space-x-2 text-sm text-orange-500">
-                      <AlertCircle className="h-4 w-4" />
-                      <span>Образование не подтверждено</span>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-
-              <CardContent className="pt-0">
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleChatWithTutor(tutor.id)}
-                    className="flex-1"
-                  >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Чат
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleScheduleLesson(tutor.id)}
-                    className="flex-1"
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Расписание
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <TutorCard
+              key={tutor.id}
+              tutor={tutor}
+              currentUserId={user?.id}
+              onChatClick={handleChatWithTutor}
+              onScheduleClick={handleScheduleWithTutor}
+            />
           ))}
         </div>
       )}
     </div>
+  );
+};
+
+interface TutorCardProps {
+  tutor: TutorData;
+  currentUserId: string | undefined;
+  onChatClick: (tutorId: string) => void;
+  onScheduleClick: (tutorId: string) => void;
+}
+
+const TutorCard: React.FC<TutorCardProps> = ({
+  tutor,
+  currentUserId,
+  onChatClick,
+  onScheduleClick
+}) => {
+  const { hasRelationship, hasConfirmedLessons } = useRelationshipStatus(
+    currentUserId,
+    tutor.id,
+    'student'
+  );
+
+  return (
+    <Card className="hover:shadow-md transition-shadow">
+      <CardHeader className="pb-2">
+        <div className="flex items-center space-x-4">
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={tutor.avatar} />
+            <AvatarFallback>
+              {tutor.name.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          
+          <div className="flex-1">
+            <CardTitle className="text-base">{tutor.name}</CardTitle>
+            <div className="flex items-center text-xs text-muted-foreground mt-1">
+              {tutor.city && (
+                <>
+                  <MapPin className="h-3 w-3 mr-1" />
+                  <span>{tutor.city}</span>
+                </>
+              )}
+              {tutor.experience && (
+                <span className="ml-2">• {tutor.experience} лет опыта</span>
+              )}
+            </div>
+          </div>
+          
+          {tutor.rating && (
+            <div className="flex items-center">
+              <Star className="h-4 w-4 text-yellow-400 fill-current" />
+              <span className="text-sm font-medium ml-1">{tutor.rating}</span>
+            </div>
+          )}
+        </div>
+      </CardHeader>
+      
+      <CardContent className="pt-0">
+        <div className="space-y-3">
+          {tutor.subjects.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {tutor.subjects.slice(0, 3).map((subject, index) => (
+                <Badge key={index} variant="secondary" className="text-xs">
+                  {subject}
+                </Badge>
+              ))}
+              {tutor.subjects.length > 3 && (
+                <Badge variant="outline" className="text-xs">
+                  +{tutor.subjects.length - 3}
+                </Badge>
+              )}
+            </div>
+          )}
+          
+          <div className="text-xs text-muted-foreground">
+            Занимаемся с {format(new Date(tutor.relationshipStart), 'd MMMM yyyy', { locale: ru })}
+          </div>
+          
+          <div className="grid grid-cols-1 gap-2">
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onChatClick(tutor.id)}
+                className="flex-1"
+              >
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Чат
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onScheduleClick(tutor.id)}
+                className="flex-1"
+              >
+                <Calendar className="h-4 w-4 mr-2" />
+                Расписание
+              </Button>
+            </div>
+            
+            <LessonAccessButton
+              tutorId={tutor.id}
+              userRole="student"
+              relationshipExists={hasRelationship}
+              hasConfirmedLessons={hasConfirmedLessons}
+              size="sm"
+              variant="default"
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };

@@ -2,7 +2,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { confirmLesson, cancelLesson } from "@/services/lessonBookingService";
 
 interface LessonRequest {
   id: string;
@@ -48,8 +47,8 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
         .from('lesson_requests')
         .select(`
           *,
-          student:profiles!lesson_requests_student_id_fkey(first_name, last_name, email, avatar_url),
-          tutor:profiles!lesson_requests_tutor_id_fkey(first_name, last_name, email, avatar_url),
+          student:profiles!lesson_requests_student_id_fkey(first_name, last_name, avatar_url),
+          tutor:profiles!lesson_requests_tutor_id_fkey(first_name, last_name, avatar_url),
           subject:subjects(name)
         `);
 
@@ -87,6 +86,32 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
     fetchRequests();
   }, [fetchRequests]);
 
+  // Добавляем realtime подписку для автоматического обновления
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('lesson_requests_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lesson_requests',
+          filter: userRole === 'tutor' ? `tutor_id=eq.${userId}` : `student_id=eq.${userId}`
+        },
+        () => {
+          console.log('Lesson request updated, refreshing...');
+          fetchRequests();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, userRole, fetchRequests]);
+
   const createLessonRequest = async (requestData: {
     tutor_id: string;
     subject_id: string;
@@ -113,7 +138,7 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
         description: "Ваш запрос на занятие отправлен репетитору",
       });
 
-      fetchRequests(); // Обновляем список
+      fetchRequests();
       return true;
     } catch (error) {
       console.error('Error creating lesson request:', error);
@@ -151,7 +176,7 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
 
         if (lessonError) throw lessonError;
 
-        // Обновляем связь студент-репетитор
+        // Создаем или обновляем связь студент-репетитор на "accepted"
         const { error: relationError } = await supabase
           .from('student_tutor_relationships')
           .upsert({
@@ -165,6 +190,21 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
 
         if (relationError) {
           console.error('Error updating relationship:', relationError);
+        }
+
+        // Создаем уведомление для студента
+        const { error: notificationError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: request.student_id,
+            type: 'lesson_confirmed',
+            title: 'Запрос на занятие принят',
+            message: 'Репетитор принял ваш запрос на занятие. Теперь вы можете взаимодействовать через интерфейс урока.',
+            related_id: lessonData.id
+          });
+
+        if (notificationError) {
+          console.error('Error creating notification:', notificationError);
         }
       }
 
@@ -183,7 +223,7 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
       toast({
         title: action === 'accept' ? "Запрос принят" : "Запрос отклонен",
         description: action === 'accept' 
-          ? "Занятие добавлено в ваше расписание" 
+          ? "Занятие добавлено в ваше расписание. Ученик добавлен в ваш список." 
           : "Запрос на занятие отклонен",
       });
 
