@@ -1,243 +1,172 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Clock, User, BookOpen, Calendar, MessageSquare, Check, X, CheckCircle, XCircle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { useToast } from "@/hooks/use-toast";
+import { useLessonRequests } from "@/hooks/useLessonRequests";
 import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-
-interface LessonRequest {
-  id: string;
-  student_id: string;
-  subject_id: string;
-  start_time: string;
-  end_time: string;
-  status: string;
-  created_at: string;
-  student: {
-    first_name: string;
-    last_name: string;
-    avatar_url?: string;
-  };
-  subject: {
-    name: string;
-  };
-}
+import { Clock, User, Book, MessageSquare, Check, X } from "lucide-react";
 
 export const LessonRequestsTab = () => {
-  const [requests, setRequests] = useState<LessonRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { toast } = useToast();
   const { user } = useAuth();
+  const { requests, loading, respondToRequest } = useLessonRequests(user?.id, 'tutor');
+  const [respondingTo, setRespondingTo] = useState<string | null>(null);
+  const [response, setResponse] = useState("");
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchLessonRequests();
-    }
-  }, [user?.id]);
-
-  const fetchLessonRequests = async () => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase
-        .from('lessons')
-        .select(`
-          id,
-          student_id,
-          subject_id,
-          start_time,
-          end_time,
-          status,
-          created_at,
-          student:profiles!student_id (
-            first_name,
-            last_name,
-            avatar_url
-          ),
-          subject:subjects (
-            name
-          )
-        `)
-        .eq('tutor_id', user?.id)
-        .eq('status', 'pending')
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      const formattedRequests = data?.map(item => ({
-        id: item.id,
-        student_id: item.student_id,
-        subject_id: item.subject_id,
-        start_time: item.start_time,
-        end_time: item.end_time,
-        status: item.status,
-        created_at: item.created_at,
-        student: Array.isArray(item.student) ? item.student[0] : item.student,
-        subject: Array.isArray(item.subject) ? item.subject[0] : item.subject,
-      })) || [];
-
-      setRequests(formattedRequests);
-    } catch (error) {
-      console.error('Error fetching lesson requests:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось загрузить запросы на занятия",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
+  const handleRespond = async (requestId: string, action: 'accept' | 'reject') => {
+    const success = await respondToRequest(requestId, action, response);
+    if (success) {
+      setRespondingTo(null);
+      setResponse("");
     }
   };
 
-  const handleRequestResponse = async (requestId: string, action: 'confirmed' | 'cancelled') => {
-    try {
-      const { error } = await supabase
-        .from('lessons')
-        .update({ 
-          status: action,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', requestId);
-
-      if (error) throw error;
-
-      // Remove from the list
-      setRequests(prev => prev.filter(req => req.id !== requestId));
-
-      toast({
-        title: action === 'confirmed' ? "Занятие подтверждено" : "Запрос отклонен",
-        description: action === 'confirmed' 
-          ? "Студент автоматически добавлен в ваш список учеников" 
-          : "Студент получит уведомление об отклонении",
-      });
-
-      // Если запрос подтвержден, обновляем счетчики
-      if (action === 'confirmed') {
-        // Trigger to update students list will be handled by database trigger
-        console.log('Request confirmed, student-tutor relationship will be created automatically');
-      }
-    } catch (error) {
-      console.error('Error updating lesson request:', error);
-      toast({
-        title: "Ошибка",
-        description: "Не удалось обновить статус запроса",
-        variant: "destructive"
-      });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  if (isLoading) {
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'Подтвержден';
+      case 'pending': return 'Ожидает ответа';
+      case 'rejected': return 'Отклонен';
+      default: return status;
+    }
+  };
+
+  if (loading) {
     return (
-      <div className="flex justify-center items-center py-12">
-        <Loader size="lg" />
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Запросы на занятия</CardTitle>
+        </CardHeader>
+        <CardContent className="flex justify-center py-8">
+          <Loader size="lg" />
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Запросы на занятия</h1>
-        <p className="text-gray-600">Управляйте запросами от студентов</p>
-      </div>
-
-      {requests.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <Calendar className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium mb-2">Нет новых запросов</h3>
-            <p className="text-gray-500">
-              Когда студенты отправят запросы на занятия, они появятся здесь
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {requests.map((request) => (
-            <Card key={request.id} className="border-l-4 border-l-orange-400">
-              <CardHeader>
-                <div className="flex items-center justify-between">
+    <Card>
+      <CardHeader>
+        <CardTitle>Запросы на занятия</CardTitle>
+        <p className="text-sm text-gray-600">
+          Здесь отображаются запросы студентов на проведение занятий
+        </p>
+      </CardHeader>
+      <CardContent>
+        {requests.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <MessageSquare className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+            <p>Нет запросов на занятия</p>
+            <p className="text-sm">Запросы от студентов появятся здесь</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {requests.map(request => (
+              <div key={request.id} className="border rounded-lg p-4">
+                <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center space-x-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={request.student?.avatar_url} />
-                      <AvatarFallback>
-                        {request.student?.first_name?.[0] || '?'}
-                        {request.student?.last_name?.[0] || ''}
-                      </AvatarFallback>
-                    </Avatar>
                     <div>
-                      <CardTitle className="text-lg">
-                        {request.student?.first_name} {request.student?.last_name}
-                      </CardTitle>
-                      <p className="text-sm text-gray-500 flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
-                        Запрос от {format(new Date(request.created_at), 'dd MMMM yyyy, HH:mm', { locale: ru })}
-                      </p>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <User className="h-4 w-4 text-gray-400" />
+                        <span className="font-medium">
+                          {request.student?.first_name} {request.student?.last_name}
+                        </span>
+                        <Badge className={getStatusColor(request.status)}>
+                          {getStatusText(request.status)}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <div className="flex items-center space-x-1">
+                          <Clock className="h-4 w-4" />
+                          <span>
+                            {format(new Date(request.requested_date), 'dd MMMM yyyy', { locale: ru })} в {request.requested_start_time.substring(0, 5)}
+                          </span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Book className="h-4 w-4" />
+                          <span>{request.subject?.name}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <Badge variant="outline" className="text-orange-600 border-orange-200 bg-orange-50">
-                    <Clock className="h-3 w-3 mr-1" />
-                    Ожидает ответа
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <div className="flex items-center space-x-2">
-                    <BookOpen className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm">
-                      <strong>Предмет:</strong> {request.subject?.name}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-green-500" />
-                    <span className="text-sm">
-                      <strong>Дата:</strong> {format(new Date(request.start_time), 'dd MMMM yyyy', { locale: ru })}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-purple-500" />
-                    <span className="text-sm">
-                      <strong>Время:</strong> {format(new Date(request.start_time), 'HH:mm')} - {format(new Date(request.end_time), 'HH:mm')}
-                    </span>
+                  <div className="text-xs text-gray-500">
+                    {format(new Date(request.created_at), 'dd.MM.yyyy HH:mm')}
                   </div>
                 </div>
 
-                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
-                  <p className="text-sm text-amber-800">
-                    <strong>Внимание:</strong> При подтверждении этого запроса студент автоматически будет добавлен в ваш список учеников, 
-                    и вы сможете общаться с ним через чат и планировать дальнейшие занятия.
-                  </p>
-                </div>
-                
-                <div className="flex justify-end space-x-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => handleRequestResponse(request.id, 'cancelled')}
-                    className="border-red-200 text-red-700 hover:bg-red-50"
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Отклонить
-                  </Button>
-                  <Button
-                    onClick={() => handleRequestResponse(request.id, 'confirmed')}
-                    className="bg-green-600 hover:bg-green-700"
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Подтвердить и добавить ученика
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
+                {request.message && (
+                  <div className="bg-gray-50 rounded p-3 mb-3">
+                    <p className="text-sm text-gray-700">{request.message}</p>
+                  </div>
+                )}
+
+                {request.status === 'pending' && (
+                  <div className="flex space-x-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleRespond(request.id, 'accept')}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <Check className="h-4 w-4 mr-1" />
+                      Принять
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setRespondingTo(respondingTo === request.id ? null : request.id)}
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Отклонить
+                    </Button>
+                  </div>
+                )}
+
+                {respondingTo === request.id && (
+                  <div className="mt-3 space-y-3">
+                    <Textarea
+                      placeholder="Причина отклонения (необязательно)"
+                      value={response}
+                      onChange={(e) => setResponse(e.target.value)}
+                      rows={2}
+                    />
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleRespond(request.id, 'reject')}
+                      >
+                        Отклонить запрос
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setRespondingTo(null);
+                          setResponse("");
+                        }}
+                      >
+                        Отмена
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };

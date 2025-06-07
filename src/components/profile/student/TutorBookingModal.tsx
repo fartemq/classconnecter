@@ -1,17 +1,11 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/hooks/auth/useAuth";
-import { Loader } from "@/components/ui/loader";
 import { TutorScheduleView } from "./schedule/TutorScheduleView";
 
 interface TutorBookingModalProps {
@@ -32,43 +26,31 @@ export const TutorBookingModal: React.FC<TutorBookingModalProps> = ({
   tutor,
   onBookingComplete
 }) => {
-  const [message, setMessage] = useState<string>("");
-  const { user } = useAuth();
-  const { toast } = useToast();
 
   const handleBookingComplete = () => {
     onBookingComplete?.();
     onClose();
-    setMessage("");
   };
+
+  const tutorName = `${tutor.first_name} ${tutor.last_name || ''}`.trim();
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            Запись на занятие к {tutor.first_name} {tutor.last_name}
+            Запись на занятие к {tutorName}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
-            Выберите время из доступного расписания репетитора
+            Выберите удобное время из расписания репетитора
           </p>
         </DialogHeader>
 
-        <div className="space-y-6">
-          <TutorScheduleView />
-
-          {message && (
-            <div className="space-y-2">
-              <Label>Дополнительное сообщение</Label>
-              <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Дополнительная информация для репетитора..."
-                rows={3}
-              />
-            </div>
-          )}
-        </div>
+        <TutorScheduleView 
+          tutorId={tutor.id}
+          tutorName={tutorName}
+          onClose={handleBookingComplete}
+        />
       </DialogContent>
     </Dialog>
   );

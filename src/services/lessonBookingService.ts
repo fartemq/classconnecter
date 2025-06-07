@@ -7,7 +7,7 @@ export interface BookingRequest {
   tutorId: string;
   subjectId: string;
   date: Date;
-  scheduleSlotId: string; // Обязательно используем ID слота из расписания
+  scheduleSlotId: string;
 }
 
 export const bookLesson = async (request: BookingRequest): Promise<{ success: boolean; error?: string; lessonId?: string }> => {
@@ -16,7 +16,7 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
     
     const formattedDate = format(date, 'yyyy-MM-dd');
     
-    console.log("Starting lesson booking process with schedule validation");
+    console.log("Starting lesson booking process with relationship management");
     console.log("Booking details:", { 
       studentId, 
       tutorId, 
@@ -33,7 +33,7 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
       };
     }
     
-    // ОБЯЗАТЕЛЬНАЯ проверка: слот должен существовать в расписании репетитора
+    // Проверка слота в расписании репетитора
     const { data: slotData, error: slotError } = await supabase
       .from('tutor_schedule')
       .select('*')
@@ -89,7 +89,7 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
       .eq('tutor_id', tutorId)
       .gte('start_time', `${formattedDate}T${slotData.start_time}`)
       .lt('start_time', `${formattedDate}T${slotData.end_time}`)
-      .in('status', ['pending', 'confirmed']);
+      .in('status', ['pending', 'confirmed', 'upcoming']);
       
     if (lessonsError) {
       console.error("Error checking existing lessons:", lessonsError);
@@ -106,13 +106,13 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
       };
     }
     
-    console.log("All validations passed, creating the lesson");
+    console.log("All validations passed, creating the lesson and relationship");
     
-    // Создание занятия СТРОГО по расписанию
+    // Создание занятия
     const startDateTime = `${formattedDate}T${slotData.start_time}`;
     const endDateTime = `${formattedDate}T${slotData.end_time}`;
     
-    const { data, error } = await supabase
+    const { data: lessonData, error: lessonError } = await supabase
       .from('lessons')
       .insert({
         student_id: studentId,
@@ -122,21 +122,53 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
         end_time: endDateTime,
         status: 'pending'
       })
-      .select();
+      .select()
+      .single();
     
-    if (error) {
-      console.error("Error creating lesson:", error);
+    if (lessonError) {
+      console.error("Error creating lesson:", lessonError);
       return { 
         success: false, 
-        error: "Не удалось создать занятие: " + error.message 
+        error: "Не удалось создать занятие: " + lessonError.message 
       };
     }
     
-    console.log("Lesson created successfully according to schedule:", data);
+    // Проверяем существование связи студент-репетитор
+    const { data: existingRelation, error: relationCheckError } = await supabase
+      .from('student_tutor_relationships')
+      .select('*')
+      .eq('student_id', studentId)
+      .eq('tutor_id', tutorId)
+      .maybeSingle();
+
+    if (relationCheckError) {
+      console.error('Error checking existing relation:', relationCheckError);
+    }
+
+    // Если связи нет, создаем новую со статусом pending
+    if (!existingRelation) {
+      const { error: relationError } = await supabase
+        .from('student_tutor_relationships')
+        .insert({
+          student_id: studentId,
+          tutor_id: tutorId,
+          status: 'pending',
+          start_date: new Date().toISOString()
+        });
+
+      if (relationError) {
+        console.error('Error creating student-tutor relationship:', relationError);
+        // Не останавливаем процесс, если не удалось создать связь
+      } else {
+        console.log("Student-tutor relationship created");
+      }
+    }
+    
+    console.log("Lesson and relationship created successfully:", lessonData);
     
     return { 
       success: true,
-      lessonId: data[0]?.id
+      lessonId: lessonData.id
     };
   } catch (error) {
     console.error("Unexpected error booking lesson:", error);
@@ -149,13 +181,49 @@ export const bookLesson = async (request: BookingRequest): Promise<{ success: bo
 
 export const confirmLesson = async (lessonId: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
+    // Получаем данные урока
+    const { data: lessonData, error: lessonFetchError } = await supabase
       .from('lessons')
-      .update({ status: 'confirmed' })
+      .select('student_id, tutor_id')
+      .eq('id', lessonId)
+      .single();
+      
+    if (lessonFetchError || !lessonData) {
+      console.error("Error fetching lesson data:", lessonFetchError);
+      return false;
+    }
+    
+    // Подтверждаем урок
+    const { error: confirmError } = await supabase
+      .from('lessons')
+      .update({ 
+        status: 'confirmed',
+        updated_at: new Date().toISOString()
+      })
       .eq('id', lessonId);
       
-    if (error) throw error;
+    if (confirmError) {
+      console.error("Error confirming lesson:", confirmError);
+      return false;
+    }
     
+    // Обновляем связь студент-репетитор на "accepted" если она была "pending"
+    const { error: relationError } = await supabase
+      .from('student_tutor_relationships')
+      .update({ 
+        status: 'accepted',
+        updated_at: new Date().toISOString()
+      })
+      .eq('student_id', lessonData.student_id)
+      .eq('tutor_id', lessonData.tutor_id)
+      .eq('status', 'pending');
+      
+    if (relationError) {
+      console.error('Error updating student-tutor relationship:', relationError);
+      // Не возвращаем false, так как урок уже подтвержден
+    }
+    
+    console.log("Lesson confirmed and relationship updated");
     return true;
   } catch (error) {
     console.error("Error confirming lesson:", error);
@@ -167,7 +235,10 @@ export const cancelLesson = async (lessonId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('lessons')
-      .update({ status: 'canceled' })
+      .update({ 
+        status: 'canceled',
+        updated_at: new Date().toISOString()
+      })
       .eq('id', lessonId);
       
     if (error) throw error;
@@ -183,7 +254,10 @@ export const completeLesson = async (lessonId: string): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('lessons')
-      .update({ status: 'completed' })
+      .update({ 
+        status: 'completed',
+        updated_at: new Date().toISOString()
+      })
       .eq('id', lessonId);
       
     if (error) throw error;

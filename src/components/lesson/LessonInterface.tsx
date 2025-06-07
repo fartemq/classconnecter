@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +54,7 @@ export const LessonInterface = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [lesson, setLesson] = useState<LessonData | null>(null);
   const [activeTools, setActiveTools] = useState<string[]>(['chat']);
@@ -63,12 +63,13 @@ export const LessonInterface = () => {
   const [isCallActive, setIsCallActive] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [hasAccess, setHasAccess] = useState(false);
 
   useEffect(() => {
-    if (lessonId) {
+    if (lessonId && user) {
       fetchLessonData();
     }
-  }, [lessonId]);
+  }, [lessonId, user]);
 
   const fetchLessonData = async () => {
     try {
@@ -84,7 +85,56 @@ export const LessonInterface = () => {
         .single();
 
       if (error) throw error;
+      
+      // Проверяем права доступа
+      const userIsParticipant = data.tutor_id === user?.id || data.student_id === user?.id;
+      
+      if (!userIsParticipant) {
+        // Дополнительная проверка через связи студент-репетитор для админов/модераторов
+        if (user?.email !== "arsenalreally35@gmail.com") {
+          toast({
+            title: "Доступ запрещен",
+            description: "У вас нет доступа к этому занятию",
+            variant: "destructive"
+          });
+          navigate('/');
+          return;
+        }
+      }
+
+      // Проверяем существование связи между студентом и репетитором
+      const { data: relationData, error: relationError } = await supabase
+        .from('student_tutor_relationships')
+        .select('status')
+        .eq('student_id', data.student_id)
+        .eq('tutor_id', data.tutor_id)
+        .eq('status', 'accepted')
+        .maybeSingle();
+
+      if (relationError) {
+        console.error('Error checking relationship:', relationError);
+      }
+
+      // Если связи нет, но это confirmed/completed урок, создаем связь
+      if (!relationData && ['confirmed', 'completed', 'upcoming'].includes(data.status)) {
+        const { error: createRelationError } = await supabase
+          .from('student_tutor_relationships')
+          .upsert({
+            student_id: data.student_id,
+            tutor_id: data.tutor_id,
+            status: 'accepted',
+            start_date: new Date().toISOString()
+          }, {
+            onConflict: 'student_id,tutor_id'
+          });
+
+        if (createRelationError) {
+          console.error('Error creating relationship:', createRelationError);
+        }
+      }
+
       setLesson(data);
+      setHasAccess(true);
     } catch (error) {
       console.error('Error fetching lesson:', error);
       toast({
@@ -92,6 +142,7 @@ export const LessonInterface = () => {
         description: "Не удалось загрузить данные урока",
         variant: "destructive"
       });
+      navigate('/');
     } finally {
       setLoading(false);
     }
@@ -169,12 +220,12 @@ export const LessonInterface = () => {
     );
   }
 
-  if (!lesson) {
+  if (!lesson || !hasAccess) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-2">Урок не найден</h2>
-          <p className="text-gray-600">Проверьте правильность ссылки</p>
+          <h2 className="text-2xl font-bold mb-2">Доступ запрещен</h2>
+          <p className="text-gray-600">У вас нет доступа к этому уроку</p>
         </div>
       </div>
     );
