@@ -14,11 +14,19 @@ interface LessonRequest {
   requested_end_time: string;
   status: string;
   message?: string;
+  tutor_response?: string;
   created_at: string;
   student?: {
     first_name: string;
     last_name: string;
     email: string;
+    avatar_url?: string;
+  };
+  tutor?: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    avatar_url?: string;
   };
   subject?: {
     name: string;
@@ -40,8 +48,8 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
         .from('lesson_requests')
         .select(`
           *,
-          student:profiles!lesson_requests_student_id_fkey(first_name, last_name, email),
-          tutor:profiles!lesson_requests_tutor_id_fkey(first_name, last_name, email),
+          student:profiles!lesson_requests_student_id_fkey(first_name, last_name, email, avatar_url),
+          tutor:profiles!lesson_requests_tutor_id_fkey(first_name, last_name, email, avatar_url),
           subject:subjects(name)
         `);
 
