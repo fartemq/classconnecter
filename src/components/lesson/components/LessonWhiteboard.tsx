@@ -15,7 +15,7 @@ import {
   Palette,
   Minus
 } from "lucide-react";
-import { fabric } from "fabric";
+import { Canvas, FabricObject, Circle as FabricCircle, Rect, Line, IText } from "fabric";
 import { supabase } from "@/integrations/supabase/client";
 
 interface LessonWhiteboardProps {
@@ -24,7 +24,7 @@ interface LessonWhiteboardProps {
 
 export const LessonWhiteboard = ({ lessonId }: LessonWhiteboardProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [canvas, setCanvas] = useState<fabric.Canvas | null>(null);
+  const [canvas, setCanvas] = useState<Canvas | null>(null);
   const [tool, setTool] = useState<string>('pen');
   const [brushSize, setBrushSize] = useState(5);
   const [color, setColor] = useState('#000000');
@@ -32,7 +32,7 @@ export const LessonWhiteboard = ({ lessonId }: LessonWhiteboardProps) => {
 
   useEffect(() => {
     if (canvasRef.current) {
-      const fabricCanvas = new fabric.Canvas(canvasRef.current, {
+      const fabricCanvas = new Canvas(canvasRef.current, {
         width: 800,
         height: 600,
         backgroundColor: 'white'
@@ -59,13 +59,17 @@ export const LessonWhiteboard = ({ lessonId }: LessonWhiteboardProps) => {
     switch (tool) {
       case 'pen':
         canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush.width = brushSize;
-        canvas.freeDrawingBrush.color = color;
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.width = brushSize;
+          canvas.freeDrawingBrush.color = color;
+        }
         break;
       case 'eraser':
         canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush.width = brushSize * 2;
-        canvas.freeDrawingBrush.color = 'white';
+        if (canvas.freeDrawingBrush) {
+          canvas.freeDrawingBrush.width = brushSize * 2;
+          canvas.freeDrawingBrush.color = 'white';
+        }
         break;
       default:
         canvas.isDrawingMode = false;
@@ -93,7 +97,7 @@ export const LessonWhiteboard = ({ lessonId }: LessonWhiteboardProps) => {
     }
   };
 
-  const saveWhiteboardData = async (fabricCanvas: fabric.Canvas) => {
+  const saveWhiteboardData = async (fabricCanvas: Canvas) => {
     try {
       const canvasData = fabricCanvas.toJSON();
       
@@ -109,10 +113,10 @@ export const LessonWhiteboard = ({ lessonId }: LessonWhiteboardProps) => {
   const addShape = (shapeType: string) => {
     if (!canvas) return;
 
-    let shape;
+    let shape: FabricObject | null = null;
     switch (shapeType) {
       case 'circle':
-        shape = new fabric.Circle({
+        shape = new FabricCircle({
           radius: 50,
           fill: 'transparent',
           stroke: color,
@@ -122,7 +126,7 @@ export const LessonWhiteboard = ({ lessonId }: LessonWhiteboardProps) => {
         });
         break;
       case 'square':
-        shape = new fabric.Rect({
+        shape = new Rect({
           width: 100,
           height: 100,
           fill: 'transparent',
@@ -133,7 +137,7 @@ export const LessonWhiteboard = ({ lessonId }: LessonWhiteboardProps) => {
         });
         break;
       case 'line':
-        shape = new fabric.Line([50, 100, 200, 100], {
+        shape = new Line([50, 100, 200, 100], {
           stroke: color,
           strokeWidth: 2
         });
@@ -149,7 +153,7 @@ export const LessonWhiteboard = ({ lessonId }: LessonWhiteboardProps) => {
   const addText = () => {
     if (!canvas) return;
 
-    const text = new fabric.IText('Текст', {
+    const text = new IText('Текст', {
       left: 100,
       top: 100,
       fontFamily: 'Arial',
