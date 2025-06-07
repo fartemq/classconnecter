@@ -38,6 +38,8 @@ const LoginPage = () => {
           navigate("/profile/tutor");
           break;
         case "student":
+          navigate("/profile/student");
+          break;
         default:
           navigate("/profile/student");
           break;

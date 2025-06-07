@@ -32,9 +32,12 @@ const ProtectedRoute = ({ allowedRoles = [] }: ProtectedRouteProps) => {
     }
   }
 
-  // Проверка роли
-  if (allowedRoles.length > 0 && userRole && !allowedRoles.includes(userRole)) {
-    return <Navigate to="/" replace />;
+  // Проверка роли - если роли указаны, проверяем доступ
+  if (allowedRoles.length > 0 && userRole) {
+    if (!allowedRoles.includes(userRole)) {
+      console.log("🚫 Access denied: User role", userRole, "not in allowed roles", allowedRoles);
+      return <Navigate to="/" replace />;
+    }
   }
 
   return <Outlet />;
