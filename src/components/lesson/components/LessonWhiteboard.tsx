@@ -183,7 +183,11 @@ export const LessonWhiteboard = ({ lessonId }: LessonWhiteboardProps) => {
 
   const exportCanvas = () => {
     if (canvas) {
-      const dataURL = canvas.toDataURL('image/png');
+      const dataURL = canvas.toDataURL({
+        format: 'png',
+        quality: 1,
+        multiplier: 1
+      });
       const link = document.createElement('a');
       link.download = `whiteboard-${lessonId}.png`;
       link.href = dataURL;
