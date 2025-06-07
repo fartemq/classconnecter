@@ -10,7 +10,7 @@ interface LessonAccessButtonProps {
   userRole: 'student' | 'tutor';
   relationshipExists: boolean;
   hasConfirmedLessons: boolean;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "default" | "lg";
   variant?: "default" | "outline";
 }
 

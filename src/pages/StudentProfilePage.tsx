@@ -10,7 +10,7 @@ import { FindTutorsTab } from "@/components/profile/student/FindTutorsTab";
 import { ChatsTab } from "@/components/profile/student/ChatsTab";
 import { NotificationsTab } from "@/components/profile/student/NotificationsTab";
 import { HomeworkTab } from "@/components/profile/student/HomeworkTab";
-import { StudentProfileForm } from "@/components/profile/student/StudentProfileForm";
+import { ProfileTab } from "@/components/profile/student/ProfileTab";
 
 const StudentProfilePage = () => {
   const [activeTab, setActiveTab] = useState("profile");
@@ -39,7 +39,7 @@ const StudentProfilePage = () => {
               <Card>
                 <CardContent className="p-6">
                   <h1 className="text-2xl font-bold mb-6">Профиль студента</h1>
-                  <StudentProfileForm />
+                  <ProfileTab />
                 </CardContent>
               </Card>
             </TabsContent>
