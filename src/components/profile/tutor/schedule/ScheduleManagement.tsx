@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,7 +59,17 @@ export const ScheduleManagement = () => {
         .limit(10);
 
       if (error) throw error;
-      return data as Lesson[];
+      
+      // Transform the data to match our interface
+      return (data || []).map(lesson => ({
+        ...lesson,
+        student_profile: Array.isArray(lesson.student_profile) 
+          ? lesson.student_profile[0] 
+          : lesson.student_profile,
+        subject: Array.isArray(lesson.subject) 
+          ? lesson.subject[0] 
+          : lesson.subject
+      })) as Lesson[];
     },
     enabled: !!user?.id
   });

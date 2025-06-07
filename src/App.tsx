@@ -5,12 +5,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/hooks/auth/AuthProvider";
-import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // Pages
 import Index from "./pages/Index";
-import LoginPage from "./pages/auth/LoginPage";
-import RegisterPage from "./pages/auth/RegisterPage";
+import LoginPage from "./pages/LoginPage";
+import RegisterPage from "./pages/RegisterPage";
 import TutorProfilePage from "./pages/TutorProfilePage";
 import { LessonPage } from "./pages/LessonPage";
 
@@ -30,7 +30,7 @@ const App = () => (
             
             {/* Protected routes */}
             <Route path="/profile/tutor/*" element={
-              <ProtectedRoute requiredRole="tutor">
+              <ProtectedRoute allowedRoles={["tutor"]}>
                 <TutorProfilePage />
               </ProtectedRoute>
             } />
