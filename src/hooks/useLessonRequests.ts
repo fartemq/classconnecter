@@ -15,6 +15,7 @@ interface LessonRequest {
   message?: string;
   tutor_response?: string;
   created_at: string;
+  responded_at?: string;
   student?: {
     first_name: string;
     last_name: string;
@@ -86,7 +87,7 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
     fetchRequests();
   }, [fetchRequests]);
 
-  // Добавляем realtime подписку для автоматического обновления
+  // Realtime subscription with optimized filtering
   useEffect(() => {
     if (!userId) return;
 
@@ -157,7 +158,7 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
       if (!request) return false;
 
       if (action === 'accept') {
-        // Создаем урок при принятии запроса
+        // Create lesson when accepting request
         const startDateTime = `${request.requested_date}T${request.requested_start_time}`;
         const endDateTime = `${request.requested_date}T${request.requested_end_time}`;
 
@@ -176,7 +177,7 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
 
         if (lessonError) throw lessonError;
 
-        // Создаем или обновляем связь студент-репетитор на "accepted"
+        // Create or update student-tutor relationship
         const { error: relationError } = await supabase
           .from('student_tutor_relationships')
           .upsert({
@@ -192,7 +193,7 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
           console.error('Error updating relationship:', relationError);
         }
 
-        // Создаем уведомление для студента
+        // Create notification for student
         const { error: notificationError } = await supabase
           .from('notifications')
           .insert({
@@ -208,7 +209,7 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
         }
       }
 
-      // Обновляем статус запроса
+      // Update request status
       const { error } = await supabase
         .from('lesson_requests')
         .update({ 

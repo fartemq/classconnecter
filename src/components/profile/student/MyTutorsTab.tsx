@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,180 +26,12 @@ interface TutorData {
   experience?: number;
 }
 
-export const MyTutorsTab = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [tutors, setTutors] = useState<TutorData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchTutors();
-    }
-  }, [user?.id]);
-
-  // Добавляем realtime подписку для автоматического обновления
-  useEffect(() => {
-    if (!user?.id) return;
-
-    const channel = supabase
-      .channel('tutor_relationships_updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'student_tutor_relationships',
-          filter: `student_id=eq.${user.id}`
-        },
-        () => {
-          console.log('Tutor relationship updated, refreshing...');
-          fetchTutors();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id]);
-
-  const fetchTutors = async () => {
-    try {
-      setIsLoading(true);
-      
-      const { data, error } = await supabase
-        .from('student_tutor_relationships')
-        .select(`
-          tutor_id,
-          start_date,
-          status,
-          tutor:profiles!tutor_id (
-            id,
-            first_name,
-            last_name,
-            avatar_url,
-            city,
-            tutor_profiles (
-              experience
-            )
-          )
-        `)
-        .eq('student_id', user?.id)
-        .eq('status', 'accepted')
-        .order('start_date', { ascending: false });
-
-      if (error) throw error;
-
-      // Получаем предметы для каждого репетитора
-      const tutorsWithSubjects = await Promise.all(
-        (data || []).map(async (item) => {
-          const tutorData = ensureSingleObject(item.tutor);
-          const tutorProfile = ensureSingleObject(tutorData?.tutor_profiles);
-
-          // Получаем предметы репетитора
-          const { data: subjectsData } = await supabase
-            .from('tutor_subjects')
-            .select(`
-              subject:subjects(name)
-            `)
-            .eq('tutor_id', item.tutor_id)
-            .eq('is_active', true);
-
-          const subjects = subjectsData?.map(s => {
-            const subject = ensureSingleObject(s.subject);
-            return subject?.name;
-          }).filter(Boolean) || [];
-
-          return {
-            id: item.tutor_id,
-            name: `${tutorData?.first_name || ''} ${tutorData?.last_name || ''}`.trim(),
-            avatar: tutorData?.avatar_url || undefined,
-            city: tutorData?.city || undefined,
-            relationshipStart: item.start_date,
-            subjects,
-            experience: tutorProfile?.experience || 0,
-            rating: 5 // Placeholder
-          };
-        })
-      );
-
-      setTutors(tutorsWithSubjects.filter(tutor => tutor.name));
-    } catch (error) {
-      console.error('Error fetching tutors:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleChatWithTutor = (tutorId: string) => {
-    navigate(`/profile/student/chats/${tutorId}`);
-  };
-
-  const handleScheduleWithTutor = (tutorId: string) => {
-    navigate(`/profile/student/schedule?tutorId=${tutorId}`);
-  };
-
-  if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <Loader size="lg" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold">Мои репетиторы</h2>
-        <Badge variant="outline" className="text-xs">
-          {tutors.length} репетиторов
-        </Badge>
-      </div>
-
-      {tutors.length === 0 ? (
-        <Card>
-          <CardContent className="text-center py-12">
-            <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium mb-2">У вас пока нет репетиторов</h3>
-            <p className="text-gray-500 mb-4">
-              Найдите репетиторов и отправьте им запросы на занятия
-            </p>
-            <Button onClick={() => navigate('/profile/student/tutors')}>
-              Найти репетиторов
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {tutors.map((tutor) => (
-            <TutorCard
-              key={tutor.id}
-              tutor={tutor}
-              currentUserId={user?.id}
-              onChatClick={handleChatWithTutor}
-              onScheduleClick={handleScheduleWithTutor}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-interface TutorCardProps {
+const TutorCard: React.FC<{
   tutor: TutorData;
   currentUserId: string | undefined;
   onChatClick: (tutorId: string) => void;
   onScheduleClick: (tutorId: string) => void;
-}
-
-const TutorCard: React.FC<TutorCardProps> = ({
-  tutor,
-  currentUserId,
-  onChatClick,
-  onScheduleClick
-}) => {
+}> = React.memo(({ tutor, currentUserId, onChatClick, onScheduleClick }) => {
   const { hasRelationship, hasConfirmedLessons } = useRelationshipStatus(
     currentUserId,
     tutor.id,
@@ -296,5 +128,170 @@ const TutorCard: React.FC<TutorCardProps> = ({
         </div>
       </CardContent>
     </Card>
+  );
+});
+
+export const MyTutorsTab = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [tutors, setTutors] = useState<TutorData[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchTutors = React.useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      setIsLoading(true);
+      
+      const { data, error } = await supabase
+        .from('student_tutor_relationships')
+        .select(`
+          tutor_id,
+          start_date,
+          status,
+          tutor:profiles!tutor_id (
+            id,
+            first_name,
+            last_name,
+            avatar_url,
+            city,
+            tutor_profiles (
+              experience
+            )
+          )
+        `)
+        .eq('student_id', user.id)
+        .eq('status', 'accepted')
+        .order('start_date', { ascending: false });
+
+      if (error) throw error;
+
+      // Get subjects for each tutor in parallel
+      const tutorsWithSubjects = await Promise.all(
+        (data || []).map(async (item) => {
+          const tutorData = ensureSingleObject(item.tutor);
+          const tutorProfile = ensureSingleObject(tutorData?.tutor_profiles);
+
+          // Get tutor subjects
+          const { data: subjectsData } = await supabase
+            .from('tutor_subjects')
+            .select(`
+              subject:subjects(name)
+            `)
+            .eq('tutor_id', item.tutor_id)
+            .eq('is_active', true);
+
+          const subjects = subjectsData?.map(s => {
+            const subject = ensureSingleObject(s.subject);
+            return subject?.name;
+          }).filter(Boolean) || [];
+
+          return {
+            id: item.tutor_id,
+            name: `${tutorData?.first_name || ''} ${tutorData?.last_name || ''}`.trim(),
+            avatar: tutorData?.avatar_url || undefined,
+            city: tutorData?.city || undefined,
+            relationshipStart: item.start_date,
+            subjects,
+            experience: tutorProfile?.experience || 0,
+            rating: 5 // Placeholder
+          };
+        })
+      );
+
+      setTutors(tutorsWithSubjects.filter(tutor => tutor.name));
+    } catch (error) {
+      console.error('Error fetching tutors:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchTutors();
+  }, [fetchTutors]);
+
+  // Realtime subscription with optimized dependencies
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('tutor_relationships_updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'student_tutor_relationships',
+          filter: `student_id=eq.${user.id}`
+        },
+        () => {
+          console.log('Tutor relationship updated, refreshing...');
+          fetchTutors();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, fetchTutors]);
+
+  const handleChatWithTutor = React.useCallback((tutorId: string) => {
+    navigate(`/profile/student/chats/${tutorId}`);
+  }, [navigate]);
+
+  const handleScheduleWithTutor = React.useCallback((tutorId: string) => {
+    navigate(`/profile/student/schedule?tutorId=${tutorId}`);
+  }, [navigate]);
+
+  const memoizedTutorCards = useMemo(() => 
+    tutors.map((tutor) => (
+      <TutorCard
+        key={tutor.id}
+        tutor={tutor}
+        currentUserId={user?.id}
+        onChatClick={handleChatWithTutor}
+        onScheduleClick={handleScheduleWithTutor}
+      />
+    )), [tutors, user?.id, handleChatWithTutor, handleScheduleWithTutor]
+  );
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-8">
+        <Loader size="lg" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Мои репетиторы</h2>
+        <Badge variant="outline" className="text-xs">
+          {tutors.length} репетиторов
+        </Badge>
+      </div>
+
+      {tutors.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-12">
+            <User className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+            <h3 className="text-lg font-medium mb-2">У вас пока нет репетиторов</h3>
+            <p className="text-gray-500 mb-4">
+              Найдите репетиторов и отправьте им запросы на занятия
+            </p>
+            <Button onClick={() => navigate('/profile/student/tutors')}>
+              Найти репетиторов
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {memoizedTutorCards}
+        </div>
+      )}
+    </div>
   );
 };

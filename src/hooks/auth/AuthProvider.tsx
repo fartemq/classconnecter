@@ -12,10 +12,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Fetch user role from profiles table
+  // Cache for user role to avoid repeated fetches
+  const roleCache = new Map<string, string>();
+
+  // Fetch user role from profiles table with caching
   const fetchUserRole = async (userId: string) => {
     try {
       console.log("🔍 Fetching role for user:", userId);
+      
+      // Check cache first
+      if (roleCache.has(userId)) {
+        console.log("✅ Role found in cache:", roleCache.get(userId));
+        return roleCache.get(userId);
+      }
       
       const { data, error } = await supabase
         .from("profiles")
@@ -43,11 +52,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (userId === "861128e6-be26-48ee-b576-e7accded9f70") {
         console.log("🛡️ Admin user detected");
+        roleCache.set(userId, "admin");
         return "admin";
       }
 
       const role = data?.role || "student";
       console.log("✅ User role fetched:", role);
+      
+      // Cache the role
+      roleCache.set(userId, role);
       return role;
     } catch (error) {
       console.error("Error in fetchUserRole:", error);
@@ -101,6 +114,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
       
+      // Clear cache on logout
+      roleCache.clear();
       return true;
     } catch (error) {
       console.error("Logout exception:", error);
@@ -112,6 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async (): Promise<void> => {
     try {
       await supabase.auth.signOut();
+      roleCache.clear();
     } catch (error) {
       console.error("Sign out error:", error);
     }
@@ -119,10 +135,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
+    let initTimeout: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
         console.log("🔄 Initializing auth...");
+        
+        // Set timeout for initialization to prevent hanging
+        initTimeout = setTimeout(() => {
+          if (mounted) {
+            console.log("⏰ Auth initialization timeout, setting loading to false");
+            setIsLoading(false);
+          }
+        }, 5000);
         
         // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
@@ -155,6 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (mounted) {
           console.log("⏹️ Initial auth check complete, setting isLoading to false");
           setIsLoading(false);
+          clearTimeout(initTimeout);
         }
       }
     };
@@ -181,6 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(null);
           setUser(null);
           setUserRole(null);
+          roleCache.clear();
         }
       }
     );
@@ -190,6 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       mounted = false;
+      clearTimeout(initTimeout);
       subscription.unsubscribe();
     };
   }, []);
