@@ -124,6 +124,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (error) {
           console.error("Error getting session:", error);
+          if (mounted) {
+            setIsLoading(false);
+          }
           return;
         }
 
@@ -171,6 +174,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSession(null);
           setUser(null);
           setUserRole(null);
+        }
+        
+        // Убеждаемся что isLoading устанавливается в false после обработки события
+        if (mounted) {
+          setIsLoading(false);
         }
       }
     );

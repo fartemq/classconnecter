@@ -26,26 +26,27 @@ const LoginPage = () => {
 
   // Redirect logged in users based on role
   useEffect(() => {
-    if (user && userRole && !authLoading && !isLoggingIn) {
+    // Если пользователь аутентифицирован и роль загружена
+    if (user && userRole && !authLoading) {
       console.log("🚀 Redirecting user with role:", userRole);
       
       switch (userRole) {
         case "admin":
         case "moderator":
-          navigate("/admin");
+          navigate("/admin", { replace: true });
           break;
         case "tutor":
-          navigate("/profile/tutor");
+          navigate("/profile/tutor", { replace: true });
           break;
         case "student":
-          navigate("/profile/student");
+          navigate("/profile/student", { replace: true });
           break;
         default:
-          navigate("/profile/student");
+          navigate("/profile/student", { replace: true });
           break;
       }
     }
-  }, [user, userRole, authLoading, isLoggingIn, navigate]);
+  }, [user, userRole, authLoading, navigate]);
 
   // Handle login form submission
   const handleLoginSuccess = async (values: LoginFormValues) => {
@@ -63,7 +64,7 @@ const LoginPage = () => {
           title: "Успешный вход",
           description: "Добро пожаловать в Stud.rep!",
         });
-        // Don't setIsLoggingIn(false) here - let useEffect handle redirect
+        // Не устанавливаем setIsLoggingIn(false) здесь - пусть useEffect обработает перенаправление
       } else if (result?.error) {
         setErrorMessage(result.error);
         toast({
@@ -86,18 +87,22 @@ const LoginPage = () => {
     }
   };
 
-  // Show loading screen during initial auth check
-  if (authLoading) {
+  // Show loading screen during initial auth check or while logging in
+  if (authLoading || (user && userRole && !isLoggingIn)) {
     return (
       <AuthLayout>
-        <LoadingScreen />
+        <LoadingScreen message={isLoggingIn ? "Выполняется вход..." : "Проверка сессии..."} />
       </AuthLayout>
     );
   }
 
-  // If user is already logged in, don't show login page
-  if (user && !isLoggingIn) {
-    return null; // Will be redirected in useEffect
+  // If user is already logged in but we don't have role yet, show loading
+  if (user && !userRole) {
+    return (
+      <AuthLayout>
+        <LoadingScreen message="Загрузка профиля..." />
+      </AuthLayout>
+    );
   }
 
   return (
