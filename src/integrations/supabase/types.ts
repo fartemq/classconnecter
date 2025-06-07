@@ -243,6 +243,150 @@ export type Database = {
           },
         ]
       }
+      lesson_chat: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          is_pinned: boolean | null
+          lesson_id: string | null
+          message_type: string
+          parent_id: string | null
+          sender_id: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          lesson_id?: string | null
+          message_type?: string
+          parent_id?: string | null
+          sender_id?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          is_pinned?: boolean | null
+          lesson_id?: string | null
+          message_type?: string
+          parent_id?: string | null
+          sender_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_chat_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_chat_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "lesson_chat"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_chat_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean | null
+          layout_config: Json
+          layout_name: string
+          subject_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          layout_config: Json
+          layout_name: string
+          subject_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          layout_config?: Json
+          layout_name?: string
+          subject_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_layouts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lesson_materials: {
+        Row: {
+          content: Json | null
+          created_at: string
+          created_by: string | null
+          file_path: string | null
+          id: string
+          lesson_id: string | null
+          material_type: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          created_by?: string | null
+          file_path?: string | null
+          id?: string
+          lesson_id?: string | null
+          material_type: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          created_by?: string | null
+          file_path?: string | null
+          id?: string
+          lesson_id?: string | null
+          material_type?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_materials_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_materials_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lesson_requests: {
         Row: {
           created_at: string
@@ -304,34 +448,46 @@ export type Database = {
           created_at: string | null
           end_time: string
           id: string
+          lesson_notes: string | null
+          lesson_type: string | null
+          recording_url: string | null
           start_time: string
           status: string | null
           student_id: string | null
           subject_id: string | null
           tutor_id: string | null
           updated_at: string | null
+          whiteboard_data: Json | null
         }
         Insert: {
           created_at?: string | null
           end_time: string
           id?: string
+          lesson_notes?: string | null
+          lesson_type?: string | null
+          recording_url?: string | null
           start_time: string
           status?: string | null
           student_id?: string | null
           subject_id?: string | null
           tutor_id?: string | null
           updated_at?: string | null
+          whiteboard_data?: Json | null
         }
         Update: {
           created_at?: string | null
           end_time?: string
           id?: string
+          lesson_notes?: string | null
+          lesson_type?: string | null
+          recording_url?: string | null
           start_time?: string
           status?: string | null
           student_id?: string | null
           subject_id?: string | null
           tutor_id?: string | null
           updated_at?: string | null
+          whiteboard_data?: Json | null
         }
         Relationships: [
           {
