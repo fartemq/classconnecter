@@ -27,15 +27,24 @@ const LoginPage = () => {
 
   // Redirect logged in users based on role
   useEffect(() => {
-    if (user && userRole) {
-      console.log("User is logged in with role:", userRole);
-      if (userRole === "tutor") {
-        navigate("/profile/tutor");
-      } else {
-        navigate("/profile/student");
+    if (user && userRole && !authLoading) {
+      console.log("🚀 Redirecting user with role:", userRole);
+      
+      switch (userRole) {
+        case "admin":
+        case "moderator":
+          navigate("/");
+          break;
+        case "tutor":
+          navigate("/profile/tutor");
+          break;
+        case "student":
+        default:
+          navigate("/profile/student");
+          break;
       }
     }
-  }, [user, userRole, navigate]);
+  }, [user, userRole, authLoading, navigate]);
 
   // Handle login form submission
   const handleLoginSuccess = async (values: LoginFormValues) => {
@@ -44,7 +53,7 @@ const LoginPage = () => {
     setErrorMessage(null);
     
     try {
-      console.log("Attempting login with:", values.email);
+      console.log("🔐 Attempting login with:", values.email);
       const result = await login(values.email, values.password);
       
       if (result?.success) {
@@ -54,10 +63,21 @@ const LoginPage = () => {
         });
       } else if (result?.error) {
         setErrorMessage(result.error);
+        toast({
+          title: "Ошибка входа",
+          description: result.error,
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Login form error:", error);
-      setErrorMessage(error instanceof Error ? error.message : "Произошла ошибка при входе");
+      const errorMsg = error instanceof Error ? error.message : "Произошла ошибка при входе";
+      setErrorMessage(errorMsg);
+      toast({
+        title: "Ошибка входа",
+        description: errorMsg,
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

@@ -22,7 +22,7 @@ export const UserMenu = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showAdminDialog, setShowAdminDialog] = useState(false);
 
-  // Отладочная информация
+  // Debug information
   useEffect(() => {
     if (user) {
       console.log("👤 UserMenu Debug Info:");
@@ -68,15 +68,16 @@ export const UserMenu = () => {
   const profilePath = userRole === "tutor" ? "/profile/tutor" : "/profile/student";
   const initials = user.email?.charAt(0).toUpperCase() || "U";
   
-  // Дополнительная проверка для конкретного админ пользователя
-  const isSpecificAdmin = user.email === "arsenalreally35@gmail.com";
+  // Check for admin access
+  const isSpecificAdmin = user.email === "arsenalreally35@gmail.com" || user.id === "861128e6-be26-48ee-b576-e7accded9f70";
   const isAdminOrModerator = userRole === "admin" || userRole === "moderator" || isSpecificAdmin;
 
   console.log("🔍 Final admin check:", {
     userRole,
     isSpecificAdmin,
     isAdminOrModerator,
-    userEmail: user.email
+    userEmail: user.email,
+    userId: user.id
   });
 
   return (
@@ -113,7 +114,7 @@ export const UserMenu = () => {
             </Link>
           </DropdownMenuItem>
           
-          {/* Показываем ссылку на админ-панель для админов, модераторов и конкретного пользователя */}
+          {/* Show admin panel link for admins, moderators and specific user */}
           {isAdminOrModerator && (
             <>
               <DropdownMenuSeparator />

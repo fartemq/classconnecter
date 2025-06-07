@@ -57,7 +57,12 @@ export const loginWithEmailAndPassword = async ({
 
     // Fetch user role from profiles table
     try {
-      const role = await fetchUserRole(data.user.id);
+      let role = await fetchUserRole(data.user.id);
+      
+      // Special case for admin user
+      if (data.user.id === "861128e6-be26-48ee-b576-e7accded9f70") {
+        role = "admin";
+      }
       
       console.log("User logged in successfully with role:", role);
       return {
