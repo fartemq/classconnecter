@@ -17,7 +17,7 @@ export const CtaSection = () => {
             <Link to="/register">Зарегистрироваться</Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="text-white border-white hover:bg-white/10">
-            <Link to="/about">Узнать больше</Link>
+            <Link to="/">Узнать больше</Link>
           </Button>
         </div>
       </div>

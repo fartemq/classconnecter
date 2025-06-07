@@ -10,7 +10,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userRole, setUserRole] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [initializing, setInitializing] = useState(true);
   const { toast } = useToast();
 
   // Fetch user role from profiles table
@@ -56,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Login function
   const login = async (email: string, password: string) => {
     try {
-      setIsLoading(true);
+      console.log("🔐 Starting login process for:", email);
       
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
@@ -79,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      // Auth state change handler will take care of setting user and role
+      console.log("✅ Login successful, waiting for auth state change");
       return { success: true };
     } catch (error) {
       console.error("Login exception:", error);
@@ -87,8 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         success: false, 
         error: error instanceof Error ? error.message : "Произошла ошибка при входе" 
       };
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -129,7 +126,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) {
           console.error("Error getting session:", error);
           if (mounted) {
-            setInitializing(false);
             setIsLoading(false);
           }
           return;
@@ -151,13 +147,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         if (mounted) {
-          setInitializing(false);
           setIsLoading(false);
         }
       } catch (error) {
         console.error("Error in getInitialSession:", error);
         if (mounted) {
-          setInitializing(false);
           setIsLoading(false);
         }
       }
@@ -171,7 +165,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!mounted) return;
         
         if (event === "SIGNED_IN" && session?.user) {
-          setIsLoading(true);
           const role = await fetchUserRole(session.user.id);
           
           if (role && mounted) {
@@ -180,27 +173,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUserRole(role);
             console.log("✅ User signed in:", { userId: session.user.id, role });
           }
-          
-          if (mounted) {
-            setIsLoading(false);
-          }
         } else if (event === "SIGNED_OUT") {
           console.log("🚪 User signed out");
           setSession(null);
           setUser(null);
           setUserRole(null);
-          
-          if (mounted) {
-            setIsLoading(false);
-          }
         }
       }
     );
 
-    // Get initial session only if not already initializing
-    if (initializing) {
-      getInitialSession();
-    }
+    // Get initial session
+    getInitialSession();
 
     return () => {
       mounted = false;
@@ -211,7 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const value: AuthContextType = {
     user,
     userRole,
-    isLoading: isLoading || initializing,
+    isLoading,
     session,
     signOut,
     setUser,

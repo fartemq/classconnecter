@@ -13,9 +13,8 @@ const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, userRole, isLoading: authLoading, login } = useAuth();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [needConfirmation, setNeedConfirmation] = useState(false);
-  const [loginAttempted, setLoginAttempted] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Check if coming from registration page
@@ -33,7 +32,7 @@ const LoginPage = () => {
       switch (userRole) {
         case "admin":
         case "moderator":
-          navigate("/");
+          navigate("/admin");
           break;
         case "tutor":
           navigate("/profile/tutor");
@@ -48,8 +47,9 @@ const LoginPage = () => {
 
   // Handle login form submission
   const handleLoginSuccess = async (values: LoginFormValues) => {
-    setIsLoading(true);
-    setLoginAttempted(true);
+    if (isLoggingIn) return; // Prevent double submission
+    
+    setIsLoggingIn(true);
     setErrorMessage(null);
     
     try {
@@ -79,12 +79,12 @@ const LoginPage = () => {
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsLoggingIn(false);
     }
   };
 
-  // Show loading screen only during initial auth check, not during login
-  if (authLoading && !loginAttempted) {
+  // Show loading screen during initial auth check
+  if (authLoading) {
     return (
       <AuthLayout>
         <LoadingScreen />
@@ -93,7 +93,7 @@ const LoginPage = () => {
   }
 
   // If user is already logged in, don't show login page
-  if (user && !authLoading) {
+  if (user) {
     return null; // Will be redirected in useEffect
   }
 
@@ -109,16 +109,16 @@ const LoginPage = () => {
         <CardContent>
           <LoginAlerts 
             needConfirmation={needConfirmation}
-            loginAttempted={loginAttempted}
-            isLoading={isLoading}
+            loginAttempted={!!errorMessage}
+            isLoading={isLoggingIn}
             errorMessage={errorMessage}
           />
           
           <LoginForm 
             onSuccess={handleLoginSuccess}
-            isLoading={isLoading}
-            setIsLoading={setIsLoading}
-            setLoginAttempted={setLoginAttempted}
+            isLoading={isLoggingIn}
+            setIsLoading={setIsLoggingIn}
+            setLoginAttempted={() => {}}
             needConfirmation={needConfirmation}
           />
         </CardContent>

@@ -18,15 +18,15 @@ export const HeroSection = () => {
         
         <div className="flex flex-col md:flex-row items-center justify-center gap-4">
           <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
-            <Link to="/subjects/mathematics/school">Я - школьник</Link>
+            <Link to="/register">Я - школьник</Link>
           </Button>
           
           <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
-            <Link to="/subjects/mathematics/adult">Я - студент/взрослый</Link>
+            <Link to="/register">Я - студент/взрослый</Link>
           </Button>
           
           <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
-            <Link to="/become-tutor">Я - репетитор</Link>
+            <Link to="/register">Я - репетитор</Link>
           </Button>
         </div>
       </div>
