@@ -14,10 +14,10 @@ export const CtaSection = () => {
         </p>
         <div className="flex flex-col md:flex-row justify-center gap-4">
           <Button asChild size="lg" className="bg-white text-primary hover:bg-gray-100">
-            <Link to="/register">Зарегистрироваться</Link>
+            <Link to="/school-student">Начать обучение</Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="text-white border-white hover:bg-white/10">
-            <Link to="/">Узнать больше</Link>
+            <Link to="/become-tutor">Стать репетитором</Link>
           </Button>
         </div>
       </div>

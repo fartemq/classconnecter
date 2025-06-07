@@ -26,7 +26,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null;
       }
 
-      // Check if user is blocked
       if (data?.is_blocked) {
         console.log("🚫 User is blocked, forcing logout");
         await supabase.auth.signOut();
@@ -40,7 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return null;
       }
 
-      // Set default role for admin user
       if (userId === "861128e6-be26-48ee-b576-e7accded9f70") {
         return "admin";
       }
@@ -78,7 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      console.log("✅ Login successful, waiting for auth state change");
+      console.log("✅ Login successful");
       return { success: true };
     } catch (error) {
       console.error("Login exception:", error);
@@ -117,17 +115,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let mounted = true;
 
-    // Get initial session
-    const getInitialSession = async () => {
+    const initializeAuth = async () => {
       try {
-        console.log("🔄 Getting initial session...");
+        console.log("🔄 Initializing auth...");
+        
+        // Get initial session
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error("Error getting session:", error);
-          if (mounted) {
-            setIsLoading(false);
-          }
           return;
         }
 
@@ -145,12 +141,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         } else {
           console.log("❌ No initial session found");
         }
-        
-        if (mounted) {
-          setIsLoading(false);
-        }
       } catch (error) {
-        console.error("Error in getInitialSession:", error);
+        console.error("Error in initializeAuth:", error);
+      } finally {
         if (mounted) {
           setIsLoading(false);
         }
@@ -182,8 +175,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // Get initial session
-    getInitialSession();
+    // Initialize auth
+    initializeAuth();
 
     return () => {
       mounted = false;

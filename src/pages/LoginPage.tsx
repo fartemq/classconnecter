@@ -26,7 +26,7 @@ const LoginPage = () => {
 
   // Redirect logged in users based on role
   useEffect(() => {
-    if (user && userRole && !authLoading) {
+    if (user && userRole && !authLoading && !isLoggingIn) {
       console.log("🚀 Redirecting user with role:", userRole);
       
       switch (userRole) {
@@ -43,11 +43,11 @@ const LoginPage = () => {
           break;
       }
     }
-  }, [user, userRole, authLoading, navigate]);
+  }, [user, userRole, authLoading, isLoggingIn, navigate]);
 
   // Handle login form submission
   const handleLoginSuccess = async (values: LoginFormValues) => {
-    if (isLoggingIn) return; // Prevent double submission
+    if (isLoggingIn) return;
     
     setIsLoggingIn(true);
     setErrorMessage(null);
@@ -61,6 +61,7 @@ const LoginPage = () => {
           title: "Успешный вход",
           description: "Добро пожаловать в Stud.rep!",
         });
+        // Don't setIsLoggingIn(false) here - let useEffect handle redirect
       } else if (result?.error) {
         setErrorMessage(result.error);
         toast({
@@ -68,6 +69,7 @@ const LoginPage = () => {
           description: result.error,
           variant: "destructive",
         });
+        setIsLoggingIn(false);
       }
     } catch (error) {
       console.error("Login form error:", error);
@@ -78,7 +80,6 @@ const LoginPage = () => {
         description: errorMsg,
         variant: "destructive",
       });
-    } finally {
       setIsLoggingIn(false);
     }
   };
@@ -93,7 +94,7 @@ const LoginPage = () => {
   }
 
   // If user is already logged in, don't show login page
-  if (user) {
+  if (user && !isLoggingIn) {
     return null; // Will be redirected in useEffect
   }
 

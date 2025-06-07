@@ -14,6 +14,9 @@ import RegisterPage from "./pages/RegisterPage";
 import TutorProfilePage from "./pages/TutorProfilePage";
 import { LessonPage } from "./pages/LessonPage";
 import { AdminDashboardPage } from "./pages/AdminDashboardPage";
+import SchoolStudentPage from "./pages/SchoolStudentPage";
+import AdultStudentPage from "./pages/AdultStudentPage";
+import BecomeTutorPage from "./pages/BecomeTutorPage";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +31,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
+            
+            {/* Role selection pages */}
+            <Route path="/school-student" element={<SchoolStudentPage />} />
+            <Route path="/adult-student" element={<AdultStudentPage />} />
+            <Route path="/become-tutor" element={<BecomeTutorPage />} />
             
             {/* Protected routes */}
             <Route path="/profile/tutor/*" element={<ProtectedRoute allowedRoles={["tutor"]} />}>
