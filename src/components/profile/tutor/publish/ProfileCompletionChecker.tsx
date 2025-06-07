@@ -12,6 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ProfileDisplayView } from "../display/ProfileDisplayView";
 import { saveTutorSubjects } from "@/services/tutorSubjectsService";
 import { uploadProfileAvatar } from "@/services/avatarService";
+import { validateTutorProfile } from "@/services/tutor/validationService";
 
 interface ProfileCompletionCheckerProps {
   profile: Profile;
@@ -24,7 +25,7 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
 }) => {
   const { updateProfile } = useTutorProfile();
   const [isLoading, setIsLoading] = useState(false);
-  const [showWizard, setShowWizard] = useState(false);
+  const [forceWizard, setForceWizard] = useState(false);
 
   // Check if profile is complete and load full profile data
   const { data: profileCompletion, isLoading: checkingCompletion, refetch } = useQuery({
@@ -68,42 +69,40 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
         console.error("Error fetching subjects:", subjectsError);
       }
 
-      // Check basic profile completeness
-      const hasBasicInfo = !!(
-        completeProfile.first_name && 
-        completeProfile.last_name && 
-        completeProfile.city && 
-        completeProfile.bio
-      );
-
-      // Check tutor-specific fields
+      // Get tutor profile data
       const tutorProfile = Array.isArray(completeProfile.tutor_profiles) 
         ? completeProfile.tutor_profiles[0] 
         : completeProfile.tutor_profiles;
 
-      const hasTutorInfo = !!(
-        tutorProfile?.education_institution && 
-        tutorProfile?.methodology && 
-        tutorProfile?.experience !== null &&
-        tutorProfile?.degree &&
-        tutorProfile?.graduation_year
-      );
+      // Prepare data for validation
+      const profileForValidation = {
+        id: completeProfile.id,
+        first_name: completeProfile.first_name,
+        last_name: completeProfile.last_name,
+        bio: completeProfile.bio,
+        city: completeProfile.city,
+        avatar_url: completeProfile.avatar_url,
+        education_institution: tutorProfile?.education_institution,
+        degree: tutorProfile?.degree,
+        graduation_year: tutorProfile?.graduation_year,
+        experience: tutorProfile?.experience,
+        methodology: tutorProfile?.methodology,
+        achievements: tutorProfile?.achievements,
+        video_url: tutorProfile?.video_url,
+        is_published: tutorProfile?.is_published || false,
+        education_verified: tutorProfile?.education_verified || false,
+      };
 
-      const hasSubjects = tutorSubjects && tutorSubjects.length > 0;
+      // Use validation service to check completeness
+      const validationResult = validateTutorProfile(profileForValidation, tutorSubjects);
 
-      console.log("Profile completion check:", {
-        hasBasicInfo,
-        hasTutorInfo,
-        hasSubjects,
-        tutorProfile,
-        tutorSubjects
-      });
+      console.log("Profile validation result:", validationResult);
 
       return {
-        isComplete: hasBasicInfo && hasTutorInfo && hasSubjects,
-        hasBasicInfo,
-        hasTutorInfo,
-        hasSubjects,
+        isComplete: validationResult.isValid,
+        completionPercentage: validationResult.completionPercentage,
+        missingFields: validationResult.missingFields,
+        warnings: validationResult.warnings,
         completeProfile,
         tutorSubjects: tutorSubjects || []
       };
@@ -191,17 +190,17 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
   };
 
   const handleSwitchToWizard = () => {
-    setShowWizard(true);
+    setForceWizard(true);
   };
 
   const handleSwitchToDisplay = () => {
-    setShowWizard(false);
+    setForceWizard(false);
     refetch();
   };
 
   const handleWizardComplete = () => {
     console.log("Wizard completed, switching to display view");
-    setShowWizard(false);
+    setForceWizard(false);
     refetch();
   };
 
@@ -213,8 +212,10 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
     );
   }
 
-  // If profile is not complete OR user wants to use wizard, show wizard
-  if (!profileCompletion?.isComplete || showWizard) {
+  // Show wizard if profile is incomplete OR user explicitly wants wizard mode
+  const shouldShowWizard = forceWizard || !profileCompletion?.isComplete;
+
+  if (shouldShowWizard) {
     const completeProfile = profileCompletion?.completeProfile;
     const tutorProfile = completeProfile?.tutor_profiles;
     const tutorData = Array.isArray(tutorProfile) ? tutorProfile[0] : tutorProfile;
@@ -242,7 +243,7 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
 
     return (
       <div className="space-y-4">
-        {profileCompletion?.isComplete && (
+        {profileCompletion?.isComplete && forceWizard && (
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <p className="text-sm text-blue-700">
               Вы находитесь в режиме полного редактирования анкеты. 
@@ -254,6 +255,18 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
             >
               Вернуться к просмотру профиля
             </button>
+          </div>
+        )}
+        {!profileCompletion?.isComplete && (
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+            <p className="text-sm text-orange-700">
+              <strong>Профиль не готов к публикации:</strong> {profileCompletion?.completionPercentage || 0}% заполнен
+            </p>
+            {profileCompletion?.missingFields && profileCompletion.missingFields.length > 0 && (
+              <p className="text-xs text-orange-600 mt-1">
+                Необходимо заполнить: {profileCompletion.missingFields.join(', ')}
+              </p>
+            )}
           </div>
         )}
         <TutorProfileWizard

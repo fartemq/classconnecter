@@ -17,6 +17,7 @@ export interface TutorProfile {
   video_url?: string;
   is_published?: boolean;
   education_verified?: boolean;
+  subjects?: any[]; // Add subjects to validation
 }
 
 export interface ValidationResult {
@@ -27,12 +28,12 @@ export interface ValidationResult {
   missingFields: string[];
 }
 
-export const validateTutorProfile = (profile: TutorProfile): ValidationResult => {
+export const validateTutorProfile = (profile: TutorProfile, tutorSubjects?: any[]): ValidationResult => {
   const errors: string[] = [];
   const warnings: string[] = [];
   const missingFields: string[] = [];
   let completedFields = 0;
-  const totalFields = 10;
+  const totalFields = 11; // Updated to include subjects
 
   // Required fields validation
   if (!profile.first_name?.trim()) {
@@ -91,15 +92,25 @@ export const validateTutorProfile = (profile: TutorProfile): ValidationResult =>
     completedFields++;
   }
 
-  // Optional but recommended fields
-  if (!profile.avatar_url?.trim()) {
-    warnings.push("Добавьте фото профиля для большего доверия");
+  if (!profile.methodology?.trim()) {
+    errors.push("Опишите вашу методику преподавания");
+    missingFields.push("Методика преподавания");
   } else {
     completedFields++;
   }
 
-  if (!profile.methodology?.trim()) {
-    warnings.push("Опишите вашу методику преподавания");
+  // Check subjects - this is critical for publication
+  const subjects = tutorSubjects || profile.subjects || [];
+  if (!subjects || subjects.length === 0) {
+    errors.push("Добавьте хотя бы один предмет для преподавания");
+    missingFields.push("Предметы");
+  } else {
+    completedFields++;
+  }
+
+  // Optional but recommended fields
+  if (!profile.avatar_url?.trim()) {
+    warnings.push("Добавьте фото профиля для большего доверия");
   } else {
     completedFields++;
   }
@@ -118,7 +129,7 @@ export const validateTutorProfile = (profile: TutorProfile): ValidationResult =>
   }
 
   const completionPercentage = Math.round((completedFields / totalFields) * 100);
-  const isValid = errors.length === 0 && completionPercentage >= 80;
+  const isValid = errors.length === 0 && completionPercentage >= 90;
 
   return {
     isValid,
@@ -149,7 +160,7 @@ export const showValidationResults = (result: ValidationResult): void => {
   }
 };
 
-export const canPublishProfile = (profile: TutorProfile): boolean => {
-  const result = validateTutorProfile(profile);
+export const canPublishProfile = (profile: TutorProfile, tutorSubjects?: any[]): boolean => {
+  const result = validateTutorProfile(profile, tutorSubjects);
   return result.isValid;
 };

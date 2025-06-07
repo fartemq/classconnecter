@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { DocumentUploadSection } from "./DocumentUploadSection";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { CheckCircle, AlertCircle, Clock } from "lucide-react";
 
 interface DocumentVerification {
   id: string;
@@ -36,8 +37,49 @@ export const DocumentVerification = () => {
     if (user?.id) {
       fetchVerifications();
       checkEducationStatus();
+      
+      // Subscribe to document verification updates
+      const channel = supabase
+        .channel('document-verification-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'document_verifications',
+            filter: `tutor_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Document verification updated:', payload);
+            const newDoc = payload.new as DocumentVerification;
+            
+            // Show notification based on status
+            if (newDoc.status === 'approved') {
+              toast({
+                title: "Документ одобрен! ✅",
+                description: "Ваш документ успешно прошел проверку",
+              });
+              // Update education verified status
+              checkEducationStatus();
+            } else if (newDoc.status === 'rejected') {
+              toast({
+                title: "Документ отклонен",
+                description: newDoc.admin_comment || "Пожалуйста, проверьте комментарий администратора",
+                variant: "destructive"
+              });
+            }
+            
+            // Refresh verifications list
+            fetchVerifications();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
-  }, [user?.id]);
+  }, [user?.id, toast]);
 
   const fetchVerifications = async () => {
     try {
@@ -72,11 +114,26 @@ export const DocumentVerification = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-50">На проверке</Badge>;
+        return (
+          <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+            <Clock className="w-3 h-3 mr-1" />
+            На проверке
+          </Badge>
+        );
       case 'approved':
-        return <Badge variant="outline" className="bg-green-50 text-green-700">Одобрено</Badge>;
+        return (
+          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+            <CheckCircle className="w-3 h-3 mr-1" />
+            Одобрено
+          </Badge>
+        );
       case 'rejected':
-        return <Badge variant="outline" className="bg-red-50 text-red-700">Отклонено</Badge>;
+        return (
+          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+            <AlertCircle className="w-3 h-3 mr-1" />
+            Отклонено
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -88,6 +145,19 @@ export const DocumentVerification = () => {
 
   return (
     <div className="space-y-6">
+      {/* Education verification status banner */}
+      {isEducationVerified && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 text-green-700">
+            <CheckCircle className="w-5 h-5" />
+            <span className="font-medium">Образование подтверждено!</span>
+          </div>
+          <p className="text-sm text-green-600 mt-1">
+            В вашем профиле теперь отображается значок подтверждённого образования, что повышает доверие студентов.
+          </p>
+        </div>
+      )}
+      
       <DocumentUploadSection 
         tutorId={user?.id || ''}
         isEducationVerified={isEducationVerified}
@@ -99,7 +169,11 @@ export const DocumentVerification = () => {
         </CardHeader>
         <CardContent>
           {verifications.length === 0 ? (
-            <p className="text-gray-500">Документы не загружены</p>
+            <div className="text-center py-8 text-gray-500">
+              <AlertCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>Документы не загружены</p>
+              <p className="text-sm">Загрузите документы для верификации образования</p>
+            </div>
           ) : (
             <div className="space-y-4">
               {verifications.map(verification => (
@@ -115,7 +189,11 @@ export const DocumentVerification = () => {
                   </div>
 
                   {verification.admin_comment && (
-                    <div className="mt-2 p-2 bg-gray-50 rounded">
+                    <div className={`mt-2 p-3 rounded ${
+                      verification.status === 'approved' 
+                        ? 'bg-green-50 border border-green-200' 
+                        : 'bg-red-50 border border-red-200'
+                    }`}>
                       <p className="text-sm">
                         <strong>Комментарий администратора:</strong> {verification.admin_comment}
                       </p>

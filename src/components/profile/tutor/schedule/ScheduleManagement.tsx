@@ -1,208 +1,161 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Calendar } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Plus, Clock, Calendar as CalendarIcon, User, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { useTutorSchedule } from "@/hooks/useTutorSchedule";
-import { Loader } from "@/components/ui/loader";
+import { Calendar, Clock, User, Plus, Video } from "lucide-react";
+import { format, isToday, isTomorrow, addDays } from "date-fns";
+import { ru } from "date-fns/locale";
+import { LessonActions } from "./LessonActions";
 
-const DAYS_OF_WEEK = [
-  { value: 1, label: "Понедельник" },
-  { value: 2, label: "Вторник" },
-  { value: 3, label: "Среда" },
-  { value: 4, label: "Четверг" },
-  { value: 5, label: "Пятница" },
-  { value: 6, label: "Суббота" },
-  { value: 7, label: "Воскресенье" },
-];
+interface Lesson {
+  id: string;
+  student_id: string;
+  subject_id: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  student_profile: {
+    first_name: string;
+    last_name: string;
+  };
+  subject: {
+    name: string;
+  };
+}
 
 export const ScheduleManagement = () => {
   const { user } = useAuth();
-  const { schedule, loading, saving, addTimeSlot, toggleSlotAvailability, deleteTimeSlot } = useTutorSchedule(user?.id || "");
-  
-  const [newSlot, setNewSlot] = useState({
-    dayOfWeek: "",
-    startTime: "",
-    endTime: ""
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
+  const { data: upcomingLessons = [] } = useQuery({
+    queryKey: ['upcomingLessons', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+
+      const { data, error } = await supabase
+        .from('lessons')
+        .select(`
+          id,
+          student_id,
+          subject_id,
+          start_time,
+          end_time,
+          status,
+          student_profile:profiles!lessons_student_id_fkey (
+            first_name,
+            last_name
+          ),
+          subject:subjects (
+            name
+          )
+        `)
+        .eq('tutor_id', user.id)
+        .gte('start_time', new Date().toISOString())
+        .order('start_time', { ascending: true })
+        .limit(10);
+
+      if (error) throw error;
+      return data as Lesson[];
+    },
+    enabled: !!user?.id
   });
 
-  const handleAddSlot = async () => {
-    if (!newSlot.dayOfWeek || !newSlot.startTime || !newSlot.endTime) return;
-    
-    const success = await addTimeSlot(
-      parseInt(newSlot.dayOfWeek),
-      newSlot.startTime,
-      newSlot.endTime
-    );
-    
-    if (success) {
-      setNewSlot({ dayOfWeek: "", startTime: "", endTime: "" });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
-  const formatTime = (time: string) => {
-    return time.substring(0, 5);
-  };
-
-  const getDayName = (dayOfWeek: number) => {
-    return DAYS_OF_WEEK.find(day => day.value === dayOfWeek)?.label || "";
-  };
-
-  const groupedSchedule = schedule.reduce((acc, slot) => {
-    if (!acc[slot.dayOfWeek]) {
-      acc[slot.dayOfWeek] = [];
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'confirmed': return 'Подтверждён';
+      case 'pending': return 'Ожидает';
+      case 'cancelled': return 'Отменён';
+      default: return status;
     }
-    acc[slot.dayOfWeek].push(slot);
-    return acc;
-  }, {} as Record<number, typeof schedule>);
+  };
 
-  if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CalendarIcon className="h-5 w-5" />
-            Управление расписанием
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex justify-center py-8">
-          <Loader size="lg" />
-        </CardContent>
-      </Card>
-    );
-  }
+  const getDateLabel = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isToday(date)) return 'Сегодня';
+    if (isTomorrow(date)) return 'Завтра';
+    return format(date, 'dd MMMM', { locale: ru });
+  };
 
   return (
     <div className="space-y-6">
-      {/* Add New Time Slot */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="h-5 w-5" />
-            Добавить новый временной слот
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
-              <Label htmlFor="dayOfWeek">День недели</Label>
-              <Select 
-                value={newSlot.dayOfWeek} 
-                onValueChange={(value) => setNewSlot(prev => ({ ...prev, dayOfWeek: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Выберите день" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DAYS_OF_WEEK.map((day) => (
-                    <SelectItem key={day.value} value={day.value.toString()}>
-                      {day.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="startTime">Время начала</Label>
-              <Input
-                id="startTime"
-                type="time"
-                value={newSlot.startTime}
-                onChange={(e) => setNewSlot(prev => ({ ...prev, startTime: e.target.value }))}
-              />
-            </div>
-            <div>
-              <Label htmlFor="endTime">Время окончания</Label>
-              <Input
-                id="endTime"
-                type="time"
-                value={newSlot.endTime}
-                onChange={(e) => setNewSlot(prev => ({ ...prev, endTime: e.target.value }))}
-              />
-            </div>
-            <div className="flex items-end">
-              <Button 
-                onClick={handleAddSlot}
-                disabled={saving || !newSlot.dayOfWeek || !newSlot.startTime || !newSlot.endTime}
-                className="w-full"
-              >
-                {saving ? "Добавление..." : "Добавить"}
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Расписание</h1>
+        <Button>
+          <Plus className="w-4 h-4 mr-2" />
+          Добавить урок
+        </Button>
+      </div>
 
-      {/* Current Schedule */}
+      {/* Upcoming Lessons */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Clock className="h-5 w-5" />
-            Текущее расписание
+          <CardTitle className="flex items-center space-x-2">
+            <Calendar className="w-5 h-5" />
+            <span>Ближайшие уроки</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {Object.keys(groupedSchedule).length === 0 ? (
+          {upcomingLessons.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <CalendarIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p className="text-lg font-medium mb-2">Расписание не настроено</p>
-              <p className="text-sm">Добавьте временные слоты, чтобы ученики могли записываться к вам на занятия</p>
+              <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>Нет запланированных уроков</p>
+              <p className="text-sm">Запросы на уроки появятся здесь</p>
             </div>
           ) : (
-            <div className="space-y-6">
-              {DAYS_OF_WEEK.map((day) => {
-                const daySlots = groupedSchedule[day.value] || [];
-                if (daySlots.length === 0) return null;
-
-                return (
-                  <div key={day.value}>
-                    <h3 className="font-medium text-lg mb-3">{day.label}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                      {daySlots.map((slot) => (
-                        <div
-                          key={slot.id}
-                          className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
-                        >
-                          <div className="flex items-center space-x-3">
-                            <div className="text-sm font-medium">
-                              {formatTime(slot.startTime)} - {formatTime(slot.endTime)}
-                            </div>
-                            <Badge 
-                              variant={slot.isAvailable ? "default" : "secondary"}
-                              className="text-xs"
-                            >
-                              {slot.isAvailable ? "Доступно" : "Заблокировано"}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => toggleSlotAvailability(slot.id, slot.isAvailable)}
-                              className="text-xs"
-                            >
-                              {slot.isAvailable ? "Заблокировать" : "Разблокировать"}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => deleteTimeSlot(slot.id)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+            <div className="space-y-4">
+              {upcomingLessons.map(lesson => (
+                <div key={lesson.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-start space-x-4">
+                      <div className="flex items-center space-x-2 text-sm text-gray-500">
+                        <Clock className="w-4 h-4" />
+                        <span>{getDateLabel(lesson.start_time)}</span>
+                        <span>
+                          {format(new Date(lesson.start_time), 'HH:mm', { locale: ru })} - 
+                          {format(new Date(lesson.end_time), 'HH:mm', { locale: ru })}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Badge className={getStatusColor(lesson.status)}>
+                        {getStatusText(lesson.status)}
+                      </Badge>
+                      <LessonActions
+                        lessonId={lesson.id}
+                        status={lesson.status}
+                        startTime={lesson.start_time}
+                        studentName={`${lesson.student_profile?.first_name} ${lesson.student_profile?.last_name}`}
+                      />
                     </div>
                   </div>
-                );
-              })}
+                  
+                  <div className="mt-2">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-4 h-4 text-gray-400" />
+                        <span className="font-medium">
+                          {lesson.student_profile?.first_name} {lesson.student_profile?.last_name}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {lesson.subject?.name}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </CardContent>
