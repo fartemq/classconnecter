@@ -15,6 +15,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Fetch user role from profiles table
   const fetchUserRole = async (userId: string) => {
     try {
+      console.log("🔍 Fetching role for user:", userId);
+      
       const { data, error } = await supabase
         .from("profiles")
         .select("role, is_blocked")
@@ -40,10 +42,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (userId === "861128e6-be26-48ee-b576-e7accded9f70") {
+        console.log("🛡️ Admin user detected");
         return "admin";
       }
 
-      return data?.role || "student";
+      const role = data?.role || "student";
+      console.log("✅ User role fetched:", role);
+      return role;
     } catch (error) {
       console.error("Error in fetchUserRole:", error);
       return null;
@@ -148,6 +153,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error("Error in initializeAuth:", error);
       } finally {
         if (mounted) {
+          console.log("⏹️ Setting isLoading to false");
           setIsLoading(false);
         }
       }
@@ -161,6 +167,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!mounted) return;
         
         if (event === "SIGNED_IN" && session?.user) {
+          console.log("🔑 Processing sign in");
           const role = await fetchUserRole(session.user.id);
           
           if (role && mounted) {
@@ -177,7 +184,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         // Убеждаемся что isLoading устанавливается в false после обработки события
-        if (mounted) {
+        if (mounted && event !== "INITIAL_SESSION") {
+          console.log("⏹️ Setting isLoading to false after auth event");
           setIsLoading(false);
         }
       }

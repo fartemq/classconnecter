@@ -27,7 +27,7 @@ const LoginPage = () => {
   // Redirect logged in users based on role
   useEffect(() => {
     // Если пользователь аутентифицирован и роль загружена
-    if (user && userRole && !authLoading) {
+    if (user && userRole) {
       console.log("🚀 Redirecting user with role:", userRole);
       
       switch (userRole) {
@@ -46,7 +46,7 @@ const LoginPage = () => {
           break;
       }
     }
-  }, [user, userRole, authLoading, navigate]);
+  }, [user, userRole, navigate]);
 
   // Handle login form submission
   const handleLoginSuccess = async (values: LoginFormValues) => {
@@ -64,7 +64,7 @@ const LoginPage = () => {
           title: "Успешный вход",
           description: "Добро пожаловать в Stud.rep!",
         });
-        // Не устанавливаем setIsLoggingIn(false) здесь - пусть useEffect обработает перенаправление
+        // isLoggingIn будет сброшен после перенаправления
       } else if (result?.error) {
         setErrorMessage(result.error);
         toast({
@@ -88,7 +88,7 @@ const LoginPage = () => {
   };
 
   // Show loading screen during initial auth check or while logging in
-  if (authLoading || (user && userRole && !isLoggingIn)) {
+  if (authLoading || isLoggingIn) {
     return (
       <AuthLayout>
         <LoadingScreen message={isLoggingIn ? "Выполняется вход..." : "Проверка сессии..."} />
