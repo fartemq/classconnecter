@@ -16,7 +16,7 @@ import { TutorHomeworkManagement } from "./homework/TutorHomeworkManagement";
 import { TutorStudentSchedule } from "./schedule/TutorStudentSchedule";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useProfile } from "@/hooks/profiles/useProfile";
-import { Loader } from "@/components/ui/loader";
+import { SimpleLoadingScreen } from "@/components/auth/SimpleLoadingScreen";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Profile } from "@/hooks/profiles/types";
@@ -28,13 +28,12 @@ export const TutorProfileContent = () => {
   // Determine active tab from URL
   const getActiveTabFromPath = () => {
     if (pathParts.includes('chats') && pathParts.length > 4) {
-      return "chat-view"; // Individual chat view
+      return "chat-view";
     } else if (pathParts.includes('chats')) {
-      return "chats"; // Chat list
+      return "chats";
     } else if (pathParts.includes('students')) {
       return "students";
     } else if (pathParts.includes('schedule')) {
-      // Check if this is student-specific schedule
       if (location.search.includes('student=')) {
         return "student-schedule";
       }
@@ -81,11 +80,7 @@ export const TutorProfileContent = () => {
   });
 
   if (isLoading || !profile || !user) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader size="lg" />
-      </div>
-    );
+    return <SimpleLoadingScreen message="Загрузка профиля..." />;
   }
 
   // Cast to Profile type for components that require it

@@ -4,7 +4,6 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext, AuthContextType } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { getUserRole, clearRoleCache, checkUserBlocked } from "@/services/auth/roleService";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -13,23 +12,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Функция для обработки нового пользователя
+  // Простая функция получения роли с таймаутом
+  const getUserRole = async (userId: string): Promise<string> => {
+    try {
+      // Специальный случай для админа
+      if (userId === "861128e6-be26-48ee-b576-e7accded9f70") {
+        return "admin";
+      }
+
+      const { data: role, error } = await Promise.race([
+        supabase.rpc('get_current_user_role'),
+        new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error("Timeout")), 3000)
+        )
+      ]);
+
+      if (error) {
+        console.warn("Could not get role, using default:", error);
+        return "student";
+      }
+
+      return role || "student";
+    } catch (error) {
+      console.warn("Error getting role, using default:", error);
+      return "student";
+    }
+  };
+
+  // Проверка блокировки пользователя
+  const checkUserBlocked = async (userId: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("is_blocked")
+        .eq("id", userId)
+        .single();
+
+      return data?.is_blocked || false;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  // Обработка сессии пользователя
   const handleUserSession = async (session: Session | null) => {
     if (!session?.user) {
-      console.log("❌ No session or user");
       setSession(null);
       setUser(null);
       setUserRole(null);
       return;
     }
 
-    console.log("🔑 Processing user session:", session.user.email);
-    
     try {
-      // Проверяем заблокирован ли пользователь
+      // Проверяем блокировку
       const isBlocked = await checkUserBlocked(session.user.id);
       if (isBlocked) {
-        console.log("🚫 User is blocked, signing out");
         await supabase.auth.signOut();
         toast({
           title: "Аккаунт заблокирован",
@@ -39,27 +76,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Получаем роль пользователя
+      // Получаем роль
       const role = await getUserRole(session.user.id);
       
-      if (role) {
-        setSession(session);
-        setUser(session.user);
-        setUserRole(role);
-        console.log("✅ User authenticated successfully:", { 
-          userId: session.user.id, 
-          email: session.user.email,
-          role 
-        });
-      } else {
-        console.error("❌ Could not get user role");
-        // Все равно устанавливаем пользователя с ролью по умолчанию
-        setSession(session);
-        setUser(session.user);
-        setUserRole("student");
-      }
+      setSession(session);
+      setUser(session.user);
+      setUserRole(role);
     } catch (error) {
-      console.error("❌ Error processing user session:", error);
+      console.error("Error processing user session:", error);
       // В случае ошибки все равно авторизуем с ролью по умолчанию
       setSession(session);
       setUser(session.user);
@@ -70,15 +94,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Функция входа
   const login = async (email: string, password: string) => {
     try {
-      console.log("🔐 Starting login process for:", email);
-      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        console.error("❌ Login error:", error);
         let errorMessage = "Ошибка входа. Пожалуйста, попробуйте снова.";
         
         if (error.message.includes("Invalid login credentials")) {
@@ -93,10 +114,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      console.log("✅ Login successful, auth state will be handled by listener");
       return { success: true };
     } catch (error) {
-      console.error("❌ Login exception:", error);
       return { 
         success: false, 
         error: error instanceof Error ? error.message : "Произошла ошибка при входе" 
@@ -108,76 +127,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async (): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error("❌ Logout error:", error);
-        return false;
-      }
-      
-      clearRoleCache();
-      return true;
+      return !error;
     } catch (error) {
-      console.error("❌ Logout exception:", error);
       return false;
     }
   };
 
-  // Функция выхода (альтернативная)
   const signOut = async (): Promise<void> => {
     try {
       await supabase.auth.signOut();
-      clearRoleCache();
     } catch (error) {
-      console.error("❌ Sign out error:", error);
+      console.error("Sign out error:", error);
     }
   };
 
   useEffect(() => {
     let mounted = true;
-    let initTimeout: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
-        console.log("🔄 Initializing auth...");
-        
         // Получаем текущую сессию
-        const { data: { session }, error } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error("❌ Error getting session:", error);
-          return;
-        }
-
         if (mounted) {
           await handleUserSession(session);
+          setIsLoading(false);
         }
       } catch (error) {
-        console.error("❌ Error in initializeAuth:", error);
-      } finally {
+        console.error("Error in initializeAuth:", error);
         if (mounted) {
-          console.log("⏹️ Auth initialization complete");
           setIsLoading(false);
         }
       }
     };
 
-    // Устанавливаем слушатель изменений auth состояния
+    // Слушатель изменений auth состояния
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("🔄 Auth state changed:", event);
-        
         if (!mounted) return;
 
         if (event === "SIGNED_IN" && session) {
-          setIsLoading(true);
           await handleUserSession(session);
-          setIsLoading(false);
         } else if (event === "SIGNED_OUT") {
-          console.log("🚪 User signed out");
           setSession(null);
           setUser(null);
           setUserRole(null);
-          clearRoleCache();
-          setIsLoading(false);
         }
       }
     );
@@ -185,17 +179,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Инициализируем auth
     initializeAuth();
 
-    // Таймаут безопасности - если инициализация зависла
-    initTimeout = setTimeout(() => {
+    // Таймаут безопасности
+    const timeout = setTimeout(() => {
       if (mounted && isLoading) {
-        console.log("⏰ Auth initialization timeout, stopping loading");
         setIsLoading(false);
       }
-    }, 8000); // 8 секунд максимум
+    }, 5000);
 
     return () => {
       mounted = false;
-      clearTimeout(initTimeout);
+      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
