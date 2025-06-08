@@ -4,6 +4,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext, AuthContextType } from "./AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { getUserRole, clearRoleCache, checkUserBlocked } from "@/services/auth/roleService";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -12,71 +13,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Simple in-memory cache for roles
-  const roleCache = new Map<string, string>();
+  // Функция для обработки нового пользователя
+  const handleUserSession = async (session: Session | null) => {
+    if (!session?.user) {
+      console.log("❌ No session or user");
+      setSession(null);
+      setUser(null);
+      setUserRole(null);
+      return;
+    }
 
-  // Fetch user role with improved error handling
-  const fetchUserRole = async (userId: string): Promise<string | null> => {
+    console.log("🔑 Processing user session:", session.user.email);
+    
     try {
-      console.log("🔍 Fetching role for user:", userId);
-      
-      // Check cache first
-      if (roleCache.has(userId)) {
-        const cachedRole = roleCache.get(userId)!;
-        console.log("✅ Role found in cache:", cachedRole);
-        return cachedRole;
-      }
-      
-      // Special case for admin user - set immediately
-      if (userId === "861128e6-be26-48ee-b576-e7accded9f70") {
-        console.log("🛡️ Admin user detected");
-        roleCache.set(userId, "admin");
-        return "admin";
-      }
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("role, is_blocked")
-        .eq("id", userId)
-        .single();
-
-      if (error) {
-        console.error("❌ Error fetching user role:", error);
-        // Return default role instead of null to prevent blocking
-        const defaultRole = "student";
-        roleCache.set(userId, defaultRole);
-        return defaultRole;
-      }
-
-      if (data?.is_blocked) {
-        console.log("🚫 User is blocked, forcing logout");
+      // Проверяем заблокирован ли пользователь
+      const isBlocked = await checkUserBlocked(session.user.id);
+      if (isBlocked) {
+        console.log("🚫 User is blocked, signing out");
         await supabase.auth.signOut();
-        
         toast({
           title: "Аккаунт заблокирован",
           description: "Ваш аккаунт был заблокирован администратором.",
           variant: "destructive",
         });
-        
-        return null;
+        return;
       }
 
-      const role = data?.role || "student";
-      console.log("✅ User role fetched:", role);
+      // Получаем роль пользователя
+      const role = await getUserRole(session.user.id);
       
-      // Cache the role
-      roleCache.set(userId, role);
-      return role;
+      if (role) {
+        setSession(session);
+        setUser(session.user);
+        setUserRole(role);
+        console.log("✅ User authenticated successfully:", { 
+          userId: session.user.id, 
+          email: session.user.email,
+          role 
+        });
+      } else {
+        console.error("❌ Could not get user role");
+        // Все равно устанавливаем пользователя с ролью по умолчанию
+        setSession(session);
+        setUser(session.user);
+        setUserRole("student");
+      }
     } catch (error) {
-      console.error("❌ Exception in fetchUserRole:", error);
-      // Return default role to prevent blocking
-      const defaultRole = "student";
-      roleCache.set(userId, defaultRole);
-      return defaultRole;
+      console.error("❌ Error processing user session:", error);
+      // В случае ошибки все равно авторизуем с ролью по умолчанию
+      setSession(session);
+      setUser(session.user);
+      setUserRole("student");
     }
   };
 
-  // Improved login function
+  // Функция входа
   const login = async (email: string, password: string) => {
     try {
       console.log("🔐 Starting login process for:", email);
@@ -102,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
 
-      console.log("✅ Login successful, auth state will be handled by onAuthStateChange");
+      console.log("✅ Login successful, auth state will be handled by listener");
       return { success: true };
     } catch (error) {
       console.error("❌ Login exception:", error);
@@ -113,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Logout function
+  // Функция выхода
   const logout = async (): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -122,8 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
       
-      // Clear cache on logout
-      roleCache.clear();
+      clearRoleCache();
       return true;
     } catch (error) {
       console.error("❌ Logout exception:", error);
@@ -131,11 +121,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Sign out function
+  // Функция выхода (альтернативная)
   const signOut = async (): Promise<void> => {
     try {
       await supabase.auth.signOut();
-      roleCache.clear();
+      clearRoleCache();
     } catch (error) {
       console.error("❌ Sign out error:", error);
     }
@@ -143,97 +133,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     let mounted = true;
-    let initializationComplete = false;
+    let initTimeout: NodeJS.Timeout;
 
     const initializeAuth = async () => {
       try {
         console.log("🔄 Initializing auth...");
         
-        // Get initial session first
+        // Получаем текущую сессию
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error("❌ Error getting session:", error);
-          if (mounted) {
-            setIsLoading(false);
-            initializationComplete = true;
-          }
           return;
         }
 
-        if (session?.user && mounted) {
-          console.log("✅ Initial session found:", session.user.email);
-          
-          const role = await fetchUserRole(session.user.id);
-          
-          if (role && mounted) {
-            setSession(session);
-            setUser(session.user);
-            setUserRole(role);
-            console.log("✅ Initial auth state set:", { userId: session.user.id, role });
-          }
-        } else {
-          console.log("❌ No initial session found");
+        if (mounted) {
+          await handleUserSession(session);
         }
       } catch (error) {
         console.error("❌ Error in initializeAuth:", error);
       } finally {
         if (mounted) {
-          console.log("⏹️ Initial auth check complete");
+          console.log("⏹️ Auth initialization complete");
           setIsLoading(false);
-          initializationComplete = true;
         }
       }
     };
 
-    // Set up auth state listener BEFORE getting initial session
+    // Устанавливаем слушатель изменений auth состояния
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log("🔄 Auth state changed:", event, session?.user?.email);
+        console.log("🔄 Auth state changed:", event);
         
         if (!mounted) return;
-        
-        if (event === "SIGNED_IN" && session?.user) {
-          console.log("🔑 Processing sign in");
+
+        if (event === "SIGNED_IN" && session) {
           setIsLoading(true);
-          
-          const role = await fetchUserRole(session.user.id);
-          
-          if (role && mounted) {
-            setSession(session);
-            setUser(session.user);
-            setUserRole(role);
-            console.log("✅ User signed in:", { userId: session.user.id, role });
-          }
-          
-          if (mounted) {
-            setIsLoading(false);
-          }
+          await handleUserSession(session);
+          setIsLoading(false);
         } else if (event === "SIGNED_OUT") {
           console.log("🚪 User signed out");
           setSession(null);
           setUser(null);
           setUserRole(null);
+          clearRoleCache();
           setIsLoading(false);
-          roleCache.clear();
         }
       }
     );
 
-    // Initialize auth
+    // Инициализируем auth
     initializeAuth();
 
-    // Safety timeout - if initialization takes too long, stop loading
-    const safetyTimeout = setTimeout(() => {
-      if (mounted && !initializationComplete) {
-        console.log("⏰ Safety timeout triggered, stopping loading");
+    // Таймаут безопасности - если инициализация зависла
+    initTimeout = setTimeout(() => {
+      if (mounted && isLoading) {
+        console.log("⏰ Auth initialization timeout, stopping loading");
         setIsLoading(false);
       }
-    }, 10000); // 10 seconds maximum
+    }, 8000); // 8 секунд максимум
 
     return () => {
       mounted = false;
-      clearTimeout(safetyTimeout);
+      clearTimeout(initTimeout);
       subscription.unsubscribe();
     };
   }, []);

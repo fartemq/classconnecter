@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthLayout } from "@/components/auth/AuthLayout";
-import { LoadingScreen } from "@/components/auth/LoadingScreen";
+import { EnhancedLoadingScreen } from "@/components/auth/EnhancedLoadingScreen";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { LoginForm, LoginFormValues } from "@/components/auth/LoginForm";
 import { LoginAlerts } from "@/components/auth/LoginAlerts";
@@ -16,20 +16,19 @@ const LoginPage = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [needConfirmation, setNeedConfirmation] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [hasRedirected, setHasRedirected] = useState(false);
+  const [loginStep, setLoginStep] = useState<string>("idle");
 
-  // Check if coming from registration page
+  // Проверяем, пришли ли с страницы регистрации
   useEffect(() => {
     if (location.state && location.state.needConfirmation) {
       setNeedConfirmation(true);
     }
   }, [location]);
 
-  // Redirect logged in users based on role - only once
+  // Перенаправляем авторизованных пользователей
   useEffect(() => {
-    if (user && userRole && !isLoggingIn && !hasRedirected && !authLoading) {
-      console.log("🚀 Redirecting user with role:", userRole);
-      setHasRedirected(true);
+    if (user && userRole && !isLoggingIn && !authLoading) {
+      console.log("🚀 Redirecting authenticated user with role:", userRole);
       
       const redirectPath = (() => {
         switch (userRole) {
@@ -45,31 +44,43 @@ const LoginPage = () => {
         }
       })();
 
-      // Use setTimeout to prevent potential race conditions
+      // Небольшая задержка для плавности UX
       setTimeout(() => {
         navigate(redirectPath, { replace: true });
-      }, 100);
+      }, 500);
     }
-  }, [user, userRole, navigate, isLoggingIn, hasRedirected, authLoading]);
+  }, [user, userRole, navigate, isLoggingIn, authLoading]);
 
-  // Handle login form submission
+  // Обработка отправки формы входа
   const handleLoginSuccess = async (values: LoginFormValues) => {
     if (isLoggingIn) return;
     
     setIsLoggingIn(true);
     setErrorMessage(null);
+    setLoginStep("authenticating");
     
     try {
       console.log("🔐 Attempting login with:", values.email);
-      const result = await login(values.email, values.password);
+      
+      // Таймаут для операции входа
+      const loginTimeout = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error("Login timeout")), 15000);
+      });
+
+      const loginPromise = login(values.email, values.password);
+      const result = await Promise.race([loginPromise, loginTimeout]);
       
       if (result?.success) {
-        console.log("✅ Login successful, waiting for auth state change");
+        console.log("✅ Login successful");
+        setLoginStep("getting_profile");
+        
         toast({
           title: "Успешный вход",
           description: "Добро пожаловать в Stud.rep!",
         });
-        // Don't set isLoggingIn to false here - let the redirect happen
+        
+        // Ждем обновления состояния auth от провайдера
+        // isLoggingIn будет сброшен при успешном redirect
       } else if (result?.error) {
         console.error("❌ Login failed:", result.error);
         setErrorMessage(result.error);
@@ -79,10 +90,14 @@ const LoginPage = () => {
           variant: "destructive",
         });
         setIsLoggingIn(false);
+        setLoginStep("idle");
       }
     } catch (error) {
       console.error("❌ Login form error:", error);
-      const errorMsg = error instanceof Error ? error.message : "Произошла ошибка при входе";
+      const errorMsg = error instanceof Error && error.message === "Login timeout" 
+        ? "Превышено время ожидания входа" 
+        : "Произошла ошибка при входе";
+      
       setErrorMessage(errorMsg);
       toast({
         title: "Ошибка входа",
@@ -90,32 +105,51 @@ const LoginPage = () => {
         variant: "destructive",
       });
       setIsLoggingIn(false);
+      setLoginStep("idle");
     }
   };
 
-  // Show loading screen during auth check or login
-  if (authLoading) {
-    return (
-      <AuthLayout>
-        <LoadingScreen message="Проверка сессии..." />
-      </AuthLayout>
-    );
-  }
+  // Обработка таймаута
+  const handleTimeout = () => {
+    console.log("⏰ Login process timed out");
+    setIsLoggingIn(false);
+    setLoginStep("idle");
+    setErrorMessage("Превышено время ожидания. Попробуйте еще раз.");
+    toast({
+      title: "Таймаут",
+      description: "Операция заняла слишком много времени",
+      variant: "destructive",
+    });
+  };
 
-  // Show loading during login process
-  if (isLoggingIn) {
-    return (
-      <AuthLayout>
-        <LoadingScreen message="Выполняется вход..." />
-      </AuthLayout>
-    );
-  }
+  // Повторная попытка
+  const handleRetry = () => {
+    setIsLoggingIn(false);
+    setLoginStep("idle");
+    setErrorMessage(null);
+  };
 
-  // If user is already logged in, show loading while redirecting
-  if (user && userRole && !hasRedirected) {
+  // Определяем сообщение для загрузки
+  const getLoadingMessage = () => {
+    if (authLoading) return "Проверка сессии...";
+    if (loginStep === "authenticating") return "Проверка учетных данных...";
+    if (loginStep === "getting_profile") return "Получение профиля...";
+    if (isLoggingIn) return "Выполняется вход...";
+    if (user && userRole) return "Переход в профиль...";
+    return "Загрузка...";
+  };
+
+  // Показываем загрузку с таймаутом
+  if (authLoading || isLoggingIn || (user && userRole)) {
     return (
       <AuthLayout>
-        <LoadingScreen message="Переход в профиль..." />
+        <EnhancedLoadingScreen 
+          message={getLoadingMessage()}
+          timeout={authLoading ? 8000 : 15000}
+          onTimeout={handleTimeout}
+          onRetry={handleRetry}
+          showRetry={!authLoading}
+        />
       </AuthLayout>
     );
   }
