@@ -20,6 +20,7 @@ export const Header = () => {
   // Check if we're on a profile page
   const isStudentProfile = location.pathname.startsWith('/profile/student');
   const isTutorProfile = location.pathname.startsWith('/profile/tutor');
+  const isMainPage = location.pathname === '/';
 
   // Generate navigation items based on user role and path
   const getNavigationItems = () => {
@@ -29,6 +30,19 @@ export const Header = () => {
     }
     
     return null;
+  };
+
+  // Get profile link based on user role
+  const getProfileLink = () => {
+    if (!user || !userRole) return "/";
+    
+    if (userRole === "admin" || userRole === "moderator") {
+      return "/admin";
+    } else if (userRole === "tutor") {
+      return "/profile/tutor";
+    } else {
+      return "/profile/student";
+    }
   };
 
   const handleMobileMenuToggle = () => {
@@ -51,13 +65,29 @@ export const Header = () => {
             </Button>
           )}
           
-          <Link to="/" className="text-primary text-2xl font-bold">
-            Stud.rep
-          </Link>
+          {/* Logo - ссылка на профиль для авторизованных пользователей */}
+          {user ? (
+            <Link to={getProfileLink()} className="text-primary text-2xl font-bold">
+              Stud.rep
+            </Link>
+          ) : (
+            <Link to="/" className="text-primary text-2xl font-bold">
+              Stud.rep
+            </Link>
+          )}
           
-          {/* Desktop navigation */}
+          {/* Desktop navigation and profile button for main page */}
           <nav className="hidden md:flex items-center space-x-6">
             {getNavigationItems()}
+            
+            {/* Кнопка "В профиль" для авторизованных пользователей на главной странице */}
+            {user && isMainPage && (
+              <Link to={getProfileLink()}>
+                <Button variant="outline" size="sm">
+                  В профиль
+                </Button>
+              </Link>
+            )}
           </nav>
           
           {/* Auth buttons/user menu */}

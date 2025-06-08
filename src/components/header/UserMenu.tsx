@@ -65,7 +65,20 @@ export const UserMenu = () => {
 
   if (!user) return null;
 
-  const profilePath = userRole === "tutor" ? "/profile/tutor" : "/profile/student";
+  // Get profile path based on role with fallback
+  const getProfilePath = () => {
+    if (!userRole) return "/profile/student"; // fallback
+    
+    if (userRole === "admin" || userRole === "moderator") {
+      return "/admin";
+    } else if (userRole === "tutor") {
+      return "/profile/tutor";
+    } else {
+      return "/profile/student";
+    }
+  };
+
+  const profilePath = getProfilePath();
   const initials = user.email?.charAt(0).toUpperCase() || "U";
   
   // Check for admin access

@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/auth/useAuth";
@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/auth/useAuth";
 export const AuthButtons = () => {
   const { user, userRole, logout } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Function to handle logout
   const handleLogout = async () => {
@@ -18,6 +19,7 @@ export const AuthButtons = () => {
           title: "Успешный выход",
           description: "Вы вышли из системы",
         });
+        navigate("/");
       } else {
         throw new Error("Не удалось выйти из системы");
       }
@@ -30,18 +32,25 @@ export const AuthButtons = () => {
     }
   };
 
+  // Get profile link based on user role
+  const getProfileLink = () => {
+    if (!userRole) return "/profile/student";
+    
+    if (userRole === "admin" || userRole === "moderator") {
+      return "/admin";
+    } else if (userRole === "tutor") {
+      return "/profile/tutor";
+    } else {
+      return "/profile/student";
+    }
+  };
+
   if (user) {
     return (
       <div className="flex items-center gap-4">
-        {userRole === "tutor" ? (
-          <Link to="/profile/tutor">
-            <Button variant="ghost">Мой профиль</Button>
-          </Link>
-        ) : (
-          <Link to="/profile/student">
-            <Button variant="ghost">Мой профиль</Button>
-          </Link>
-        )}
+        <Link to={getProfileLink()}>
+          <Button variant="ghost">Мой профиль</Button>
+        </Link>
         <Button onClick={handleLogout} variant="ghost">
           Выйти
         </Button>
