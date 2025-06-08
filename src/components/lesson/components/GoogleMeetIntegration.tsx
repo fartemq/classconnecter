@@ -77,27 +77,65 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
       if (error) throw error;
 
       if (data?.auth_url) {
-        window.open(data.auth_url, '_blank', 'width=500,height=600');
+        const popup = window.open(data.auth_url, '_blank', 'width=500,height=600');
         
-        // Слушаем сообщения от окна авторизации
         const handleMessage = (event: MessageEvent) => {
           if (event.data.type === 'google_auth_success') {
-            setIsAuthorized(true);
+            // Обрабатываем успешную авторизацию
+            handleAuthCallback(event.data.code, event.data.state);
+            window.removeEventListener('message', handleMessage);
+            if (popup) popup.close();
+          } else if (event.data.type === 'google_auth_error') {
             toast({
-              title: "Авторизация успешна",
-              description: "Google аккаунт подключен"
+              title: "Ошибка авторизации",
+              description: `Не удалось подключить Google аккаунт: ${event.data.error}`,
+              variant: "destructive"
             });
             window.removeEventListener('message', handleMessage);
+            if (popup) popup.close();
           }
         };
         
         window.addEventListener('message', handleMessage);
+        
+        // Проверяем, если popup закрыли вручную
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            window.removeEventListener('message', handleMessage);
+          }
+        }, 1000);
       }
     } catch (error) {
       console.error('Error authorizing Google:', error);
       toast({
         title: "Ошибка авторизации",
         description: "Не удалось подключить Google аккаунт",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAuthCallback = async (code: string, state: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('google-oauth', {
+        body: { action: 'callback', code, state }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setIsAuthorized(true);
+        toast({
+          title: "Авторизация успешна",
+          description: "Google аккаунт подключен"
+        });
+      }
+    } catch (error) {
+      console.error('Error handling auth callback:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось завершить авторизацию",
         variant: "destructive"
       });
     }

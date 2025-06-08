@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,26 +76,65 @@ export const MiroIntegration = ({ lessonId }: MiroIntegrationProps) => {
       if (error) throw error;
 
       if (data?.auth_url) {
-        window.open(data.auth_url, '_blank', 'width=500,height=600');
+        const popup = window.open(data.auth_url, '_blank', 'width=500,height=600');
         
         const handleMessage = (event: MessageEvent) => {
           if (event.data.type === 'miro_auth_success') {
-            setIsAuthorized(true);
+            // Обрабатываем успешную авторизацию
+            handleAuthCallback(event.data.code, event.data.state);
+            window.removeEventListener('message', handleMessage);
+            if (popup) popup.close();
+          } else if (event.data.type === 'miro_auth_error') {
             toast({
-              title: "Авторизация успешна",
-              description: "Miro аккаунт подключен"
+              title: "Ошибка авторизации",
+              description: `Не удалось подключить Miro аккаунт: ${event.data.error}`,
+              variant: "destructive"
             });
             window.removeEventListener('message', handleMessage);
+            if (popup) popup.close();
           }
         };
         
         window.addEventListener('message', handleMessage);
+        
+        // Проверяем, если popup закрыли вручную
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed);
+            window.removeEventListener('message', handleMessage);
+          }
+        }, 1000);
       }
     } catch (error) {
       console.error('Error authorizing Miro:', error);
       toast({
         title: "Ошибка авторизации",
         description: "Не удалось подключить Miro аккаунт",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleAuthCallback = async (code: string, state: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('miro-oauth', {
+        body: { action: 'callback', code, state }
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        setIsAuthorized(true);
+        toast({
+          title: "Авторизация успешна",
+          description: "Miro аккаунт подключен"
+        });
+      }
+    } catch (error) {
+      console.error('Error handling auth callback:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось завершить авторизацию",
         variant: "destructive"
       });
     }

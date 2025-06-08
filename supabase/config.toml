@@ -41,11 +41,17 @@ enable_confirmations = false
 [functions.google-oauth]
 verify_jwt = true
 
+[functions.google-oauth-callback]
+verify_jwt = false
+
 [functions.google-meet]
 verify_jwt = true
 
 [functions.miro-oauth]
 verify_jwt = true
+
+[functions.miro-oauth-callback]
+verify_jwt = false
 
 [functions.miro-board]
 verify_jwt = true
