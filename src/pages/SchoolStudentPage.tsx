@@ -1,12 +1,55 @@
 
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { GraduationCap, Book, Calendar } from "lucide-react";
+import { EmergencyLogout } from "@/components/auth/EmergencyLogout";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 const SchoolStudentPage = () => {
+  const { user, userRole, isLoading } = useAuth();
+  const navigate = useNavigate();
+
+  // Перенаправляем авторизованных пользователей
+  useEffect(() => {
+    if (!isLoading && user) {
+      let redirectPath = "/profile/student";
+      
+      if (userRole === "admin" || userRole === "moderator") {
+        redirectPath = "/admin";
+      } else if (userRole === "tutor") {
+        redirectPath = "/profile/tutor";
+      }
+      
+      navigate(redirectPath, { replace: true });
+    }
+  }, [user, userRole, isLoading, navigate]);
+
+  // Показываем загрузку
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center relative">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <EmergencyLogout />
+      </div>
+    );
+  }
+
+  // Если пользователь авторизован, не показываем контент (будет перенаправление)
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center relative">
+        <div className="text-center">
+          <p className="text-gray-600">Перенаправление...</p>
+        </div>
+        <EmergencyLogout />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Header />

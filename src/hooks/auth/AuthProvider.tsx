@@ -3,7 +3,6 @@ import React, { useState, useEffect } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext, AuthContextType } from "./AuthContext";
-import { getUserRole } from "@/utils/authUtils";
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -53,8 +52,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Простая функция для получения роли
+  const getUserRole = async (userId: string): Promise<string> => {
+    try {
+      // Специальный случай для админа
+      if (userId === "861128e6-be26-48ee-b576-e7accded9f70") {
+        return "admin";
+      }
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", userId)
+        .single();
+
+      return data?.role || "student";
+    } catch (error) {
+      console.error("Error getting user role:", error);
+      return "student";
+    }
+  };
+
   useEffect(() => {
     let mounted = true;
+    let loadingTimeout: NodeJS.Timeout;
+
+    // Установим максимальный таймаут для загрузки
+    loadingTimeout = setTimeout(() => {
+      console.log("Loading timeout reached, setting isLoading to false");
+      if (mounted) {
+        setIsLoading(false);
+      }
+    }, 3000); // Максимум 3 секунды загрузки
 
     // Получение текущей сессии
     const getInitialSession = async () => {
@@ -66,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session?.user ?? null);
           
           if (session?.user) {
-            // Получаем роль пользователя
+            // Простое получение роли без сложной логики
             const role = await getUserRole(session.user.id);
             if (mounted) {
               setUserRole(role);
@@ -75,17 +104,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUserRole(null);
           }
           
+          clearTimeout(loadingTimeout);
           setIsLoading(false);
         }
       } catch (error) {
         console.error("Error getting initial session:", error);
         if (mounted) {
+          clearTimeout(loadingTimeout);
           setIsLoading(false);
         }
       }
     };
 
-    // Слушатель изменений auth состояния
+    // Простой слушатель изменений auth состояния
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (!mounted) return;
@@ -96,17 +127,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
 
         if (session?.user && event === "SIGNED_IN") {
-          // Получаем роль только при входе
-          try {
-            const role = await getUserRole(session.user.id);
-            if (mounted) {
-              setUserRole(role);
-            }
-          } catch (error) {
-            console.error("Error getting role after sign in:", error);
-            if (mounted) {
-              setUserRole("student");
-            }
+          // Простое получение роли при входе
+          const role = await getUserRole(session.user.id);
+          if (mounted) {
+            setUserRole(role);
           }
         } else if (!session) {
           setUserRole(null);
@@ -119,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     return () => {
       mounted = false;
+      clearTimeout(loadingTimeout);
       subscription.unsubscribe();
     };
   }, []);

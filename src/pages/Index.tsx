@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FeaturesSection } from "@/components/FeaturesSection";
 import { TestimonialsSection } from "@/components/TestimonialsSection";
@@ -7,21 +7,33 @@ import { CtaSection } from "@/components/CtaSection";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
+import { EmergencyLogout } from "@/components/auth/EmergencyLogout";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 const Index = () => {
   const { user, userRole, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [showEmergency, setShowEmergency] = useState(false);
   
-  // Автоматическое перенаправление авторизованных пользователей
+  // Показываем экстренные кнопки если загрузка длится слишком долго
   useEffect(() => {
-    if (!isLoading && user && userRole) {
+    const timer = setTimeout(() => {
+      setShowEmergency(true);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Простая логика перенаправления
+  useEffect(() => {
+    if (!isLoading && user) {
       // Специальная логика для главного администратора - остается на главной
       if (user.email === "arsenalreally35@gmail.com") {
+        setShowEmergency(false);
         return;
       }
       
-      // Перенаправляем остальных пользователей на их профили
+      // Перенаправляем остальных пользователей
       let redirectPath = "/profile/student"; // по умолчанию
       
       if (userRole === "admin" || userRole === "moderator") {
@@ -32,14 +44,30 @@ const Index = () => {
       
       console.log("Redirecting authenticated user to:", redirectPath);
       navigate(redirectPath, { replace: true });
+    } else if (!isLoading && !user) {
+      // Пользователь не авторизован - остается на главной
+      setShowEmergency(false);
     }
   }, [user, userRole, isLoading, navigate]);
 
-  // Показываем загрузку пока проверяем авторизацию
-  if (isLoading) {
+  // Показываем загрузку только первые 2 секунды
+  if (isLoading && !showEmergency) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  // Если загрузка затянулась, показываем экстренные кнопки
+  if (isLoading && showEmergency) {
+    return (
+      <div className="min-h-screen flex items-center justify-center relative">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Загрузка...</p>
+        </div>
+        <EmergencyLogout />
       </div>
     );
   }
@@ -66,6 +94,8 @@ const Index = () => {
       <TestimonialsSection />
       <CtaSection />
       <Footer />
+      {/* Показываем экстренные кнопки если пользователь авторизован но не перенаправлен */}
+      {user && <EmergencyLogout />}
     </div>
   );
 };

@@ -22,16 +22,6 @@ export const Header = () => {
   const isTutorProfile = location.pathname.startsWith('/profile/tutor');
   const isMainPage = location.pathname === '/';
 
-  // Generate navigation items based on user role and path
-  const getNavigationItems = () => {
-    // Only show navigation for non-profile pages on desktop
-    if (!isMobile && !isStudentProfile && !isTutorProfile) {
-      return <GuestNavigation />;
-    }
-    
-    return null;
-  };
-
   // Get profile link based on user role
   const getProfileLink = () => {
     if (!user || !userRole) return "/";
@@ -65,7 +55,7 @@ export const Header = () => {
             </Button>
           )}
           
-          {/* Logo - ссылка на профиль для авторизованных пользователей */}
+          {/* Logo - простая логика */}
           {user ? (
             <Link to={getProfileLink()} className="text-primary text-2xl font-bold">
               Stud.rep
@@ -76,11 +66,11 @@ export const Header = () => {
             </Link>
           )}
           
-          {/* Desktop navigation and profile button for main page */}
+          {/* Desktop navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            {getNavigationItems()}
+            {!isMobile && !isStudentProfile && !isTutorProfile && <GuestNavigation />}
             
-            {/* Кнопка "В профиль" для авторизованных пользователей на главной странице */}
+            {/* Простая кнопка "В профиль" для авторизованных пользователей на главной странице */}
             {user && isMainPage && (
               <Link to={getProfileLink()}>
                 <Button variant="outline" size="sm">
