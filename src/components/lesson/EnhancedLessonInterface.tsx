@@ -25,8 +25,8 @@ import {
   Minimize2
 } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
-import { LessonVideoCall } from "./components/LessonVideoCall";
-import { LessonWhiteboard } from "./components/LessonWhiteboard";
+import { GoogleMeetIntegration } from "./components/GoogleMeetIntegration";
+import { MiroIntegration } from "./components/MiroIntegration";
 import { LessonNotes } from "./components/LessonNotes";
 import { LessonHomework } from "./components/LessonHomework";
 import { EnhancedLessonChat } from "./components/EnhancedLessonChat";
@@ -89,9 +89,9 @@ export const EnhancedLessonInterface = () => {
   const userRole = searchParams.get('role') as 'student' | 'tutor';
 
   const tools: Tool[] = [
-    { id: 'video', name: 'Видеозвонок', icon: Video, category: 'communication', description: 'Видео и аудио связь' },
+    { id: 'video', name: 'Google Meet', icon: Video, category: 'communication', description: 'Видеосвязь через Google Meet' },
     { id: 'chat', name: 'Чат и вопросы', icon: MessageSquare, category: 'communication', description: 'Общение и вопросы' },
-    { id: 'whiteboard', name: 'Онлайн доска', icon: Edit3, category: 'tools', description: 'Рисование и объяснения' },
+    { id: 'whiteboard', name: 'Miro Доска', icon: Edit3, category: 'tools', description: 'Интерактивная доска Miro' },
     { id: 'notes', name: 'Конспект', icon: FileText, category: 'content', description: 'Заметки урока' },
     { id: 'homework', name: 'Домашнее задание', icon: BookOpen, category: 'content', description: 'Задания и проверка' },
     { id: 'materials', name: 'Материалы', icon: FileText, category: 'content', description: 'Файлы и документы' },
@@ -327,9 +327,9 @@ export const EnhancedLessonInterface = () => {
   const renderToolContent = (toolId: string) => {
     switch (toolId) {
       case 'video':
-        return <LessonVideoCall lessonId={componentId} />;
+        return <GoogleMeetIntegration lessonId={componentId} />;
       case 'whiteboard':
-        return <LessonWhiteboard lessonId={componentId} />;
+        return <MiroIntegration lessonId={componentId} />;
       case 'notes':
         return <LessonNotes lessonId={componentId} />;
       case 'homework':

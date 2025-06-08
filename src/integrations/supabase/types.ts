@@ -173,6 +173,42 @@ export type Database = {
           },
         ]
       }
+      google_meet_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_id: string
+          meet_link: string
+          meeting_id: string | null
+          organizer_id: string
+          participant_id: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_id: string
+          meet_link: string
+          meeting_id?: string | null
+          organizer_id: string
+          participant_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          meet_link?: string
+          meeting_id?: string | null
+          organizer_id?: string
+          participant_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       homework: {
         Row: {
           created_at: string | null
@@ -557,6 +593,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      miro_boards: {
+        Row: {
+          board_id: string
+          board_url: string
+          created_at: string
+          creator_id: string
+          id: string
+          lesson_id: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          board_id: string
+          board_url: string
+          created_at?: string
+          creator_id: string
+          id?: string
+          lesson_id: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          board_id?: string
+          board_url?: string
+          created_at?: string
+          creator_id?: string
+          id?: string
+          lesson_id?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -958,6 +1027,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_oauth_tokens: {
+        Row: {
+          access_token: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          provider: string
+          refresh_token: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          provider: string
+          refresh_token?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          provider?: string
+          refresh_token?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
