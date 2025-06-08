@@ -87,7 +87,7 @@ export const useLessonRequests = (userId: string | undefined, userRole: 'student
     fetchRequests();
   }, [fetchRequests]);
 
-  // Realtime subscription with optimized filtering
+  // Realtime subscription
   useEffect(() => {
     if (!userId) return;
 

@@ -8,8 +8,8 @@ interface LessonAccessButtonProps {
   studentId?: string;
   tutorId?: string;
   userRole: 'student' | 'tutor';
-  relationshipExists: boolean;
-  hasConfirmedLessons: boolean;
+  relationshipExists?: boolean;
+  hasConfirmedLessons?: boolean;
   size?: "sm" | "default" | "lg";
   variant?: "default" | "outline";
 }
@@ -18,19 +18,15 @@ export const LessonAccessButton: React.FC<LessonAccessButtonProps> = ({
   studentId,
   tutorId,
   userRole,
-  relationshipExists,
-  hasConfirmedLessons,
+  relationshipExists = true, // Теперь по умолчанию доступно
+  hasConfirmedLessons = true, // Теперь по умолчанию доступно
   size = "sm",
   variant = "default"
 }) => {
   const navigate = useNavigate();
 
-  if (!relationshipExists || !hasConfirmedLessons) {
-    return null;
-  }
-
   const handleLessonAccess = () => {
-    // Переходим в интерфейс урока с параметрами
+    // Переходим в интерфейс урока с параметрами - теперь доступен заранее
     const partnerId = userRole === 'student' ? tutorId : studentId;
     navigate(`/lesson?partnerId=${partnerId}&role=${userRole}`);
   };

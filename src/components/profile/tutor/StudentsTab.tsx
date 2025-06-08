@@ -4,13 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { MessageSquare, Calendar, User, BookOpen } from "lucide-react";
+import { MessageSquare, Calendar, User, BookOpen, Video } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { Loader } from "@/components/ui/loader";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
+import { LessonAccessButton } from "@/components/lesson/LessonAccessButton";
 
 interface Student {
   id: string;
@@ -20,25 +21,6 @@ interface Student {
   city: string | null;
   relationship_start: string;
   relationship_status: string;
-}
-
-interface StudentRelationshipData {
-  student_id: string;
-  start_date: string;
-  status: string;
-  student: {
-    id: string;
-    first_name: string;
-    last_name: string | null;
-    avatar_url: string | null;
-    city: string | null;
-  }[] | {
-    id: string;
-    first_name: string;
-    last_name: string | null;
-    avatar_url: string | null;
-    city: string | null;
-  };
 }
 
 export const StudentsTab = () => {
@@ -72,13 +54,12 @@ export const StudentsTab = () => {
           )
         `)
         .eq('tutor_id', user?.id)
-        .eq('status', 'accepted')
+        .in('status', ['pending', 'accepted']) // Включаем и pending и accepted
         .order('start_date', { ascending: false });
 
       if (error) throw error;
 
       const formattedStudents = data?.map(item => {
-        // Handle both array and single object cases from Supabase
         const studentData = Array.isArray(item.student) 
           ? item.student[0] 
           : item.student;
@@ -92,7 +73,7 @@ export const StudentsTab = () => {
           relationship_start: item.start_date,
           relationship_status: item.status
         };
-      }).filter(student => student.first_name) || []; // Filter out invalid students
+      }).filter(student => student.first_name) || [];
 
       setStudents(formattedStudents);
     } catch (error) {
@@ -108,6 +89,11 @@ export const StudentsTab = () => {
 
   const handleScheduleWithStudent = (studentId: string) => {
     navigate(`/profile/tutor/schedule?studentId=${studentId}`);
+  };
+
+  const handleLessonWithStudent = (studentId: string) => {
+    // Переходим в интерфейс урока - теперь доступен заранее
+    navigate(`/lesson?partnerId=${studentId}&role=tutor`);
   };
 
   if (isLoading) {
@@ -141,7 +127,7 @@ export const StudentsTab = () => {
               Когда студенты отправят вам запросы и вы их примете, они появятся здесь
             </p>
             <Button 
-              onClick={() => navigate('/profile/tutor/requests')}
+              onClick={() => navigate('/profile/tutor/lesson-requests')}
               variant="outline"
             >
               <BookOpen className="h-4 w-4 mr-2" />
@@ -163,9 +149,14 @@ export const StudentsTab = () => {
                   </Avatar>
                   
                   <div className="flex-1">
-                    <h3 className="font-medium">
-                      {student.first_name} {student.last_name}
-                    </h3>
+                    <div className="flex items-center space-x-2 mb-1">
+                      <h3 className="font-medium">
+                        {student.first_name} {student.last_name}
+                      </h3>
+                      <Badge variant={student.relationship_status === 'accepted' ? 'default' : 'secondary'}>
+                        {student.relationship_status === 'accepted' ? 'Принят' : 'Ожидает'}
+                      </Badge>
+                    </div>
                     {student.city && (
                       <p className="text-sm text-muted-foreground">{student.city}</p>
                     )}
@@ -177,24 +168,37 @@ export const StudentsTab = () => {
               </CardHeader>
               
               <CardContent className="pt-0">
-                <div className="flex space-x-2">
+                <div className="flex flex-col space-y-2">
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleChatWithStudent(student.id)}
+                      className="flex-1"
+                    >
+                      <MessageSquare className="h-4 w-4 mr-2" />
+                      Чат
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleScheduleWithStudent(student.id)}
+                      className="flex-1"
+                    >
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Расписание
+                    </Button>
+                  </div>
+                  
+                  {/* Кнопка урока - доступна для всех связей */}
                   <Button
-                    variant="outline"
+                    variant="default"
                     size="sm"
-                    onClick={() => handleChatWithStudent(student.id)}
-                    className="flex-1"
+                    onClick={() => handleLessonWithStudent(student.id)}
+                    className="w-full"
                   >
-                    <MessageSquare className="h-4 w-4 mr-2" />
-                    Чат
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleScheduleWithStudent(student.id)}
-                    className="flex-1"
-                  >
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Расписание
+                    <Video className="h-4 w-4 mr-2" />
+                    Урок
                   </Button>
                 </div>
               </CardContent>
