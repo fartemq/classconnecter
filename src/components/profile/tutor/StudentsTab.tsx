@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,7 +91,7 @@ export const StudentsTab = () => {
   };
 
   const handleLessonWithStudent = (studentId: string) => {
-    // Переходим в интерфейс урока - теперь доступен заранее
+    // Navigate to lesson interface with partner parameters
     navigate(`/lesson?partnerId=${studentId}&role=tutor`);
   };
 
@@ -190,7 +189,7 @@ export const StudentsTab = () => {
                     </Button>
                   </div>
                   
-                  {/* Кнопка урока - доступна для всех связей */}
+                  {/* Кнопка урока - теперь работает с правильным маршрутом */}
                   <Button
                     variant="default"
                     size="sm"

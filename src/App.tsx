@@ -80,7 +80,10 @@ const App = () => (
               <Route index element={<AdminDashboardPage />} />
             </Route>
             
-            {/* Lesson interface route */}
+            {/* Lesson interface routes - both with and without lessonId */}
+            <Route path="/lesson" element={<ProtectedRoute />}>
+              <Route index element={<LessonPage />} />
+            </Route>
             <Route path="/lesson/:lessonId" element={<ProtectedRoute />}>
               <Route index element={<LessonPage />} />
             </Route>

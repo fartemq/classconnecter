@@ -18,15 +18,15 @@ export const LessonAccessButton: React.FC<LessonAccessButtonProps> = ({
   studentId,
   tutorId,
   userRole,
-  relationshipExists = true, // Теперь по умолчанию доступно
-  hasConfirmedLessons = true, // Теперь по умолчанию доступно
+  relationshipExists = true,
+  hasConfirmedLessons = true,
   size = "sm",
   variant = "default"
 }) => {
   const navigate = useNavigate();
 
   const handleLessonAccess = () => {
-    // Переходим в интерфейс урока с параметрами - теперь доступен заранее
+    // Navigate to lesson interface with correct partner parameters
     const partnerId = userRole === 'student' ? tutorId : studentId;
     navigate(`/lesson?partnerId=${partnerId}&role=${userRole}`);
   };

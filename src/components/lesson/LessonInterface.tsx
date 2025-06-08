@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,13 +50,23 @@ interface LessonData {
   subject?: { name: string };
 }
 
+interface PartnerData {
+  id: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+}
+
 export const LessonInterface = () => {
   const { lessonId } = useParams<{ lessonId: string }>();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   
   const [lesson, setLesson] = useState<LessonData | null>(null);
+  const [partner, setPartner] = useState<PartnerData | null>(null);
+  const [sessionId, setSessionId] = useState<string>('');
   const [activeTools, setActiveTools] = useState<string[]>(['chat']);
   const [layout, setLayout] = useState<'grid' | 'split' | 'focus'>('grid');
   const [focusedTool, setFocusedTool] = useState<string | null>(null);
@@ -65,11 +75,93 @@ export const LessonInterface = () => {
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
 
+  // Get partner info from URL params
+  const partnerId = searchParams.get('partnerId');
+  const userRole = searchParams.get('role') as 'student' | 'tutor';
+
   useEffect(() => {
-    if (lessonId && user) {
+    if (lessonId) {
+      // Existing lesson mode
       fetchLessonData();
+    } else if (partnerId && userRole && user) {
+      // New session mode
+      initializeSession();
+    } else {
+      // No valid parameters
+      toast({
+        title: "Ошибка",
+        description: "Недостаточно данных для запуска урока",
+        variant: "destructive"
+      });
+      navigate('/');
     }
-  }, [lessonId, user]);
+  }, [lessonId, partnerId, userRole, user]);
+
+  const initializeSession = async () => {
+    try {
+      setLoading(true);
+      
+      // Generate session ID for temporary lesson
+      const tempSessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      setSessionId(tempSessionId);
+
+      // Fetch partner data
+      const { data: partnerData, error: partnerError } = await supabase
+        .from('profiles')
+        .select('id, first_name, last_name, role')
+        .eq('id', partnerId)
+        .single();
+
+      if (partnerError) throw partnerError;
+
+      // Verify relationship exists
+      const studentId = userRole === 'student' ? user?.id : partnerId;
+      const tutorId = userRole === 'tutor' ? user?.id : partnerId;
+
+      const { data: relationData, error: relationError } = await supabase
+        .from('student_tutor_relationships')
+        .select('status')
+        .eq('student_id', studentId)
+        .eq('tutor_id', tutorId)
+        .maybeSingle();
+
+      if (relationError) {
+        console.error('Error checking relationship:', relationError);
+      }
+
+      // Create relationship if it doesn't exist
+      if (!relationData) {
+        const { error: createRelationError } = await supabase
+          .from('student_tutor_relationships')
+          .upsert({
+            student_id: studentId,
+            tutor_id: tutorId,
+            status: 'pending',
+            start_date: new Date().toISOString()
+          }, {
+            onConflict: 'student_id,tutor_id'
+          });
+
+        if (createRelationError) {
+          console.error('Error creating relationship:', createRelationError);
+        }
+      }
+
+      setPartner(partnerData);
+      setHasAccess(true);
+
+    } catch (error) {
+      console.error('Error initializing session:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось инициализировать сессию урока",
+        variant: "destructive"
+      });
+      navigate('/');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchLessonData = async () => {
     try {
@@ -99,37 +191,6 @@ export const LessonInterface = () => {
           });
           navigate('/');
           return;
-        }
-      }
-
-      // Проверяем существование связи между студентом и репетитором
-      const { data: relationData, error: relationError } = await supabase
-        .from('student_tutor_relationships')
-        .select('status')
-        .eq('student_id', data.student_id)
-        .eq('tutor_id', data.tutor_id)
-        .eq('status', 'accepted')
-        .maybeSingle();
-
-      if (relationError) {
-        console.error('Error checking relationship:', relationError);
-      }
-
-      // Если связи нет, но это confirmed/completed урок, создаем связь
-      if (!relationData && ['confirmed', 'completed', 'upcoming'].includes(data.status)) {
-        const { error: createRelationError } = await supabase
-          .from('student_tutor_relationships')
-          .upsert({
-            student_id: data.student_id,
-            tutor_id: data.tutor_id,
-            status: 'accepted',
-            start_date: new Date().toISOString()
-          }, {
-            onConflict: 'student_id,tutor_id'
-          });
-
-        if (createRelationError) {
-          console.error('Error creating relationship:', createRelationError);
         }
       }
 
@@ -188,15 +249,17 @@ export const LessonInterface = () => {
 
   const saveLesson = async () => {
     try {
-      const { error } = await supabase
-        .from('lessons')
-        .update({ 
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', lessonId);
+      if (lessonId) {
+        const { error } = await supabase
+          .from('lessons')
+          .update({ 
+            status: 'completed',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', lessonId);
 
-      if (error) throw error;
+        if (error) throw error;
+      }
       
       toast({
         title: "Урок сохранен",
@@ -220,7 +283,7 @@ export const LessonInterface = () => {
     );
   }
 
-  if (!lesson || !hasAccess) {
+  if (!hasAccess) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -233,14 +296,37 @@ export const LessonInterface = () => {
 
   const tools = [
     { id: 'video', name: 'Видеозвонок', icon: Video, color: 'bg-blue-500' },
-    { id: 'whiteboard', name: 'Доска', icon: Edit3, color: 'bg-green-500' },
-    { id: 'notes', name: 'Конспект', icon: FileText, color: 'bg-purple-500' },
+    { id: 'whiteboard', name: 'Онлайн доска', icon: Edit3, color: 'bg-green-500' },
+    { id: 'notes', name: 'Конспект занятия', icon: FileText, color: 'bg-purple-500' },
     { id: 'homework', name: 'Домашнее задание', icon: BookOpen, color: 'bg-orange-500' },
-    { id: 'chat', name: 'Чат и вопросы', icon: MessageSquare, color: 'bg-indigo-500' },
+    { id: 'chat', name: 'Вопросы', icon: MessageSquare, color: 'bg-indigo-500' },
     { id: 'timer', name: 'Таймер', icon: Clock, color: 'bg-red-500' },
     { id: 'calculator', name: 'Калькулятор', icon: Calculator, color: 'bg-yellow-500' },
     { id: 'materials', name: 'Материалы', icon: FileText, color: 'bg-gray-500' }
   ];
+
+  // Display names based on lesson or partner data
+  const getTutorName = () => {
+    if (lesson?.tutor) return `${lesson.tutor.first_name} ${lesson.tutor.last_name}`;
+    if (partner && userRole === 'student') return `${partner.first_name} ${partner.last_name}`;
+    if (userRole === 'tutor') return `${user?.user_metadata?.first_name || ''} ${user?.user_metadata?.last_name || ''}`;
+    return 'Репетитор';
+  };
+
+  const getStudentName = () => {
+    if (lesson?.student) return `${lesson.student.first_name} ${lesson.student.last_name}`;
+    if (partner && userRole === 'tutor') return `${partner.first_name} ${partner.last_name}`;
+    if (userRole === 'student') return `${user?.user_metadata?.first_name || ''} ${user?.user_metadata?.last_name || ''}`;
+    return 'Ученик';
+  };
+
+  const getSubjectName = () => {
+    if (lesson?.subject) return lesson.subject.name;
+    return 'Урок';
+  };
+
+  // Use lessonId or sessionId for components
+  const componentId = lessonId || sessionId;
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -249,13 +335,13 @@ export const LessonInterface = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <h1 className="text-xl font-semibold">
-              {lesson.subject?.name} - Урок
+              {getSubjectName()} - Урок
             </h1>
             <Badge variant="outline">
-              {lesson.tutor?.first_name} {lesson.tutor?.last_name}
+              {getTutorName()}
             </Badge>
             <Badge variant="outline">
-              {lesson.student?.first_name} {lesson.student?.last_name}
+              {getStudentName()}
             </Badge>
           </div>
           
@@ -345,14 +431,14 @@ export const LessonInterface = () => {
             </div>
             <Card className="h-full">
               <CardContent className="p-4 h-full">
-                {focusedTool === 'video' && <LessonVideoCall lessonId={lessonId!} />}
-                {focusedTool === 'whiteboard' && <LessonWhiteboard lessonId={lessonId!} />}
-                {focusedTool === 'notes' && <LessonNotes lessonId={lessonId!} />}
-                {focusedTool === 'homework' && <LessonHomework lessonId={lessonId!} />}
-                {focusedTool === 'chat' && <LessonChat lessonId={lessonId!} />}
+                {focusedTool === 'video' && <LessonVideoCall lessonId={componentId} />}
+                {focusedTool === 'whiteboard' && <LessonWhiteboard lessonId={componentId} />}
+                {focusedTool === 'notes' && <LessonNotes lessonId={componentId} />}
+                {focusedTool === 'homework' && <LessonHomework lessonId={componentId} />}
+                {focusedTool === 'chat' && <LessonChat lessonId={componentId} />}
                 {focusedTool === 'timer' && <LessonTimer />}
                 {focusedTool === 'calculator' && <LessonCalculator />}
-                {focusedTool === 'materials' && <LessonMaterials lessonId={lessonId!} />}
+                {focusedTool === 'materials' && <LessonMaterials lessonId={componentId} />}
               </CardContent>
             </Card>
           </div>
@@ -383,14 +469,14 @@ export const LessonInterface = () => {
                     </Button>
                   </div>
                   <CardContent className="flex-1 p-4">
-                    {toolId === 'video' && <LessonVideoCall lessonId={lessonId!} />}
-                    {toolId === 'whiteboard' && <LessonWhiteboard lessonId={lessonId!} />}
-                    {toolId === 'notes' && <LessonNotes lessonId={lessonId!} />}
-                    {toolId === 'homework' && <LessonHomework lessonId={lessonId!} />}
-                    {toolId === 'chat' && <LessonChat lessonId={lessonId!} />}
+                    {toolId === 'video' && <LessonVideoCall lessonId={componentId} />}
+                    {toolId === 'whiteboard' && <LessonWhiteboard lessonId={componentId} />}
+                    {toolId === 'notes' && <LessonNotes lessonId={componentId} />}
+                    {toolId === 'homework' && <LessonHomework lessonId={componentId} />}
+                    {toolId === 'chat' && <LessonChat lessonId={componentId} />}
                     {toolId === 'timer' && <LessonTimer />}
                     {toolId === 'calculator' && <LessonCalculator />}
-                    {toolId === 'materials' && <LessonMaterials lessonId={lessonId!} />}
+                    {toolId === 'materials' && <LessonMaterials lessonId={componentId} />}
                   </CardContent>
                 </Card>
               );
