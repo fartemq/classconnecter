@@ -5,25 +5,35 @@ import { LogOut, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 export const EmergencyLogout = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user, userRole } = useAuth();
 
   const handleEmergencyLogout = async () => {
     try {
       setIsLoading(true);
+      
+      // Принудительный выход - очищаем все
       await supabase.auth.signOut();
+      localStorage.clear();
+      sessionStorage.clear();
+      
       toast({
         title: "Выход выполнен",
         description: "Вы вышли из системы",
       });
-      window.location.href = "/"; // Принудительная перезагрузка
+      
+      // Принудительная перезагрузка страницы
+      window.location.href = "/";
     } catch (error) {
       console.error("Emergency logout error:", error);
-      // Даже при ошибке пытаемся очистить localStorage и перезагрузить
+      // Даже при ошибке принудительно очищаем и перезагружаем
       localStorage.clear();
+      sessionStorage.clear();
       window.location.href = "/";
     } finally {
       setIsLoading(false);
@@ -31,8 +41,29 @@ export const EmergencyLogout = () => {
   };
 
   const handleGoToProfile = () => {
-    // Простая попытка перехода в профиль
-    navigate("/profile/student");
+    try {
+      // Определяем правильный путь на основе роли
+      let profilePath = "/profile/student"; // по умолчанию
+      
+      if (userRole === "admin" || userRole === "moderator") {
+        profilePath = "/admin";
+      } else if (userRole === "tutor") {
+        profilePath = "/profile/tutor";
+      }
+      
+      console.log("Redirecting to profile:", profilePath, "User role:", userRole);
+      navigate(profilePath, { replace: true });
+    } catch (error) {
+      console.error("Profile navigation error:", error);
+      // Fallback - попробуем через window.location
+      if (userRole === "tutor") {
+        window.location.href = "/profile/tutor";
+      } else if (userRole === "admin" || userRole === "moderator") {
+        window.location.href = "/admin";
+      } else {
+        window.location.href = "/profile/student";
+      }
+    }
   };
 
   return (
@@ -43,6 +74,7 @@ export const EmergencyLogout = () => {
           size="sm" 
           variant="outline"
           onClick={handleGoToProfile}
+          disabled={isLoading}
         >
           <User className="h-4 w-4 mr-1" />
           В профиль

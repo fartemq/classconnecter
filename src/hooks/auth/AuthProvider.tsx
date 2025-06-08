@@ -34,60 +34,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Простая функция выхода
+  // Единственный простой метод выхода
   const logout = async (): Promise<boolean> => {
     try {
-      const { error } = await supabase.auth.signOut();
-      return !error;
+      await supabase.auth.signOut();
+      localStorage.clear();
+      sessionStorage.clear();
+      return true;
     } catch (error) {
-      return false;
+      console.error("Logout error:", error);
+      // Даже при ошибке очищаем локально
+      localStorage.clear();
+      sessionStorage.clear();
+      return true; // Считаем успешным
     }
   };
 
   const signOut = async (): Promise<void> => {
-    try {
-      await supabase.auth.signOut();
-    } catch (error) {
-      console.error("Sign out error:", error);
-    }
+    await logout();
   };
 
-  // Простая функция для получения роли
-  const getUserRole = async (userId: string): Promise<string> => {
-    try {
-      // Специальный случай для админа
-      if (userId === "861128e6-be26-48ee-b576-e7accded9f70") {
-        return "admin";
-      }
+  // Простое получение роли без сложной логики
+  const getUserRole = (userId: string): string => {
+    // Хардкод для админа
+    if (userId === "861128e6-be26-48ee-b576-e7accded9f70") {
+      return "admin";
+    }
+    
+    // Проверяем localStorage как fallback
+    const cachedRole = localStorage.getItem(`user_role_${userId}`);
+    if (cachedRole) {
+      return cachedRole;
+    }
+    
+    return "student"; // по умолчанию
+  };
 
+  // Простая функция для установки роли с кешем
+  const fetchAndSetRole = async (userId: string) => {
+    try {
       const { data } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", userId)
         .single();
 
-      return data?.role || "student";
+      const role = data?.role || "student";
+      localStorage.setItem(`user_role_${userId}`, role);
+      setUserRole(role);
+      return role;
     } catch (error) {
-      console.error("Error getting user role:", error);
-      return "student";
+      console.error("Error fetching role:", error);
+      const fallbackRole = getUserRole(userId);
+      setUserRole(fallbackRole);
+      return fallbackRole;
     }
   };
 
   useEffect(() => {
     let mounted = true;
-    let loadingTimeout: NodeJS.Timeout;
+    let initTimeout: NodeJS.Timeout;
 
-    // Установим максимальный таймаут для загрузки
-    loadingTimeout = setTimeout(() => {
-      console.log("Loading timeout reached, setting isLoading to false");
+    // Максимальный таймаут инициализации - 2 секунды
+    initTimeout = setTimeout(() => {
       if (mounted) {
+        console.log("Auth initialization timeout");
         setIsLoading(false);
       }
-    }, 3000); // Максимум 3 секунды загрузки
+    }, 2000);
 
-    // Получение текущей сессии
-    const getInitialSession = async () => {
+    const initializeAuth = async () => {
       try {
+        // Получаем текущую сессию
         const { data: { session } } = await supabase.auth.getSession();
         
         if (mounted) {
@@ -95,30 +113,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session?.user ?? null);
           
           if (session?.user) {
-            // Простое получение роли без сложной логики
-            const role = await getUserRole(session.user.id);
-            if (mounted) {
-              setUserRole(role);
-            }
+            // Сразу устанавливаем роль из кеша или по умолчанию
+            const quickRole = getUserRole(session.user.id);
+            setUserRole(quickRole);
+            
+            // Асинхронно обновляем роль из БД
+            setTimeout(() => {
+              if (mounted) {
+                fetchAndSetRole(session.user.id);
+              }
+            }, 100);
           } else {
             setUserRole(null);
           }
           
-          clearTimeout(loadingTimeout);
+          clearTimeout(initTimeout);
           setIsLoading(false);
         }
       } catch (error) {
-        console.error("Error getting initial session:", error);
+        console.error("Auth initialization error:", error);
         if (mounted) {
-          clearTimeout(loadingTimeout);
+          clearTimeout(initTimeout);
           setIsLoading(false);
         }
       }
     };
 
-    // Простой слушатель изменений auth состояния
+    // Простой слушатель изменений состояния
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         if (!mounted) return;
 
         console.log("Auth state changed:", event);
@@ -126,24 +149,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(session);
         setUser(session?.user ?? null);
 
-        if (session?.user && event === "SIGNED_IN") {
-          // Простое получение роли при входе
-          const role = await getUserRole(session.user.id);
-          if (mounted) {
-            setUserRole(role);
-          }
-        } else if (!session) {
+        if (session?.user) {
+          const quickRole = getUserRole(session.user.id);
+          setUserRole(quickRole);
+          
+          // Асинхронно обновляем роль
+          setTimeout(() => {
+            if (mounted) {
+              fetchAndSetRole(session.user.id);
+            }
+          }, 100);
+        } else {
           setUserRole(null);
+          // Очищаем кеш ролей при выходе
+          Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('user_role_')) {
+              localStorage.removeItem(key);
+            }
+          });
         }
+        
+        setIsLoading(false);
       }
     );
 
     // Инициализируем
-    getInitialSession();
+    initializeAuth();
 
     return () => {
       mounted = false;
-      clearTimeout(loadingTimeout);
+      clearTimeout(initTimeout);
       subscription.unsubscribe();
     };
   }, []);

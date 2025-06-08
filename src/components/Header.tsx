@@ -17,12 +17,12 @@ export const Header = () => {
   const isMobile = useIsMobile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  // Check if we're on a profile page
+  // Проверяем страницы профиля
   const isStudentProfile = location.pathname.startsWith('/profile/student');
   const isTutorProfile = location.pathname.startsWith('/profile/tutor');
   const isMainPage = location.pathname === '/';
 
-  // Get profile link based on user role
+  // Простое определение ссылки профиля
   const getProfileLink = () => {
     if (!user || !userRole) return "/";
     
@@ -43,7 +43,7 @@ export const Header = () => {
     <>
       <header className="w-full bg-white py-3 border-b border-gray-200 sticky top-0 z-40">
         <div className="container mx-auto flex items-center justify-between px-4">
-          {/* Mobile menu button for authenticated users */}
+          {/* Mobile menu button для авторизованных пользователей */}
           {isMobile && user && (isStudentProfile || isTutorProfile) && (
             <Button 
               variant="ghost" 
@@ -55,7 +55,7 @@ export const Header = () => {
             </Button>
           )}
           
-          {/* Logo - простая логика */}
+          {/* Logo */}
           {user ? (
             <Link to={getProfileLink()} className="text-primary text-2xl font-bold">
               Stud.rep
@@ -70,7 +70,7 @@ export const Header = () => {
           <nav className="hidden md:flex items-center space-x-6">
             {!isMobile && !isStudentProfile && !isTutorProfile && <GuestNavigation />}
             
-            {/* Простая кнопка "В профиль" для авторизованных пользователей на главной странице */}
+            {/* Кнопка "В профиль" для авторизованных на главной */}
             {user && isMainPage && (
               <Link to={getProfileLink()}>
                 <Button variant="outline" size="sm">
