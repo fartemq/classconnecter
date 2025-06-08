@@ -12,7 +12,7 @@ import { toast } from "@/hooks/use-toast";
 const LoginPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, userRole, isLoading: authLoading, login } = useAuth();
+  const { user, userRole, isLoading, login } = useAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [needConfirmation, setNeedConfirmation] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -26,24 +26,19 @@ const LoginPage = () => {
 
   // Перенаправляем авторизованных пользователей
   useEffect(() => {
-    if (user && userRole && !authLoading) {
-      const redirectPath = (() => {
-        switch (userRole) {
-          case "admin":
-          case "moderator":
-            return "/admin";
-          case "tutor":
-            return "/profile/tutor";
-          case "student":
-            return "/profile/student";
-          default:
-            return "/profile/student";
-        }
-      })();
+    if (user && userRole && !isLoading) {
+      let redirectPath = "/profile/student"; // по умолчанию
+      
+      if (userRole === "admin" || userRole === "moderator") {
+        redirectPath = "/admin";
+      } else if (userRole === "tutor") {
+        redirectPath = "/profile/tutor";
+      }
 
+      console.log("Redirecting to:", redirectPath);
       navigate(redirectPath, { replace: true });
     }
-  }, [user, userRole, navigate, authLoading]);
+  }, [user, userRole, navigate, isLoading]);
 
   // Обработка отправки формы входа
   const handleLoginSuccess = async (values: LoginFormValues) => {
@@ -53,20 +48,14 @@ const LoginPage = () => {
     setErrorMessage(null);
     
     try {
-      // Таймаут для операции входа
-      const result = await Promise.race([
-        login(values.email, values.password),
-        new Promise<never>((_, reject) => {
-          setTimeout(() => reject(new Error("Login timeout")), 10000);
-        })
-      ]);
+      const result = await login(values.email, values.password);
       
       if (result?.success) {
         toast({
           title: "Успешный вход",
           description: "Добро пожаловать в Stud.rep!",
         });
-        // isLoggingIn будет сброшен при успешном redirect
+        // Перенаправление произойдет автоматически через useEffect
       } else if (result?.error) {
         setErrorMessage(result.error);
         toast({
@@ -77,10 +66,7 @@ const LoginPage = () => {
         setIsLoggingIn(false);
       }
     } catch (error) {
-      const errorMsg = error instanceof Error && error.message === "Login timeout" 
-        ? "Превышено время ожидания входа" 
-        : "Произошла ошибка при входе";
-      
+      const errorMsg = "Произошла ошибка при входе";
       setErrorMessage(errorMsg);
       toast({
         title: "Ошибка входа",
@@ -91,10 +77,10 @@ const LoginPage = () => {
     }
   };
 
-  // Показываем загрузку
-  if (authLoading || isLoggingIn || (user && userRole)) {
+  // Показываем загрузку только если действительно идет процесс
+  if (isLoading || (isLoggingIn && !errorMessage) || (user && userRole)) {
     let message = "Загрузка...";
-    if (authLoading) message = "Проверка сессии...";
+    if (isLoading) message = "Проверка сессии...";
     else if (isLoggingIn) message = "Вход в систему...";
     else if (user && userRole) message = "Переход в профиль...";
 
