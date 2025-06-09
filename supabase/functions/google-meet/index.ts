@@ -32,113 +32,85 @@ serve(async (req) => {
     const { action, lessonId, title, startTime, endTime } = await req.json()
 
     if (action === 'create') {
+      // Получаем OAuth токен пользователя
       const { data: tokens } = await supabase
         .from('user_oauth_tokens')
         .select('*')
         .eq('user_id', user.id)
         .eq('provider', 'google')
-        .single()
+        .maybeSingle()
 
-      if (!tokens) {
+      if (!tokens || new Date(tokens.expires_at) <= new Date()) {
         return new Response(
-          JSON.stringify({ error: 'Google account not connected' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Google authorization required' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
-      let accessToken = tokens.access_token
-
-      if (new Date(tokens.expires_at) <= new Date()) {
-        const refreshResponse = await fetch('https://oauth2.googleapis.com/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+      // Создаем Google Meet через Calendar API
+      const calendarResponse = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokens.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          summary: title || `Урок ${lessonId}`,
+          start: {
+            dateTime: startTime || new Date().toISOString(),
+            timeZone: 'Europe/Moscow',
           },
-          body: new URLSearchParams({
-            client_id: Deno.env.get('GOOGLE_CLIENT_ID')!,
-            client_secret: Deno.env.get('GOOGLE_CLIENT_SECRET')!,
-            refresh_token: tokens.refresh_token!,
-            grant_type: 'refresh_token',
-          }),
-        })
-
-        const refreshData = await refreshResponse.json()
-        accessToken = refreshData.access_token
-
-        await supabase
-          .from('user_oauth_tokens')
-          .update({
-            access_token: accessToken,
-            expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
-          })
-          .eq('id', tokens.id)
-      }
-
-      const calendarEvent = {
-        summary: title,
-        start: {
-          dateTime: startTime,
-          timeZone: 'UTC',
-        },
-        end: {
-          dateTime: endTime,
-          timeZone: 'UTC',
-        },
-        conferenceData: {
-          createRequest: {
-            requestId: `lesson-${lessonId}-${Date.now()}`,
-            conferenceSolutionKey: {
-              type: 'hangoutsMeet'
+          end: {
+            dateTime: endTime || new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+            timeZone: 'Europe/Moscow',
+          },
+          conferenceData: {
+            createRequest: {
+              requestId: `meet-${lessonId}-${Date.now()}`,
+              conferenceSolutionKey: {
+                type: 'hangoutsMeet'
+              }
             }
           }
-        }
-      }
+        }),
+      })
 
-      const calendarResponse = await fetch(
-        'https://www.googleapis.com/calendar/v3/calendars/primary/events?conferenceDataVersion=1',
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(calendarEvent),
-        }
-      )
+      const event = await calendarResponse.json()
 
-      const eventData = await calendarResponse.json()
-
-      if (eventData.error) {
+      if (!calendarResponse.ok) {
+        console.error('Calendar API error:', event)
         return new Response(
-          JSON.stringify({ error: eventData.error }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Failed to create Google Meet' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
-      const meetLink = eventData.conferenceData?.entryPoints?.find(
-        (ep: any) => ep.entryPointType === 'video'
-      )?.uri
+      const meetLink = event.conferenceData?.entryPoints?.[0]?.uri || event.hangoutLink
+      const meetingId = event.conferenceData?.conferenceId || event.id
 
+      // Сохраняем сессию в базе данных
       const { data: session, error } = await supabase
         .from('google_meet_sessions')
         .insert({
           lesson_id: lessonId,
           meet_link: meetLink,
-          meeting_id: eventData.id,
+          meeting_id: meetingId,
           organizer_id: user.id,
+          status: 'active'
         })
         .select()
         .single()
 
       if (error) {
+        console.error('Database error:', error)
         return new Response(
-          JSON.stringify({ error: error.message }),
+          JSON.stringify({ error: 'Failed to save session' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
       return new Response(
-        JSON.stringify({ session, event: eventData }),
+        JSON.stringify({ session }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }

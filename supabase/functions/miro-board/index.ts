@@ -32,82 +32,52 @@ serve(async (req) => {
     const { action, lessonId, name, description, boardId } = await req.json()
 
     if (action === 'create') {
+      // Получаем OAuth токен пользователя
       const { data: tokens } = await supabase
         .from('user_oauth_tokens')
         .select('*')
         .eq('user_id', user.id)
         .eq('provider', 'miro')
-        .single()
+        .maybeSingle()
 
-      if (!tokens) {
+      if (!tokens || new Date(tokens.expires_at) <= new Date()) {
         return new Response(
-          JSON.stringify({ error: 'Miro account not connected' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Miro authorization required' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
-      let accessToken = tokens.access_token
-
-      if (new Date(tokens.expires_at) <= new Date()) {
-        const refreshResponse = await fetch('https://api.miro.com/v1/oauth/token', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-          body: new URLSearchParams({
-            client_id: Deno.env.get('MIRO_CLIENT_ID')!,
-            client_secret: Deno.env.get('MIRO_CLIENT_SECRET')!,
-            refresh_token: tokens.refresh_token!,
-            grant_type: 'refresh_token',
-          }),
-        })
-
-        const refreshData = await refreshResponse.json()
-        accessToken = refreshData.access_token
-
-        await supabase
-          .from('user_oauth_tokens')
-          .update({
-            access_token: accessToken,
-            expires_at: new Date(Date.now() + refreshData.expires_in * 1000).toISOString(),
-          })
-          .eq('id', tokens.id)
-      }
-
-      const boardData = {
-        name: name,
-        description: description,
-        policy: {
-          permissionsPolicy: {
-            collaborationToolsStartAccess: 'all_editors',
-            copyAccess: 'anyone',
-            sharingAccess: 'team_members_with_editing_rights'
-          },
-          sharingPolicy: {
-            access: 'private',
-            inviteToAccountAndBoardLinkAccess: 'no_access'
-          }
-        }
-      }
-
-      const boardResponse = await fetch('https://api.miro.com/v2/boards', {
+      // Создаем Miro Board
+      const miroResponse = await fetch('https://api.miro.com/v2/boards', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${tokens.access_token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(boardData),
+        body: JSON.stringify({
+          name: name || `Урок ${lessonId}`,
+          description: description || 'Интерактивная доска для урока',
+          policy: {
+            permissionsPolicy: {
+              collaborationToolsStartAccess: 'all_editors',
+              copyAccess: 'anyone',
+              sharingAccess: 'team_members_with_editing_rights'
+            }
+          }
+        }),
       })
 
-      const board = await boardResponse.json()
+      const board = await miroResponse.json()
 
-      if (board.error) {
+      if (!miroResponse.ok) {
+        console.error('Miro API error:', board)
         return new Response(
-          JSON.stringify({ error: board.error }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Failed to create Miro board' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
+      // Сохраняем доску в базе данных
       const { data: savedBoard, error } = await supabase
         .from('miro_boards')
         .insert({
@@ -115,38 +85,42 @@ serve(async (req) => {
           board_id: board.id,
           board_url: board.viewLink,
           creator_id: user.id,
+          status: 'active'
         })
         .select()
         .single()
 
       if (error) {
+        console.error('Database error:', error)
         return new Response(
-          JSON.stringify({ error: error.message }),
+          JSON.stringify({ error: 'Failed to save board' }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
       return new Response(
-        JSON.stringify({ board: savedBoard, miro_board: board }),
+        JSON.stringify({ board: savedBoard }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     if (action === 'duplicate') {
+      // Получаем OAuth токен пользователя
       const { data: tokens } = await supabase
         .from('user_oauth_tokens')
         .select('*')
         .eq('user_id', user.id)
         .eq('provider', 'miro')
-        .single()
+        .maybeSingle()
 
-      if (!tokens) {
+      if (!tokens || new Date(tokens.expires_at) <= new Date()) {
         return new Response(
-          JSON.stringify({ error: 'Miro account not connected' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Miro authorization required' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
+      // Дублируем доску
       const duplicateResponse = await fetch(`https://api.miro.com/v2/boards/${boardId}/copy`, {
         method: 'POST',
         headers: {
@@ -154,22 +128,22 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: `${name} - Копия`,
-          description: `Копия доски для урока ${lessonId}`
+          name: `Копия урока ${lessonId}`,
         }),
       })
 
       const duplicatedBoard = await duplicateResponse.json()
 
-      if (duplicatedBoard.error) {
+      if (!duplicateResponse.ok) {
+        console.error('Miro duplicate error:', duplicatedBoard)
         return new Response(
-          JSON.stringify({ error: duplicatedBoard.error }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          JSON.stringify({ error: 'Failed to duplicate board' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
       return new Response(
-        JSON.stringify({ board: duplicatedBoard }),
+        JSON.stringify({ success: true, board: duplicatedBoard }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
