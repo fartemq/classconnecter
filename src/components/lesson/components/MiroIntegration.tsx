@@ -1,11 +1,15 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Edit3, ExternalLink, Users, Palette, Loader2, RefreshCw } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Edit3, ExternalLink, Users, Palette, Loader2, RefreshCw, Plus, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface MiroIntegrationProps {
   lessonId: string;
@@ -27,6 +31,9 @@ export const MiroIntegration = ({ lessonId }: MiroIntegrationProps) => {
   const [isCreating, setIsCreating] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualBoardLink, setManualBoardLink] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     checkMiroAuth();
@@ -69,6 +76,7 @@ export const MiroIntegration = ({ lessonId }: MiroIntegrationProps) => {
 
   const authorizeMiro = async () => {
     try {
+      setAuthError(null);
       const { data, error } = await supabase.functions.invoke('miro-oauth', {
         body: { action: 'authorize' }
       });
@@ -80,14 +88,18 @@ export const MiroIntegration = ({ lessonId }: MiroIntegrationProps) => {
         
         const handleMessage = (event: MessageEvent) => {
           if (event.data.type === 'miro_auth_success') {
-            // Обрабатываем успешную авторизацию
             handleAuthCallback(event.data.code, event.data.state);
             window.removeEventListener('message', handleMessage);
             if (popup) popup.close();
           } else if (event.data.type === 'miro_auth_error') {
+            const errorMessage = event.data.error.includes('redirect_uri') 
+              ? "Ошибка настройки приложения. Попробуйте добавить доску вручную."
+              : `Ошибка авторизации: ${event.data.error}`;
+            
+            setAuthError(errorMessage);
             toast({
-              title: "Ошибка авторизации",
-              description: `Не удалось подключить Miro аккаунт: ${event.data.error}`,
+              title: "Ошибка авторизации Miro",
+              description: errorMessage,
               variant: "destructive"
             });
             window.removeEventListener('message', handleMessage);
@@ -97,7 +109,6 @@ export const MiroIntegration = ({ lessonId }: MiroIntegrationProps) => {
         
         window.addEventListener('message', handleMessage);
         
-        // Проверяем, если popup закрыли вручную
         const checkClosed = setInterval(() => {
           if (popup?.closed) {
             clearInterval(checkClosed);
@@ -107,9 +118,11 @@ export const MiroIntegration = ({ lessonId }: MiroIntegrationProps) => {
       }
     } catch (error) {
       console.error('Error authorizing Miro:', error);
+      const errorMessage = "Не удалось подключить Miro аккаунт. Попробуйте добавить доску вручную.";
+      setAuthError(errorMessage);
       toast({
         title: "Ошибка авторизации",
-        description: "Не удалось подключить Miro аккаунт",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -125,6 +138,7 @@ export const MiroIntegration = ({ lessonId }: MiroIntegrationProps) => {
 
       if (data?.success) {
         setIsAuthorized(true);
+        setAuthError(null);
         toast({
           title: "Авторизация успешна",
           description: "Miro аккаунт подключен"
@@ -132,6 +146,7 @@ export const MiroIntegration = ({ lessonId }: MiroIntegrationProps) => {
       }
     } catch (error) {
       console.error('Error handling auth callback:', error);
+      setAuthError("Не удалось завершить авторизацию");
       toast({
         title: "Ошибка",
         description: "Не удалось завершить авторизацию",
@@ -172,11 +187,55 @@ export const MiroIntegration = ({ lessonId }: MiroIntegrationProps) => {
       console.error('Error creating board:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось создать доску",
+        description: "Не удалось создать доску. Попробуйте добавить ссылку вручную.",
         variant: "destructive"
       });
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const addManualBoard = async () => {
+    if (!manualBoardLink.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Введите ссылку на Miro доску",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const boardId = manualBoardLink.split('/').pop() || `manual-${Date.now()}`;
+      
+      const { data, error } = await supabase
+        .from('miro_boards')
+        .insert({
+          lesson_id: lessonId,
+          board_url: manualBoardLink,
+          board_id: boardId,
+          creator_id: user?.id,
+          status: 'active'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setMiroBoard(data);
+      setShowManualEntry(false);
+      setManualBoardLink("");
+      toast({
+        title: "Доска добавлена",
+        description: "Ссылка на Miro доску сохранена"
+      });
+    } catch (error) {
+      console.error('Error adding manual board:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить доску",
+        variant: "destructive"
+      });
     }
   };
 
@@ -251,33 +310,62 @@ export const MiroIntegration = ({ lessonId }: MiroIntegrationProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!isAuthorized ? (
+        {authError && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {authError}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isAuthorized && !miroBoard ? (
           <div className="text-center space-y-4">
             <p className="text-gray-600">
-              Подключите Miro аккаунт для создания интерактивных досок
+              Подключите Miro аккаунт для автоматического создания досок
             </p>
-            <Button onClick={authorizeMiro} className="w-full">
-              <Palette className="h-4 w-4 mr-2" />
-              Подключить Miro
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={authorizeMiro} className="w-full">
+                <Palette className="h-4 w-4 mr-2" />
+                Подключить Miro
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowManualEntry(true)}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Добавить ссылку вручную
+              </Button>
+            </div>
           </div>
         ) : !miroBoard ? (
           <div className="text-center space-y-4">
             <p className="text-gray-600">
               Создайте Miro доску для совместной работы
             </p>
-            <Button 
-              onClick={createBoard} 
-              disabled={isCreating}
-              className="w-full"
-            >
-              {isCreating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Edit3 className="h-4 w-4 mr-2" />
-              )}
-              Создать доску
-            </Button>
+            <div className="space-y-2">
+              <Button 
+                onClick={createBoard} 
+                disabled={isCreating}
+                className="w-full"
+              >
+                {isCreating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Edit3 className="h-4 w-4 mr-2" />
+                )}
+                Создать доску
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowManualEntry(true)}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Добавить ссылку вручную
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -323,6 +411,34 @@ export const MiroIntegration = ({ lessonId }: MiroIntegrationProps) => {
                 className="text-sm text-gray-500"
               >
                 Архивировать
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {showManualEntry && (
+          <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
+            <Label htmlFor="manual-board-link">Ссылка на Miro доску</Label>
+            <Input
+              id="manual-board-link"
+              type="url"
+              placeholder="https://miro.com/app/board/xxxxx"
+              value={manualBoardLink}
+              onChange={(e) => setManualBoardLink(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <Button onClick={addManualBoard} className="flex-1">
+                Добавить
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowManualEntry(false);
+                  setManualBoardLink("");
+                }}
+                className="flex-1"
+              >
+                Отмена
               </Button>
             </div>
           </div>

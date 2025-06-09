@@ -3,10 +3,13 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Video, VideoOff, Users, Calendar, ExternalLink, Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Video, VideoOff, Users, Calendar, ExternalLink, Loader2, Plus, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface GoogleMeetIntegrationProps {
   lessonId: string;
@@ -28,6 +31,9 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
   const [isCreating, setIsCreating] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showManualEntry, setShowManualEntry] = useState(false);
+  const [manualMeetLink, setManualMeetLink] = useState("");
+  const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
     checkGoogleAuth();
@@ -70,6 +76,7 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
 
   const authorizeGoogle = async () => {
     try {
+      setAuthError(null);
       const { data, error } = await supabase.functions.invoke('google-oauth', {
         body: { action: 'authorize' }
       });
@@ -81,14 +88,18 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
         
         const handleMessage = (event: MessageEvent) => {
           if (event.data.type === 'google_auth_success') {
-            // Обрабатываем успешную авторизацию
             handleAuthCallback(event.data.code, event.data.state);
             window.removeEventListener('message', handleMessage);
             if (popup) popup.close();
           } else if (event.data.type === 'google_auth_error') {
+            const errorMessage = event.data.error === 'access_denied' 
+              ? "Доступ заблокирован. Попробуйте добавить встречу вручную или обратитесь к администратору."
+              : `Ошибка авторизации: ${event.data.error}`;
+            
+            setAuthError(errorMessage);
             toast({
-              title: "Ошибка авторизации",
-              description: `Не удалось подключить Google аккаунт: ${event.data.error}`,
+              title: "Ошибка авторизации Google",
+              description: errorMessage,
               variant: "destructive"
             });
             window.removeEventListener('message', handleMessage);
@@ -98,7 +109,6 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
         
         window.addEventListener('message', handleMessage);
         
-        // Проверяем, если popup закрыли вручную
         const checkClosed = setInterval(() => {
           if (popup?.closed) {
             clearInterval(checkClosed);
@@ -108,9 +118,11 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
       }
     } catch (error) {
       console.error('Error authorizing Google:', error);
+      const errorMessage = "Не удалось подключить Google аккаунт. Попробуйте добавить встречу вручную.";
+      setAuthError(errorMessage);
       toast({
         title: "Ошибка авторизации",
-        description: "Не удалось подключить Google аккаунт",
+        description: errorMessage,
         variant: "destructive"
       });
     }
@@ -126,6 +138,7 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
 
       if (data?.success) {
         setIsAuthorized(true);
+        setAuthError(null);
         toast({
           title: "Авторизация успешна",
           description: "Google аккаунт подключен"
@@ -133,6 +146,7 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
       }
     } catch (error) {
       console.error('Error handling auth callback:', error);
+      setAuthError("Не удалось завершить авторизацию");
       toast({
         title: "Ошибка",
         description: "Не удалось завершить авторизацию",
@@ -159,7 +173,7 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
           lessonId,
           title: `Урок ${lessonId}`,
           startTime: new Date().toISOString(),
-          endTime: new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 час
+          endTime: new Date(Date.now() + 60 * 60 * 1000).toISOString()
         }
       });
 
@@ -174,11 +188,55 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
       console.error('Error creating meeting:', error);
       toast({
         title: "Ошибка",
-        description: "Не удалось создать встречу",
+        description: "Не удалось создать встречу. Попробуйте добавить ссылку вручную.",
         variant: "destructive"
       });
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const addManualMeeting = async () => {
+    if (!manualMeetLink.trim()) {
+      toast({
+        title: "Ошибка",
+        description: "Введите ссылку на Google Meet",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      const meetingId = manualMeetLink.split('/').pop() || `manual-${Date.now()}`;
+      
+      const { data, error } = await supabase
+        .from('google_meet_sessions')
+        .insert({
+          lesson_id: lessonId,
+          meet_link: manualMeetLink,
+          meeting_id: meetingId,
+          organizer_id: user?.id,
+          status: 'active'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setMeetSession(data);
+      setShowManualEntry(false);
+      setManualMeetLink("");
+      toast({
+        title: "Встреча добавлена",
+        description: "Ссылка на Google Meet сохранена"
+      });
+    } catch (error) {
+      console.error('Error adding manual meeting:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось сохранить встречу",
+        variant: "destructive"
+      });
     }
   };
 
@@ -227,33 +285,62 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {!isAuthorized ? (
+        {authError && (
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              {authError}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isAuthorized && !meetSession ? (
           <div className="text-center space-y-4">
             <p className="text-gray-600">
-              Подключите Google аккаунт для создания видеовстреч
+              Подключите Google аккаунт для автоматического создания встреч
             </p>
-            <Button onClick={authorizeGoogle} className="w-full">
-              <Video className="h-4 w-4 mr-2" />
-              Подключить Google
-            </Button>
+            <div className="space-y-2">
+              <Button onClick={authorizeGoogle} className="w-full">
+                <Video className="h-4 w-4 mr-2" />
+                Подключить Google
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowManualEntry(true)}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Добавить ссылку вручную
+              </Button>
+            </div>
           </div>
         ) : !meetSession ? (
           <div className="text-center space-y-4">
             <p className="text-gray-600">
               Создайте Google Meet для начала урока
             </p>
-            <Button 
-              onClick={createMeeting} 
-              disabled={isCreating}
-              className="w-full"
-            >
-              {isCreating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Video className="h-4 w-4 mr-2" />
-              )}
-              Создать встречу
-            </Button>
+            <div className="space-y-2">
+              <Button 
+                onClick={createMeeting} 
+                disabled={isCreating}
+                className="w-full"
+              >
+                {isCreating ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Video className="h-4 w-4 mr-2" />
+                )}
+                Создать встречу
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowManualEntry(true)}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Добавить ссылку вручную
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -292,6 +379,34 @@ export const GoogleMeetIntegration = ({ lessonId }: GoogleMeetIntegrationProps) 
                 className="text-sm"
               >
                 Скопировать ссылку
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {showManualEntry && (
+          <div className="space-y-3 p-4 border rounded-lg bg-gray-50">
+            <Label htmlFor="manual-meet-link">Ссылка на Google Meet</Label>
+            <Input
+              id="manual-meet-link"
+              type="url"
+              placeholder="https://meet.google.com/xxx-xxxx-xxx"
+              value={manualMeetLink}
+              onChange={(e) => setManualMeetLink(e.target.value)}
+            />
+            <div className="flex gap-2">
+              <Button onClick={addManualMeeting} className="flex-1">
+                Добавить
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowManualEntry(false);
+                  setManualMeetLink("");
+                }}
+                className="flex-1"
+              >
+                Отмена
               </Button>
             </div>
           </div>
