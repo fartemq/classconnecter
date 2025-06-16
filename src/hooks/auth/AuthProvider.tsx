@@ -1,9 +1,8 @@
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchUserRole } from "@/services/auth/userService";
-import { logger } from "@/utils/logger";
 
 interface AuthState {
   user: User | null;
@@ -28,31 +27,65 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Cache for user roles to avoid repeated database calls
+const roleCache = new Map<string, { role: string; timestamp: number }>();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const refreshUserData = async () => {
+  const getCachedRole = useCallback((userId: string): string | null => {
+    const cached = roleCache.get(userId);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.role;
+    }
+    return null;
+  }, []);
+
+  const setCachedRole = useCallback((userId: string, role: string) => {
+    roleCache.set(userId, { role, timestamp: Date.now() });
+  }, []);
+
+  const fetchAndCacheRole = useCallback(async (userId: string): Promise<string | null> => {
+    // Check cache first
+    const cachedRole = getCachedRole(userId);
+    if (cachedRole) {
+      return cachedRole;
+    }
+
+    try {
+      const role = await fetchUserRole(userId);
+      if (role) {
+        setCachedRole(userId, role);
+      }
+      return role;
+    } catch (error) {
+      console.error('Failed to fetch user role:', error);
+      return null;
+    }
+  }, [getCachedRole, setCachedRole]);
+
+  const refreshUserData = useCallback(async () => {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       setUser(currentUser);
       
       if (currentUser) {
-        const role = await fetchUserRole(currentUser.id);
+        const role = await fetchAndCacheRole(currentUser.id);
         setUserRole(role);
-        logger.debug('User data refreshed', 'auth', { userId: currentUser.id, role });
       } else {
         setUserRole(null);
       }
     } catch (error) {
-      logger.error('Failed to refresh user data', 'auth', error);
+      console.error('Failed to refresh user data:', error);
       setUser(null);
       setUserRole(null);
     }
-  };
+  }, [fetchAndCacheRole]);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
       
@@ -62,45 +95,44 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (error) {
-        logger.error('Login failed', 'auth', error);
         return false;
       }
 
       if (data.user) {
         setUser(data.user);
-        const role = await fetchUserRole(data.user.id);
+        const role = await fetchAndCacheRole(data.user.id);
         setUserRole(role);
-        logger.info('Login successful', 'auth', { userId: data.user.id, role });
         return true;
       }
 
       return false;
     } catch (error) {
-      logger.error('Login error', 'auth', error);
       return false;
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [fetchAndCacheRole]);
 
-  const logout = async (): Promise<boolean> => {
+  const logout = useCallback(async (): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        logger.error('Logout failed', 'auth', error);
         return false;
       }
 
+      // Clear cache on logout
+      if (user?.id) {
+        roleCache.delete(user.id);
+      }
+      
       setUser(null);
       setUserRole(null);
-      logger.info('Logout successful', 'auth');
       return true;
     } catch (error) {
-      logger.error('Logout error', 'auth', error);
       return false;
     }
-  };
+  }, [user?.id]);
 
   useEffect(() => {
     let mounted = true;
@@ -111,12 +143,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (mounted && session?.user) {
           setUser(session.user);
-          const role = await fetchUserRole(session.user.id);
+          const role = await fetchAndCacheRole(session.user.id);
           setUserRole(role);
-          logger.debug('Auth initialized', 'auth', { userId: session.user.id, role });
         }
       } catch (error) {
-        logger.error('Auth initialization failed', 'auth', error);
+        console.error('Auth initialization failed:', error);
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -130,11 +161,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       async (event, session) => {
         if (!mounted) return;
 
-        logger.debug('Auth state changed', 'auth', { event, hasSession: !!session });
-
         if (session?.user) {
           setUser(session.user);
-          const role = await fetchUserRole(session.user.id);
+          const role = await fetchAndCacheRole(session.user.id);
           setUserRole(role);
         } else {
           setUser(null);
@@ -149,16 +178,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchAndCacheRole]);
 
-  const value: AuthState = {
+  const value = useMemo<AuthState>(() => ({
     user,
     userRole,
     isLoading,
     login,
     logout,
     refreshUserData,
-  };
+  }), [user, userRole, isLoading, login, logout, refreshUserData]);
 
   return (
     <AuthContext.Provider value={value}>

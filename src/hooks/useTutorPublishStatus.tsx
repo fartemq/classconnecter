@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/hooks/auth/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,11 +8,11 @@ import {
   publishTutorProfile,
   getTutorPublicationStatus 
 } from '@/services/tutor';
-import { logger } from '@/utils/logger';
 
-/**
- * Hook for managing tutor profile publication status
- */
+// Cache for publication status
+const statusCache = new Map<string, { status: any; timestamp: number }>();
+const CACHE_DURATION = 2 * 60 * 1000; // 2 minutes
+
 export const useTutorPublishStatus = (tutorId?: string) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -22,51 +22,70 @@ export const useTutorPublishStatus = (tutorId?: string) => {
   const [warnings, setWarnings] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Validate profile and check publish status
-  useEffect(() => {
-    const checkStatus = async () => {
-      let profileId = tutorId;
+  const getCachedStatus = useCallback((profileId: string) => {
+    const cached = statusCache.get(profileId);
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      return cached.status;
+    }
+    return null;
+  }, []);
+
+  const setCachedStatus = useCallback((profileId: string, status: any) => {
+    statusCache.set(profileId, { status, timestamp: Date.now() });
+  }, []);
+
+  const checkStatus = useCallback(async () => {
+    let profileId = tutorId;
+    
+    if (!profileId && user?.id) {
+      profileId = user.id;
+    }
+    
+    if (!profileId) {
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setLoading(true);
       
-      if (!profileId && user?.id) {
-        profileId = user.id;
-      }
-      
-      if (!profileId) {
-        logger.debug('No profile ID available to check', 'publish-status');
+      // Check cache first
+      const cachedStatus = getCachedStatus(profileId);
+      if (cachedStatus) {
+        setIsValid(cachedStatus.isValid);
+        setMissingFields(cachedStatus.missingFields);
+        setWarnings(cachedStatus.warnings);
+        setIsPublished(cachedStatus.isPublished);
         setLoading(false);
         return;
       }
       
-      try {
-        setLoading(true);
-        logger.debug('Checking publication status', 'publish-status', { profileId });
-        
-        // Get the comprehensive status
-        const status = await getTutorPublicationStatus(profileId);
-        
-        logger.debug('Publication status result', 'publish-status', status);
-        
-        setIsValid(status.isValid);
-        setMissingFields(status.missingFields);
-        setWarnings(status.warnings);
-        setIsPublished(status.isPublished);
-      } catch (error) {
-        logger.error('Error checking publish status', 'publish-status', error);
-        toast({
-          title: 'Ошибка',
-          description: 'Не удалось проверить статус публикации профиля',
-          variant: 'destructive',
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    checkStatus();
-  }, [tutorId, user?.id]);
+      const status = await getTutorPublicationStatus(profileId);
+      
+      // Cache the result
+      setCachedStatus(profileId, status);
+      
+      setIsValid(status.isValid);
+      setMissingFields(status.missingFields);
+      setWarnings(status.warnings);
+      setIsPublished(status.isPublished);
+    } catch (error) {
+      console.error('Error checking publish status:', error);
+      toast({
+        title: 'Ошибка',
+        description: 'Не удалось проверить статус публикации профиля',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }, [tutorId, user?.id, getCachedStatus, setCachedStatus, toast]);
 
-  // Function to toggle publish status
-  const togglePublishStatus = async () => {
+  useEffect(() => {
+    checkStatus();
+  }, [checkStatus]);
+
+  const togglePublishStatus = useCallback(async () => {
     let profileId = tutorId;
     
     if (!profileId && user?.id) {
@@ -84,9 +103,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
     
     try {
       setLoading(true);
-      logger.debug(`Attempting to ${isPublished ? 'unpublish' : 'publish'} profile`, 'publish-status', { profileId });
       
-      // If trying to publish, check if valid first
       if (!isPublished && !isValid) {
         toast({
           title: 'Профиль не готов к публикации',
@@ -96,11 +113,13 @@ export const useTutorPublishStatus = (tutorId?: string) => {
         return false;
       }
       
-      // Toggle publish status
       const success = await publishTutorProfile(profileId, !isPublished);
       
       if (success) {
         setIsPublished(!isPublished);
+        
+        // Clear cache to force refresh
+        statusCache.delete(profileId);
         
         toast({
           title: isPublished ? 'Профиль снят с публикации' : 'Профиль опубликован',
@@ -114,7 +133,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
         throw new Error('Failed to update publish status');
       }
     } catch (error) {
-      logger.error('Error toggling publish status', 'publish-status', error);
+      console.error('Error toggling publish status:', error);
       toast({
         title: 'Ошибка',
         description: 'Не удалось изменить статус публикации',
@@ -124,7 +143,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tutorId, user?.id, isPublished, isValid, missingFields, toast]);
 
   return {
     isPublished,
@@ -133,5 +152,6 @@ export const useTutorPublishStatus = (tutorId?: string) => {
     warnings,
     loading,
     togglePublishStatus,
+    refreshStatus: checkStatus,
   };
 };

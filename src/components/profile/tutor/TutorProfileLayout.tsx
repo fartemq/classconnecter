@@ -1,17 +1,14 @@
 
 import React from "react";
-import { Header } from "@/components/Header";
-import { Footer } from "@/components/Footer";
+import { OptimizedLayout } from "@/components/layout/OptimizedLayout";
 import { TutorProfileContent } from "@/components/profile/tutor/TutorProfileContent";
 
-export const TutorProfileLayout: React.FC = () => {
+export const TutorProfileLayout: React.FC = React.memo(() => {
   return (
-    <div className="min-h-screen flex flex-col">
-      <Header />
-      <main className="flex-grow">
-        <TutorProfileContent />
-      </main>
-      <Footer />
-    </div>
+    <OptimizedLayout>
+      <TutorProfileContent />
+    </OptimizedLayout>
   );
-};
+});
+
+TutorProfileLayout.displayName = "TutorProfileLayout";

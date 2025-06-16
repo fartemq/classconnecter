@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FeaturesSection } from "@/components/FeaturesSection";
 import { TestimonialsSection } from "@/components/TestimonialsSection";
@@ -9,6 +9,10 @@ import { Header } from "@/components/Header";
 import { HeroSection } from "@/components/HeroSection";
 import { EmergencyLogout } from "@/components/auth/EmergencyLogout";
 import { useAuth } from "@/hooks/auth/useAuth";
+import { logger } from "@/utils/logger";
+
+const MAIN_ADMIN_EMAIL = "arsenalreally35@gmail.com";
+const EMERGENCY_TIMEOUT = 1500;
 
 const Index = () => {
   const { user, userRole, isLoading } = useAuth();
@@ -16,46 +20,56 @@ const Index = () => {
   const [showEmergency, setShowEmergency] = useState(false);
   const [redirectAttempted, setRedirectAttempted] = useState(false);
   
-  // Показываем экстренные кнопки если загрузка затягивается
+  // Show emergency buttons if loading takes too long
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowEmergency(true);
-    }, 1500);
+    }, EMERGENCY_TIMEOUT);
 
     return () => clearTimeout(timer);
   }, []);
 
-  // Простое перенаправление авторизованных пользователей
-  useEffect(() => {
-    if (!isLoading && user && !redirectAttempted) {
-      setRedirectAttempted(true);
-      
-      // Исключение для главного админа - остается на главной
-      if (user.email === "arsenalreally35@gmail.com") {
-        console.log("Main admin stays on home page");
-        setShowEmergency(false);
-        return;
-      }
-      
-      // Определяем путь для перенаправления
-      let redirectPath = "/profile/student"; // по умолчанию
-      
-      if (userRole === "admin" || userRole === "moderator") {
-        redirectPath = "/admin";
-      } else if (userRole === "tutor") {
-        redirectPath = "/profile/tutor";
-      }
-      
-      console.log("Redirecting user:", user.email, "to:", redirectPath, "role:", userRole);
-      
-      // Перенаправляем с небольшой задержкой для стабильности
-      setTimeout(() => {
-        navigate(redirectPath, { replace: true });
-      }, 100);
+  const handleRedirect = useCallback(() => {
+    if (!user || redirectAttempted) return;
+    
+    setRedirectAttempted(true);
+    
+    // Exception for main admin - stays on home page
+    if (user.email === MAIN_ADMIN_EMAIL) {
+      logger.debug("Main admin stays on home page", "index");
+      setShowEmergency(false);
+      return;
     }
-  }, [user, userRole, isLoading, navigate, redirectAttempted]);
+    
+    // Determine redirect path
+    let redirectPath = "/profile/student"; // default
+    
+    if (userRole === "admin" || userRole === "moderator") {
+      redirectPath = "/admin";
+    } else if (userRole === "tutor") {
+      redirectPath = "/profile/tutor";
+    }
+    
+    logger.debug("Redirecting user", "index", { 
+      email: user.email, 
+      path: redirectPath, 
+      role: userRole 
+    });
+    
+    // Redirect with small delay for stability
+    setTimeout(() => {
+      navigate(redirectPath, { replace: true });
+    }, 100);
+  }, [user, userRole, navigate, redirectAttempted]);
 
-  // Показываем загрузку только первые 1.5 секунды
+  // Simple redirect for authenticated users
+  useEffect(() => {
+    if (!isLoading && user) {
+      handleRedirect();
+    }
+  }, [user, userRole, isLoading, handleRedirect]);
+
+  // Show loading only for the first 1.5 seconds
   if (isLoading && !showEmergency) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -64,7 +78,7 @@ const Index = () => {
     );
   }
 
-  // Если загрузка затянулась, показываем экстренные кнопки
+  // If loading is delayed, show emergency buttons
   if (isLoading && showEmergency) {
     return (
       <div className="min-h-screen flex items-center justify-center relative">
@@ -77,8 +91,8 @@ const Index = () => {
     );
   }
   
-  // Главная страница для админа (без HeroSection)
-  if (user?.email === "arsenalreally35@gmail.com") {
+  // Home page for admin (without HeroSection)
+  if (user?.email === MAIN_ADMIN_EMAIL) {
     return (
       <div className="min-h-screen">
         <Header />
@@ -90,7 +104,7 @@ const Index = () => {
     );
   }
   
-  // Если пользователь авторизован но еще не перенаправлен
+  // If user is authenticated but not yet redirected
   if (user && !redirectAttempted) {
     return (
       <div className="min-h-screen flex items-center justify-center relative">
@@ -102,7 +116,7 @@ const Index = () => {
     );
   }
 
-  // Обычная главная страница для неавторизованных пользователей
+  // Regular home page for unauthenticated users
   return (
     <div className="min-h-screen">
       <Header />

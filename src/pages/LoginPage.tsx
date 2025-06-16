@@ -8,8 +8,9 @@ import { LoginForm, LoginFormValues } from "@/components/auth/LoginForm";
 import { LoginAlerts } from "@/components/auth/LoginAlerts";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { logger } from "@/utils/logger";
 
-const LoginPage = () => {
+const LoginPage = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, userRole, isLoading, login } = useAuth();
@@ -18,14 +19,14 @@ const LoginPage = () => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
-  // Проверяем, пришли ли с страницы регистрации
+  // Check if coming from registration page
   useEffect(() => {
     if (location.state && location.state.needConfirmation) {
       setNeedConfirmation(true);
     }
   }, [location]);
 
-  // Перенаправляем авторизованных пользователей
+  // Redirect authenticated users
   useEffect(() => {
     if (user && userRole && !isLoading) {
       let redirectPath = "/profile/student";
@@ -36,12 +37,11 @@ const LoginPage = () => {
         redirectPath = "/profile/tutor";
       }
 
-      console.log("Redirecting authenticated user to:", redirectPath);
+      logger.debug("Redirecting authenticated user", "login", { path: redirectPath });
       navigate(redirectPath, { replace: true });
     }
   }, [user, userRole, navigate, isLoading]);
 
-  // Обработка отправки формы входа
   const handleLoginSuccess = async (values: LoginFormValues) => {
     if (isLoggingIn) return;
     
@@ -49,7 +49,7 @@ const LoginPage = () => {
     setErrorMessage(null);
     
     try {
-      console.log("Attempting login for:", values.email);
+      logger.debug("Attempting login", "login", { email: values.email });
       const success = await login(values.email, values.password);
       
       if (success) {
@@ -58,13 +58,12 @@ const LoginPage = () => {
           title: "Успешный вход",
           description: "Добро пожаловать в Stud.rep!",
         });
-        // Перенаправление произойдет автоматически через useEffect
+        // Redirection will happen automatically via useEffect
       } else {
         setRetryCount(prev => prev + 1);
         const errorMsg = "Неверный email или пароль. Проверьте данные и попробуйте снова.";
         setErrorMessage(errorMsg);
         
-        // Показываем дополнительную помощь после нескольких неудачных попыток
         if (retryCount >= 2) {
           toast({
             title: "Проблемы со входом?",
@@ -81,7 +80,7 @@ const LoginPage = () => {
         setIsLoggingIn(false);
       }
     } catch (error) {
-      console.error("Login error:", error);
+      logger.error("Login error", "login", error);
       const errorMsg = error instanceof Error ? error.message : "Произошла ошибка при входе. Проверьте подключение к интернету";
       setErrorMessage(errorMsg);
       toast({
@@ -93,7 +92,7 @@ const LoginPage = () => {
     }
   };
 
-  // Показываем загрузку
+  // Show loading
   if (isLoading || (isLoggingIn && !errorMessage) || (user && userRole)) {
     let message = "Загрузка...";
     if (isLoading) message = "Проверка сессии...";
@@ -147,6 +146,8 @@ const LoginPage = () => {
       </Card>
     </AuthLayout>
   );
-};
+});
+
+LoginPage.displayName = "LoginPage";
 
 export default LoginPage;

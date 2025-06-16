@@ -4,13 +4,11 @@ import { useTutorProfile } from './useTutorProfile';
 import { useAuth } from '@/hooks/auth/useAuth';
 
 export const useProfile = () => {
-  const { user } = useAuth();
+  const { userRole } = useAuth();
   const studentProfile = useStudentProfile();
   const tutorProfile = useTutorProfile();
 
-  // Determine which profile to use based on user role
-  const userRole = user?.user_metadata?.role || 'student';
-
+  // Use role from database, not user metadata
   if (userRole === 'tutor') {
     return {
       ...tutorProfile,

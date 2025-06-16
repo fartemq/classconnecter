@@ -35,7 +35,9 @@ class Logger {
     const entry = this.createLogEntry('debug', message, context, data);
     this.addLog(entry);
     
+    // Only log to console in development
     if (this.isDevelopment) {
+      // eslint-disable-next-line no-console
       console.debug(`[DEBUG] ${context ? `[${context}] ` : ''}${message}`, data);
     }
   }
@@ -45,6 +47,7 @@ class Logger {
     this.addLog(entry);
     
     if (this.isDevelopment) {
+      // eslint-disable-next-line no-console
       console.info(`[INFO] ${context ? `[${context}] ` : ''}${message}`, data);
     }
   }
@@ -53,6 +56,8 @@ class Logger {
     const entry = this.createLogEntry('warn', message, context, data);
     this.addLog(entry);
     
+    // Always show warnings
+    // eslint-disable-next-line no-console
     console.warn(`[WARN] ${context ? `[${context}] ` : ''}${message}`, data);
   }
 
@@ -60,38 +65,47 @@ class Logger {
     const entry = this.createLogEntry('error', message, context, data);
     this.addLog(entry);
     
+    // Always show errors
+    // eslint-disable-next-line no-console
     console.error(`[ERROR] ${context ? `[${context}] ` : ''}${message}`, data);
   }
 
+  // Development only methods
   getLogs(level?: LogLevel): LogEntry[] {
+    if (!this.isDevelopment) return [];
     if (!level) return this.logs;
     return this.logs.filter(log => log.level === level);
   }
 
   clearLogs(): void {
-    this.logs = [];
+    if (this.isDevelopment) {
+      this.logs = [];
+    }
   }
 
   exportLogs(): string {
+    if (!this.isDevelopment) return '';
     return JSON.stringify(this.logs, null, 2);
   }
 }
 
 export const logger = new Logger();
 
-// Global error handler
-window.addEventListener('error', (event) => {
-  logger.error('Uncaught error', 'global', {
-    message: event.message,
-    filename: event.filename,
-    lineno: event.lineno,
-    colno: event.colno,
-    error: event.error
+// Only in development
+if (import.meta.env.DEV) {
+  window.addEventListener('error', (event) => {
+    logger.error('Uncaught error', 'global', {
+      message: event.message,
+      filename: event.filename,
+      lineno: event.lineno,
+      colno: event.colno,
+      error: event.error
+    });
   });
-});
 
-window.addEventListener('unhandledrejection', (event) => {
-  logger.error('Unhandled promise rejection', 'global', {
-    reason: event.reason
+  window.addEventListener('unhandledrejection', (event) => {
+    logger.error('Unhandled promise rejection', 'global', {
+      reason: event.reason
+    });
   });
-});
+}
