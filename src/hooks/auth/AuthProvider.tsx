@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
-import { getUserRole } from "@/services/auth/userService";
+import { fetchUserRole } from "@/services/auth/userService";
 import { logger } from "@/utils/logger";
 
 interface AuthState {
@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(currentUser);
       
       if (currentUser) {
-        const role = await getUserRole(currentUser.id);
+        const role = await fetchUserRole(currentUser.id);
         setUserRole(role);
         logger.debug('User data refreshed', 'auth', { userId: currentUser.id, role });
       } else {
@@ -68,7 +68,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       if (data.user) {
         setUser(data.user);
-        const role = await getUserRole(data.user.id);
+        const role = await fetchUserRole(data.user.id);
         setUserRole(role);
         logger.info('Login successful', 'auth', { userId: data.user.id, role });
         return true;
@@ -111,7 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         
         if (mounted && session?.user) {
           setUser(session.user);
-          const role = await getUserRole(session.user.id);
+          const role = await fetchUserRole(session.user.id);
           setUserRole(role);
           logger.debug('Auth initialized', 'auth', { userId: session.user.id, role });
         }
@@ -134,7 +134,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         if (session?.user) {
           setUser(session.user);
-          const role = await getUserRole(session.user.id);
+          const role = await fetchUserRole(session.user.id);
           setUserRole(role);
         } else {
           setUser(null);
