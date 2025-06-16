@@ -16,6 +16,7 @@ const LoginPage = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [needConfirmation, setNeedConfirmation] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Проверяем, пришли ли с страницы регистрации
   useEffect(() => {
@@ -27,7 +28,7 @@ const LoginPage = () => {
   // Перенаправляем авторизованных пользователей
   useEffect(() => {
     if (user && userRole && !isLoading) {
-      let redirectPath = "/profile/student"; // по умолчанию
+      let redirectPath = "/profile/student";
       
       if (userRole === "admin" || userRole === "moderator") {
         redirectPath = "/admin";
@@ -35,7 +36,7 @@ const LoginPage = () => {
         redirectPath = "/profile/tutor";
       }
 
-      console.log("Redirecting to:", redirectPath);
+      console.log("Redirecting authenticated user to:", redirectPath);
       navigate(redirectPath, { replace: true });
     }
   }, [user, userRole, navigate, isLoading]);
@@ -48,25 +49,39 @@ const LoginPage = () => {
     setErrorMessage(null);
     
     try {
+      console.log("Attempting login for:", values.email);
       const result = await login(values.email, values.password);
       
       if (result?.success) {
+        setRetryCount(0);
         toast({
           title: "Успешный вход",
           description: "Добро пожаловать в Stud.rep!",
         });
         // Перенаправление произойдет автоматически через useEffect
       } else if (result?.error) {
+        setRetryCount(prev => prev + 1);
         setErrorMessage(result.error);
-        toast({
-          title: "Ошибка входа",
-          description: result.error,
-          variant: "destructive",
-        });
+        
+        // Показываем дополнительную помощь после нескольких неудачных попыток
+        if (retryCount >= 2) {
+          toast({
+            title: "Проблемы со входом?",
+            description: "Попробуйте сбросить пароль или обратитесь в поддержку",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Ошибка входа",
+            description: result.error,
+            variant: "destructive",
+          });
+        }
         setIsLoggingIn(false);
       }
     } catch (error) {
-      const errorMsg = "Произошла ошибка при входе";
+      console.error("Login error:", error);
+      const errorMsg = "Произошла ошибка при входе. Проверьте подключение к интернету";
       setErrorMessage(errorMsg);
       toast({
         title: "Ошибка входа",
@@ -77,7 +92,7 @@ const LoginPage = () => {
     }
   };
 
-  // Показываем загрузку только если действительно идет процесс
+  // Показываем загрузку
   if (isLoading || (isLoggingIn && !errorMessage) || (user && userRole)) {
     let message = "Загрузка...";
     if (isLoading) message = "Проверка сессии...";
@@ -118,8 +133,14 @@ const LoginPage = () => {
         </CardContent>
         
         <CardFooter className="flex flex-col text-center text-sm text-gray-500 pt-0">
+          {retryCount >= 2 && (
+            <div className="mb-2 p-2 bg-blue-50 rounded text-blue-700">
+              <p className="font-medium">Нужна помощь?</p>
+              <p>Попробуйте восстановить пароль или обратитесь в поддержку</p>
+            </div>
+          )}
           <p>
-            Для разработки: вы можете отключить обязательное подтверждение email в настройках Supabase.
+            После входа в систему вы сможете пользоваться всеми возможностями платформы.
           </p>
         </CardFooter>
       </Card>

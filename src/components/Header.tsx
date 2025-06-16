@@ -12,7 +12,7 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Header = () => {
-  const { user, userRole } = useAuth();
+  const { user, userRole, isLoading } = useAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -22,16 +22,27 @@ export const Header = () => {
   const isTutorProfile = location.pathname.startsWith('/profile/tutor');
   const isMainPage = location.pathname === '/';
 
-  // Простое определение ссылки профиля
+  // Безопасное определение ссылки профиля
   const getProfileLink = () => {
-    if (!user || !userRole) return "/";
+    if (!user) return "/";
     
-    if (userRole === "admin" || userRole === "moderator") {
-      return "/admin";
-    } else if (userRole === "tutor") {
-      return "/profile/tutor";
-    } else {
-      return "/profile/student";
+    // Если роль еще загружается, используем безопасное значение
+    if (isLoading) return "/";
+    
+    switch (userRole) {
+      case "admin":
+      case "moderator":
+        return "/admin";
+      case "tutor":
+        return "/profile/tutor";
+      case "student":
+        return "/profile/student";
+      default:
+        // Fallback на основе URL, если роль не определена
+        if (location.pathname.startsWith('/profile/tutor')) {
+          return "/profile/tutor";
+        }
+        return "/profile/student";
     }
   };
 
@@ -71,7 +82,7 @@ export const Header = () => {
             {!isMobile && !isStudentProfile && !isTutorProfile && <GuestNavigation />}
             
             {/* Кнопка "В профиль" для авторизованных на главной */}
-            {user && isMainPage && (
+            {user && isMainPage && !isLoading && (
               <Link to={getProfileLink()}>
                 <Button variant="outline" size="sm">
                   В профиль
