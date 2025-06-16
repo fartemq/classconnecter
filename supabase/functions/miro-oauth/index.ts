@@ -29,18 +29,28 @@ serve(async (req) => {
       )
     }
 
-    const { action } = await req.json()
+    const { action, code, state } = await req.json()
 
     if (action === 'authorize') {
       const clientId = Deno.env.get('MIRO_CLIENT_ID')
       const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/miro-oauth-callback`
       
+      if (!clientId) {
+        return new Response(
+          JSON.stringify({ error: 'Miro OAuth not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      const authState = `${user.id}-${Date.now()}`
+      const scope = 'boards:read boards:write'
+      
       const authUrl = `https://miro.com/oauth/authorize?` +
+        `response_type=code&` +
         `client_id=${clientId}&` +
         `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-        `response_type=code&` +
-        `scope=${encodeURIComponent('boards:read boards:write')}&` +
-        `state=${user.id}`
+        `scope=${encodeURIComponent(scope)}&` +
+        `state=${authState}`
 
       return new Response(
         JSON.stringify({ auth_url: authUrl }),
@@ -49,9 +59,15 @@ serve(async (req) => {
     }
 
     if (action === 'callback') {
-      const { code, state } = await req.json()
-      
-      if (state !== user.id) {
+      if (!code || !state) {
+        return new Response(
+          JSON.stringify({ error: 'Missing code or state' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Verify state contains user ID
+      if (!state.startsWith(user.id)) {
         return new Response(
           JSON.stringify({ error: 'Invalid state parameter' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -62,42 +78,58 @@ serve(async (req) => {
       const clientSecret = Deno.env.get('MIRO_CLIENT_SECRET')
       const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/miro-oauth-callback`
 
+      if (!clientId || !clientSecret) {
+        return new Response(
+          JSON.stringify({ error: 'Miro OAuth not configured' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+
+      // Exchange code for tokens
       const tokenResponse = await fetch('https://api.miro.com/v1/oauth/token', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: new URLSearchParams({
-          client_id: clientId!,
-          client_secret: clientSecret!,
-          code: code,
           grant_type: 'authorization_code',
+          client_id: clientId,
+          client_secret: clientSecret,
+          code,
           redirect_uri: redirectUri,
         }),
       })
 
       const tokens = await tokenResponse.json()
 
-      if (tokens.error) {
+      if (!tokenResponse.ok) {
+        console.error('Token exchange failed:', tokens)
         return new Response(
-          JSON.stringify({ error: tokens.error }),
+          JSON.stringify({ error: 'Failed to exchange code for tokens' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
 
-      const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString()
-
-      await supabase
+      // Store tokens in database
+      const expiresAt = new Date(Date.now() + tokens.expires_in * 1000)
+      
+      const { error: dbError } = await supabase
         .from('user_oauth_tokens')
         .upsert({
           user_id: user.id,
           provider: 'miro',
           access_token: tokens.access_token,
           refresh_token: tokens.refresh_token,
-          expires_at: expiresAt,
-        }, {
-          onConflict: 'user_id,provider'
+          expires_at: expiresAt.toISOString(),
         })
+
+      if (dbError) {
+        console.error('Database error:', dbError)
+        return new Response(
+          JSON.stringify({ error: 'Failed to save tokens' }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
 
       return new Response(
         JSON.stringify({ success: true }),
