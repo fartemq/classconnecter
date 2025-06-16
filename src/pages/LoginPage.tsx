@@ -50,18 +50,19 @@ const LoginPage = () => {
     
     try {
       console.log("Attempting login for:", values.email);
-      const result = await login(values.email, values.password);
+      const success = await login(values.email, values.password);
       
-      if (result?.success) {
+      if (success) {
         setRetryCount(0);
         toast({
           title: "Успешный вход",
           description: "Добро пожаловать в Stud.rep!",
         });
         // Перенаправление произойдет автоматически через useEffect
-      } else if (result?.error) {
+      } else {
         setRetryCount(prev => prev + 1);
-        setErrorMessage(result.error);
+        const errorMsg = "Неверный email или пароль. Проверьте данные и попробуйте снова.";
+        setErrorMessage(errorMsg);
         
         // Показываем дополнительную помощь после нескольких неудачных попыток
         if (retryCount >= 2) {
@@ -73,7 +74,7 @@ const LoginPage = () => {
         } else {
           toast({
             title: "Ошибка входа",
-            description: result.error,
+            description: errorMsg,
             variant: "destructive",
           });
         }
@@ -81,7 +82,7 @@ const LoginPage = () => {
       }
     } catch (error) {
       console.error("Login error:", error);
-      const errorMsg = "Произошла ошибка при входе. Проверьте подключение к интернету";
+      const errorMsg = error instanceof Error ? error.message : "Произошла ошибка при входе. Проверьте подключение к интернету";
       setErrorMessage(errorMsg);
       toast({
         title: "Ошибка входа",
