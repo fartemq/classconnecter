@@ -8,7 +8,6 @@ import { LoginForm, LoginFormValues } from "@/components/auth/LoginForm";
 import { LoginAlerts } from "@/components/auth/LoginAlerts";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { toast } from "@/hooks/use-toast";
-import { logger } from "@/utils/logger";
 
 const LoginPage = React.memo(() => {
   const navigate = useNavigate();
@@ -17,7 +16,6 @@ const LoginPage = React.memo(() => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [needConfirmation, setNeedConfirmation] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [retryCount, setRetryCount] = useState(0);
 
   // Check if coming from registration page
   useEffect(() => {
@@ -26,19 +24,10 @@ const LoginPage = React.memo(() => {
     }
   }, [location]);
 
-  // Redirect authenticated users
+  // Simple redirect for authenticated users
   useEffect(() => {
     if (user && userRole && !isLoading) {
-      let redirectPath = "/profile/student";
-      
-      if (userRole === "admin" || userRole === "moderator") {
-        redirectPath = "/admin";
-      } else if (userRole === "tutor") {
-        redirectPath = "/profile/tutor";
-      }
-
-      logger.debug("Redirecting authenticated user", "login", { path: redirectPath });
-      navigate(redirectPath, { replace: true });
+      navigate("/", { replace: true });
     }
   }, [user, userRole, navigate, isLoading]);
 
@@ -49,59 +38,50 @@ const LoginPage = React.memo(() => {
     setErrorMessage(null);
     
     try {
-      logger.debug("Attempting login", "login", { email: values.email });
       const success = await login(values.email, values.password);
       
       if (success) {
-        setRetryCount(0);
         toast({
           title: "Успешный вход",
           description: "Добро пожаловать в Stud.rep!",
         });
-        // Redirection will happen automatically via useEffect
+        // Redirect will happen automatically via useEffect
       } else {
-        setRetryCount(prev => prev + 1);
         const errorMsg = "Неверный email или пароль. Проверьте данные и попробуйте снова.";
         setErrorMessage(errorMsg);
-        
-        if (retryCount >= 2) {
-          toast({
-            title: "Проблемы со входом?",
-            description: "Попробуйте сбросить пароль или обратитесь в поддержку",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Ошибка входа",
-            description: errorMsg,
-            variant: "destructive",
-          });
-        }
-        setIsLoggingIn(false);
+        toast({
+          title: "Ошибка входа",
+          description: errorMsg,
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      logger.error("Login error", "login", error);
-      const errorMsg = error instanceof Error ? error.message : "Произошла ошибка при входе. Проверьте подключение к интернету";
+      const errorMsg = "Произошла ошибка при входе. Проверьте подключение к интернету";
       setErrorMessage(errorMsg);
       toast({
         title: "Ошибка входа",
         description: errorMsg,
         variant: "destructive",
       });
+    } finally {
       setIsLoggingIn(false);
     }
   };
 
   // Show loading
-  if (isLoading || (isLoggingIn && !errorMessage) || (user && userRole)) {
-    let message = "Загрузка...";
-    if (isLoading) message = "Проверка сессии...";
-    else if (isLoggingIn) message = "Вход в систему...";
-    else if (user && userRole) message = "Переход в профиль...";
-
+  if (isLoading) {
     return (
       <AuthLayout>
-        <SimpleLoadingScreen message={message} />
+        <SimpleLoadingScreen message="Проверка сессии..." />
+      </AuthLayout>
+    );
+  }
+
+  // Redirect if already logged in
+  if (user && userRole) {
+    return (
+      <AuthLayout>
+        <SimpleLoadingScreen message="Переход на главную..." />
       </AuthLayout>
     );
   }
@@ -133,12 +113,6 @@ const LoginPage = React.memo(() => {
         </CardContent>
         
         <CardFooter className="flex flex-col text-center text-sm text-gray-500 pt-0">
-          {retryCount >= 2 && (
-            <div className="mb-2 p-2 bg-blue-50 rounded text-blue-700">
-              <p className="font-medium">Нужна помощь?</p>
-              <p>Попробуйте восстановить пароль или обратитесь в поддержку</p>
-            </div>
-          )}
           <p>
             После входа в систему вы сможете пользоваться всеми возможностями платформы.
           </p>
