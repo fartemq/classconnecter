@@ -17,9 +17,19 @@ import { TutorStudentSchedule } from "./schedule/TutorStudentSchedule";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useProfile } from "@/hooks/profiles/useProfile";
 import { SimpleLoadingScreen } from "@/components/auth/SimpleLoadingScreen";
+import { LazyLoader } from "@/components/ui/lazy-loader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Profile } from "@/hooks/profiles/types";
+
+// Lazy load heavy components
+const LazyTutorAnalytics = React.lazy(() => 
+  import("./analytics/TutorAnalytics").then(module => ({ default: module.TutorAnalytics }))
+);
+
+const LazyHomeworkManagement = React.lazy(() => 
+  import("./homework/TutorHomeworkManagement").then(module => ({ default: module.TutorHomeworkManagement }))
+);
 
 export const TutorProfileContent = () => {
   const location = useLocation();
@@ -103,9 +113,17 @@ export const TutorProfileContent = () => {
       case "student-schedule":
         return <TutorStudentSchedule />;
       case "homework":
-        return <TutorHomeworkManagement />;
+        return (
+          <LazyLoader>
+            <LazyHomeworkManagement />
+          </LazyLoader>
+        );
       case "analytics":
-        return <TutorAnalytics tutorId={user.id} />;
+        return (
+          <LazyLoader>
+            <LazyTutorAnalytics tutorId={user.id} />
+          </LazyLoader>
+        );
       case "chats":
         return <TutorChatsTab />;
       case "chat-view":

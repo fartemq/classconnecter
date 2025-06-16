@@ -14,6 +14,7 @@ import { User, Settings, LogOut, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { AdminAccessDialog } from "@/components/admin/AdminAccessDialog";
+import { logger } from "@/utils/logger";
 
 export const UserMenu = () => {
   const { user, userRole, logout } = useAuth();
@@ -25,13 +26,13 @@ export const UserMenu = () => {
   // Debug information
   useEffect(() => {
     if (user) {
-      console.log("👤 UserMenu Debug Info:");
-      console.log("- User ID:", user.id);
-      console.log("- User Email:", user.email);
-      console.log("- User Role:", userRole);
-      console.log("- Is Admin Role:", userRole === "admin");
-      console.log("- Is Moderator Role:", userRole === "moderator");
-      console.log("- Is Admin/Moderator:", userRole === "admin" || userRole === "moderator");
+      logger.debug('UserMenu debug info', 'user-menu', {
+        userId: user.id,
+        email: user.email,
+        role: userRole,
+        isAdmin: userRole === "admin",
+        isModerator: userRole === "moderator"
+      });
     }
   }, [user, userRole]);
 
@@ -49,6 +50,7 @@ export const UserMenu = () => {
         throw new Error("Не удалось выйти из системы");
       }
     } catch (error) {
+      logger.error('Logout error', 'user-menu', error);
       toast({
         title: "Ошибка",
         description: "Не удалось выйти из системы",
@@ -85,14 +87,6 @@ export const UserMenu = () => {
   const isSpecificAdmin = user.email === "arsenalreally35@gmail.com" || user.id === "861128e6-be26-48ee-b576-e7accded9f70";
   const isAdminOrModerator = userRole === "admin" || userRole === "moderator" || isSpecificAdmin;
 
-  console.log("🔍 Final admin check:", {
-    userRole,
-    isSpecificAdmin,
-    isAdminOrModerator,
-    userEmail: user.email,
-    userId: user.id
-  });
-
   return (
     <>
       <DropdownMenu>
@@ -104,7 +98,7 @@ export const UserMenu = () => {
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
+        <DropdownMenuContent className="w-56 bg-white z-50" align="end" forceMount>
           <div className="flex items-center justify-start gap-2 p-2">
             <div className="flex flex-col space-y-1 leading-none">
               <p className="font-medium">{user.email}</p>

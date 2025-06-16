@@ -19,7 +19,7 @@ export const TutorMobileLayout: React.FC<TutorMobileLayoutProps> = ({
   
   if (isMobile) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 pb-16">
         <div className="px-4 py-4">
           {children}
         </div>

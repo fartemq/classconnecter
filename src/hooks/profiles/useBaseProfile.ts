@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { logger } from "@/utils/logger";
 
 export interface BaseProfile {
   id: string;
@@ -34,7 +35,9 @@ export const useBaseProfile = (expectedRole?: string) => {
 
     // Check role mismatch
     if (expectedRole && userRole && userRole !== expectedRole) {
-      setError(`Неверная роль пользователя. Ожидается: ${expectedRole}, получено: ${userRole}`);
+      const errorMsg = `Неверная роль пользователя. Ожидается: ${expectedRole}, получено: ${userRole}`;
+      logger.warn("Role mismatch", "base-profile", { expected: expectedRole, actual: userRole });
+      setError(errorMsg);
       setIsLoading(false);
       return;
     }
@@ -58,7 +61,7 @@ export const useBaseProfile = (expectedRole?: string) => {
       if (fetchError) {
         if (fetchError.code === 'PGRST116') {
           // Profile doesn't exist, create it
-          console.log("Profile not found, creating...");
+          logger.debug("Profile not found, creating", "base-profile");
           await createProfile();
         } else {
           throw fetchError;
@@ -67,7 +70,7 @@ export const useBaseProfile = (expectedRole?: string) => {
         setProfile(data);
       }
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      logger.error("Error fetching profile", "base-profile", error);
       setError(error instanceof Error ? error.message : "Ошибка загрузки профиля");
       toast({
         title: "Ошибка",
@@ -101,9 +104,9 @@ export const useBaseProfile = (expectedRole?: string) => {
       if (error) throw error;
 
       setProfile(data);
-      console.log("Profile created successfully");
+      logger.info("Profile created successfully", "base-profile");
     } catch (error) {
-      console.error("Error creating profile:", error);
+      logger.error("Error creating profile", "base-profile", error);
       setError("Не удалось создать профиль");
       toast({
         title: "Ошибка",

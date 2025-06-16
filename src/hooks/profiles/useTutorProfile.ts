@@ -5,6 +5,7 @@ import { ProfileUpdateParams } from "./types";
 import { useBaseProfile } from "./useBaseProfile";
 import { createRoleSpecificProfile } from "./utils";
 import { fetchTutorProfileData } from "./utils/fetchProfile";
+import { logger } from "@/utils/logger";
 
 /**
  * Hook for managing tutor profile data
@@ -16,7 +17,7 @@ export const useTutorProfile = () => {
   const updateProfile = async (params: ProfileUpdateParams): Promise<boolean> => {
     try {
       if (!profile?.id) {
-        console.error("No profile ID found");
+        logger.error("No profile ID found", "tutor-profile");
         toast({
           title: "Ошибка",
           description: "Пользователь не авторизован",
@@ -25,7 +26,7 @@ export const useTutorProfile = () => {
         return false;
       }
 
-      console.log("Updating tutor profile with data:", params);
+      logger.debug("Updating tutor profile", "tutor-profile", params);
 
       // Start transaction-like approach
       const profileData = {
@@ -55,7 +56,7 @@ export const useTutorProfile = () => {
         .eq("id", profile.id);
 
       if (profileError) {
-        console.error("Error updating basic profile:", profileError);
+        logger.error("Error updating basic profile", "tutor-profile", profileError);
         throw profileError;
       }
 
@@ -67,7 +68,7 @@ export const useTutorProfile = () => {
         .maybeSingle();
 
       if (checkError && checkError.code !== 'PGRST116') {
-        console.error("Error checking tutor profile:", checkError);
+        logger.error("Error checking tutor profile", "tutor-profile", checkError);
         throw checkError;
       }
 
@@ -79,7 +80,7 @@ export const useTutorProfile = () => {
           .eq("id", profile.id);
 
         if (tutorUpdateError) {
-          console.error("Error updating tutor profile:", tutorUpdateError);
+          logger.error("Error updating tutor profile", "tutor-profile", tutorUpdateError);
           throw tutorUpdateError;
         }
       } else {
@@ -94,7 +95,7 @@ export const useTutorProfile = () => {
           });
 
         if (tutorCreateError) {
-          console.error("Error creating tutor profile:", tutorCreateError);
+          logger.error("Error creating tutor profile", "tutor-profile", tutorCreateError);
           throw tutorCreateError;
         }
       }
@@ -114,10 +115,10 @@ export const useTutorProfile = () => {
         description: "Профиль успешно обновлен",
       });
 
-      console.log("Profile update completed successfully");
+      logger.info("Profile update completed successfully", "tutor-profile");
       return true;
     } catch (error) {
-      console.error("Error in updateProfile:", error);
+      logger.error("Error in updateProfile", "tutor-profile", error);
       toast({
         title: "Ошибка",
         description: error instanceof Error ? error.message : "Не удалось обновить профиль",
@@ -145,12 +146,12 @@ export const useTutorProfile = () => {
           education_verified: tutorData.education_verified
         };
       } else {
-        console.log("No tutor profile found, creating one");
+        logger.debug("No tutor profile found, creating one", "tutor-profile");
         await createRoleSpecificProfile(userId, 'tutor');
         return null;
       }
     } catch (error) {
-      console.error("Error loading tutor data:", error);
+      logger.error("Error loading tutor data", "tutor-profile", error);
       return null;
     }
   };

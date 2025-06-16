@@ -36,25 +36,25 @@ export const MobileNavigation = ({
       </Button>
       
       {isMenuOpen && (
-        <div className="bg-white border-t border-gray-100 py-2">
+        <div className="bg-white border-t border-gray-100 py-2 shadow-lg">
           <div className="flex flex-col space-y-2 px-4">
             <Link 
               to="/subjects"
-              className="text-gray-700 hover:text-primary py-2"
+              className="text-gray-700 hover:text-primary py-2 transition-colors"
               onClick={() => setIsMenuOpen(false)}
             >
               Предметы
             </Link>
             <Link 
               to="/tutors"
-              className={`${location.pathname === "/tutors" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary py-2`}
+              className={`${location.pathname === "/tutors" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary py-2 transition-colors`}
               onClick={() => setIsMenuOpen(false)}
             >
               Репетиторы
             </Link>
             <Link 
               to="/about"
-              className={`${location.pathname === "/about" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary py-2`}
+              className={`${location.pathname === "/about" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary py-2 transition-colors`}
               onClick={() => setIsMenuOpen(false)}
             >
               О нас

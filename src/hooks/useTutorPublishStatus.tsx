@@ -8,6 +8,7 @@ import {
   publishTutorProfile,
   getTutorPublicationStatus 
 } from '@/services/tutor';
+import { logger } from '@/utils/logger';
 
 /**
  * Hook for managing tutor profile publication status
@@ -31,26 +32,26 @@ export const useTutorPublishStatus = (tutorId?: string) => {
       }
       
       if (!profileId) {
-        console.log("No profile ID available to check");
+        logger.debug('No profile ID available to check', 'publish-status');
         setLoading(false);
         return;
       }
       
       try {
         setLoading(true);
-        console.log("Checking publication status for profile ID:", profileId);
+        logger.debug('Checking publication status', 'publish-status', { profileId });
         
         // Get the comprehensive status
         const status = await getTutorPublicationStatus(profileId);
         
-        console.log("Publication status result:", status);
+        logger.debug('Publication status result', 'publish-status', status);
         
         setIsValid(status.isValid);
         setMissingFields(status.missingFields);
         setWarnings(status.warnings);
         setIsPublished(status.isPublished);
       } catch (error) {
-        console.error('Error checking publish status:', error);
+        logger.error('Error checking publish status', 'publish-status', error);
         toast({
           title: 'Ошибка',
           description: 'Не удалось проверить статус публикации профиля',
@@ -83,7 +84,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
     
     try {
       setLoading(true);
-      console.log(`Attempting to ${isPublished ? 'unpublish' : 'publish'} profile ID:`, profileId);
+      logger.debug(`Attempting to ${isPublished ? 'unpublish' : 'publish'} profile`, 'publish-status', { profileId });
       
       // If trying to publish, check if valid first
       if (!isPublished && !isValid) {
@@ -113,7 +114,7 @@ export const useTutorPublishStatus = (tutorId?: string) => {
         throw new Error('Failed to update publish status');
       }
     } catch (error) {
-      console.error('Error toggling publish status:', error);
+      logger.error('Error toggling publish status', 'publish-status', error);
       toast({
         title: 'Ошибка',
         description: 'Не удалось изменить статус публикации',
