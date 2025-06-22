@@ -1,69 +1,142 @@
-# Welcome to your Lovable project
 
-## Project info
+# Stud.rep - Платформа для поиска репетиторов
 
-**URL**: https://lovable.dev/projects/eab0a9b7-8677-4f8b-97ac-c2414fd56b0e
+Современная платформа для связи студентов с квалифицированными репетиторами.
 
-## How can I edit this code?
+## 🚀 Быстрый старт
 
-There are several ways of editing your application.
+### Требования
+- Node.js 18+
+- npm или yarn
 
-**Use Lovable**
+### Установка и запуск
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/eab0a9b7-8677-4f8b-97ac-c2414fd56b0e) and start prompting.
+```bash
+# Клонирование репозитория
+git clone <repository-url>
+cd stud-rep
 
-Changes made via Lovable will be committed automatically to this repo.
+# Установка зависимостей
+npm install
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Запуск в режиме разработки
 npm run dev
+
+# Сборка для продакшена
+npm run build
+
+# Предварительный просмотр сборки
+npm run preview
 ```
 
-**Edit a file directly in GitHub**
+### Переменные окружения
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+Создайте файл `.env.local` с необходимыми переменными:
 
-**Use GitHub Codespaces**
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📁 Структура проекта
 
-## What technologies are used for this project?
+```
+src/
+├── components/          # Переиспользуемые компоненты
+│   ├── ui/             # Базовые UI компоненты
+│   ├── auth/           # Компоненты аутентификации
+│   ├── profile/        # Компоненты профилей
+│   └── ...
+├── hooks/              # Пользовательские хуки
+├── pages/              # Страницы приложения
+├── services/           # API сервисы
+├── utils/              # Утилиты и хелперы
+└── types/              # TypeScript типы
+```
 
-This project is built with .
+## 🔐 Безопасность
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Все пользовательские вводы валидируются
+- Реализована защита от XSS атак
+- Используется HTTPS для всех запросов
+- Настроены CSP заголовки
 
-## How can I deploy this project?
+## 🎨 UI/UX
 
-Simply open [Lovable](https://lovable.dev/projects/eab0a9b7-8677-4f8b-97ac-c2414fd56b0e) and click on Share -> Publish.
+- Responsive дизайн для всех устройств
+- Поддержка accessibility (a11y)
+- Индикаторы загрузки для всех асинхронных операций
+- Понятные сообщения об ошибках
 
-## I want to use a custom domain - is that possible?
+## 🔧 Технологии
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+- **Frontend**: React 18, TypeScript, Vite
+- **Стилизация**: Tailwind CSS, shadcn/ui
+- **Состояние**: Tanstack Query, React Hook Form
+- **Backend**: Supabase (PostgreSQL, Auth, Storage)
+- **Деплой**: Lovable Platform
+
+## 📊 Производительность
+
+- Lazy loading для изображений и компонентов
+- Оптимизированная сборка с помощью Vite
+- Кэширование API запросов
+- Мониторинг производительности
+
+## 🧪 Тестирование
+
+```bash
+# Запуск smoke-тестов
+npm run test:smoke
+
+# Проверка типов
+npm run type-check
+
+# Линтинг
+npm run lint
+```
+
+## 📝 Основной функционал
+
+### Для студентов:
+- Поиск и фильтрация репетиторов
+- Просмотр профилей и отзывов
+- Бронирование уроков
+- Система сообщений
+- Управление домашними заданиями
+
+### Для репетиторов:
+- Создание и управление профилем
+- Управление расписанием
+- Проведение онлайн уроков
+- Работа с домашними заданиями
+- Аналитика и статистика
+
+### Для администраторов:
+- Управление пользователями
+- Модерация контента
+- Системная аналитика
+- Обработка обращений
+
+## 🔄 Процесс обновления
+
+1. Сделайте backup базы данных
+2. Обновите зависимости: `npm update`
+3. Проверьте миграции базы данных
+4. Запустите тесты: `npm run test`
+5. Деплойте изменения
+
+## 📞 Поддержка
+
+При возникновении проблем:
+1. Проверьте [Known Issues](KNOWN_ISSUES.md)
+2. Посмотрите логи в консоли браузера
+3. Создайте issue в репозитории
+
+## 📈 Roadmap
+
+См. [ROADMAP.md](ROADMAP.md) для планов развития проекта.
+
+## 📄 Лицензия
+
+MIT License - см. файл LICENSE для подробностей.
