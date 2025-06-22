@@ -129,21 +129,32 @@ export const performanceUtils = {
       rtt: connection.rtt,
       saveData: connection.saveData
     };
+  },
+
+  // Базовый мониторинг Core Web Vitals
+  measureCoreWebVitals: () => {
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
+    
+    return {
+      // First Contentful Paint
+      fcp: navigation.responseEnd - navigation.fetchStart,
+      // Largest Contentful Paint (приблизительно)
+      lcp: navigation.loadEventEnd - navigation.fetchStart,
+      // Time to First Byte
+      ttfb: navigation.responseStart - navigation.requestStart,
+      // DOM Content Loaded
+      dcl: navigation.domContentLoadedEventEnd - navigation.domContentLoadedEventStart
+    };
   }
 };
 
 // Автоматический мониторинг производительности
 export const startPerformanceMonitoring = () => {
-  // Мониторинг Core Web Vitals
-  if ('web-vitals' in window) {
-    import('web-vitals').then(({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
-      getCLS(console.log);
-      getFID(console.log);
-      getFCP(console.log);
-      getLCP(console.log);
-      getTTFB(console.log);
-    });
-  }
+  // Базовый мониторинг Core Web Vitals
+  setTimeout(() => {
+    const vitals = performanceUtils.measureCoreWebVitals();
+    console.log('📊 Core Web Vitals:', vitals);
+  }, 1000);
 
   // Предупреждение о высоком использовании памяти
   setInterval(() => {
@@ -154,13 +165,19 @@ export const startPerformanceMonitoring = () => {
   }, 30000);
 
   // Мониторинг медленных операций
-  const observer = new PerformanceObserver((list) => {
-    list.getEntries().forEach((entry) => {
-      if (entry.duration > 100) {
-        console.warn(`🐌 Медленная операция: ${entry.name} - ${entry.duration.toFixed(2)}ms`);
-      }
-    });
-  });
+  if ('PerformanceObserver' in window) {
+    try {
+      const observer = new PerformanceObserver((list) => {
+        list.getEntries().forEach((entry) => {
+          if (entry.duration > 100) {
+            console.warn(`🐌 Медленная операция: ${entry.name} - ${entry.duration.toFixed(2)}ms`);
+          }
+        });
+      });
 
-  observer.observe({ entryTypes: ['measure'] });
+      observer.observe({ entryTypes: ['measure'] });
+    } catch (error) {
+      console.warn('Performance Observer не поддерживается', error);
+    }
+  }
 };
