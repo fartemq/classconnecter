@@ -5,7 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/hooks/auth/AuthProvider";
+import { SimpleAuthProvider } from "@/hooks/auth/SimpleAuthProvider";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 // Pages
@@ -34,13 +34,13 @@ import StudentMaterialsPage from "./pages/StudentMaterialsPage";
 import StudentChatsPage from "./pages/StudentChatsPage";
 import StudentEditProfilePage from "./pages/StudentEditProfilePage";
 
-// Create QueryClient outside of component to prevent re-creation
+// Create QueryClient with optimized settings
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 5 * 60 * 1000, // 5 minutes
       gcTime: 30 * 60 * 1000, // 30 minutes
-      retry: 2,
+      retry: 1, // Уменьшил до 1 попытки для быстрости
       refetchOnWindowFocus: false,
     },
   },
@@ -48,7 +48,7 @@ const queryClient = new QueryClient({
 
 const App: React.FC = () => (
   <QueryClientProvider client={queryClient}>
-    <AuthProvider>
+    <SimpleAuthProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -91,7 +91,7 @@ const App: React.FC = () => (
               <Route index element={<AdminDashboardPage />} />
             </Route>
             
-            {/* Lesson interface routes - both with and without lessonId */}
+            {/* Lesson interface routes */}
             <Route path="/lesson" element={<ProtectedRoute />}>
               <Route index element={<LessonPage />} />
             </Route>
@@ -104,7 +104,7 @@ const App: React.FC = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
-    </AuthProvider>
+    </SimpleAuthProvider>
   </QueryClientProvider>
 );
 

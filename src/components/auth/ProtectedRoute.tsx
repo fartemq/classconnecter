@@ -1,46 +1,62 @@
 
 import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
-import { useAuth } from "@/hooks/auth/useAuth";
-import { Loader } from "@/components/ui/loader";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
+import { LoadingManager } from "@/components/loading/LoadingManager";
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
+  redirectTo?: string;
 }
 
-const ProtectedRoute = ({ allowedRoles = [] }: ProtectedRouteProps) => {
-  const { user, userRole, isLoading } = useAuth();
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  allowedRoles = [],
+  redirectTo = "/login"
+}) => {
+  const { user, userRole, isLoading, isError } = useSimpleAuth();
+  const location = useLocation();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader size="lg" />
-      </div>
-    );
-  }
+  return (
+    <LoadingManager 
+      isLoading={isLoading} 
+      isError={isError}
+      fallbackContent={
+        <div className="space-y-4">
+          <button
+            onClick={() => window.location.href = "/"}
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Вернуться на главную
+          </button>
+          <button
+            onClick={() => window.location.href = "/login"}
+            className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            Войти в аккаунт
+          </button>
+        </div>
+      }
+    >
+      {(() => {
+        // Если пользователь не залогинен
+        if (!user) {
+          return <Navigate to={redirectTo} state={{ from: location }} replace />;
+        }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+        // Если нет информации о роли, но пользователь есть - разрешаем доступ
+        if (!userRole) {
+          return <Outlet />;
+        }
 
-  // Специальная проверка для админ-панели
-  if (allowedRoles.includes('admin') || allowedRoles.includes('moderator')) {
-    // Только arsenalreally35@gmail.com может получить доступ к админ-панели
-    if (user.email !== "arsenalreally35@gmail.com") {
-      console.log("🚫 Access denied: Not the authorized admin email");
-      return <Navigate to="/" replace />;
-    }
-  }
+        // Если есть ограничения по ролям
+        if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
+          return <Navigate to="/" replace />;
+        }
 
-  // Проверка роли - если роли указаны, проверяем доступ
-  if (allowedRoles.length > 0 && userRole) {
-    if (!allowedRoles.includes(userRole)) {
-      console.log("🚫 Access denied: User role", userRole, "not in allowed roles", allowedRoles);
-      return <Navigate to="/" replace />;
-    }
-  }
-
-  return <Outlet />;
+        return <Outlet />;
+      })()}
+    </LoadingManager>
+  );
 };
 
 export default ProtectedRoute;

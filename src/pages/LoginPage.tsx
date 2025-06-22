@@ -2,17 +2,17 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthLayout } from "@/components/auth/AuthLayout";
-import { SimpleLoadingScreen } from "@/components/auth/SimpleLoadingScreen";
+import { SimpleLoader } from "@/components/loading/SimpleLoader";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { LoginForm, LoginFormValues } from "@/components/auth/LoginForm";
 import { LoginAlerts } from "@/components/auth/LoginAlerts";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { toast } from "@/hooks/use-toast";
 
 const LoginPage = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, userRole, isLoading, login } = useAuth();
+  const { user, userRole, isLoading, login } = useSimpleAuth();
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [needConfirmation, setNeedConfirmation] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -72,7 +72,7 @@ const LoginPage = React.memo(() => {
   if (isLoading) {
     return (
       <AuthLayout>
-        <SimpleLoadingScreen message="Проверка сессии..." />
+        <SimpleLoader message="Проверка сессии..." />
       </AuthLayout>
     );
   }
@@ -81,7 +81,7 @@ const LoginPage = React.memo(() => {
   if (user && userRole) {
     return (
       <AuthLayout>
-        <SimpleLoadingScreen message="Переход на главную..." />
+        <SimpleLoader message="Переход на главную..." />
       </AuthLayout>
     );
   }

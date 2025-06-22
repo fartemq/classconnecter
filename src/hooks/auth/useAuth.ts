@@ -1,12 +1,13 @@
 
-import { useAuthContext } from "./AuthProvider";
+import { useSimpleAuth } from "./SimpleAuthProvider";
 
+// Адаптер для обратной совместимости
 export const useAuth = () => {
-  const context = useAuthContext();
+  const simpleAuth = useSimpleAuth();
   
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  
-  return context;
+  return {
+    ...simpleAuth,
+    // Добавляем дополнительные поля если нужны для совместимости
+    refreshUserData: simpleAuth.refreshUserData,
+  };
 };
