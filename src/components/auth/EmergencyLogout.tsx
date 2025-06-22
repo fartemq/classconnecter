@@ -11,21 +11,31 @@ export const EmergencyLogout = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, userRole } = useAuth();
+  const { user, userRole, logout } = useAuth();
 
   const handleEmergencyLogout = async () => {
     try {
       setIsLoading(true);
       
-      // Принудительный выход - очищаем все
-      await supabase.auth.signOut();
-      localStorage.clear();
-      sessionStorage.clear();
+      // Сначала пробуем обычный logout
+      const success = await logout();
       
-      toast({
-        title: "Выход выполнен",
-        description: "Вы вышли из системы",
-      });
+      if (success) {
+        toast({
+          title: "Выход выполнен",
+          description: "Вы успешно вышли из системы",
+        });
+      } else {
+        // Если обычный logout не сработал, делаем принудительную очистку
+        await supabase.auth.signOut({ scope: 'global' });
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        toast({
+          title: "Принудительный выход",
+          description: "Сессия очищена принудительно",
+        });
+      }
       
       // Принудительная перезагрузка страницы
       window.location.href = "/";
@@ -68,7 +78,7 @@ export const EmergencyLogout = () => {
 
   return (
     <div className="fixed top-4 right-4 z-50 bg-white border border-red-200 rounded-lg p-4 shadow-lg">
-      <p className="text-sm text-gray-600 mb-3">Проблемы с навигацией?</p>
+      <p className="text-sm text-gray-600 mb-3">Проблемы с авторизацией?</p>
       <div className="flex gap-2">
         <Button 
           size="sm" 

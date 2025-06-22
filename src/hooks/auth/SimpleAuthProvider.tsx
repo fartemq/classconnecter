@@ -129,12 +129,7 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
 
   const logout = useCallback(async (): Promise<boolean> => {
     try {
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        return false;
-      }
-      
+      // Очищаем состояние сразу, независимо от результата запроса
       setUser(null);
       setUserRole(null);
       
@@ -148,10 +143,21 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
       } catch (error) {
         // Игнорируем ошибки очистки кэша
       }
+
+      // Пытаемся выйти через Supabase
+      const { error } = await supabase.auth.signOut();
+      
+      // Даже если есть ошибка (например, сессия уже недействительна), 
+      // возвращаем true, так как состояние уже очищено
+      if (error) {
+        console.warn("Logout warning (but state cleared):", error.message);
+      }
       
       return true;
     } catch (error) {
-      return false;
+      // Даже при исключении возвращаем true, так как состояние очищено
+      console.warn("Logout exception (but state cleared):", error);
+      return true;
     }
   }, []);
 
