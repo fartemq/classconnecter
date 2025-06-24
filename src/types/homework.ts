@@ -5,9 +5,10 @@ export interface HomeworkData {
   subject_id: string;
   title: string;
   description: string;
-  file_path: string | null;
+  file_path?: string | null;
   due_date: string;
   status?: string;
+  materials?: string[];
 }
 
 export interface Homework {
@@ -26,6 +27,8 @@ export interface Homework {
   updated_at: string;
   answer?: string | null;
   answer_file_path?: string | null;
+  materials?: string[];
+  answer_files?: string[];
   subject?: {
     name: string;
     id?: string;
@@ -40,4 +43,13 @@ export interface Homework {
     last_name: string | null;
     id?: string;
   };
+}
+
+export interface HomeworkFile {
+  id: string;
+  name: string;
+  path: string;
+  size: number;
+  type: string;
+  uploaded_at: string;
 }
