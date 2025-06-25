@@ -1,251 +1,321 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { ensureObject, ensureSingleObject } from "@/utils/supabaseUtils";
-
-// Define Subject type
-interface Subject {
-  id: string;
-  name: string;
-}
-
-// Define Student type
-interface Student {
-  id: string;
-  first_name: string;
-  last_name: string | null;
-  avatar_url?: string | null;
-}
+import { ArrowLeft, Calendar, User, BookOpen, FileText, Upload } from "lucide-react";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { fetchHomeworkById, gradeHomework } from "@/services/homework/homeworkService";
+import { uploadHomeworkAnswer, getFileUrl } from "@/services/homework/fileUploadService";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { Homework } from "@/types/homework";
 
 const HomeworkAssignment = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [dueDate, setDueDate] = useState("");
-  const [selectedSubjectId, setSelectedSubjectId] = useState("");
-  const [selectedStudentId, setSelectedStudentId] = useState("");
-  const [students, setStudents] = useState<Student[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useAuth();
+  const [homework, setHomework] = useState<Homework | null>(null);
+  const [grade, setGrade] = useState<string>("");
+  const [feedback, setFeedback] = useState<string>("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
 
   useEffect(() => {
-    const fetchStudentsAndSubjects = async () => {
+    const loadHomework = async () => {
+      if (!id) return;
+      
       try {
-        // Get current user
-        const { data: userData } = await supabase.auth.getUser();
-        if (!userData?.user) return;
-        
-        // Fetch students
-        const { data: studentsData, error: studentsError } = await supabase
-          .from('student_requests')
-          .select(`
-            student_id,
-            student:profiles!student_id (id, first_name, last_name, avatar_url)
-          `)
-          .eq('tutor_id', userData.user.id)
-          .eq('status', 'accepted');
-          
-        if (studentsError) throw studentsError;
-        
-        // Fetch subjects
-        const { data: subjectsData, error: subjectsError } = await supabase
-          .from('subjects')
-          .select('id, name');
-          
-        if (subjectsError) throw subjectsError;
-        
-        // Process students data
-        if (studentsData) {
-          const formattedStudents = studentsData.map(item => {
-            if (!item.student) return null;
-            
-            const student = ensureSingleObject(item.student);
-            return {
-              id: student.id,
-              first_name: student.first_name,
-              last_name: student.last_name,
-              avatar_url: student.avatar_url
-            };
-          }).filter(Boolean) as Student[];
-          
-          setStudents(formattedStudents);
-          if (formattedStudents.length > 0) {
-            setSelectedStudentId(formattedStudents[0].id);
-          }
+        const { data, error } = await fetchHomeworkById(id);
+        if (error || !data) {
+          toast({
+            title: "Ошибка",
+            description: "Не удалось загрузить задание",
+            variant: "destructive"
+          });
+          return;
         }
-        
-        // Process subjects data
-        if (subjectsData) {
-          setSubjects(subjectsData as Subject[]);
-          if (subjectsData.length > 0) {
-            setSelectedSubjectId(subjectsData[0].id);
-          }
-        }
+        setHomework(data);
+        setFeedback(data.feedback || "");
+        setGrade(data.grade?.toString() || "");
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error loading homework:', error);
         toast({
-          title: "Ошибка загрузки данных",
-          description: "Не удалось загрузить необходимые данные",
+          title: "Ошибка",
+          description: "Произошла ошибка при загрузке задания",
           variant: "destructive"
         });
+      } finally {
+        setIsLoading(false);
       }
     };
-    
-    fetchStudentsAndSubjects();
-  }, [toast]);
 
-  const handleAssignHomework = async (e: React.FormEvent) => {
-    e.preventDefault();
+    loadHomework();
+  }, [id, toast]);
+
+  const handleGradeSubmit = async () => {
+    if (!homework || !user) return;
     
-    if (!title || !description || !dueDate || !selectedSubjectId || !selectedStudentId) {
+    const gradeNum = parseFloat(grade);
+    if (isNaN(gradeNum) || gradeNum < 1 || gradeNum > 5) {
       toast({
-        title: "Заполните все поля",
-        description: "Все поля должны быть заполнены",
+        title: "Неверная оценка",
+        description: "Оценка должна быть от 1 до 5",
         variant: "destructive"
       });
       return;
     }
-    
+
+    setIsSubmitting(true);
     try {
-      setIsLoading(true);
-      
-      // Get current user
-      const { data: userData } = await supabase.auth.getUser();
-      if (!userData?.user) {
+      const success = await gradeHomework(homework.id, gradeNum, feedback);
+      if (success) {
         toast({
-          title: "Ошибка авторизации",
-          description: "Войдите в систему для назначения домашнего задания",
-          variant: "destructive"
+          title: "Оценка выставлена",
+          description: "Работа успешно оценена",
         });
-        return;
+        setHomework(prev => prev ? {
+          ...prev,
+          grade: gradeNum,
+          feedback,
+          status: 'graded'
+        } : null);
+      } else {
+        throw new Error('Не удалось выставить оценку');
       }
-      
-      // Format due date to ISO
-      const formattedDueDate = new Date(dueDate).toISOString();
-      
-      // Create homework
-      const { data, error } = await supabase
-        .from('homework')
-        .insert({
-          title,
-          description,
-          due_date: formattedDueDate,
-          subject_id: selectedSubjectId,
-          student_id: selectedStudentId,
-          tutor_id: userData.user.id,
-          status: 'assigned'
-        })
-        .select();
-        
-      if (error) throw error;
-      
-      toast({
-        title: "Задание назначено",
-        description: "Ученик получит уведомление о новом задании",
-      });
-      
-      navigate("/profile/tutor");
     } catch (error) {
-      console.error('Error assigning homework:', error);
       toast({
-        title: "Ошибка назначения",
-        description: "Не удалось назначить домашнее задание",
+        title: "Ошибка",
+        description: "Не удалось выставить оценку",
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
+  const handleFileUpload = async (file: File): Promise<string | null> => {
+    const fileName = `${Date.now()}_${file.name}`;
+    const filePath = `answers/${homework?.id}/${fileName}`;
+    
+    const { path, error } = await uploadHomeworkAnswer(file, filePath);
+    if (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
+    return path;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'assigned': return 'bg-blue-100 text-blue-800';
+      case 'submitted': return 'bg-yellow-100 text-yellow-800';
+      case 'graded': return 'bg-green-100 text-green-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'assigned': return 'Назначено';
+      case 'submitted': return 'Отправлено';
+      case 'graded': return 'Проверено';
+      default: return status;
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center">
+          <div className="text-center">Загрузка...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!homework) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <p className="text-gray-500">Задание не найдено</p>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate(-1)}
+              className="mt-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Назад
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const isOverdue = homework.due_date && new Date(homework.due_date) < new Date();
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Назначение домашнего задания</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleAssignHomework} className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="student">Ученик</Label>
-            <select
-              id="student"
-              className="w-full p-2 border rounded"
-              value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-            >
-              {students.map((student) => (
-                <option key={student.id} value={student.id}>
-                  {student.first_name} {student.last_name || ''}
-                </option>
-              ))}
-            </select>
-          </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="max-w-4xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <Button 
+            variant="outline" 
+            onClick={() => navigate(-1)}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Назад
+          </Button>
+          <Badge className={getStatusColor(homework.status)}>
+            {getStatusText(homework.status)}
+          </Badge>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl">{homework.title}</CardTitle>
+            <div className="flex items-center space-x-4 text-sm text-gray-500">
+              {homework.subject && (
+                <div className="flex items-center">
+                  <BookOpen className="h-4 w-4 mr-1" />
+                  <span>{homework.subject.name}</span>
+                </div>
+              )}
+              
+              {homework.student && (
+                <div className="flex items-center">
+                  <User className="h-4 w-4 mr-1" />
+                  <span>{homework.student.first_name} {homework.student.last_name}</span>
+                </div>
+              )}
+              
+              <div className="flex items-center">
+                <Calendar className="h-4 w-4 mr-1" />
+                <span className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                  {homework.due_date 
+                    ? format(new Date(homework.due_date), 'dd MMM yyyy HH:mm', { locale: ru })
+                    : 'Без срока'
+                  }
+                </span>
+              </div>
+            </div>
+          </CardHeader>
           
-          <div className="space-y-2">
-            <Label htmlFor="subject">Предмет</Label>
-            <select
-              id="subject"
-              className="w-full p-2 border rounded"
-              value={selectedSubjectId}
-              onChange={(e) => setSelectedSubjectId(e.target.value)}
-            >
-              {subjects.map((subject) => (
-                <option key={subject.id} value={subject.id}>
-                  {subject.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="title">Название задания</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Введите название задания"
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="description">Описание задания</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Подробно опишите задание"
-              rows={5}
-            />
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="dueDate">Срок выполнения</Label>
-            <Input
-              id="dueDate"
-              type="datetime-local"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-            />
-          </div>
-          
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" type="button" onClick={() => navigate(-1)}>
-              Отмена
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? "Назначение..." : "Назначить задание"}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+          <CardContent className="space-y-6">
+            <div>
+              <h3 className="font-medium mb-2">Описание задания</h3>
+              <p className="text-gray-700 whitespace-pre-wrap">{homework.description}</p>
+            </div>
+
+            {homework.materials && homework.materials.length > 0 && (
+              <div>
+                <h3 className="font-medium mb-2">Материалы</h3>
+                <div className="space-y-2">
+                  {homework.materials.map((material, index) => (
+                    <div key={index} className="flex items-center p-2 bg-gray-50 rounded">
+                      <FileText className="h-4 w-4 mr-2" />
+                      <span>{material}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {homework.answer && (
+              <div>
+                <h3 className="font-medium mb-2">Ответ студента</h3>
+                <div className="p-4 bg-blue-50 rounded">
+                  <p className="whitespace-pre-wrap">{homework.answer}</p>
+                </div>
+              </div>
+            )}
+
+            {homework.answer_files && homework.answer_files.length > 0 && (
+              <div>
+                <h3 className="font-medium mb-2">Файлы ответа</h3>
+                <div className="space-y-2">
+                  {homework.answer_files.map((file, index) => (
+                    <div key={index} className="flex items-center p-2 bg-gray-50 rounded">
+                      <FileText className="h-4 w-4 mr-2" />
+                      <span>{file}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {homework.status === 'submitted' && user?.userRole === 'tutor' && (
+              <div className="border-t pt-6">
+                <h3 className="font-medium mb-4">Оценить работу</h3>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="grade">Оценка (1-5)</Label>
+                    <Input
+                      id="grade"
+                      type="number"
+                      min="1"
+                      max="5"
+                      step="0.1"
+                      value={grade}
+                      onChange={(e) => setGrade(e.target.value)}
+                      placeholder="Введите оценку"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="feedback">Комментарий</Label>
+                    <Textarea
+                      id="feedback"
+                      value={feedback}
+                      onChange={(e) => setFeedback(e.target.value)}
+                      placeholder="Ваш комментарий к работе..."
+                      rows={4}
+                    />
+                  </div>
+                  
+                  <Button 
+                    onClick={handleGradeSubmit}
+                    disabled={isSubmitting || !grade}
+                    className="w-full"
+                  >
+                    {isSubmitting ? "Сохранение..." : "Выставить оценку"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {homework.status === 'graded' && (
+              <div className="border-t pt-6">
+                <h3 className="font-medium mb-4">Результат</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-4 bg-green-50 rounded">
+                    <span className="font-medium">Оценка:</span>
+                    <span className="text-xl font-bold text-green-700">{homework.grade}</span>
+                  </div>
+                  
+                  {homework.feedback && (
+                    <div>
+                      <Label className="font-medium">Комментарий преподавателя:</Label>
+                      <div className="mt-2 p-4 bg-gray-50 rounded">
+                        <p className="whitespace-pre-wrap">{homework.feedback}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 };
 

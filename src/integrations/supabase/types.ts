@@ -1086,6 +1086,15 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: boolean
       }
+      generate_tutor_time_slots: {
+        Args: { p_tutor_id: string; p_date: string }
+        Returns: {
+          slot_id: string
+          start_time: string
+          end_time: string
+          is_available: boolean
+        }[]
+      }
       get_admin_messages_for_user: {
         Args: { user_id_param: string }
         Returns: {
