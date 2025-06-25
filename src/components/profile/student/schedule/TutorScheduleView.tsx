@@ -1,269 +1,275 @@
 
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
-import { Clock, Calendar as CalendarIcon, User } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { supabase } from "@/integrations/supabase/client";
-import { Loader } from "@/components/ui/loader";
-import { format, isToday, isTomorrow, addDays } from "date-fns";
-import { ru } from "date-fns/locale";
-import { BookLessonDialog } from "./BookLessonDialog";
 import { useToast } from "@/hooks/use-toast";
+import { generateTutorTimeSlots, TimeSlot } from "@/services/lesson/timeSlotsService";
+import { bookLesson } from "@/services/lessonBookingService";
+import { notifyLessonBooked } from "@/services/scheduleNotificationService";
+import { format } from "date-fns";
+import { ru } from "date-fns/locale";
+import { Clock, User, BookOpen } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TutorScheduleViewProps {
-  tutorId?: string;
-  tutorName?: string;
+  tutorId: string;
+  tutorName: string;
   onClose?: () => void;
 }
 
-interface TimeSlot {
-  id: string;
-  start_time: string;
-  end_time: string;
-  day_of_week: number;
-}
-
-interface Subject {
-  id: string;
-  name: string;
-}
-
-export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({ 
-  tutorId, 
-  tutorName = "Репетитор",
-  onClose 
+export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({
+  tutorId,
+  tutorName,
+  onClose
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
-  const [subjects, setSubjects] = useState<Subject[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
-  const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [subjects, setSubjects] = useState<Array<{id: string, name: string}>>([]);
+  const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [bookingSlot, setBookingSlot] = useState<string | null>(null);
 
   useEffect(() => {
-    if (tutorId) {
-      fetchTutorSubjects();
-    }
-  }, [tutorId]);
-
-  useEffect(() => {
-    if (tutorId && selectedDate) {
-      fetchAvailableSlots();
-    }
+    fetchSubjects();
+    fetchTimeSlots();
   }, [tutorId, selectedDate]);
 
-  const fetchTutorSubjects = async () => {
+  const fetchSubjects = async () => {
     try {
       const { data, error } = await supabase
         .from('tutor_subjects')
         .select(`
-          subject:subjects(id, name)
+          subject:subjects (id, name)
         `)
         .eq('tutor_id', tutorId)
         .eq('is_active', true);
 
       if (error) throw error;
 
-      const subjectList = data
-        ?.map(item => item.subject)
+      const subjectList = (data || [])
+        .map(item => item.subject)
         .filter(Boolean)
-        .map(subject => Array.isArray(subject) ? subject[0] : subject) as Subject[];
+        .map(subject => Array.isArray(subject) ? subject[0] : subject);
 
-      setSubjects(subjectList || []);
+      setSubjects(subjectList);
+      if (subjectList.length > 0 && !selectedSubject) {
+        setSelectedSubject(subjectList[0].id);
+      }
     } catch (error) {
-      console.error('Error fetching tutor subjects:', error);
+      console.error('Error fetching subjects:', error);
     }
   };
 
-  const fetchAvailableSlots = async () => {
-    if (!tutorId || !selectedDate) return;
-    
-    setIsLoading(true);
+  const fetchTimeSlots = async () => {
+    setLoading(true);
     try {
-      const dayOfWeek = selectedDate.getDay() === 0 ? 7 : selectedDate.getDay();
-      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
-      
-      // Получаем расписание репетитора на выбранный день недели
-      const { data: scheduleData, error: scheduleError } = await supabase
-        .from('tutor_schedule')
-        .select('*')
-        .eq('tutor_id', tutorId)
-        .eq('day_of_week', dayOfWeek)
-        .eq('is_available', true)
-        .order('start_time');
-        
-      if (scheduleError) {
-        console.error('Error fetching schedule:', scheduleError);
-        setAvailableSlots([]);
-        return;
-      }
-      
-      if (!scheduleData || scheduleData.length === 0) {
-        setAvailableSlots([]);
-        return;
-      }
-      
-      // Проверяем исключения на выбранную дату
-      const { data: exceptions, error: exceptionsError } = await supabase
-        .from('tutor_schedule_exceptions')
-        .select('*')
-        .eq('tutor_id', tutorId)
-        .eq('date', formattedDate)
-        .eq('is_full_day', true);
-        
-      if (exceptionsError) {
-        console.error('Error fetching exceptions:', exceptionsError);
-      }
-      
-      // Если есть исключение на весь день, слоты недоступны
-      if (exceptions && exceptions.length > 0) {
-        setAvailableSlots([]);
-        return;
-      }
-      
-      // Получаем уже забронированные занятия на эту дату
-      const { data: existingLessons, error: lessonsError } = await supabase
-        .from('lessons')
-        .select('start_time, end_time')
-        .eq('tutor_id', tutorId)
-        .gte('start_time', `${formattedDate}T00:00:00`)
-        .lt('start_time', `${formattedDate}T23:59:59`)
-        .in('status', ['pending', 'confirmed', 'upcoming']);
-        
-      if (lessonsError) {
-        console.error('Error fetching lessons:', lessonsError);
-      }
-      
-      // Фильтруем доступные слоты, исключая уже забронированные
-      const freeSlots = scheduleData.filter(slot => {
-        const slotStartTime = `${formattedDate}T${slot.start_time}`;
-        
-        return !existingLessons?.some(lesson => 
-          lesson.start_time === slotStartTime
-        );
-      });
-      
-      setAvailableSlots(freeSlots);
+      const slots = await generateTutorTimeSlots(tutorId, selectedDate);
+      setTimeSlots(slots);
     } catch (error) {
-      console.error('Error in fetchAvailableSlots:', error);
-      setAvailableSlots([]);
+      console.error('Error fetching time slots:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось загрузить доступное время",
+        variant: "destructive"
+      });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleSlotSelect = (slot: TimeSlot) => {
-    setSelectedSlot(slot);
-    setBookingDialogOpen(true);
+  const handleBookSlot = async (slot: TimeSlot) => {
+    if (!user?.id || !selectedSubject) {
+      toast({
+        title: "Ошибка",
+        description: "Необходимо выбрать предмет и войти в систему",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setBookingSlot(slot.slot_id);
+
+    try {
+      // Find corresponding schedule slot
+      const { data: scheduleSlots, error } = await supabase
+        .from('tutor_schedule')
+        .select('id')
+        .eq('tutor_id', tutorId)
+        .eq('start_time', slot.start_time)
+        .eq('end_time', slot.end_time)
+        .single();
+
+      if (error || !scheduleSlots) {
+        throw new Error('Schedule slot not found');
+      }
+
+      const bookingResult = await bookLesson({
+        studentId: user.id,
+        tutorId,
+        subjectId: selectedSubject,
+        date: selectedDate,
+        scheduleSlotId: scheduleSlots.id
+      });
+
+      if (bookingResult.success) {
+        // Get user names for notification
+        const { data: studentProfile } = await supabase
+          .from('profiles')
+          .select('first_name, last_name')
+          .eq('id', user.id)
+          .single();
+
+        const { data: subjectData } = await supabase
+          .from('subjects')
+          .select('name')
+          .eq('id', selectedSubject)
+          .single();
+
+        // Send notifications
+        await notifyLessonBooked(
+          tutorId,
+          user.id,
+          {
+            date: format(selectedDate, 'dd.MM.yyyy', { locale: ru }),
+            time: slot.start_time.substring(0, 5),
+            subject: subjectData?.name || 'Предмет',
+            studentName: `${studentProfile?.first_name} ${studentProfile?.last_name}`,
+            tutorName
+          }
+        );
+
+        toast({
+          title: "Успешно",
+          description: "Занятие успешно забронировано",
+        });
+
+        // Refresh slots
+        fetchTimeSlots();
+        onClose?.();
+      } else {
+        throw new Error(bookingResult.error || 'Failed to book lesson');
+      }
+    } catch (error) {
+      console.error('Error booking lesson:', error);
+      toast({
+        title: "Ошибка",
+        description: "Не удалось забронировать занятие",
+        variant: "destructive"
+      });
+    } finally {
+      setBookingSlot(null);
+    }
   };
 
-  const getDateLabel = (date: Date) => {
-    if (isToday(date)) return 'Сегодня';
-    if (isTomorrow(date)) return 'Завтра';
-    return format(date, 'dd MMMM', { locale: ru });
-  };
-
-  const isDateAvailable = (date: Date) => {
-    // Не позволяем выбирать прошедшие даты
-    return date >= new Date();
-  };
+  const availableSlots = timeSlots.filter(slot => slot.is_available);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">Выберите время для занятия</h3>
-        {onClose && (
-          <Button variant="outline" onClick={onClose}>
-            Закрыть
-          </Button>
-        )}
+      <div className="space-y-4">
+        <div>
+          <label className="text-sm font-medium mb-2 block">Предмет</label>
+          <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+            <SelectTrigger>
+              <SelectValue placeholder="Выберите предмет" />
+            </SelectTrigger>
+            <SelectContent>
+              {subjects.map(subject => (
+                <SelectItem key={subject.id} value={subject.id}>
+                  {subject.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Календарь для выбора даты */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CalendarIcon className="h-5 w-5" />
-              <span>Выберите дату</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+      <div className="flex flex-col md:flex-row gap-6">
+        <Card className="md:w-80">
+          <CardContent className="p-4">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={(date) => date && setSelectedDate(date)}
-              disabled={(date) => !isDateAvailable(date)}
-              className="rounded-md border"
+              locale={ru}
+              disabled={(date) => date < new Date()}
+              className="rounded-md border-0"
             />
           </CardContent>
         </Card>
 
-        {/* Доступные временные слоты */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="h-5 w-5" />
-              <span>
-                Доступное время - {getDateLabel(selectedDate)}
-              </span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <Loader size="lg" />
-              </div>
-            ) : availableSlots.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <Clock className="mx-auto h-12 w-12 text-gray-300 mb-4" />
-                <p>Нет доступного времени</p>
-                <p className="text-sm">на выбранную дату</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2">
-                {availableSlots.map(slot => (
-                  <Button
-                    key={slot.id}
-                    variant="outline"
-                    className="py-3 h-auto hover:bg-blue-50 hover:border-blue-300"
-                    onClick={() => handleSlotSelect(slot)}
-                  >
-                    <div className="flex flex-col items-center">
-                      <Clock className="h-4 w-4 mb-1" />
-                      <span className="text-sm">
-                        {slot.start_time.substring(0, 5)} - {slot.end_time.substring(0, 5)}
-                      </span>
-                    </div>
-                  </Button>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <div className="flex-1">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>
+                  {format(selectedDate, 'EEEE, d MMMM', { locale: ru })}
+                </span>
+                <Badge variant="outline">
+                  {availableSlots.length} свободных слотов
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : availableSlots.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Нет свободных слотов на эту дату</p>
+                  <p className="text-sm">Попробуйте выбрать другой день</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {availableSlots.map((slot) => (
+                    <Card 
+                      key={slot.slot_id} 
+                      className="cursor-pointer transition-all hover:shadow-md hover:border-blue-300"
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center space-x-2">
+                            <Clock className="h-4 w-4" />
+                            <span className="font-medium">
+                              {slot.start_time.substring(0, 5)} - {slot.end_time.substring(0, 5)}
+                            </span>
+                          </div>
+                          <Badge variant="secondary">
+                            Свободно
+                          </Badge>
+                        </div>
+                        
+                        <Button 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => handleBookSlot(slot)}
+                          disabled={bookingSlot === slot.slot_id || !selectedSubject}
+                        >
+                          {bookingSlot === slot.slot_id ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                              Бронирование...
+                            </>
+                          ) : (
+                            'Забронировать'
+                          )}
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
-
-      {/* Диалог бронирования */}
-      {selectedSlot && (
-        <BookLessonDialog
-          isOpen={bookingDialogOpen}
-          onClose={() => {
-            setBookingDialogOpen(false);
-            setSelectedSlot(null);
-          }}
-          tutorId={tutorId!}
-          tutorName={tutorName}
-          date={selectedDate}
-          startTime={selectedSlot.start_time}
-          endTime={selectedSlot.end_time}
-          subjects={subjects}
-        />
-      )}
     </div>
   );
 };

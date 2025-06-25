@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,6 @@ export const TutorBookingModal: React.FC<TutorBookingModalProps> = ({
   tutor,
   onBookingComplete
 }) => {
-
   const handleBookingComplete = () => {
     onBookingComplete?.();
     onClose();
@@ -36,7 +35,7 @@ export const TutorBookingModal: React.FC<TutorBookingModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
             Запись на занятие к {tutorName}
