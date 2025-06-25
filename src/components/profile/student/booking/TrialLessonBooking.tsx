@@ -62,12 +62,14 @@ export const TrialLessonBooking: React.FC<TrialLessonBookingProps> = ({
     onClose();
   };
 
+  const tutorName = `${tutor.first_name} ${tutor.last_name}`.trim();
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            Пробное занятие с {tutor.first_name} {tutor.last_name}
+            Пробное занятие с {tutorName}
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
             Выберите время из расписания репетитора
@@ -86,7 +88,8 @@ export const TrialLessonBooking: React.FC<TrialLessonBookingProps> = ({
 
           {/* Используем TutorScheduleView для строгого соблюдения расписания */}
           <TutorScheduleView 
-            tutorId={tutor.id} 
+            tutorId={tutor.id}
+            tutorName={tutorName}
             onClose={handleBookingComplete}
           />
         </div>
