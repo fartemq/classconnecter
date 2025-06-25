@@ -20,7 +20,7 @@ const HomeworkAssignment = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, userRole } = useAuth();
   const [homework, setHomework] = useState<Homework | null>(null);
   const [grade, setGrade] = useState<string>("");
   const [feedback, setFeedback] = useState<string>("");
@@ -252,7 +252,7 @@ const HomeworkAssignment = () => {
               </div>
             )}
 
-            {homework.status === 'submitted' && user?.userRole === 'tutor' && (
+            {homework.status === 'submitted' && userRole === 'tutor' && (
               <div className="border-t pt-6">
                 <h3 className="font-medium mb-4">Оценить работу</h3>
                 <div className="space-y-4">
