@@ -57,7 +57,7 @@ const setCachedRole = (userId: string, role: string): void => {
   }
 };
 
-const fetchUserRoleWithTimeout = async (userId: string): Promise<string> => {
+const fetchUserRoleWithValidation = async (userId: string): Promise<string | null> => {
   // Сначала проверяем кэш
   const cachedRole = getCachedRole(userId);
   if (cachedRole) {
@@ -73,27 +73,31 @@ const fetchUserRoleWithTimeout = async (userId: string): Promise<string> => {
     // Пробуем получить роль с timeout
     const rolePromise = supabase
       .from("profiles")
-      .select("role")
+      .select("role, is_blocked")
       .eq("id", userId)
       .maybeSingle();
 
     const { data, error } = await Promise.race([rolePromise, timeoutPromise]);
 
-    if (error || !data?.role) {
-      // Fallback на роль студента
-      const fallbackRole = 'student';
-      setCachedRole(userId, fallbackRole);
-      return fallbackRole;
+    if (error || !data) {
+      console.error("Profile not found or error:", error);
+      return null; // Возвращаем null если профиль не найден
+    }
+
+    // Проверяем блокировку
+    if (data.is_blocked) {
+      console.error("User is blocked:", userId);
+      return null;
     }
 
     const role = data.role;
-    setCachedRole(userId, role);
+    if (role) {
+      setCachedRole(userId, role);
+    }
     return role;
   } catch (error) {
-    // При любой ошибке возвращаем студента
-    const fallbackRole = 'student';
-    setCachedRole(userId, fallbackRole);
-    return fallbackRole;
+    console.error("Error fetching user role:", error);
+    return null;
   }
 };
 
@@ -114,13 +118,17 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
         return false;
       }
 
-      setUser(data.user);
+      // Проверяем существование профиля
+      const role = await fetchUserRoleWithValidation(data.user.id);
       
-      // Получаем роль асинхронно
-      fetchUserRoleWithTimeout(data.user.id).then(role => {
-        setUserRole(role);
-      });
+      if (!role) {
+        // Если профиль не найден или пользователь заблокирован, выходим
+        await supabase.auth.signOut();
+        return false;
+      }
 
+      setUser(data.user);
+      setUserRole(role);
       return true;
     } catch (error) {
       return false;
@@ -164,12 +172,22 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
   const refreshUserData = useCallback(async () => {
     try {
       const { data: { user: currentUser } } = await supabase.auth.getUser();
-      setUser(currentUser);
       
       if (currentUser) {
-        const role = await fetchUserRoleWithTimeout(currentUser.id);
+        const role = await fetchUserRoleWithValidation(currentUser.id);
+        
+        if (!role) {
+          // Если профиль не найден, выходим из системы
+          await supabase.auth.signOut();
+          setUser(null);
+          setUserRole(null);
+          return;
+        }
+        
+        setUser(currentUser);
         setUserRole(role);
       } else {
+        setUser(null);
         setUserRole(null);
       }
     } catch (error) {
@@ -194,14 +212,18 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         
         if (mounted && session?.user) {
-          setUser(session.user);
+          // Проверяем существование профиля
+          const role = await fetchUserRoleWithValidation(session.user.id);
           
-          // Получаем роль асинхронно, не блокируя UI
-          fetchUserRoleWithTimeout(session.user.id).then(role => {
-            if (mounted) {
-              setUserRole(role);
-            }
-          });
+          if (!role) {
+            // Если профиль не найден, выходим из системы
+            await supabase.auth.signOut();
+            setUser(null);
+            setUserRole(null);
+          } else {
+            setUser(session.user);
+            setUserRole(role);
+          }
         }
       } catch (error) {
         if (mounted) {
@@ -222,14 +244,18 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
         if (!mounted) return;
 
         if (session?.user) {
-          setUser(session.user);
+          // Проверяем существование профиля
+          const role = await fetchUserRoleWithValidation(session.user.id);
           
-          // Получаем роль асинхронно
-          fetchUserRoleWithTimeout(session.user.id).then(role => {
-            if (mounted) {
-              setUserRole(role);
-            }
-          });
+          if (!role) {
+            // Если профиль не найден, выходим из системы
+            await supabase.auth.signOut();
+            setUser(null);
+            setUserRole(null);
+          } else {
+            setUser(session.user);
+            setUserRole(role);
+          }
         } else {
           setUser(null);
           setUserRole(null);

@@ -15,7 +15,7 @@ export interface LoginResponse {
 }
 
 /**
- * Enhanced login function with better error handling and retry mechanism
+ * Enhanced login function with profile existence check
  */
 export const loginWithEmailAndPassword = async ({ 
   email, 
@@ -89,19 +89,72 @@ export const loginWithEmailAndPassword = async ({
       };
     }
 
-    // Fetch user role with retry mechanism
+    // КРИТИЧЕСКАЯ ПРОВЕРКА: Проверяем существование профиля
     try {
-      let role = await fetchUserRole(data.user.id);
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("id, role")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
+      if (profileError) {
+        console.error("Profile check error:", profileError);
+        // Выходим из системы если профиль не найден
+        await supabase.auth.signOut();
+        return {
+          success: false,
+          error: "Ошибка проверки профиля. Обратитесь в поддержку.",
+        };
+      }
+
+      // Если профиль не найден, запрещаем вход
+      if (!profile) {
+        console.error("User has no profile:", data.user.id);
+        // Выходим из системы
+        await supabase.auth.signOut();
+        return {
+          success: false,
+          error: "Профиль пользователя не найден. Возможно, регистрация не была завершена. Попробуйте зарегистрироваться заново.",
+        };
+      }
+
+      // Проверяем, что пользователь не заблокирован
+      const { data: profileData, error: profileDataError } = await supabase
+        .from("profiles")
+        .select("is_blocked")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profileDataError) {
+        console.error("Profile data check error:", profileDataError);
+      } else if (profileData?.is_blocked) {
+        // Выходим из системы если пользователь заблокирован
+        await supabase.auth.signOut();
+        return {
+          success: false,
+          error: "Ваш аккаунт заблокирован. Обратитесь в поддержку.",
+        };
+      }
+
+      const role = profile.role;
       
       // Special case for admin user
       if (data.user.id === "861128e6-be26-48ee-b576-e7accded9f70") {
-        role = "admin";
+        return {
+          success: true,
+          user: data.user,
+          role: "admin",
+        };
       }
       
       // Validate role
       if (!role || !['admin', 'tutor', 'student'].includes(role)) {
-        console.warn("Invalid or missing role, defaulting to student");
-        role = "student";
+        console.warn("Invalid role, denying login:", role);
+        await supabase.auth.signOut();
+        return {
+          success: false,
+          error: "Некорректная роль пользователя. Обратитесь в поддержку.",
+        };
       }
       
       console.log("User logged in successfully with role:", role);
@@ -110,14 +163,14 @@ export const loginWithEmailAndPassword = async ({
         user: data.user,
         role,
       };
-    } catch (roleError) {
-      console.error("Error fetching user role:", roleError);
+    } catch (profileCheckError) {
+      console.error("Error checking user profile:", profileCheckError);
       
-      // Still return success but with default role
+      // Выходим из системы при ошибке проверки профиля
+      await supabase.auth.signOut();
       return {
-        success: true,
-        user: data.user,
-        role: "student", // safe default
+        success: false,
+        error: "Ошибка проверки профиля пользователя. Попробуйте еще раз.",
       };
     }
   } catch (error) {
