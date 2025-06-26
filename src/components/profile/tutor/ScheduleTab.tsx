@@ -435,7 +435,6 @@ export const ScheduleTab = () => {
               {user?.id && (
                 <TutorScheduleView 
                   tutorId={user.id}
-                  tutorName={`${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`.trim()}
                   showBookingOptions={false}
                 />
               )}
