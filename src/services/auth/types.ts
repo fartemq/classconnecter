@@ -14,4 +14,5 @@ export type RegisterUserData = {
 export interface AuthResult {
   user: any;
   session: any | null;
+  needsEmailConfirmation?: boolean;
 }

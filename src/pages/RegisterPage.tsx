@@ -17,7 +17,9 @@ import { RegisterFormValues } from "@/components/auth/register-form-schema";
 import { registerUser } from "@/services/auth";
 import { supabase } from "@/integrations/supabase/client";
 import { EmailConfirmationStatus } from "@/components/auth/EmailConfirmationStatus";
+import { ProfileRecoveryDialog } from "@/components/auth/ProfileRecoveryDialog";
 import { useAuth } from "@/hooks/auth/useAuth";
+import { checkUserProfileStatus } from "@/services/auth/profileRecoveryService";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -27,8 +29,10 @@ const RegisterPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [showConfirmEmail, setShowConfirmEmail] = useState(false);
+  const [showProfileRecovery, setShowProfileRecovery] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [registeredRole, setRegisteredRole] = useState<"student" | "tutor" | undefined>(undefined);
+  const [registrationData, setRegistrationData] = useState<RegisterFormValues | null>(null);
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -36,15 +40,33 @@ const RegisterPage = () => {
       try {
         setCheckingSession(true);
         if (user) {
-          // Already logged in, redirect to profile
+          // Already logged in, check profile status
           try {
-            const { data } = await supabase
-              .from("profiles")
-              .select("role")
-              .eq("id", user.id)
-              .maybeSingle();
+            const profileStatus = await checkUserProfileStatus(user.id);
+            
+            if (!profileStatus.profileExists) {
+              // Profile doesn't exist, show recovery dialog
+              console.log("User logged in but profile missing, showing recovery dialog");
               
-            if (data?.role === "tutor") {
+              // Try to get registration data from user metadata
+              const userData = {
+                firstName: user.user_metadata?.first_name || "",
+                lastName: user.user_metadata?.last_name || "",
+                role: (user.user_metadata?.role as "student" | "tutor") || "student",
+                city: user.user_metadata?.city || "",
+                phone: user.user_metadata?.phone || "",
+                bio: user.user_metadata?.bio || "",
+              };
+              
+              setRegistrationData(userData);
+              setShowProfileRecovery(true);
+              setCheckingSession(false);
+              return;
+            }
+            
+            // Profile exists, redirect to appropriate page
+            const role = user.user_metadata?.role || "student";
+            if (role === "tutor") {
               console.log("RegisterPage: Redirecting to tutor profile");
               navigate("/profile/tutor");
             } else {
@@ -52,7 +74,7 @@ const RegisterPage = () => {
               navigate("/profile/student");
             }
           } catch (error) {
-            console.error("Error fetching profile data:", error);
+            console.error("Error checking profile status:", error);
             setCheckingSession(false);
           }
         } else {
@@ -87,6 +109,9 @@ const RegisterPage = () => {
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: registeredEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?role=${registeredRole}`,
+        }
       });
       
       if (error) {
@@ -118,8 +143,10 @@ const RegisterPage = () => {
       const role = values.role || defaultRole || "student";
       console.log("Using role for registration:", role);
       
-      // Save role for redirect after email confirmation
+      // Save data for potential profile recovery
+      setRegistrationData(values);
       setRegisteredRole(role);
+      setRegisteredEmail(values.email);
       
       // Register user with all provided data
       const result = await registerUser({
@@ -134,12 +161,9 @@ const RegisterPage = () => {
       });
 
       console.log("Registration successful:", result);
-
-      // Store email for potential resend
-      setRegisteredEmail(values.email);
       
       // Check if email confirmation is required
-      if (!result.session) {
+      if (result.needsEmailConfirmation || !result.session) {
         // Show confirmation page instead of redirect
         setShowConfirmEmail(true);
       } else {
@@ -179,6 +203,7 @@ const RegisterPage = () => {
           email={registeredEmail}
           status="pending"
           onResend={handleResendConfirmation}
+          isResending={isLoading}
           role={registeredRole}
         />
       </AuthLayout>
@@ -207,6 +232,15 @@ const RegisterPage = () => {
           </p>
         </CardFooter>
       </Card>
+
+      {/* Profile Recovery Dialog */}
+      {showProfileRecovery && registrationData && (
+        <ProfileRecoveryDialog
+          isOpen={showProfileRecovery}
+          onClose={() => setShowProfileRecovery(false)}
+          userData={registrationData}
+        />
+      )}
     </AuthLayout>
   );
 };

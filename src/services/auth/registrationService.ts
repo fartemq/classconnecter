@@ -1,17 +1,17 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { RegisterUserData, AuthResult } from "./types";
+import { checkUserProfileStatus, createMissingProfile } from "./profileRecoveryService";
 
 /**
- * Registers a new user and creates their profile with RLS compliance
- * Profiles are now automatically created via database triggers
+ * Улучшенный сервис регистрации с поддержкой восстановления профилей
  */
 export const registerUser = async (userData: RegisterUserData): Promise<AuthResult> => {
   try {
-    console.log("Starting registration process for:", userData.email);
+    console.log("Starting enhanced registration process for:", userData.email);
     console.log("Registration data:", userData);
     
-    // Register the user with proper metadata
+    // Регистрируем пользователя с правильными метаданными
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
@@ -24,37 +24,74 @@ export const registerUser = async (userData: RegisterUserData): Promise<AuthResu
           phone: userData.phone || '',
           bio: userData.bio || '',
         },
-        emailRedirectTo: window.location.origin + '/profile/' + userData.role,
+        // Критически важно для email подтверждения
+        emailRedirectTo: `${window.location.origin}/auth/callback?role=${userData.role}`,
       },
     });
 
     if (authError) {
       console.error("Auth error:", authError);
       
-      // Handle specific errors
+      // Обрабатываем специфические ошибки
       if (authError.message.includes("User already registered")) {
         throw new Error("Пользователь с таким email уже существует");
+      }
+      
+      if (authError.message.includes("Password should be at least")) {
+        throw new Error("Пароль должен содержать минимум 6 символов");
       }
       
       throw new Error(authError.message || "Ошибка при регистрации пользователя");
     }
 
-    // Verify user is created
+    // Проверяем, что пользователь создан
     if (!authData.user) {
       throw new Error("Не удалось создать пользователя");
     }
     
     console.log("User created successfully:", authData.user.id);
-    console.log("Profile will be created automatically via database trigger");
 
-    // Return auth result
-    if (!authData.session) {
+    // Если есть сессия (email подтверждение отключено), проверим профиль
+    if (authData.session) {
+      console.log("Session exists, checking profile creation");
+      
+      // Даем время триггеру сработать
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Проверяем, создался ли профиль
+      const profileStatus = await checkUserProfileStatus(authData.user.id);
+      
+      if (!profileStatus.profileExists) {
+        console.log("Profile not created by trigger, creating manually");
+        
+        // Создаем профиль вручную
+        const recoveryResult = await createMissingProfile(authData.user.id, {
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          role: userData.role,
+          city: userData.city,
+          phone: userData.phone,
+          bio: userData.bio,
+        });
+        
+        if (!recoveryResult.success) {
+          console.error("Failed to create profile manually:", recoveryResult.message);
+        } else {
+          console.log("Profile created manually");
+        }
+      } else {
+        console.log("Profile created successfully by trigger");
+      }
+    } else {
       console.log("No session found, email confirmation is required");
-      return { user: authData.user, session: null };
     }
-    
-    console.log("Session exists, registration complete");
-    return { user: authData.user, session: authData.session };
+
+    // Возвращаем результат
+    return { 
+      user: authData.user, 
+      session: authData.session,
+      needsEmailConfirmation: !authData.session 
+    };
   } catch (error) {
     console.error("Registration error:", error);
     throw error;
