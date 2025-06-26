@@ -6,7 +6,7 @@ import { toast } from "@/hooks/use-toast";
  * Сервис для работы с подтверждением email
  */
 
-export interface EmailConfirmationStatus {
+export interface EmailConfirmationStatusData {
   isConfirmed: boolean;
   email: string;
   userId: string;
@@ -17,7 +17,7 @@ export interface EmailConfirmationStatus {
 /**
  * Проверяет статус подтверждения email для текущего пользователя
  */
-export const checkEmailConfirmationStatus = async (): Promise<EmailConfirmationStatus | null> => {
+export const checkEmailConfirmationStatus = async (): Promise<EmailConfirmationStatusData | null> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     

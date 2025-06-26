@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MailCheck, Loader2, RefreshCw } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { checkEmailConfirmationStatus, resendConfirmationEmail } from "@/services/auth/emailConfirmationService";
-import type { EmailConfirmationStatus } from "@/services/auth/emailConfirmationService";
+import type { EmailConfirmationStatusData } from "@/services/auth/emailConfirmationService";
 
 interface EmailConfirmationStatusProps {
   email: string;
@@ -24,7 +24,7 @@ export const EmailConfirmationStatus: React.FC<EmailConfirmationStatusProps> = (
   role
 }) => {
   const navigate = useNavigate();
-  const [emailStatus, setEmailStatus] = useState<EmailConfirmationStatus | null>(null);
+  const [emailStatus, setEmailStatus] = useState<EmailConfirmationStatusData | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [isResendingLocal, setIsResendingLocal] = useState(false);
 

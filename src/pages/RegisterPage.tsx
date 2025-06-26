@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthLayout } from "@/components/auth/AuthLayout";
@@ -32,7 +31,14 @@ const RegisterPage = () => {
   const [showProfileRecovery, setShowProfileRecovery] = useState(false);
   const [registeredEmail, setRegisteredEmail] = useState("");
   const [registeredRole, setRegisteredRole] = useState<"student" | "tutor" | undefined>(undefined);
-  const [registrationData, setRegistrationData] = useState<RegisterFormValues | null>(null);
+  const [registrationData, setRegistrationData] = useState<{
+    firstName: string;
+    lastName: string;
+    role: "student" | "tutor";
+    city?: string;
+    phone?: string;
+    bio?: string;
+  } | null>(null);
 
   // Check if user is already authenticated
   useEffect(() => {
@@ -143,8 +149,17 @@ const RegisterPage = () => {
       const role = values.role || defaultRole || "student";
       console.log("Using role for registration:", role);
       
-      // Save data for potential profile recovery
-      setRegistrationData(values);
+      // Save data for potential profile recovery with required fields
+      const recoveryData = {
+        firstName: values.firstName || "",
+        lastName: values.lastName || "",
+        role: role,
+        city: values.city || "",
+        phone: values.phone || "",
+        bio: values.bio || "",
+      };
+      
+      setRegistrationData(recoveryData);
       setRegisteredRole(role);
       setRegisteredEmail(values.email);
       

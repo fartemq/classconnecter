@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
@@ -11,6 +10,15 @@ export interface ProfileRecoveryResult {
   message: string;
   profileExists: boolean;
   emailConfirmed: boolean;
+}
+
+export interface UserDataForRecovery {
+  firstName: string;
+  lastName: string;
+  role: "student" | "tutor";
+  city?: string;
+  phone?: string;
+  bio?: string;
 }
 
 /**
@@ -59,14 +67,7 @@ export const checkUserProfileStatus = async (userId: string): Promise<ProfileRec
 /**
  * Создает профиль для пользователя вручную
  */
-export const createMissingProfile = async (userId: string, userData: {
-  firstName: string;
-  lastName: string;
-  role: "student" | "tutor";
-  city?: string;
-  phone?: string;
-  bio?: string;
-}): Promise<ProfileRecoveryResult> => {
+export const createMissingProfile = async (userId: string, userData: UserDataForRecovery): Promise<ProfileRecoveryResult> => {
   try {
     // Создаем основной профиль
     const { error: profileError } = await supabase
