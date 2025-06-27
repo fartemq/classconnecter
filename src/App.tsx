@@ -1,111 +1,43 @@
-import React from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
 import { SimpleAuthProvider } from "@/hooks/auth/SimpleAuthProvider";
-import ProtectedRoute from "@/components/auth/ProtectedRoute";
-import NotFoundPage from "@/pages/NotFoundPage";
+import HomePage from "@/pages/HomePage";
+import LoginPage from "@/pages/LoginPage";
+import RegisterPage from "@/pages/RegisterPage";
+import AuthCallbackPage from "@/pages/AuthCallbackPage";
+import StudentProfilePage from "@/pages/StudentProfilePage";
+import TutorProfilePage from "@/pages/TutorProfilePage";
+import TutorCompleteProfilePage from "@/pages/TutorCompleteProfilePage";
+import SearchTutorsPage from "@/pages/SearchTutorsPage";
+import LessonPage from "@/pages/LessonPage";
 
-// Pages
-import Index from "./pages/Index";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import TutorProfilePage from "./pages/TutorProfilePage";
-import { LessonPage } from "./pages/LessonPage";
-import { AdminDashboardPage } from "./pages/AdminDashboardPage";
-import SchoolStudentPage from "./pages/SchoolStudentPage";
-import AdultStudentPage from "./pages/AdultStudentPage";
-import BecomeTutorPage from "./pages/BecomeTutorPage";
+const queryClient = new QueryClient();
 
-// Student Profile Pages
-import StudentProfilePage from "./pages/StudentProfilePage";
-import StudentSettingsPage from "./pages/StudentSettingsPage";
-import StudentSchedulePage from "./pages/StudentSchedulePage";
-import StudentProgressPage from "./pages/StudentProgressPage";
-import StudentProfileEditPage from "./pages/StudentProfileEditPage";
-import StudentMyTutorsPage from "./pages/StudentMyTutorsPage";
-import StudentHomeworkPage from "./pages/StudentHomeworkPage";
-import StudentFindTutorsPage from "./pages/StudentFindTutorsPage";
-import StudentNotificationsPage from "./pages/StudentNotificationsPage";
-import StudentLessonRequestsPage from "./pages/StudentLessonRequestsPage";
-import StudentMaterialsPage from "./pages/StudentMaterialsPage";
-import StudentChatsPage from "./pages/StudentChatsPage";
-import StudentEditProfilePage from "./pages/StudentEditProfilePage";
-
-// Create QueryClient with optimized settings
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 30 * 60 * 1000, // 30 minutes
-      retry: 1, // Уменьшил до 1 попытки для быстрости
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
-const App: React.FC = () => (
-  <QueryClientProvider client={queryClient}>
-    <SimpleAuthProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            
-            {/* Role selection pages */}
-            <Route path="/school-student" element={<SchoolStudentPage />} />
-            <Route path="/adult-student" element={<AdultStudentPage />} />
-            <Route path="/become-tutor" element={<BecomeTutorPage />} />
-            
-            {/* Protected routes */}
-            <Route path="/profile/tutor/*" element={<ProtectedRoute allowedRoles={["tutor"]} />}>
-              <Route index element={<TutorProfilePage />} />
-            </Route>
-            
-            {/* Student profile routes */}
-            <Route path="/profile/student/*" element={<ProtectedRoute allowedRoles={["student"]} />}>
-              <Route index element={<StudentProfilePage />} />
-              <Route path="settings" element={<StudentSettingsPage />} />
-              <Route path="schedule" element={<StudentSchedulePage />} />
-              <Route path="progress" element={<StudentProgressPage />} />
-              <Route path="profile" element={<StudentProfileEditPage />} />
-              <Route path="my-tutors" element={<StudentMyTutorsPage />} />
-              <Route path="homework" element={<StudentHomeworkPage />} />
-              <Route path="find-tutors" element={<StudentFindTutorsPage />} />
-              <Route path="notifications" element={<StudentNotificationsPage />} />
-              <Route path="lesson-requests" element={<StudentLessonRequestsPage />} />
-              <Route path="materials" element={<StudentMaterialsPage />} />
-              <Route path="chats" element={<StudentChatsPage />} />
-              <Route path="chats/:tutorId" element={<StudentChatsPage />} />
-              <Route path="edit-profile" element={<StudentEditProfilePage />} />
-            </Route>
-            
-            {/* Admin route */}
-            <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin", "moderator"]} />}>
-              <Route index element={<AdminDashboardPage />} />
-            </Route>
-            
-            {/* Lesson interface routes */}
-            <Route path="/lesson" element={<ProtectedRoute />}>
-              <Route index element={<LessonPage />} />
-            </Route>
-            <Route path="/lesson/:lessonId" element={<ProtectedRoute />}>
-              <Route index element={<LessonPage />} />
-            </Route>
-            
-            {/* 404 page */}
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </SimpleAuthProvider>
-  </QueryClientProvider>
-);
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <SimpleAuthProvider>
+        <Router>
+          <div className="min-h-screen bg-background">
+            <Routes>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
+              <Route path="/profile/student" element={<StudentProfilePage />} />
+              <Route path="/profile/tutor" element={<TutorProfilePage />} />
+              <Route path="/profile/tutor/complete" element={<TutorCompleteProfilePage />} />
+              <Route path="/search" element={<SearchTutorsPage />} />
+              <Route path="/lesson/:lessonId" element={<LessonPage />} />
+            </Routes>
+          </div>
+          <Toaster />
+        </Router>
+      </SimpleAuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;

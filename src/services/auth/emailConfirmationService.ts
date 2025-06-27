@@ -100,6 +100,24 @@ export const handleEmailConfirmationCallback = async (): Promise<{
   role?: string;
 }> => {
   try {
+    // Получаем сессию из URL параметров
+    const urlParams = new URLSearchParams(window.location.search);
+    const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
+    
+    if (accessToken && refreshToken) {
+      // Устанавливаем сессию
+      const { error } = await supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      });
+      
+      if (error) {
+        console.error("Error setting session:", error);
+        return { success: false };
+      }
+    }
+    
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {

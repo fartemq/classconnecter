@@ -1,238 +1,214 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { format, isSameDay } from "date-fns";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { Calendar, Clock, User, Video } from "lucide-react";
+import { format, isToday, isTomorrow } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Clock, User, BookOpen, Video } from "lucide-react";
-import { Lesson } from "@/types/lesson";
-import { ensureSingleObject } from "@/utils/supabaseUtils";
+import { useNavigate } from "react-router-dom";
+import { toast } from "@/hooks/use-toast";
+
+interface Lesson {
+  id: string;
+  tutor_id: string;
+  subject_id: string;
+  start_time: string;
+  end_time: string;
+  status: string;
+  tutor_profile: {
+    first_name: string;
+    last_name: string;
+  };
+  subject: {
+    name: string;
+  };
+}
 
 export const StudentScheduleView = () => {
   const { user } = useAuth();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (user?.id) {
-      fetchLessons();
-    }
-  }, [user?.id, selectedDate]);
+  const { data: upcomingLessons = [] } = useQuery({
+    queryKey: ['studentLessons', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
 
-  const fetchLessons = async () => {
-    if (!user?.id) return;
-    
-    setLoading(true);
-    try {
-      const dateStr = format(selectedDate, 'yyyy-MM-dd');
-      
       const { data, error } = await supabase
         .from('lessons')
         .select(`
           id,
           tutor_id,
-          student_id,
           subject_id,
           start_time,
           end_time,
           status,
-          created_at,
-          updated_at,
-          tutor:profiles!tutor_id (id, first_name, last_name, avatar_url),
-          subject:subjects (id, name)
+          tutor_profile:profiles!lessons_tutor_id_fkey (
+            first_name,
+            last_name
+          ),
+          subject:subjects (
+            name
+          )
         `)
         .eq('student_id', user.id)
-        .gte('start_time', `${dateStr}T00:00:00`)
-        .lt('start_time', `${dateStr}T23:59:59`)
-        .order('start_time');
+        .gte('start_time', new Date().toISOString())
+        .order('start_time', { ascending: true })
+        .limit(10);
 
       if (error) throw error;
+      
+      return (data || []).map(lesson => ({
+        ...lesson,
+        tutor_profile: Array.isArray(lesson.tutor_profile) 
+          ? lesson.tutor_profile[0] 
+          : lesson.tutor_profile,
+        subject: Array.isArray(lesson.subject) 
+          ? lesson.subject[0] 
+          : lesson.subject
+      })) as Lesson[];
+    },
+    enabled: !!user?.id
+  });
 
-      const transformedLessons: Lesson[] = (data || []).map(item => {
-        const tutor = ensureSingleObject(item.tutor);
-        const subject = ensureSingleObject(item.subject);
-        
-        const startTime = new Date(item.start_time);
-        const endTime = new Date(item.end_time);
-        const timeString = format(startTime, 'HH:mm:ss');
-        const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
-        
-        return {
-          id: item.id,
-          tutor_id: item.tutor_id,
-          student_id: item.student_id,
-          subject_id: item.subject_id,
-          date: format(startTime, 'yyyy-MM-dd'),
-          time: timeString,
-          duration: durationMinutes,
-          status: item.status,
-          created_at: item.created_at,
-          updated_at: item.updated_at,
-          tutor: tutor ? {
-            id: tutor.id,
-            first_name: tutor.first_name,
-            last_name: tutor.last_name,
-            avatar_url: tutor.avatar_url
-          } : undefined,
-          subject: subject ? {
-            id: subject.id,
-            name: subject.name
-          } : undefined
-        };
+  const handleJoinLesson = (lessonId: string, startTime: string) => {
+    const now = new Date();
+    const lessonStart = new Date(startTime);
+    const timeDiff = lessonStart.getTime() - now.getTime();
+    const minutesUntilStart = Math.floor(timeDiff / (1000 * 60));
+
+    if (minutesUntilStart > 15) {
+      toast({
+        title: "Урок ещё не начался",
+        description: `До начала урока осталось ${minutesUntilStart} минут`,
+        variant: "destructive"
       });
-
-      setLessons(transformedLessons);
-    } catch (error) {
-      console.error('Error fetching lessons:', error);
-    } finally {
-      setLoading(false);
+      return;
     }
+
+    navigate(`/lesson/${lessonId}`);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'confirmed': return 'default';
-      case 'pending': return 'secondary';
-      case 'completed': return 'secondary';
-      case 'canceled': return 'destructive';
-      default: return 'outline';
+      case 'confirmed': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'canceled': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
     }
   };
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'confirmed': return 'Подтверждено';
+      case 'confirmed': return 'Подтверждён';
       case 'pending': return 'Ожидает подтверждения';
-      case 'completed': return 'Завершено';
-      case 'canceled': return 'Отменено';
+      case 'canceled': return 'Отменён';
       default: return status;
     }
   };
 
-  const upcomingLessons = lessons.filter(lesson => 
-    new Date(lesson.date + 'T' + lesson.time) > new Date() && 
-    ['confirmed', 'pending'].includes(lesson.status)
-  );
+  const getDateLabel = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isToday(date)) return 'Сегодня';
+    if (isTomorrow(date)) return 'Завтра';
+    return format(date, 'dd MMMM', { locale: ru });
+  };
+
+  const canJoinLesson = (startTime: string, status: string) => {
+    if (status !== 'confirmed') return false;
+    
+    const now = new Date();
+    const lessonStart = new Date(startTime);
+    const timeDiff = lessonStart.getTime() - now.getTime();
+    const minutesUntilStart = Math.floor(timeDiff / (1000 * 60));
+
+    return minutesUntilStart <= 15 && minutesUntilStart >= -60;
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col lg:flex-row gap-6">
-        <Card className="lg:w-80">
-          <CardHeader>
-            <CardTitle className="text-lg">Календарь</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
-              locale={ru}
-              className="rounded-md border"
-            />
-          </CardContent>
-        </Card>
-
-        <div className="flex-1 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>
-                  Занятия на {format(selectedDate, 'd MMMM yyyy', { locale: ru })}
-                </span>
-                <Badge variant="outline">
-                  {lessons.length} занятий
-                </Badge>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              ) : lessons.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Нет занятий на эту дату</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {lessons.map((lesson) => (
-                    <Card key={lesson.id} className="border-l-4 border-l-blue-500">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between">
-                          <div className="space-y-2">
-                            <div className="flex items-center space-x-2">
-                              <Clock className="h-4 w-4" />
-                              <span className="font-medium">
-                                {lesson.time.substring(0, 5)} 
-                                ({lesson.duration} мин)
-                              </span>
-                              <Badge variant={getStatusColor(lesson.status)}>
-                                {getStatusText(lesson.status)}
-                              </Badge>
-                            </div>
-                            
-                            <div className="flex items-center space-x-2">
-                              <BookOpen className="h-4 w-4 text-muted-foreground" />
-                              <span>{lesson.subject?.name}</span>
-                            </div>
-                            
-                            <div className="flex items-center space-x-2">
-                              <User className="h-4 w-4 text-muted-foreground" />
-                              <span>
-                                {lesson.tutor?.first_name} {lesson.tutor?.last_name}
-                              </span>
-                            </div>
-                          </div>
-                          
-                          {lesson.status === 'confirmed' && (
-                            <Button size="sm" variant="outline">
-                              <Video className="h-4 w-4 mr-2" />
-                              Войти в урок
-                            </Button>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {upcomingLessons.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Ближайшие занятия</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {upcomingLessons.slice(0, 3).map((lesson) => (
-                    <div key={lesson.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{lesson.subject?.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {format(new Date(lesson.date + 'T' + lesson.time), 'dd.MM в HH:mm', { locale: ru })}
-                          {' с '}
-                          {lesson.tutor?.first_name} {lesson.tutor?.last_name}
-                        </div>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Calendar className="w-5 h-5" />
+            <span>Мои уроки</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {upcomingLessons.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <p>У вас нет запланированных уроков</p>
+              <p className="text-sm">Найдите репетитора и забронируйте урок</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {upcomingLessons.map(lesson => (
+                <div key={lesson.id} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-start space-x-4">
+                      <div className="flex items-center space-x-2 text-sm text-gray-500">
+                        <Clock className="w-4 h-4" />
+                        <span>{getDateLabel(lesson.start_time)}</span>
+                        <span>
+                          {format(new Date(lesson.start_time), 'HH:mm', { locale: ru })} - 
+                          {format(new Date(lesson.end_time), 'HH:mm', { locale: ru })}
+                        </span>
                       </div>
-                      <Badge variant={getStatusColor(lesson.status)}>
-                        {getStatusText(lesson.status)}
-                      </Badge>
                     </div>
-                  ))}
+                    <Badge className={getStatusColor(lesson.status)}>
+                      {getStatusText(lesson.status)}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <User className="w-4 h-4 text-gray-400" />
+                        <span className="font-medium">
+                          {lesson.tutor_profile?.first_name} {lesson.tutor_profile?.last_name}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        {lesson.subject?.name}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      {canJoinLesson(lesson.start_time, lesson.status) && (
+                        <Button
+                          size="sm"
+                          onClick={() => handleJoinLesson(lesson.id, lesson.start_time)}
+                          className="flex items-center space-x-1"
+                        >
+                          <Video className="w-4 h-4" />
+                          <span>Войти в урок</span>
+                        </Button>
+                      )}
+                      
+                      {lesson.status === 'confirmed' && !canJoinLesson(lesson.start_time, lesson.status) && (
+                        <div className="flex items-center text-xs text-gray-500">
+                          <Clock className="w-3 h-3 mr-1" />
+                          <span>Доступно за 15 мин до урока</span>
+                        </div>
+                      )}
+                      
+                      {lesson.status === 'pending' && (
+                        <div className="text-xs text-gray-500">
+                          Ожидает подтверждения репетитора
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </CardContent>
-            </Card>
+              ))}
+            </div>
           )}
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

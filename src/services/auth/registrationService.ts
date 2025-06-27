@@ -24,8 +24,8 @@ export const registerUser = async (userData: RegisterUserData): Promise<AuthResu
           phone: userData.phone || '',
           bio: userData.bio || '',
         },
-        // Критически важно для email подтверждения
-        emailRedirectTo: `${window.location.origin}/auth/callback?role=${userData.role}`,
+        // Критически важно для email подтверждения - используем правильный callback URL
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
 
