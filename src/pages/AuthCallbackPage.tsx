@@ -1,74 +1,69 @@
 
 import React, { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle, AlertTriangle } from "lucide-react";
-import { handleEmailConfirmationCallback } from "@/services/auth/emailConfirmationService";
-import { checkUserProfileStatus } from "@/services/auth/profileRecoveryService";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { Button } from "@/components/ui/button";
+import { handleReliableEmailConfirmation } from "@/services/auth/reliableEmailConfirmationService";
+import { toast } from "@/hooks/use-toast";
 
 const AuthCallbackPage = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  const { user } = useAuth();
   const [status, setStatus] = useState<"processing" | "success" | "error">("processing");
   const [message, setMessage] = useState("");
+  const [redirectPath, setRedirectPath] = useState("/");
 
   useEffect(() => {
     const processCallback = async () => {
       try {
-        console.log("Processing auth callback...");
+        console.log("Processing email confirmation callback...");
         
-        // Обрабатываем callback
-        const result = await handleEmailConfirmationCallback();
+        const result = await handleReliableEmailConfirmation();
         
-        if (!result.success) {
-          setStatus("error");
-          setMessage("Не удалось подтвердить email. Попробуйте войти в аккаунт снова.");
-          return;
-        }
-
-        console.log("Email confirmation successful, user role:", result.role);
-        
-        // Проверяем состояние профиля
-        if (user?.id) {
-          const profileStatus = await checkUserProfileStatus(user.id);
+        if (result.success) {
+          setStatus("success");
+          setMessage("Email успешно подтверждён! Добро пожаловать в Stud.rep!");
+          setRedirectPath(result.redirectPath || "/");
           
-          if (!profileStatus.profileExists) {
-            console.log("Profile not found after email confirmation");
-            setStatus("error");
-            setMessage("Профиль не найден. Обратитесь в поддержку.");
-            return;
-          }
+          toast({
+            title: "Подтверждение успешно!",
+            description: "Ваш аккаунт активирован",
+          });
+          
+          // Автоматический редирект через 3 секунды
+          setTimeout(() => {
+            navigate(result.redirectPath || "/");
+          }, 3000);
+        } else {
+          setStatus("error");
+          setMessage(result.error || "Произошла ошибка при подтверждении email");
+          
+          toast({
+            title: "Ошибка подтверждения",
+            description: result.error || "Не удалось подтвердить email",
+            variant: "destructive",
+          });
         }
-
-        setStatus("success");
-        setMessage("Email успешно подтвержден! Перенаправляем в ваш профиль...");
-        
-        // Редиректим через 2 секунды
-        setTimeout(() => {
-          if (result.redirectPath) {
-            navigate(result.redirectPath);
-          } else {
-            navigate("/");
-          }
-        }, 2000);
         
       } catch (error) {
         console.error("Error in auth callback:", error);
         setStatus("error");
-        setMessage("Произошла ошибка при подтверждении email.");
+        setMessage("Произошла неожиданная ошибка при подтверждении email");
       }
     };
 
-    // Небольшая задержка, чтобы auth state успел обновиться
+    // Небольшая задержка для лучшего UX
     const timer = setTimeout(processCallback, 1000);
     
     return () => clearTimeout(timer);
-  }, [navigate, user]);
+  }, [navigate]);
+
+  const handleManualRedirect = () => {
+    navigate(redirectPath);
+  };
 
   if (status === "processing") {
     return (
@@ -91,12 +86,34 @@ const AuthCallbackPage = () => {
             Подтверждение Email
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-4">
           <Alert className={status === "success" ? "border-green-200 bg-green-50" : "border-red-200 bg-red-50"}>
-            <AlertDescription>
+            <AlertDescription className="text-center">
               {message}
             </AlertDescription>
           </Alert>
+
+          {status === "success" && (
+            <div className="text-center space-y-3">
+              <p className="text-sm text-gray-600">
+                Вы будете автоматически перенаправлены через несколько секунд...
+              </p>
+              <Button onClick={handleManualRedirect} className="w-full">
+                Перейти в профиль
+              </Button>
+            </div>
+          )}
+
+          {status === "error" && (
+            <div className="text-center space-y-3">
+              <Button onClick={() => navigate("/login")} variant="outline" className="w-full">
+                Вернуться к входу
+              </Button>
+              <Button onClick={() => navigate("/register")} className="w-full">
+                Повторить регистрацию
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </AuthLayout>

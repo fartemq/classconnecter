@@ -5,8 +5,10 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
 import { toast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { SimpleRegisterForm } from "@/components/auth/SimpleRegisterForm";
-import { registerUserSimple } from "@/services/auth/simpleRegistrationService";
+import { ReliableRegisterForm } from "@/components/auth/ReliableRegisterForm";
+import { ReliableEmailWaiting } from "@/components/auth/ReliableEmailWaiting";
+import { registerUserReliable } from "@/services/auth/reliableRegistrationService";
+import { resendReliableConfirmation } from "@/services/auth/reliableEmailConfirmationService";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 const RegisterPage = () => {
@@ -15,6 +17,9 @@ const RegisterPage = () => {
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [registrationState, setRegistrationState] = useState<"form" | "waiting">("form");
+  const [userEmail, setUserEmail] = useState("");
+  const [userRole, setUserRole] = useState<"student" | "tutor">("student");
 
   // Определяем роль по умолчанию из URL
   const getDefaultRole = (): "student" | "tutor" => {
@@ -42,7 +47,7 @@ const RegisterPage = () => {
     setIsLoading(true);
     
     try {
-      const result = await registerUserSimple({
+      const result = await registerUserReliable({
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
@@ -51,16 +56,28 @@ const RegisterPage = () => {
       });
 
       if (result.success) {
-        toast({
-          title: "Регистрация успешна!",
-          description: "Добро пожаловать в Stud.rep",
-        });
-
-        // Перенаправляем в зависимости от роли
-        if (formData.role === "tutor") {
-          navigate("/profile/tutor/complete");
+        if (result.needsEmailConfirmation) {
+          // Переходим в режим ожидания подтверждения email
+          setUserEmail(formData.email);
+          setUserRole(formData.role);
+          setRegistrationState("waiting");
+          
+          toast({
+            title: "Регистрация успешна!",
+            description: "Проверьте свою почту для подтверждения аккаунта",
+          });
         } else {
-          navigate("/profile/student");
+          // Автоматический вход (если подтверждение отключено)
+          toast({
+            title: "Регистрация завершена!",
+            description: "Добро пожаловать в Stud.rep",
+          });
+
+          if (formData.role === "tutor") {
+            navigate("/profile/tutor/complete");
+          } else {
+            navigate("/profile/student");
+          }
         }
       } else {
         toast({
@@ -81,10 +98,26 @@ const RegisterPage = () => {
     }
   };
 
+  const handleResendConfirmation = async (): Promise<boolean> => {
+    return await resendReliableConfirmation(userEmail);
+  };
+
   if (checkingAuth) {
     return (
       <AuthLayout>
         <LoadingScreen />
+      </AuthLayout>
+    );
+  }
+
+  if (registrationState === "waiting") {
+    return (
+      <AuthLayout>
+        <ReliableEmailWaiting 
+          email={userEmail}
+          onResend={handleResendConfirmation}
+          role={userRole}
+        />
       </AuthLayout>
     );
   }
@@ -99,7 +132,7 @@ const RegisterPage = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SimpleRegisterForm 
+          <ReliableRegisterForm 
             onSubmit={handleRegister}
             isLoading={isLoading}
             defaultRole={getDefaultRole()}

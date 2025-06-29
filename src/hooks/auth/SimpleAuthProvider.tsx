@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode, useMemo, useCallback } from "react";
 import { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { loginUserReliable } from "@/services/auth/reliableLoginService";
 
 interface SimpleAuthState {
   user: User | null;
@@ -64,24 +65,16 @@ const fetchUserRoleWithValidation = async (userId: string): Promise<string | nul
     return cachedRole;
   }
 
-  // Timeout promise
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    setTimeout(() => reject(new Error('Timeout')), 3000);
-  });
-
   try {
-    // Пробуем получить роль с timeout
-    const rolePromise = supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("role, is_blocked")
       .eq("id", userId)
       .maybeSingle();
 
-    const { data, error } = await Promise.race([rolePromise, timeoutPromise]);
-
     if (error || !data) {
       console.error("Profile not found or error:", error);
-      return null; // Возвращаем null если профиль не найден
+      return null;
     }
 
     // Проверяем блокировку
@@ -109,35 +102,24 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
 
   const login = useCallback(async (email: string, password: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-
-      if (error || !data.user) {
-        return false;
-      }
-
-      // Проверяем существование профиля
-      const role = await fetchUserRoleWithValidation(data.user.id);
+      const result = await loginUserReliable({ email, password });
       
-      if (!role) {
-        // Если профиль не найден или пользователь заблокирован, выходим
-        await supabase.auth.signOut();
-        return false;
+      if (result.success && result.user && result.role) {
+        setUser(result.user);
+        setUserRole(result.role);
+        return true;
       }
-
-      setUser(data.user);
-      setUserRole(role);
-      return true;
+      
+      return false;
     } catch (error) {
+      console.error("Login error:", error);
       return false;
     }
   }, []);
 
   const logout = useCallback(async (): Promise<boolean> => {
     try {
-      // Очищаем состояние сразу, независимо от результата запроса
+      // Очищаем состояние сразу
       setUser(null);
       setUserRole(null);
       
@@ -152,19 +134,16 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
         // Игнорируем ошибки очистки кэша
       }
 
-      // Пытаемся выйти через Supabase
+      // Выходим через Supabase
       const { error } = await supabase.auth.signOut();
       
-      // Даже если есть ошибка (например, сессия уже недействительна), 
-      // возвращаем true, так как состояние уже очищено
       if (error) {
-        console.warn("Logout warning (but state cleared):", error.message);
+        console.warn("Logout warning:", error.message);
       }
       
       return true;
     } catch (error) {
-      // Даже при исключении возвращаем true, так как состояние очищено
-      console.warn("Logout exception (but state cleared):", error);
+      console.warn("Logout exception:", error);
       return true;
     }
   }, []);
@@ -174,10 +153,19 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
       const { data: { user: currentUser } } = await supabase.auth.getUser();
       
       if (currentUser) {
+        // Проверяем подтверждение email
+        if (!currentUser.email_confirmed_at) {
+          console.log("User email not confirmed, signing out");
+          await supabase.auth.signOut();
+          setUser(null);
+          setUserRole(null);
+          return;
+        }
+        
         const role = await fetchUserRoleWithValidation(currentUser.id);
         
         if (!role) {
-          // Если профиль не найден, выходим из системы
+          // Если профиль не найден или заблокирован, выходим
           await supabase.auth.signOut();
           setUser(null);
           setUserRole(null);
@@ -191,6 +179,7 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
         setUserRole(null);
       }
     } catch (error) {
+      console.error("Error refreshing user data:", error);
       setIsError(true);
     }
   }, []);
@@ -201,7 +190,6 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
 
     const initializeAuth = async () => {
       try {
-        // Timeout для всей инициализации - 5 секунд максимум
         timeoutId = setTimeout(() => {
           if (mounted) {
             setIsLoading(false);
@@ -212,21 +200,29 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         
         if (mounted && session?.user) {
-          // Проверяем существование профиля
-          const role = await fetchUserRoleWithValidation(session.user.id);
-          
-          if (!role) {
-            // Если профиль не найден, выходим из системы
+          // Проверяем подтверждение email
+          if (!session.user.email_confirmed_at) {
+            console.log("User email not confirmed during init");
             await supabase.auth.signOut();
             setUser(null);
             setUserRole(null);
           } else {
-            setUser(session.user);
-            setUserRole(role);
+            const role = await fetchUserRoleWithValidation(session.user.id);
+            
+            if (!role) {
+              // Если профиль не найден, выходим
+              await supabase.auth.signOut();
+              setUser(null);
+              setUserRole(null);
+            } else {
+              setUser(session.user);
+              setUserRole(role);
+            }
           }
         }
       } catch (error) {
         if (mounted) {
+          console.error("Auth initialization error:", error);
           setIsError(true);
         }
       } finally {
@@ -243,13 +239,21 @@ export const SimpleAuthProvider: React.FC<SimpleAuthProviderProps> = ({ children
       async (event, session) => {
         if (!mounted) return;
 
+        console.log("Auth state changed:", event, !!session);
+
         if (session?.user) {
-          // Проверяем существование профиля
+          // Проверяем подтверждение email
+          if (!session.user.email_confirmed_at) {
+            console.log("User email not confirmed in state change");
+            setUser(null);
+            setUserRole(null);
+            return;
+          }
+          
           const role = await fetchUserRoleWithValidation(session.user.id);
           
           if (!role) {
-            // Если профиль не найден, выходим из системы
-            await supabase.auth.signOut();
+            // Если профиль не найден, очищаем состояние
             setUser(null);
             setUserRole(null);
           } else {

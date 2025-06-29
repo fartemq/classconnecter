@@ -33,10 +33,10 @@ file_size_limit = "50MiB"
 enabled = true
 port = 54328
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["https://localhost:3000"]
+additional_redirect_urls = ["https://localhost:3000", "http://localhost:3000/auth/callback"]
 jwt_expiry = 3600
 enable_signup = true
-enable_confirmations = false
+enable_confirmations = true
 
 [functions.google-oauth]
 verify_jwt = true
