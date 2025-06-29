@@ -3,8 +3,9 @@ import React, { useState } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MailCheck, RefreshCw, CheckCircle } from "lucide-react";
+import { MailCheck, RefreshCw, CheckCircle, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
 
 interface ReliableEmailWaitingProps {
   email: string;
@@ -19,14 +20,38 @@ export const ReliableEmailWaiting: React.FC<ReliableEmailWaitingProps> = ({
 }) => {
   const [isResending, setIsResending] = useState(false);
   const [lastResent, setLastResent] = useState<Date | null>(null);
+  const [resendError, setResendError] = useState<string | null>(null);
 
   const handleResend = async () => {
     setIsResending(true);
-    const success = await onResend();
-    setIsResending(false);
+    setResendError(null);
     
-    if (success) {
-      setLastResent(new Date());
+    try {
+      const success = await onResend();
+      
+      if (success) {
+        setLastResent(new Date());
+        toast({
+          title: "Письмо отправлено",
+          description: "Проверьте свою почту для подтверждения аккаунта"
+        });
+      } else {
+        setResendError("Не удалось отправить письмо. Возможно, превышен лимит отправки");
+        toast({
+          title: "Ошибка отправки",
+          description: "Превышен лимит отправки писем. Попробуйте через несколько минут",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      setResendError("Произошла ошибка при отправке письма");
+      toast({
+        title: "Ошибка",
+        description: "Произошла ошибка при отправке письма",
+        variant: "destructive"
+      });
+    } finally {
+      setIsResending(false);
     }
   };
 
@@ -51,6 +76,15 @@ export const ReliableEmailWaiting: React.FC<ReliableEmailWaitingProps> = ({
             Пожалуйста, проверьте вашу почту (включая папку "Спам") и нажмите на ссылку подтверждения.
           </AlertDescription>
         </Alert>
+
+        {resendError && (
+          <Alert variant="destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              {resendError}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <div className="bg-blue-50 p-4 rounded-lg">
           <h4 className="font-medium text-blue-900 mb-2">Что дальше:</h4>

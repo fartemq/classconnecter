@@ -67,10 +67,12 @@ export const registerUserReliable = async (userData: ReliableRegistrationData): 
         errorMessage = "Пользователь с таким email уже существует";
       } else if (error.message.includes("Password should be at least")) {
         errorMessage = "Пароль должен содержать минимум 6 символов";
-      } else if (error.message.includes("Email rate limit exceeded")) {
-        errorMessage = "Превышен лимит отправки писем. Попробуйте позже";
+      } else if (error.message.includes("email rate limit exceeded") || error.message.includes("over_email_send_rate_limit")) {
+        errorMessage = "Превышен лимит отправки писем. Попробуйте через несколько минут";
       } else if (error.message.includes("Invalid email")) {
         errorMessage = "Введите корректный email адрес";
+      } else if (error.message.includes("Email rate limit exceeded")) {
+        errorMessage = "Слишком много попыток отправки email. Подождите несколько минут";
       }
       
       return {
