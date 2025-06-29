@@ -1,6 +1,5 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
 
 export interface EmailConfirmationResult {
   success: boolean;
@@ -171,36 +170,12 @@ export const resendReliableConfirmation = async (email: string): Promise<boolean
 
     if (error) {
       console.error("Error resending confirmation:", error);
-      
-      if (error.message.includes("Email rate limit exceeded")) {
-        toast({
-          title: "Превышен лимит",
-          description: "Слишком много попыток. Попробуйте через минуту",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Ошибка отправки",
-          description: "Не удалось отправить письмо",
-          variant: "destructive"
-        });
-      }
       return false;
     }
-
-    toast({
-      title: "Письмо отправлено",
-      description: "Проверьте свою почту для подтверждения"
-    });
     
     return true;
   } catch (error) {
     console.error("Error in resendConfirmation:", error);
-    toast({
-      title: "Ошибка",
-      description: "Произошла ошибка при отправке письма",
-      variant: "destructive"
-    });
     return false;
   }
 };

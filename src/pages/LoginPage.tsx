@@ -9,7 +9,7 @@ import { ReliableEmailWaiting } from "@/components/auth/ReliableEmailWaiting";
 import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { loginUserReliable } from "@/services/auth/reliableLoginService";
 import { resendReliableConfirmation } from "@/services/auth/reliableEmailConfirmationService";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 

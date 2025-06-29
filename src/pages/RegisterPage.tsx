@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReliableRegisterForm } from "@/components/auth/ReliableRegisterForm";
 import { ReliableEmailWaiting } from "@/components/auth/ReliableEmailWaiting";
