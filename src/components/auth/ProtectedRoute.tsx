@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
@@ -24,37 +23,34 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
         <div className="space-y-4">
           <button
             onClick={() => window.location.href = "/"}
-            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            Вернуться на главную
-          </button>
-          <button
-            onClick={() => window.location.href = "/login"}
-            className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-          >
-            Войти в аккаунт
+            Перейти на главную
           </button>
         </div>
       }
     >
-      {(() => {
-        // Если пользователь не залогинен
-        if (!user) {
-          return <Navigate to={redirectTo} state={{ from: location }} replace />;
-        }
-
-        // Если нет информации о роли, но пользователь есть - разрешаем доступ
-        if (!userRole) {
-          return <Outlet />;
-        }
-
-        // Если есть ограничения по ролям
-        if (allowedRoles.length > 0 && !allowedRoles.includes(userRole)) {
-          return <Navigate to="/" replace />;
-        }
-
-        return <Outlet />;
-      })()}
+      {user ? (
+        // If no role restriction, allow access
+        allowedRoles.length === 0 || 
+        // If user has required role, allow access
+        (userRole && allowedRoles.includes(userRole)) ? (
+          <Outlet />
+        ) : (
+          // User doesn't have required role
+          <Navigate 
+            to={userRole === "admin" ? "/admin" : `/profile/${userRole}`} 
+            replace 
+          />
+        )
+      ) : (
+        // User not authenticated
+        <Navigate 
+          to={redirectTo}
+          state={{ from: location }}
+          replace 
+        />
+      )}
     </LoadingManager>
   );
 };

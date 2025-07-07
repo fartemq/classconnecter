@@ -17,17 +17,28 @@ export const HeroSection = () => {
         </p>
         
         <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-          <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
-            <Link to="/school-student">Я - школьник</Link>
+          <Button asChild size="lg" className="bg-primary hover:bg-primary/90 text-white w-full md:w-auto">
+            <Link to="/tutors">Найти репетитора</Link>
           </Button>
           
-          <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
-            <Link to="/adult-student">Я - студент/взрослый</Link>
+          <Button asChild size="lg" variant="outline" className="w-full md:w-auto">
+            <Link to="/register?role=tutor">Стать репетитором</Link>
           </Button>
-          
-          <Button asChild size="lg" className="bg-[#3498db] hover:bg-[#2980b9] text-white w-full md:w-auto">
-            <Link to="/become-tutor">Я - репетитор</Link>
-          </Button>
+        </div>
+        
+        {/* Quick search section */}
+        <div className="mt-12 max-w-md mx-auto">
+          <div className="relative">
+            <Link to="/tutors" className="block w-full">
+              <Button 
+                variant="secondary" 
+                size="lg" 
+                className="w-full bg-white hover:bg-gray-50 text-gray-700 border border-gray-200"
+              >
+                🔍 Быстрый поиск репетиторов
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

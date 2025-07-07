@@ -9,7 +9,7 @@ export const GuestNavigation = () => {
     <>
       <Link 
         to="/tutors" 
-        className={`${location.pathname === "/tutors" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary`}
+        className={`${location.pathname === "/tutors" || location.pathname === "/search" ? "text-primary font-medium" : "text-gray-700"} hover:text-primary`}
       >
         Репетиторы
       </Link>
