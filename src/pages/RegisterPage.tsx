@@ -3,18 +3,19 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { LoadingScreen } from "@/components/auth/LoadingScreen";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ReliableRegisterForm } from "@/components/auth/ReliableRegisterForm";
 import { ReliableEmailWaiting } from "@/components/auth/ReliableEmailWaiting";
 import { registerUserReliable } from "@/services/auth/reliableRegistrationService";
 import { resendReliableConfirmation } from "@/services/auth/reliableEmailConfirmationService";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [registrationState, setRegistrationState] = useState<"form" | "waiting">("form");
