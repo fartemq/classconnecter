@@ -8,11 +8,12 @@ import { AuthButtons } from "./header/AuthButtons";
 import { UserMenu } from "./header/UserMenu";
 import { StudentMobileSidebar } from "./mobile/StudentMobileSidebar";
 import { TutorMobileSidebar } from "./mobile/TutorMobileSidebar";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
+import { NotificationCenter } from "./notifications/NotificationCenter";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export const Header = () => {
-  const { user, userRole, isLoading } = useAuth();
+  const { user, userRole, isLoading } = useSimpleAuth();
   const location = useLocation();
   const isMobile = useIsMobile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -92,7 +93,10 @@ export const Header = () => {
           </nav>
           
           {/* Auth buttons/user menu */}
-          {user ? <UserMenu /> : <AuthButtons />}
+          <div className="flex items-center space-x-4">
+            {user && <NotificationCenter />}
+            {user ? <UserMenu /> : <AuthButtons />}
+          </div>
         </div>
       </header>
 

@@ -15,6 +15,9 @@ import TutorSearchPage from "@/pages/TutorSearchPage";
 import ChatPage from "@/pages/ChatPage";
 import LessonPage from "@/pages/LessonPage";
 import AboutPage from "@/pages/AboutPage";
+import StudentDashboardPage from "@/pages/StudentDashboardPage";
+import TutorDashboardPage from "@/pages/TutorDashboardPage";
+import PublicTutorProfilePage from "@/pages/PublicTutorProfilePage";
 import { AdminDashboardPage } from "@/pages/AdminDashboardPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
@@ -35,10 +38,13 @@ function App() {
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/tutors" element={<TutorSearchPage />} />
+              <Route path="/tutors/:id" element={<PublicTutorProfilePage />} />
               <Route path="/search" element={<TutorSearchPage />} />
               
               {/* Protected routes */}
               <Route element={<ProtectedRoute />}>
+                <Route path="/dashboard/student" element={<StudentDashboardPage />} />
+                <Route path="/dashboard/tutor" element={<TutorDashboardPage />} />
                 <Route path="/profile/student/*" element={<StudentProfilePage />} />
                 <Route path="/profile/tutor/*" element={<TutorProfilePage />} />
                 <Route path="/profile/tutor/complete" element={<TutorCompletePage />} />
