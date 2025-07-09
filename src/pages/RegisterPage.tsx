@@ -68,17 +68,28 @@ const RegisterPage = () => {
             description: "Проверьте свою почту для подтверждения аккаунта",
           });
         } else {
-          // Автоматический вход (если подтверждение отключено)
-          toast({
-            title: "Регистрация завершена!",
-            description: "Добро пожаловать в Stud.rep",
-          });
-
-          if (formData.role === "tutor") {
-            navigate("/profile/tutor/complete");
+          // Автоматический вход или обработка ошибки email
+          if (result.error) {
+            toast({
+              title: "Регистрация завершена с предупреждением",
+              description: result.error,
+              variant: "default",
+            });
           } else {
-            navigate("/profile/student");
+            toast({
+              title: "Регистрация завершена!",
+              description: "Добро пожаловать в Stud.rep",
+            });
           }
+
+          // Небольшая задержка для показа сообщения
+          setTimeout(() => {
+            if (formData.role === "tutor") {
+              navigate("/profile/tutor/complete");
+            } else {
+              navigate("/profile/student");
+            }
+          }, 1500);
         }
       } else {
         toast({
@@ -91,7 +102,7 @@ const RegisterPage = () => {
       console.error("Registration error:", error);
       toast({
         title: "Ошибка",
-        description: "Произошла неожиданная ошибка",
+        description: "Произошла неожиданная ошибка при регистрации",
         variant: "destructive",
       });
     } finally {

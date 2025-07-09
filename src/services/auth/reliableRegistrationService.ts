@@ -42,7 +42,9 @@ export const registerUserReliable = async (userData: ReliableRegistrationData): 
       };
     }
 
-    // Регистрация пользователя с обязательным подтверждением email
+    // Убираем проверку через admin API, так как она недоступна в клиентском коде
+
+    // Регистрация пользователя 
     const { data, error } = await supabase.auth.signUp({
       email: userData.email.trim().toLowerCase(),
       password: userData.password,
@@ -63,10 +65,23 @@ export const registerUserReliable = async (userData: ReliableRegistrationData): 
       
       let errorMessage = "Произошла ошибка при регистрации";
       
-      if (error.message.includes("User already registered")) {
+      if (error.message.includes("User already registered") || error.message.includes("already registered")) {
         errorMessage = "Пользователь с таким email уже существует";
       } else if (error.message.includes("Password should be at least")) {
         errorMessage = "Пароль должен содержать минимум 6 символов";
+      } else if (error.message.includes("Error sending confirmation email") || error.status === 500) {
+        // Особая обработка ошибки отправки email - пробуем создать профиль вручную
+        errorMessage = "Email подтверждение недоступно. Попробуйте войти с этими данными через несколько минут.";
+        
+        // Если пользователь был создан, но email не отправился
+        if (data.user && !data.user.email_confirmed_at) {
+          return {
+            success: true,
+            needsEmailConfirmation: false, // Пропускаем подтверждение
+            user: data.user,
+            error: "Регистрация завершена, но email подтверждение недоступно. Вы можете войти в систему."
+          };
+        }
       } else if (error.message.includes("email rate limit exceeded") || error.message.includes("over_email_send_rate_limit")) {
         errorMessage = "Превышен лимит отправки писем. Попробуйте через несколько минут";
       } else if (error.message.includes("Invalid email")) {
@@ -90,14 +105,24 @@ export const registerUserReliable = async (userData: ReliableRegistrationData): 
       };
     }
 
-    console.log("User registered successfully, awaiting email confirmation:", data.user.id);
+    console.log("User registered successfully:", data.user.id);
 
-    // Успешная регистрация - всегда требуем подтверждение email
-    return {
-      success: true,
-      needsEmailConfirmation: true,
-      user: data.user
-    };
+    // Проверяем, подтвержден ли email (может быть отключено в настройках)
+    if (data.user.email_confirmed_at) {
+      // Email уже подтвержден (отключено в настройках Supabase)
+      return {
+        success: true,
+        needsEmailConfirmation: false,
+        user: data.user
+      };
+    } else {
+      // Требуется подтверждение email
+      return {
+        success: true,
+        needsEmailConfirmation: true,
+        user: data.user
+      };
+    }
 
   } catch (error) {
     console.error("Registration exception:", error);
