@@ -14,7 +14,7 @@ import { ProgressTab } from "./ProgressTab";
 import { LessonRequestsTab } from "./LessonRequestsTab";
 import { NotificationsTab } from "./NotificationsTab";
 import { SettingsTab } from "./SettingsTab";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { useProfile } from "@/hooks/profiles/useProfile";
 import { Loader } from "@/components/ui/loader";
 
@@ -52,7 +52,7 @@ export const StudentProfileContent = () => {
   };
 
   const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const { profile, isLoading } = useProfile();
 
   // Update active tab when location changes
