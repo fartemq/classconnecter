@@ -216,6 +216,8 @@ export type Database = {
       }
       homework: {
         Row: {
+          answer: string | null
+          answer_file_path: string | null
           created_at: string | null
           description: string | null
           due_date: string | null
@@ -231,6 +233,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          answer?: string | null
+          answer_file_path?: string | null
           created_at?: string | null
           description?: string | null
           due_date?: string | null
@@ -246,6 +250,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          answer?: string | null
+          answer_file_path?: string | null
           created_at?: string | null
           description?: string | null
           due_date?: string | null
@@ -383,6 +389,8 @@ export type Database = {
           created_at: string
           created_by: string | null
           file_path: string | null
+          file_size: number | null
+          file_type: string | null
           id: string
           lesson_id: string | null
           material_type: string
@@ -394,6 +402,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
           id?: string
           lesson_id?: string | null
           material_type: string
@@ -405,6 +415,8 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
           id?: string
           lesson_id?: string | null
           material_type?: string
@@ -427,6 +439,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      lesson_notes: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          lesson_id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          lesson_id: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       lesson_requests: {
         Row: {

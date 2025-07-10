@@ -14,7 +14,7 @@ import {
   Edit2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { useToast } from "@/hooks/use-toast";
 
 interface LessonNotesProps {
@@ -30,7 +30,7 @@ interface Note {
 }
 
 export const LessonNotes = ({ lessonId }: LessonNotesProps) => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const { toast } = useToast();
   const [notes, setNotes] = useState<Note[]>([]);
   const [currentNote, setCurrentNote] = useState<Note | null>(null);
@@ -55,26 +55,17 @@ export const LessonNotes = ({ lessonId }: LessonNotesProps) => {
   const fetchNotes = async () => {
     try {
       const { data, error } = await supabase
-        .from('lesson_materials')
+        .from('lesson_notes')
         .select('*')
         .eq('lesson_id', lessonId)
-        .eq('material_type', 'notes')
         .order('created_at', { ascending: true });
 
       if (error) throw error;
       
-      const formattedNotes = data.map(item => ({
-        id: item.id,
-        title: item.title,
-        content: item.content?.content || '',
-        created_at: item.created_at,
-        updated_at: item.updated_at
-      }));
+      setNotes(data || []);
       
-      setNotes(formattedNotes);
-      
-      if (formattedNotes.length > 0 && !currentNote) {
-        selectNote(formattedNotes[0]);
+      if (data && data.length > 0 && !currentNote) {
+        selectNote(data[0]);
       }
     } catch (error) {
       console.error('Error fetching notes:', error);
@@ -92,13 +83,12 @@ export const LessonNotes = ({ lessonId }: LessonNotesProps) => {
     const newTitle = `Заметка ${notes.length + 1}`;
     try {
       const { data, error } = await supabase
-        .from('lesson_materials')
+        .from('lesson_notes')
         .insert({
           lesson_id: lessonId,
-          material_type: 'notes',
+          user_id: user?.id,
           title: newTitle,
-          content: { content: '' },
-          created_by: user?.id
+          content: ''
         })
         .select()
         .single();
@@ -132,11 +122,10 @@ export const LessonNotes = ({ lessonId }: LessonNotesProps) => {
     try {
       setAutoSaving(true);
       const { error } = await supabase
-        .from('lesson_materials')
+        .from('lesson_notes')
         .update({
           title: title,
-          content: { content: content },
-          updated_at: new Date().toISOString()
+          content: content
         })
         .eq('id', currentNote.id);
 
@@ -180,7 +169,7 @@ export const LessonNotes = ({ lessonId }: LessonNotesProps) => {
   const deleteNote = async (noteId: string) => {
     try {
       const { error } = await supabase
-        .from('lesson_materials')
+        .from('lesson_notes')
         .delete()
         .eq('id', noteId);
 
