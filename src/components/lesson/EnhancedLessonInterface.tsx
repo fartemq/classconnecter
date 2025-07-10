@@ -22,13 +22,17 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Calendar
 } from "lucide-react";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { GoogleMeetIntegration } from "./components/GoogleMeetIntegration";
 import { MiroIntegration } from "./components/MiroIntegration";
 import { LessonNotes } from "./components/LessonNotes";
 import { LessonHomework } from "./components/LessonHomework";
+import { LessonFiles } from "./components/LessonFiles";
+import { HomeworkManager } from "./components/HomeworkManager";
+import { LessonScheduler } from "./components/LessonScheduler";
 import { EnhancedLessonChat } from "./components/EnhancedLessonChat";
 import { LessonTimer } from "./components/LessonTimer";
 import { LessonCalculator } from "./components/LessonCalculator";
@@ -95,6 +99,9 @@ export const EnhancedLessonInterface = () => {
     { id: 'notes', name: 'Конспект', icon: FileText, category: 'content', description: 'Заметки урока' },
     { id: 'homework', name: 'Домашнее задание', icon: BookOpen, category: 'content', description: 'Задания и проверка' },
     { id: 'materials', name: 'Материалы', icon: FileText, category: 'content', description: 'Файлы и документы' },
+    { id: 'files', name: 'Файлы урока', icon: FileText, category: 'content', description: 'Загрузка и обмен файлами' },
+    { id: 'homework_manager', name: 'Управление ДЗ', icon: BookOpen, category: 'content', description: 'Создание и оценка заданий' },
+    { id: 'scheduler', name: 'Планировщик', icon: Calendar, category: 'utils', description: 'Планирование уроков' },
     { id: 'timer', name: 'Таймер', icon: Clock, category: 'utils', description: 'Контроль времени' },
     { id: 'calculator', name: 'Калькулятор', icon: Calculator, category: 'utils', description: 'Математические расчеты' }
   ];
@@ -340,6 +347,12 @@ export const EnhancedLessonInterface = () => {
         return <LessonTimer />;
       case 'calculator':
         return <LessonCalculator />;
+      case 'files':
+        return <LessonFiles lessonId={componentId} />;
+      case 'homework_manager':
+        return <HomeworkManager />;
+      case 'scheduler':
+        return <LessonScheduler />;
       case 'materials':
         return <LessonMaterials lessonId={componentId} />;
       default:
