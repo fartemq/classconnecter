@@ -1,10 +1,10 @@
 
 import { useStudentProfile } from './student/useStudentProfile';
 import { useTutorProfile } from './useTutorProfile';
-import { useAuth } from '@/hooks/auth/useAuth';
+import { useSimpleAuth } from '@/hooks/auth/SimpleAuthProvider';
 
 export const useProfile = () => {
-  const { userRole } = useAuth();
+  const { userRole } = useSimpleAuth();
   const studentProfile = useStudentProfile();
   const tutorProfile = useTutorProfile();
 

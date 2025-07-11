@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 import { logger } from "@/utils/logger";
@@ -19,7 +19,7 @@ export interface BaseProfile {
 }
 
 export const useBaseProfile = (expectedRole?: string) => {
-  const { user, userRole, isLoading: authLoading } = useAuth();
+  const { user, userRole, isLoading: authLoading } = useSimpleAuth();
   const [profile, setProfile] = useState<BaseProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

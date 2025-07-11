@@ -33,10 +33,18 @@ const LoginPage = React.memo(() => {
   // Редирект для авторизованных пользователей
   useEffect(() => {
     if (user && userRole && !isLoading) {
-      const redirectTo = location.state?.from?.pathname || "/";
-      navigate(redirectTo, { replace: true });
+      // Прямой переход в профили по ролям
+      if (userRole === "admin") {
+        navigate("/admin", { replace: true });
+      } else if (userRole === "tutor") {
+        navigate("/profile/tutor", { replace: true });
+      } else if (userRole === "student") {
+        navigate("/profile/student", { replace: true });
+      } else {
+        navigate("/", { replace: true });
+      }
     }
-  }, [user, userRole, navigate, isLoading, location]);
+  }, [user, userRole, navigate, isLoading]);
 
   const handleLoginSuccess = async (values: LoginFormValues) => {
     if (isLoggingIn) return;

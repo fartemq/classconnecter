@@ -1,14 +1,14 @@
 
 import { useState, useEffect } from "react";
 import { Profile } from "./types";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { fetchProfileData } from "./utils/fetchProfile";
 
 /**
  * Common profile hook that provides basic profile functionality
  */
 export const useProfileCommon = (requiredRole?: string) => {
-  const { user, userRole, isLoading: authLoading } = useAuth();
+  const { user, userRole, isLoading: authLoading } = useSimpleAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

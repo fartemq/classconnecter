@@ -88,9 +88,9 @@ export const StudentSidebar = ({ activeTab, onTabChange }: StudentSidebarProps) 
                 <NavLink
                   to={item.path}
                   onClick={() => onTabChange(item.id)}
-                  className={cn(
+                  className={({ isActive: isNavActive }) => cn(
                     "flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                    isActive 
+                    isNavActive || isActive
                       ? "bg-blue-50 text-blue-700 border-r-2 border-blue-700" 
                       : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   )}

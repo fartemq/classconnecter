@@ -32,13 +32,8 @@ const RegisterPage = () => {
   // Проверяем авторизацию
   useEffect(() => {
     if (user) {
-      // Пользователь уже авторизован, перенаправляем
-      const role = user.user_metadata?.role || "student";
-      if (role === "tutor") {
-        navigate("/profile/tutor");
-      } else {
-        navigate("/profile/student");
-      }
+      // Пользователь уже авторизован, перенаправляем напрямую в профили
+      navigate("/profile/student");
     } else {
       setCheckingAuth(false);
     }
@@ -85,7 +80,7 @@ const RegisterPage = () => {
           // Небольшая задержка для показа сообщения
           setTimeout(() => {
             if (formData.role === "tutor") {
-              navigate("/profile/tutor/complete");
+              navigate("/profile/tutor");
             } else {
               navigate("/profile/student");
             }
