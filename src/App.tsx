@@ -7,7 +7,7 @@ import Index from "@/pages/Index";
 import LoginPage from "@/pages/LoginPage";
 import RegisterPage from "@/pages/RegisterPage";
 import AuthCallbackPage from "@/pages/AuthCallbackPage";
-import StudentProfilePage from "@/pages/StudentProfilePage";
+import { StudentProfileContent } from "@/components/profile/student/StudentProfileContent";
 import TutorProfilePage from "@/pages/TutorProfilePage";
 import TutorCompletePage from "@/pages/TutorCompletePage";
 import TutorsPage from "@/pages/TutorsPage";
@@ -45,7 +45,7 @@ function App() {
               <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard/student" element={<StudentDashboardPage />} />
                 <Route path="/dashboard/tutor" element={<TutorDashboardPage />} />
-                <Route path="/profile/student/*" element={<StudentProfilePage />} />
+                <Route path="/profile/student/*" element={<StudentProfileContent />} />
                 <Route path="/profile/tutor/*" element={<TutorProfilePage />} />
                 <Route path="/profile/tutor/complete" element={<TutorCompletePage />} />
                 <Route path="/lesson/:lessonId" element={<LessonPage />} />
