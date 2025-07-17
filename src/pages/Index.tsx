@@ -16,34 +16,28 @@ const Index = () => {
   const { user, userRole, isLoading, isError } = useSimpleAuth();
   const navigate = useNavigate();
 
+  // Автоматически перенаправляем авторизованных пользователей в их профили
+  React.useEffect(() => {
+    if (user && userRole && user.email !== MAIN_ADMIN_EMAIL) {
+      if (userRole === "admin" || userRole === "moderator") {
+        navigate("/admin");
+      } else if (userRole === "tutor") {
+        navigate("/profile/tutor");
+      } else {
+        navigate("/profile/student");
+      }
+    }
+  }, [user, userRole, navigate]);
+
+  // Если пользователь авторизован и не админ, не рендерим главную страницу
+  if (user && userRole && user.email !== MAIN_ADMIN_EMAIL) {
+    return <LoadingManager isLoading={true} isError={false}><div /></LoadingManager>;
+  }
+
   return (
     <LoadingManager isLoading={isLoading} isError={isError}>
       <div className="min-h-screen">
         <Header />
-        
-        {/* Если пользователь залогинен, показываем кнопку перехода в профиль */}
-        {user && userRole && user.email !== MAIN_ADMIN_EMAIL && (
-          <div className="bg-blue-50 border-b border-blue-200 py-3">
-            <div className="container mx-auto px-4 text-center">
-              <p className="text-blue-800 mb-2">Добро пожаловать! Вы успешно вошли в систему.</p>
-              <button
-                onClick={() => {
-                  if (userRole === "admin" || userRole === "moderator") {
-                    navigate("/admin");
-                  } else if (userRole === "tutor") {
-                    navigate("/profile/tutor");
-                  } else {
-                    navigate("/profile/student");
-                  }
-                }}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Перейти в профиль
-              </button>
-            </div>
-          </div>
-        )}
-        
         <HeroSection />
         <FeaturesSection />
         <TestimonialsSection />
