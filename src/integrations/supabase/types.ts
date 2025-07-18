@@ -474,6 +474,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          lesson_duration: number | null
           message: string | null
           requested_date: string
           requested_end_time: string
@@ -489,6 +490,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          lesson_duration?: number | null
           message?: string | null
           requested_date: string
           requested_end_time: string
@@ -504,6 +506,7 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          lesson_duration?: number | null
           message?: string | null
           requested_date?: string
           requested_end_time?: string
@@ -962,31 +965,37 @@ export type Database = {
       }
       tutor_schedule: {
         Row: {
+          break_duration: number | null
           created_at: string | null
           day_of_week: number
           end_time: string
           id: string
           is_available: boolean | null
+          lesson_duration: number | null
           start_time: string
           tutor_id: string
           updated_at: string | null
         }
         Insert: {
+          break_duration?: number | null
           created_at?: string | null
           day_of_week: number
           end_time: string
           id?: string
           is_available?: boolean | null
+          lesson_duration?: number | null
           start_time: string
           tutor_id: string
           updated_at?: string | null
         }
         Update: {
+          break_duration?: number | null
           created_at?: string | null
           day_of_week?: number
           end_time?: string
           id?: string
           is_available?: boolean | null
+          lesson_duration?: number | null
           start_time?: string
           tutor_id?: string
           updated_at?: string | null

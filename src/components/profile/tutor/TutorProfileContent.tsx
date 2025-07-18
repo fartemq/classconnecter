@@ -9,6 +9,7 @@ import { TutorChatsTab } from "./TutorChatsTab";
 import { TutorChatView } from "./TutorChatView";
 import { TutorSettingsTab } from "./TutorSettingsTab";
 import { LessonRequestsTab } from "./LessonRequestsTab";
+import { TutorLessonRequests } from "@/components/booking/TutorLessonRequests";
 import { NotificationsTab } from "./NotificationsTab";
 import { ProfileCompletionChecker } from "./publish/ProfileCompletionChecker";
 import { useAuth } from "@/hooks/auth/useAuth";
@@ -127,7 +128,7 @@ export const TutorProfileContent = React.memo(() => {
       case "profile":
         return <ProfileCompletionChecker profile={tutorProfile} subjects={subjects} />;
       case "lesson-requests":
-        return <LessonRequestsTab />;
+        return <TutorLessonRequests />;
       case "notifications":
         return <NotificationsTab />;
       case "students":

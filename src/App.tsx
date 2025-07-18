@@ -20,6 +20,7 @@ import TutorDashboardPage from "@/pages/TutorDashboardPage";
 import PublicTutorProfilePage from "@/pages/PublicTutorProfilePage";
 import { AdminDashboardPage } from "@/pages/AdminDashboardPage";
 import NotFoundPage from "@/pages/NotFoundPage";
+import BookingPage from "@/pages/BookingPage";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
