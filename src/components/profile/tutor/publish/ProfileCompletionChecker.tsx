@@ -281,9 +281,29 @@ export const ProfileCompletionChecker: React.FC<ProfileCompletionCheckerProps> =
   }
 
   // If profile is complete, show beautiful display view
+  // Merge nested tutor profile fields and subjects for display
+  const tp = Array.isArray(profileCompletion.completeProfile?.tutor_profiles)
+    ? profileCompletion.completeProfile.tutor_profiles[0]
+    : profileCompletion.completeProfile?.tutor_profiles;
+  const displayProfile = {
+    ...profileCompletion.completeProfile,
+    // Flatten tutor-specific fields for DisplayView expectations
+    education_institution: tp?.education_institution ?? profileCompletion.completeProfile.education_institution,
+    degree: tp?.degree ?? profileCompletion.completeProfile.degree,
+    graduation_year: tp?.graduation_year ?? profileCompletion.completeProfile.graduation_year,
+    experience: tp?.experience ?? profileCompletion.completeProfile.experience,
+    methodology: tp?.methodology ?? profileCompletion.completeProfile.methodology,
+    achievements: tp?.achievements ?? profileCompletion.completeProfile.achievements,
+    video_url: tp?.video_url ?? profileCompletion.completeProfile.video_url,
+    education_verified: tp?.education_verified ?? profileCompletion.completeProfile.education_verified,
+    is_published: tp?.is_published ?? profileCompletion.completeProfile.is_published,
+    // Provide subjects ids array for badges rendering
+    subjects: (profileCompletion.tutorSubjects || []).map((s: any) => s.subject_id),
+  } as Profile;
+
   return (
     <ProfileDisplayView 
-      profile={profileCompletion.completeProfile}
+      profile={displayProfile}
       subjects={subjects}
       onUpdate={handleUpdate}
       onSwitchToWizard={handleSwitchToWizard}
