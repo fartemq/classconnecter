@@ -12,6 +12,7 @@ import { LessonRequestsTab } from "./LessonRequestsTab";
 import { TutorLessonRequests } from "@/components/booking/TutorLessonRequests";
 import { NotificationsTab } from "./NotificationsTab";
 import { ProfileCompletionChecker } from "./publish/ProfileCompletionChecker";
+import { AdvancedScheduleTab } from "./AdvancedScheduleTab";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useProfile } from "@/hooks/profiles/useProfile";
 import { SimpleLoadingScreen } from "@/components/auth/SimpleLoadingScreen";
@@ -121,6 +122,8 @@ export const TutorProfileContent = React.memo(() => {
 
   const tutorProfile = profile as Profile;
 
+  const isEditingSchedule = new URLSearchParams(location.search).get('edit') === '1';
+
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
@@ -134,7 +137,7 @@ export const TutorProfileContent = React.memo(() => {
       case "students":
         return <StudentsTab />;
       case "schedule":
-        return <ScheduleManagement />;
+        return isEditingSchedule ? <AdvancedScheduleTab tutorId={user.id} /> : <ScheduleManagement />;
       case "student-schedule":
         return (
           <ErrorBoundary FallbackComponent={ErrorFallback}>

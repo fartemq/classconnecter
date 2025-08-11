@@ -188,10 +188,19 @@ export const ScheduleManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Расписание</h1>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Добавить урок
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => navigate('/profile/tutor/schedule?edit=1')}
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Создать/редактировать расписание
+          </Button>
+          <Button>
+            <Plus className="w-4 h-4 mr-2" />
+            Добавить урок
+          </Button>
+        </div>
       </div>
 
       {/* Upcoming Lessons */}

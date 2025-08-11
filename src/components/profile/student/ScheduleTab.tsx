@@ -1,13 +1,12 @@
 
 import React, { useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
 import { StudentScheduleView } from "./schedule/StudentScheduleView";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { subscribeToScheduleUpdates } from "@/services/scheduleNotificationService";
 import { toast } from "@/hooks/use-toast";
 
 export const ScheduleTab = () => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   
   // Set up real-time schedule notifications
   useEffect(() => {
