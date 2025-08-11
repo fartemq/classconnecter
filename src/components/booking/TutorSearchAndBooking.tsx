@@ -160,12 +160,12 @@ export const TutorSearchAndBooking = () => {
                 />
               </div>
             </div>
-            <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+            <Select value={selectedSubject || "all"} onValueChange={(v) => setSelectedSubject(v === "all" ? "" : v)}>
               <SelectTrigger className="w-48">
                 <SelectValue placeholder="Выберите предмет" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">Все предметы</SelectItem>
+              <SelectContent className="z-50">
+                <SelectItem value="all">Все предметы</SelectItem>
                 {subjects.map(subject => (
                   <SelectItem key={subject.id} value={subject.id}>
                     {subject.name}
