@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { Calendar, Clock, User, Plus, Video, Phone } from "lucide-react";
 import { format, isToday, isTomorrow } from "date-fns";
 import { ru } from "date-fns/locale";
@@ -29,7 +29,7 @@ interface Lesson {
 }
 
 export const ScheduleManagement = () => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const navigate = useNavigate();
 
   const { data: upcomingLessons = [], refetch } = useQuery({
@@ -154,7 +154,8 @@ export const ScheduleManagement = () => {
     switch (status) {
       case 'confirmed': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
-      case 'canceled': return 'bg-red-100 text-red-800';
+      case 'canceled':
+      case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -163,7 +164,8 @@ export const ScheduleManagement = () => {
     switch (status) {
       case 'confirmed': return 'Подтверждён';
       case 'pending': return 'Ожидает';
-      case 'canceled': return 'Отменён';
+      case 'canceled':
+      case 'cancelled': return 'Отменён';
       default: return status;
     }
   };

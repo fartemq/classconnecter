@@ -3,7 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2 } from "lucide-react";
@@ -14,6 +14,8 @@ interface ScheduleSlot {
   start_time: string;
   end_time: string;
   is_available: boolean;
+  lesson_duration?: number;
+  break_duration?: number;
 }
 
 const DAYS_OF_WEEK = [
@@ -27,13 +29,15 @@ const DAYS_OF_WEEK = [
 ];
 
 export const ScheduleManager = () => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const { toast } = useToast();
   const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([]);
   const [newSlot, setNewSlot] = useState({
     day_of_week: 1,
     start_time: '09:00',
-    end_time: '10:00'
+    end_time: '10:00',
+    lesson_duration: 60,
+    break_duration: 15
   });
 
   useEffect(() => {
@@ -72,6 +76,8 @@ export const ScheduleManager = () => {
           day_of_week: newSlot.day_of_week,
           start_time: newSlot.start_time,
           end_time: newSlot.end_time,
+          lesson_duration: newSlot.lesson_duration,
+          break_duration: newSlot.break_duration,
           is_available: true
         });
 
@@ -130,7 +136,7 @@ export const ScheduleManager = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
               <Select 
                 value={newSlot.day_of_week.toString()} 
                 onValueChange={(value) => setNewSlot(prev => ({ ...prev, day_of_week: parseInt(value) }))}
@@ -160,7 +166,28 @@ export const ScheduleManager = () => {
                 onChange={(e) => setNewSlot(prev => ({ ...prev, end_time: e.target.value }))}
                 className="px-3 py-2 border rounded-md"
               />
-
+              <input
+                type="number"
+                min={15}
+                max={240}
+                step={5}
+                value={newSlot.lesson_duration}
+                onChange={(e) => setNewSlot(prev => ({ ...prev, lesson_duration: parseInt(e.target.value || '0') }))}
+                className="px-3 py-2 border rounded-md"
+                placeholder="Длительность (мин)"
+                aria-label="Длительность урока (мин)"
+              />
+              <input
+                type="number"
+                min={0}
+                max={120}
+                step={5}
+                value={newSlot.break_duration}
+                onChange={(e) => setNewSlot(prev => ({ ...prev, break_duration: parseInt(e.target.value || '0') }))}
+                className="px-3 py-2 border rounded-md"
+                placeholder="Перерыв (мин)"
+                aria-label="Длительность перерыва (мин)"
+              />
               <Button onClick={addScheduleSlot}>
                 <Plus className="h-4 w-4 mr-2" />
                 Добавить
