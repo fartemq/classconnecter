@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Clock, Eye } from "lucide-react";
@@ -40,7 +40,7 @@ const DAYS_OF_WEEK = [
 ];
 
 export const EnhancedScheduleManager = () => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const { toast } = useToast();
   const [scheduleSlots, setScheduleSlots] = useState<ScheduleSlot[]>([]);
   const [previewSlots, setPreviewSlots] = useState<GeneratedSlot[]>([]);
