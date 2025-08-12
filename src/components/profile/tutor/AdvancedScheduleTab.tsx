@@ -37,6 +37,8 @@ export const AdvancedScheduleTab = ({ tutorId }: AdvancedScheduleTabProps) => {
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
   const [activeTab, setActiveTab] = useState("regular");
+  const [lessonDuration, setLessonDuration] = useState<number>(60);
+  const [breakDuration, setBreakDuration] = useState<number>(15);
   
   // For exceptions
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
@@ -50,7 +52,7 @@ export const AdvancedScheduleTab = ({ tutorId }: AdvancedScheduleTabProps) => {
   const timeSlots = getTimeSlots();
 
   const handleAddTimeSlot = async () => {
-    const success = await addTimeSlot(selectedDay, startTime, endTime);
+    const success = await addTimeSlot(selectedDay, startTime, endTime, lessonDuration, breakDuration);
     if (success) {
       // Optionally reset form or do other actions
     }
@@ -130,7 +132,7 @@ export const AdvancedScheduleTab = ({ tutorId }: AdvancedScheduleTabProps) => {
               <CardTitle>Добавить временной слот</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">День недели</label>
                   <Select
@@ -186,6 +188,30 @@ export const AdvancedScheduleTab = ({ tutorId }: AdvancedScheduleTabProps) => {
                       ))}
                     </SelectContent>
                   </Select>
+                </div>
+
+                <div>
+                  <Label className="block text-sm font-medium mb-1">Длительность урока (мин)</Label>
+                  <Input
+                    type="number"
+                    min={15}
+                    max={240}
+                    step={5}
+                    value={lessonDuration}
+                    onChange={(e) => setLessonDuration(parseInt(e.target.value || '60'))}
+                  />
+                </div>
+
+                <div>
+                  <Label className="block text-sm font-medium mb-1">Перерыв (мин)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    max={120}
+                    step={5}
+                    value={breakDuration}
+                    onChange={(e) => setBreakDuration(parseInt(e.target.value || '15'))}
+                  />
                 </div>
               </div>
               

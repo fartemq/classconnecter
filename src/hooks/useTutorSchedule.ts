@@ -26,7 +26,9 @@ export const useTutorSchedule = (tutorId: string) => {
           dayOfWeek: item.day_of_week as number,
           startTime: item.start_time as string,
           endTime: item.end_time as string,
-          isAvailable: item.is_available as boolean
+          isAvailable: item.is_available as boolean,
+          lessonDuration: (item as any).lesson_duration ?? undefined,
+          breakDuration: (item as any).break_duration ?? undefined
         }));
 
         setSchedule(formattedData);
@@ -47,7 +49,13 @@ export const useTutorSchedule = (tutorId: string) => {
     fetchSchedule();
   }, [fetchSchedule]);
 
-  const addTimeSlot = async (dayOfWeek: number, startTime: string, endTime: string) => {
+  const addTimeSlot = async (
+    dayOfWeek: number,
+    startTime: string,
+    endTime: string,
+    lessonDuration: number = 60,
+    breakDuration: number = 15
+  ) => {
     try {
       setSaving(true);
       
@@ -85,6 +93,8 @@ export const useTutorSchedule = (tutorId: string) => {
           day_of_week: dayOfWeek,
           start_time: startTime,
           end_time: endTime,
+          lesson_duration: lessonDuration,
+          break_duration: breakDuration,
           is_available: true
         })
         .select();

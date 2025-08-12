@@ -73,6 +73,8 @@ export interface TimeSlot {
   startTime: string;
   endTime: string;
   isAvailable: boolean;
+  lessonDuration?: number;
+  breakDuration?: number;
 }
 
 export interface TutorReview {
