@@ -28,8 +28,8 @@ export const TutorMobileNav: React.FC<TutorMobileNavProps> = ({
   const navItems = [
     { key: "dashboard", label: "Главная", icon: Home, path: "/profile/tutor" },
     { key: "students", label: "Ученики", icon: Users, path: "/profile/tutor/students" },
+    { key: "lessons", label: "Занятия", icon: BookOpen, path: "/profile/tutor/lessons" },
     { key: "schedule", label: "Расписание", icon: Calendar, path: "/profile/tutor/schedule" },
-    { key: "chats", label: "Чаты", icon: MessageSquare, path: "/profile/tutor/chats" },
     { key: "lesson-requests", label: "Запросы", icon: ClipboardList, path: "/profile/tutor/lesson-requests" },
   ];
 

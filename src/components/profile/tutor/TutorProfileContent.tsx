@@ -85,6 +85,8 @@ export const TutorProfileContent = React.memo(() => {
       return "lesson-requests";
     } else if (pathParts.includes('notifications')) {
       return "notifications";
+    } else if (pathParts.includes('lessons')) {
+      return "lessons";
     } else {
       return "dashboard";
     }
@@ -166,6 +168,23 @@ export const TutorProfileContent = React.memo(() => {
         return <TutorChatsTab />;
       case "chat-view":
         return <TutorChatView />;
+      case "lessons":
+        return (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <h3 className="text-lg font-medium mb-2">Управление занятиями</h3>
+              <p className="text-muted-foreground mb-4">
+                Просматривайте заявки, управляйте уроками и присоединяйтесь к занятиям
+              </p>
+              <button 
+                onClick={() => window.open('/tutor/lessons', '_blank')}
+                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
+              >
+                Открыть страницу занятий
+              </button>
+            </div>
+          </div>
+        );
       case "settings":
         return <TutorSettingsTab profile={tutorProfile} />;
       default:

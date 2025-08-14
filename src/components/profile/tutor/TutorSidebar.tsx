@@ -11,7 +11,8 @@ import {
   FileText,
   Edit3,
   Home,
-  ClipboardList
+  ClipboardList,
+  BookOpen
 } from "lucide-react";
 
 interface TutorSidebarProps {
@@ -50,6 +51,11 @@ export const TutorSidebar = ({ activeTab, onTabChange }: TutorSidebarProps) => {
       id: "schedule",
       label: "Расписание",
       icon: Calendar,
+    },
+    {
+      id: "lessons",
+      label: "Занятия",
+      icon: BookOpen,
     },
     {
       id: "analytics",

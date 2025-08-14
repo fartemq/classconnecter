@@ -10,6 +10,7 @@ import AuthCallbackPage from "@/pages/AuthCallbackPage";
 import { StudentProfileContent } from "@/components/profile/student/StudentProfileContent";
 import TutorProfilePage from "@/pages/TutorProfilePage";
 import TutorCompletePage from "@/pages/TutorCompletePage";
+import TutorLessonsPage from "@/pages/TutorLessonsPage";
 import TutorsPage from "@/pages/TutorsPage";
 import TutorSearchPage from "@/pages/TutorSearchPage";
 import ChatPage from "@/pages/ChatPage";
@@ -49,6 +50,7 @@ function App() {
                 <Route path="/profile/student/*" element={<StudentProfileContent />} />
                 <Route path="/profile/tutor/*" element={<TutorProfilePage />} />
                 <Route path="/profile/tutor/complete" element={<TutorCompletePage />} />
+                <Route path="/tutor/lessons" element={<TutorLessonsPage />} />
                 <Route path="/lesson/:lessonId" element={<LessonPage />} />
                 <Route path="/chat/:tutorId" element={<ChatPage />} />
               </Route>

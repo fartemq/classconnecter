@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
@@ -1123,18 +1123,18 @@ export type Database = {
     }
     Functions: {
       block_user: {
-        Args: { user_id_param: string; block_status: boolean }
+        Args: { block_status: boolean; user_id_param: string }
         Returns: boolean
       }
       create_homework: {
         Args: {
-          tutor_id: string
+          description: string
+          due_date: string
+          file_path: string
           student_id: string
           subject_id: string
           title: string
-          description: string
-          file_path: string
-          due_date: string
+          tutor_id: string
         }
         Returns: string
       }
@@ -1143,22 +1143,22 @@ export type Database = {
         Returns: boolean
       }
       generate_tutor_time_slots: {
-        Args: { p_tutor_id: string; p_date: string }
+        Args: { p_date: string; p_tutor_id: string }
         Returns: {
-          slot_id: string
-          start_time: string
           end_time: string
           is_available: boolean
+          slot_id: string
+          start_time: string
         }[]
       }
       get_admin_messages_for_user: {
         Args: { user_id_param: string }
         Returns: {
-          id: string
-          subject: string
           content: string
           created_at: string
+          id: string
           is_from_admin: boolean
+          subject: string
         }[]
       }
       get_current_user_role: {
@@ -1168,32 +1168,32 @@ export type Database = {
       get_user_profile: {
         Args: { user_id?: string }
         Returns: {
-          id: string
-          first_name: string
-          last_name: string
           avatar_url: string
           bio: string
           city: string
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
           phone: string
           role: string
-          created_at: string
           updated_at: string
         }[]
       }
       log_admin_action: {
         Args: {
           action_text: string
-          target_type_param?: string
-          target_id_param?: string
           details_param?: Json
+          target_id_param?: string
+          target_type_param?: string
         }
         Returns: string
       }
       send_admin_message: {
         Args: {
+          content_param: string
           recipient_id_param: string
           subject_param: string
-          content_param: string
         }
         Returns: string
       }
