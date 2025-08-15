@@ -48,6 +48,10 @@ const LazyTutorStudentSchedule = React.lazy(() =>
   import("./schedule/TutorStudentSchedule").then(module => ({ default: module.TutorStudentSchedule }))
 );
 
+const LazyTutorLessons = React.lazy(() => 
+  import("../../../pages/TutorLessonsPage").then(module => ({ default: module.default }))
+);
+
 const LoadingFallback = ({ message = "Загрузка..." }: { message?: string }) => (
   <div className="flex justify-center py-8">
     <div className="text-center">
@@ -170,20 +174,11 @@ export const TutorProfileContent = React.memo(() => {
         return <TutorChatView />;
       case "lessons":
         return (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <h3 className="text-lg font-medium mb-2">Управление занятиями</h3>
-              <p className="text-muted-foreground mb-4">
-                Просматривайте заявки, управляйте уроками и присоединяйтесь к занятиям
-              </p>
-              <button 
-                onClick={() => window.open('/tutor/lessons', '_blank')}
-                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90"
-              >
-                Открыть страницу занятий
-              </button>
-            </div>
-          </div>
+          <ErrorBoundary FallbackComponent={ErrorFallback}>
+            <Suspense fallback={<LoadingFallback message="Загрузка занятий..." />}>
+              <LazyTutorLessons />
+            </Suspense>
+          </ErrorBoundary>
         );
       case "settings":
         return <TutorSettingsTab profile={tutorProfile} />;

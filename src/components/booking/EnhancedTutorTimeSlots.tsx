@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, CalendarDays, User } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { generateTutorTimeSlots } from "@/services/lesson/timeSlotsService";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader } from "@/components/ui/loader";
@@ -36,7 +36,7 @@ export const EnhancedTutorTimeSlots: React.FC<EnhancedTutorTimeSlotsProps> = ({
   subjectName,
   hourlyRate
 }) => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const { toast } = useToast();
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
   const [message, setMessage] = useState("");

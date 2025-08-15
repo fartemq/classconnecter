@@ -11,6 +11,7 @@ import { format, isToday, isTomorrow } from "date-fns";
 import { ru } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/hooks/use-toast";
+import { AddLessonModal } from "./AddLessonModal";
 
 interface Lesson {
   id: string;
@@ -31,6 +32,7 @@ interface Lesson {
 export const ScheduleManagement = () => {
   const { user } = useSimpleAuth();
   const navigate = useNavigate();
+  const [isAddLessonModalOpen, setIsAddLessonModalOpen] = useState(false);
 
   const { data: upcomingLessons = [], refetch } = useQuery({
     queryKey: ['upcomingLessons', user?.id],
@@ -198,7 +200,7 @@ export const ScheduleManagement = () => {
             <Calendar className="w-4 h-4 mr-2" />
             Создать/редактировать расписание
           </Button>
-          <Button>
+          <Button onClick={() => setIsAddLessonModalOpen(true)}>
             <Plus className="w-4 h-4 mr-2" />
             Добавить урок
           </Button>
@@ -298,6 +300,12 @@ export const ScheduleManagement = () => {
           )}
         </CardContent>
       </Card>
+
+      <AddLessonModal
+        isOpen={isAddLessonModalOpen}
+        onClose={() => setIsAddLessonModalOpen(false)}
+        onLessonAdded={() => refetch()}
+      />
     </div>
   );
 };
