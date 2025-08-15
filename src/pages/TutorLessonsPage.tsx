@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
-import { Calendar, Clock, User, Video, BookOpen, Plus, MessageSquare } from "lucide-react";
+import { Calendar, Clock, User, Video, BookOpen, Plus, MessageSquare, Presentation, Phone, FileText, ClipboardCheck, NotebookPen } from "lucide-react";
 import { format, isToday, isTomorrow, addMinutes } from "date-fns";
 import { ru } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
@@ -53,7 +53,7 @@ interface LessonRequest {
 const TutorLessonsPage = () => {
   const { user } = useSimpleAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("upcoming");
+  const [activeTab, setActiveTab] = useState("whiteboard");
 
   const { data: upcomingLessons = [], refetch: refetchLessons } = useQuery({
     queryKey: ['tutorUpcomingLessons', user?.id],
@@ -283,212 +283,166 @@ const TutorLessonsPage = () => {
             <div className="mb-6">
               <h1 className="text-3xl font-bold flex items-center gap-3">
                 <BookOpen className="h-8 w-8 text-primary" />
-                Мои занятия
+                Инструменты для занятий
               </h1>
               <p className="text-muted-foreground">
-                Управляйте своими уроками и заявками студентов
+                Используйте инструменты для эффективного проведения уроков
               </p>
             </div>
             
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="upcoming" className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  Предстоящие уроки
-                  {upcomingLessons.length > 0 && (
-                    <Badge variant="secondary">{upcomingLessons.length}</Badge>
-                  )}
+              <TabsList className="grid w-full grid-cols-5">
+                <TabsTrigger value="whiteboard" className="flex items-center gap-2">
+                  <Presentation className="h-4 w-4" />
+                  Доска
                 </TabsTrigger>
-                <TabsTrigger value="requests" className="flex items-center gap-2">
-                  <MessageSquare className="h-4 w-4" />
-                  Заявки
-                  {lessonRequests.length > 0 && (
-                    <Badge variant="destructive">{lessonRequests.length}</Badge>
-                  )}
+                <TabsTrigger value="call" className="flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  Звонок
                 </TabsTrigger>
-                <TabsTrigger value="schedule" className="flex items-center gap-2">
-                  <Plus className="h-4 w-4" />
-                  Расписание
+                <TabsTrigger value="homework" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Домашнее задание
+                </TabsTrigger>
+                <TabsTrigger value="test" className="flex items-center gap-2">
+                  <ClipboardCheck className="h-4 w-4" />
+                  Тест
+                </TabsTrigger>
+                <TabsTrigger value="notes" className="flex items-center gap-2">
+                  <NotebookPen className="h-4 w-4" />
+                  Конспект
                 </TabsTrigger>
               </TabsList>
               
-              <TabsContent value="upcoming" className="space-y-6 mt-6">
+              <TabsContent value="whiteboard" className="space-y-6 mt-6">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
-                      <Calendar className="w-5 h-5" />
-                      <span>Ближайшие уроки</span>
+                      <Presentation className="w-5 h-5" />
+                      <span>Интерактивная доска</span>
                     </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {upcomingLessons.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500">
-                        <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                        <h3 className="text-lg font-medium mb-2">Нет запланированных уроков</h3>
-                        <p className="text-sm">Уроки появятся здесь после одобрения заявок</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {upcomingLessons.map(lesson => (
-                          <Card key={lesson.id} className="border-l-4 border-l-primary">
-                            <CardContent className="p-6">
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center space-x-4">
-                                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                                    <Clock className="w-4 h-4" />
-                                    <span>{getDateLabel(lesson.start_time)}</span>
-                                    <span>
-                                      {format(new Date(lesson.start_time), 'HH:mm', { locale: ru })} - 
-                                      {format(new Date(lesson.end_time), 'HH:mm', { locale: ru })}
-                                    </span>
-                                  </div>
-                                </div>
-                                <Badge className={getStatusColor(lesson.status)}>
-                                  {getStatusText(lesson.status)}
-                                </Badge>
-                              </div>
-                              
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center space-x-6">
-                                  <div className="flex items-center space-x-2">
-                                    <User className="w-4 h-4 text-gray-400" />
-                                    <span className="font-medium">
-                                      {lesson.student_profile?.first_name} {lesson.student_profile?.last_name}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <BookOpen className="w-4 h-4 text-gray-400" />
-                                    <span className="text-gray-600">
-                                      {lesson.subject?.name}
-                                    </span>
-                                  </div>
-                                </div>
-                                
-                                <div className="flex items-center space-x-2">
-                                  {lesson.status === 'confirmed' && canJoinLesson(lesson.start_time) && (
-                                    <Button
-                                      onClick={() => handleJoinLesson(lesson.id, lesson.start_time)}
-                                      className="bg-green-600 hover:bg-green-700 text-white"
-                                    >
-                                      <Video className="w-4 h-4 mr-2" />
-                                      Войти в урок
-                                    </Button>
-                                  )}
-                                  
-                                  {lesson.status === 'confirmed' && !canJoinLesson(lesson.start_time) && (
-                                    <div className="flex items-center text-xs text-gray-500">
-                                      <Clock className="w-3 h-3 mr-1" />
-                                      <span>Доступно за 15 мин до урока</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="requests" className="space-y-6 mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <MessageSquare className="w-5 h-5" />
-                      <span>Заявки на уроки</span>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {lessonRequests.length === 0 ? (
-                      <div className="text-center py-12 text-gray-500">
-                        <MessageSquare className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                        <h3 className="text-lg font-medium mb-2">Нет новых заявок</h3>
-                        <p className="text-sm">Заявки от студентов появятся здесь</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        {lessonRequests.map(request => (
-                          <Card key={request.id} className="border-l-4 border-l-orange-400">
-                            <CardContent className="p-6">
-                              <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center space-x-4">
-                                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                                    <Clock className="w-4 h-4" />
-                                    <span>{getDateLabel(request.requested_date)}</span>
-                                    <span>
-                                      {request.requested_start_time.substring(0, 5)} - 
-                                      {request.requested_end_time.substring(0, 5)}
-                                    </span>
-                                  </div>
-                                </div>
-                                <Badge className="bg-orange-100 text-orange-800 border-orange-200">
-                                  Новая заявка
-                                </Badge>
-                              </div>
-                              
-                              <div className="space-y-4">
-                                <div className="flex items-center space-x-6">
-                                  <div className="flex items-center space-x-2">
-                                    <User className="w-4 h-4 text-gray-400" />
-                                    <span className="font-medium">
-                                      {request.student_profile?.first_name} {request.student_profile?.last_name}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <BookOpen className="w-4 h-4 text-gray-400" />
-                                    <span className="text-gray-600">
-                                      {request.subject?.name}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                {request.message && (
-                                  <div className="p-3 bg-gray-50 rounded-lg">
-                                    <p className="text-sm text-gray-700">{request.message}</p>
-                                  </div>
-                                )}
-
-                                <div className="flex items-center space-x-3">
-                                  <Button
-                                    onClick={() => handleApproveRequest(request.id, request)}
-                                    className="bg-green-600 hover:bg-green-700 text-white"
-                                  >
-                                    Одобрить
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    onClick={() => handleRejectRequest(request.id)}
-                                    className="border-red-300 text-red-600 hover:bg-red-50"
-                                  >
-                                    Отклонить
-                                  </Button>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="schedule" className="space-y-6 mt-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Управление расписанием</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-center py-12">
-                      <Button 
-                        onClick={() => navigate('/profile/tutor/schedule')}
-                        className="bg-primary hover:bg-primary/90"
-                      >
-                        <Calendar className="w-4 h-4 mr-2" />
-                        Открыть настройки расписания
+                      <Presentation className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-lg font-medium mb-2">Интерактивная доска</h3>
+                      <p className="text-sm text-gray-600 mb-4">Создавайте схемы, решайте задачи и объясняйте материал на виртуальной доске</p>
+                      <Button className="bg-primary hover:bg-primary/90">
+                        <Presentation className="w-4 h-4 mr-2" />
+                        Открыть доску
                       </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="call" className="space-y-6 mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <Phone className="w-5 h-5" />
+                      <span>Видеосвязь</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12">
+                      <Phone className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-lg font-medium mb-2">Видеосвязь с учениками</h3>
+                      <p className="text-sm text-gray-600 mb-4">Проводите уроки в режиме реального времени с качественным видео и аудио</p>
+                      <div className="flex gap-3 justify-center">
+                        <Button className="bg-green-600 hover:bg-green-700 text-white">
+                          <Video className="w-4 h-4 mr-2" />
+                          Начать звонок
+                        </Button>
+                        <Button variant="outline">
+                          <Phone className="w-4 h-4 mr-2" />
+                          Только аудио
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="homework" className="space-y-6 mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <FileText className="w-5 h-5" />
+                      <span>Домашние задания</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12">
+                      <FileText className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-lg font-medium mb-2">Управление заданиями</h3>
+                      <p className="text-sm text-gray-600 mb-4">Создавайте, отправляйте и проверяйте домашние задания</p>
+                      <div className="flex gap-3 justify-center">
+                        <Button className="bg-primary hover:bg-primary/90">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Создать задание
+                        </Button>
+                        <Button variant="outline">
+                          <FileText className="w-4 h-4 mr-2" />
+                          Просмотреть сданные
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="test" className="space-y-6 mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <ClipboardCheck className="w-5 h-5" />
+                      <span>Тестирование</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12">
+                      <ClipboardCheck className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-lg font-medium mb-2">Создание тестов</h3>
+                      <p className="text-sm text-gray-600 mb-4">Создавайте интерактивные тесты для проверки знаний студентов</p>
+                      <div className="flex gap-3 justify-center">
+                        <Button className="bg-primary hover:bg-primary/90">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Создать тест
+                        </Button>
+                        <Button variant="outline">
+                          <ClipboardCheck className="w-4 h-4 mr-2" />
+                          Результаты тестов
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="notes" className="space-y-6 mt-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <NotebookPen className="w-5 h-5" />
+                      <span>Конспекты уроков</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-12">
+                      <NotebookPen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                      <h3 className="text-lg font-medium mb-2">Ведение конспектов</h3>
+                      <p className="text-sm text-gray-600 mb-4">Создавайте и делитесь конспектами уроков со студентами</p>
+                      <div className="flex gap-3 justify-center">
+                        <Button className="bg-primary hover:bg-primary/90">
+                          <Plus className="w-4 h-4 mr-2" />
+                          Новый конспект
+                        </Button>
+                        <Button variant="outline">
+                          <NotebookPen className="w-4 h-4 mr-2" />
+                          Мои конспекты
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
