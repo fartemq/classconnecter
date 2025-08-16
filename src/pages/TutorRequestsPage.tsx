@@ -1,7 +1,7 @@
 import React from "react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { TutorLessonRequests } from "./TutorLessonRequests";
+import { TutorLessonRequests } from "@/components/profile/tutor/TutorLessonRequests";
 
 const TutorRequestsPage = () => {
   return (

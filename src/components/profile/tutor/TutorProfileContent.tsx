@@ -9,11 +9,11 @@ import { TutorChatsTab } from "./TutorChatsTab";
 import { TutorChatView } from "./TutorChatView";
 import { TutorSettingsTab } from "./TutorSettingsTab";
 import { LessonRequestsTab } from "./LessonRequestsTab";
-import { TutorLessonRequests } from "@/components/booking/TutorLessonRequests";
+import { TutorLessonRequests } from "./TutorLessonRequests";
 import { NotificationsTab } from "./NotificationsTab";
 import { ProfileCompletionChecker } from "./publish/ProfileCompletionChecker";
 import { AdvancedScheduleTab } from "./AdvancedScheduleTab";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { useProfile } from "@/hooks/profiles/useProfile";
 import { SimpleLoadingScreen } from "@/components/auth/SimpleLoadingScreen";
 import { useQuery } from "@tanstack/react-query";
@@ -97,7 +97,7 @@ export const TutorProfileContent = React.memo(() => {
   };
 
   const [activeTab, setActiveTab] = useState(getActiveTabFromPath());
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const { profile, isLoading } = useProfile();
 
   // Update active tab when location changes

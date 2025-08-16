@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { format, isToday, isTomorrow, isAfter, subMinutes } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Clock, User, BookOpen, Video, Calendar as CalendarIcon } from "lucide-react";
@@ -30,7 +30,7 @@ interface Lesson {
 }
 
 export const StudentUpcomingLessons = () => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 

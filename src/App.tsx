@@ -22,6 +22,7 @@ import PublicTutorProfilePage from "@/pages/PublicTutorProfilePage";
 import { AdminDashboardPage } from "@/pages/AdminDashboardPage";
 import NotFoundPage from "@/pages/NotFoundPage";
 import BookingPage from "@/pages/BookingPage";
+import TutorRequestsPage from "@/pages/TutorRequestsPage";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient();
@@ -53,6 +54,11 @@ function App() {
                 <Route path="/tutor/lessons" element={<TutorLessonsPage />} />
                 <Route path="/lesson/:lessonId" element={<LessonPage />} />
                 <Route path="/chat/:tutorId" element={<ChatPage />} />
+              </Route>
+              
+              {/* Tutor-specific routes */}
+              <Route element={<ProtectedRoute allowedRoles={["tutor"]} />}>
+                <Route path="/tutor/requests" element={<TutorRequestsPage />} />
               </Route>
               
               {/* Admin routes */}
