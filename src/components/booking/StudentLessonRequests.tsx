@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/auth/useAuth";
+import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
 import { Clock, User, BookOpen, MessageSquare, X } from "lucide-react";
@@ -33,7 +33,7 @@ interface LessonRequest {
 }
 
 export const StudentLessonRequests = () => {
-  const { user } = useAuth();
+  const { user } = useSimpleAuth();
   const { toast } = useToast();
 
   const { data: requests = [], isLoading, refetch } = useQuery({

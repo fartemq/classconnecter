@@ -8,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Search, Star, MapPin, Clock, User, BookOpen } from "lucide-react";
-import { TutorBookingCalendar } from "./TutorBookingCalendar";
+import { TrialLessonBookingModal } from "./TrialLessonBookingModal";
 
 interface Tutor {
   id: string;
@@ -39,8 +39,6 @@ interface Tutor {
 export const TutorSearchAndBooking = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubject, setSelectedSubject] = useState("");
-  const [selectedTutor, setSelectedTutor] = useState<Tutor | null>(null);
-  const [showBooking, setShowBooking] = useState(false);
 
   // Fetch subjects for filter
   const { data: subjects = [] } = useQuery({
@@ -124,22 +122,6 @@ export const TutorSearchAndBooking = () => {
     return Math.min(...subjects.map(s => s.hourly_rate));
   };
 
-  const handleBookTutor = (tutor: Tutor) => {
-    setSelectedTutor(tutor);
-    setShowBooking(true);
-  };
-
-  if (showBooking && selectedTutor) {
-    return (
-      <TutorBookingCalendar
-        tutor={selectedTutor}
-        onBack={() => {
-          setShowBooking(false);
-          setSelectedTutor(null);
-        }}
-      />
-    );
-  }
 
   return (
     <div className="space-y-6">
@@ -257,12 +239,11 @@ export const TutorSearchAndBooking = () => {
                         <div className="text-sm text-muted-foreground">
                           От {getMinPrice(tutor.tutor_subjects)}₽/час
                         </div>
-                        <Button 
-                          onClick={() => handleBookTutor(tutor)}
-                          className="w-full"
-                        >
-                          Записаться
-                        </Button>
+                        <TrialLessonBookingModal tutor={tutor}>
+                          <Button className="w-full">
+                            Пробное занятие
+                          </Button>
+                        </TrialLessonBookingModal>
                       </div>
                     </div>
                   </CardContent>
