@@ -76,7 +76,15 @@ export const NotificationsTab = () => {
               className={`cursor-pointer transition-colors ${
                 notification.is_read ? 'bg-white' : 'bg-blue-50 border-blue-200'
               }`}
-              onClick={() => !notification.is_read && markAsRead(notification.id)}
+              onClick={() => {
+                if (!notification.is_read) markAsRead(notification.id);
+                // Navigate based on notification type
+                if (notification.type === 'lesson_request') {
+                  window.location.href = '/profile/tutor?tab=lesson-requests';
+                } else if (notification.type === 'lesson_booked') {
+                  window.location.href = '/profile/tutor?tab=lesson-requests';
+                }
+              }}
             >
               <CardContent className="p-4">
                 <div className="flex items-start space-x-3">
