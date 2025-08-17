@@ -27,7 +27,7 @@ export const useTutorSlots = (tutorId: string, date: Date) => {
         .from('tutor_schedule')
         .select('*')
         .eq('tutor_id', tutorId)
-        .eq('day_of_week', dayOfWeek)
+        .in('day_of_week', [dayOfWeek, dayOfWeek === 7 ? 0 : dayOfWeek])
         .eq('is_available', true);
         
       if (scheduleError) {

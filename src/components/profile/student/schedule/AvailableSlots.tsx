@@ -64,7 +64,7 @@ export const AvailableSlots = ({
           is_available
         `)
         .eq('tutor_id', tutorId)
-        .eq('day_of_week', dayOfWeek)
+        .in('day_of_week', [dayOfWeek, dayOfWeek === 7 ? 0 : dayOfWeek])
         .eq('is_available', true);
         
       if (error) throw error;

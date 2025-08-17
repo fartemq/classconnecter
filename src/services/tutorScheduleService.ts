@@ -61,7 +61,7 @@ export const hasAvailableSlotsOnDate = async (tutorId: string, date: string): Pr
       .from("tutor_schedule")
       .select("*")
       .eq("tutor_id", tutorId)
-      .eq("day_of_week", dayOfWeek)
+      .in("day_of_week", ARRAY[dayOfWeek, CASE WHEN dayOfWeek = 7 THEN 0 ELSE dayOfWeek END])
       .eq("is_available", true);
       
     if (scheduleError) throw scheduleError;
@@ -83,7 +83,7 @@ export const getAvailableSlotsForDate = async (tutorId: string, date: string): P
       .from("tutor_schedule")
       .select("*")
       .eq("tutor_id", tutorId)
-      .eq("day_of_week", dayOfWeek)
+      .in("day_of_week", ARRAY[dayOfWeek, CASE WHEN dayOfWeek = 7 THEN 0 ELSE dayOfWeek END])
       .eq("is_available", true);
       
     if (scheduleError) throw scheduleError;
@@ -97,7 +97,8 @@ export const getAvailableSlotsForDate = async (tutorId: string, date: string): P
       .from("lessons")
       .select("start_time, end_time")
       .eq("tutor_id", tutorId)
-      .eq("date", date)
+      .gte("start_time", date || '')
+      .lt("start_time", (date || '') || '')
       .in("status", ["confirmed", "pending"]);
       
     if (bookedError) throw bookedError;
