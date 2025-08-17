@@ -8,11 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { generateTutorTimeSlots, TimeSlot } from "@/services/lesson/timeSlotsService";
-import { bookLesson } from "@/services/lessonBookingService";
-import { notifyLessonBooked } from "@/services/scheduleNotificationService";
 import { format } from "date-fns";
 import { ru } from "date-fns/locale";
-import { Clock, User, BookOpen } from "lucide-react";
+import { Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 interface TutorScheduleViewProps {
@@ -96,65 +94,34 @@ export const TutorScheduleView: React.FC<TutorScheduleViewProps> = ({
     setBookingSlot(slot.slot_id);
 
     try {
-      // Find corresponding schedule slot
-      const { data: scheduleSlots, error } = await supabase
-        .from('tutor_schedule')
-        .select('id')
-        .eq('tutor_id', tutorId)
-        .eq('start_time', slot.start_time)
-        .eq('end_time', slot.end_time)
+      // Создаем запрос на занятие (pending)
+      const formattedDate = format(selectedDate, 'yyyy-MM-dd');
+      const { data, error } = await supabase
+        .from('lesson_requests')
+        .insert({
+          student_id: user.id,
+          tutor_id: tutorId,
+          subject_id: selectedSubject,
+          requested_date: formattedDate,
+          requested_start_time: slot.start_time,
+          requested_end_time: slot.end_time,
+          status: 'pending'
+        })
+        .select()
         .single();
 
-      if (error || !scheduleSlots) {
-        throw new Error('Schedule slot not found');
+      if (error || !data) {
+        throw error || new Error('Failed to create lesson request');
       }
 
-      const bookingResult = await bookLesson({
-        studentId: user.id,
-        tutorId,
-        subjectId: selectedSubject,
-        date: selectedDate,
-        scheduleSlotId: scheduleSlots.id
+      toast({
+        title: "Заявка отправлена",
+        description: "Ожидайте подтверждения репетитора",
       });
 
-      if (bookingResult.success) {
-        // Get user names for notification
-        const { data: studentProfile } = await supabase
-          .from('profiles')
-          .select('first_name, last_name')
-          .eq('id', user.id)
-          .single();
-
-        const { data: subjectData } = await supabase
-          .from('subjects')
-          .select('name')
-          .eq('id', selectedSubject)
-          .single();
-
-        // Send notifications
-        await notifyLessonBooked(
-          tutorId,
-          user.id,
-          {
-            date: format(selectedDate, 'dd.MM.yyyy', { locale: ru }),
-            time: slot.start_time.substring(0, 5),
-            subject: subjectData?.name || 'Предмет',
-            studentName: `${studentProfile?.first_name} ${studentProfile?.last_name}`,
-            tutorName
-          }
-        );
-
-        toast({
-          title: "Успешно",
-          description: "Занятие успешно забронировано",
-        });
-
-        // Refresh slots
-        fetchTimeSlots();
-        onClose?.();
-      } else {
-        throw new Error(bookingResult.error || 'Failed to book lesson');
-      }
+      // Обновляем слоты и закрываем модалку
+      fetchTimeSlots();
+      onClose?.();
     } catch (error) {
       console.error('Error booking lesson:', error);
       toast({
