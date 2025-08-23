@@ -1,0 +1,41 @@
+name: Deploy Supabase Edge Function (ai-tutor)
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'supabase/functions/ai-tutor/**'
+      - '.github/workflows/supabase-deploy.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Supabase CLI
+        uses: supabase/setup-cli@v1
+
+      - name: Set OPENAI_API_KEY secret (prod)
+        run: |
+          supabase secrets set --env prod OPENAI_API_KEY="$OPENAI_API_KEY" --project-ref "$PROJECT_REF"
+
+      - name: Deploy ai-tutor function
+        run: |
+          supabase functions deploy ai-tutor --project-ref "$PROJECT_REF" --no-verify-jwt
+
+      # Optional smoke test (requires ANON_KEY secret)
+      - name: Smoke test
+        if: ${{ secrets.SUPABASE_ANON_KEY != '' }}
+        env:
+          ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          curl -sS https://$PROJECT_REF.functions.supabase.co/ai-tutor \
+            -H "Authorization: Bearer $ANON_KEY" \
+            -H "apikey: $ANON_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"messages":[{"role":"user","content":"Скажи привет"}]}' | jq .
