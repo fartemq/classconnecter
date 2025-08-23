@@ -1,0 +1,14 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run Secretlint on staged changes
+FILES=$(git diff --cached --name-only --diff-filter=ACM | tr '\n' ' ')
+if [ -n "$FILES" ]; then
+  npx --yes secretlint $FILES || {
+    echo "\nSecretlint found potential secrets. Commit aborted." >&2
+    exit 1
+  }
+fi
+
+# Quick ESLint (ignore warnings)
+npm run -s lint || exit 1
