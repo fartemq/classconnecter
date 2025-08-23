@@ -345,8 +345,8 @@ export interface Database {
   };
 }
 
-const SUPABASE_URL = "https://unvkzyztoiirmuevqpyb.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVudmt6eXp0b2lpcm11ZXZxcHliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTg5NDcsImV4cCI6MjA2MjI5NDk0N30.lFk8L1PITO2RjwUatPqbY2DhZYqc7J59ap3dB5V3YgA";
+const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL || "https://unvkzyztoiirmuevqpyb.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVudmt6eXp0b2lpcm11ZXZxcHliIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDY3MTg5NDcsImV4cCI6MjA2MjI5NDk0N30.lFk8L1PITO2RjwUatPqbY2DhZYqc7J59ap3dB5V3YgA";
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
