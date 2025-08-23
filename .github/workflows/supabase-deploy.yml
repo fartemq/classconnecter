@@ -20,10 +20,6 @@ jobs:
       - name: Setup Supabase CLI
         uses: supabase/setup-cli@v1
 
-      - name: Set OPENAI_API_KEY secret (prod)
-        run: |
-          supabase secrets set OPENAI_API_KEY="$OPENAI_API_KEY" --project-ref "$PROJECT_REF"
-
       - name: Deploy ai-tutor function
         run: |
           supabase functions deploy ai-tutor --project-ref "$PROJECT_REF" --no-verify-jwt
