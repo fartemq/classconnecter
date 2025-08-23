@@ -22,7 +22,7 @@ jobs:
 
       - name: Set OPENAI_API_KEY secret (prod)
         run: |
-          supabase secrets set --env prod OPENAI_API_KEY="$OPENAI_API_KEY" --project-ref "$PROJECT_REF"
+          supabase secrets set OPENAI_API_KEY="$OPENAI_API_KEY" --project-ref "$PROJECT_REF"
 
       - name: Deploy ai-tutor function
         run: |
