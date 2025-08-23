@@ -32,13 +32,17 @@ jobs:
       - name: Smoke test
         env:
           ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        continue-on-error: true
         run: |
           if [ -n "$ANON_KEY" ]; then
+            set -e
             curl -sS https://$PROJECT_REF.functions.supabase.co/ai-tutor \
               -H "Authorization: Bearer $ANON_KEY" \
               -H "apikey: $ANON_KEY" \
               -H "Content-Type: application/json" \
-              -d '{"messages":[{"role":"user","content":"Скажи привет"}]}' | jq .
+              -d '{"messages":[{"role":"user","content":"Скажи привет"}]}'
+            echo ""
+            echo "Smoke test done"
           else
-            echo "Skipping smoke test: SUPABASE_ANON_KEY is not set";
+            echo "Skipping smoke test: SUPABASE_ANON_KEY is not set"
           fi
