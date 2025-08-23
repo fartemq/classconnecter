@@ -12,7 +12,8 @@ import {
   TrendingUp, 
   Settings,
   Bell,
-  User
+  User,
+  Bot
 } from "lucide-react";
 
 interface StudentSidebarProps {
@@ -28,6 +29,7 @@ export const StudentSidebar = ({ activeTab, onTabChange }: StudentSidebarProps) 
     { id: "profile", label: "Профиль", icon: User, path: "/profile/student/profile" },
     { id: "find-tutors", label: "Найти репетиторов", icon: Search, path: "/profile/student/find-tutors" },
     { id: "my-tutors", label: "Мои репетиторы", icon: Users, path: "/profile/student/my-tutors" },
+    { id: "ai-tutor", label: "ИИ‑репетитор", icon: Bot, path: "/profile/student/ai-tutor" },
     { id: "chats", label: "Сообщения", icon: MessageSquare, path: "/profile/student/chats" },
     { id: "schedule", label: "Расписание", icon: Calendar, path: "/profile/student/schedule" },
     { id: "homework", label: "Домашние задания", icon: BookOpen, path: "/profile/student/homework" },

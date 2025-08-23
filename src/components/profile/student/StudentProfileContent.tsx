@@ -17,6 +17,9 @@ import { SettingsTab } from "./SettingsTab";
 import { useSimpleAuth } from "@/hooks/auth/SimpleAuthProvider";
 import { useProfile } from "@/hooks/profiles/useProfile";
 import { Loader } from "@/components/ui/loader";
+import { Suspense, lazy } from "react";
+
+const AITutorTab = lazy(() => import("./AITutorTab").then(m => ({ default: m.AITutorTab })));
 
 export const StudentProfileContent = () => {
   const location = useLocation();
@@ -32,6 +35,8 @@ export const StudentProfileContent = () => {
       return "find-tutors";
     } else if (pathParts.includes('my-tutors')) {
       return "my-tutors";
+    } else if (pathParts.includes('ai-tutor')) {
+      return "ai-tutor";
     } else if (pathParts.includes('schedule')) {
       return "schedule";
     } else if (pathParts.includes('homework')) {
@@ -78,6 +83,12 @@ export const StudentProfileContent = () => {
         return <FindTutorsTab />;
       case "my-tutors":
         return <MyTutorsTab />;
+      case "ai-tutor":
+        return (
+          <Suspense fallback={<div className="flex justify-center p-6"><Loader size="md" /></div>}>
+            <AITutorTab />
+          </Suspense>
+        );
       case "chats":
         return <ChatsTab />;
       case "chat-conversation":
