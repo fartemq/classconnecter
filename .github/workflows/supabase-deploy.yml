@@ -28,14 +28,17 @@ jobs:
         run: |
           supabase functions deploy ai-tutor --project-ref "$PROJECT_REF" --no-verify-jwt
 
-      # Optional smoke test (requires ANON_KEY secret)
+      # Optional smoke test (runs only if SUPABASE_ANON_KEY is provided)
       - name: Smoke test
-        if: ${{ secrets.SUPABASE_ANON_KEY != '' }}
         env:
           ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
-          curl -sS https://$PROJECT_REF.functions.supabase.co/ai-tutor \
-            -H "Authorization: Bearer $ANON_KEY" \
-            -H "apikey: $ANON_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{"messages":[{"role":"user","content":"Скажи привет"}]}' | jq .
+          if [ -n "$ANON_KEY" ]; then
+            curl -sS https://$PROJECT_REF.functions.supabase.co/ai-tutor \
+              -H "Authorization: Bearer $ANON_KEY" \
+              -H "apikey: $ANON_KEY" \
+              -H "Content-Type: application/json" \
+              -d '{"messages":[{"role":"user","content":"Скажи привет"}]}' | jq .
+          else
+            echo "Skipping smoke test: SUPABASE_ANON_KEY is not set";
+          fi
