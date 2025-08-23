@@ -2,9 +2,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 export interface ChatTurn { role: "user" | "assistant" | "system"; content: string }
 
-export const sendAiTutorMessage = async (history: ChatTurn[], latestUserMessage: string): Promise<string> => {
+export const sendAiTutorMessage = async (history: ChatTurn[]): Promise<string> => {
   try {
-    const payload = { messages: [...history, { role: "user", content: latestUserMessage }] };
+    const payload = { messages: history };
     const { data, error } = await supabase.functions.invoke("ai-tutor", { body: payload });
     if (error) throw error;
     if (data && typeof data.reply === "string") return data.reply;
@@ -13,7 +13,8 @@ export const sendAiTutorMessage = async (history: ChatTurn[], latestUserMessage:
   } catch (e) {
     console.error("AI tutor service error", e);
     // Local fallback explanation to keep feature functional without server
-    return generateLocalFallback(latestUserMessage);
+    const last = history[history.length - 1]?.content ?? "";
+    return generateLocalFallback(last);
   }
 };
 

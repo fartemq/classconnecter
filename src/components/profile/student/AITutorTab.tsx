@@ -41,11 +41,13 @@ export const AITutorTab: React.FC = () => {
     setIsSending(true);
     try {
       const reply = await sendAiTutorMessage(
-        messages
-          .filter((m) => m.role === "user" || m.role === "assistant")
-          .slice(-8) // send last 8 turns for brevity
-          .map((m) => ({ role: m.role, content: m.content })),
-        text
+        [
+          ...messages
+            .filter((m) => m.role === "user" || m.role === "assistant")
+            .slice(-8)
+            .map((m) => ({ role: m.role, content: m.content })),
+          { role: "user", content: text }
+        ]
       );
 
       const assistantMsg: ChatMessage = {
