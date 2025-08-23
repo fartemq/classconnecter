@@ -62,6 +62,11 @@ export const UserMenu = () => {
   };
 
   const handleAdminAccess = () => {
+    // If admin access was already granted in this session, skip dialog
+    if (sessionStorage.getItem("admin_access_granted") === "1") {
+      navigate("/admin");
+      return;
+    }
     setShowAdminDialog(true);
   };
 
